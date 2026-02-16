@@ -1,0 +1,179 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>NovaSound TITAN LUX</title>
+  <link rel="stylesheet" href="style.css">
+
+  <!-- PWA manifest & theme -->
+  <link rel="manifest" href="manifest.webmanifest">
+  <meta name="theme-color" content="#00e0ff">
+  <link rel="apple-touch-icon" href="icons/icon-192.png">
+</head>
+<body>
+
+<header class="topbar">
+  <div class="brand">
+    <div class="logo-dot"></div>
+    <div class="brand-text">NovaSound <span class="brand-mini">TITAN LUX</span></div>
+  </div>
+
+  <div class="search-wrap">
+    <input id="globalSearch" class="search" placeholder="Rechercher artiste, titre, actualité..." />
+    <button id="searchBtn" class="btn-ghost">🔍</button>
+  </div>
+
+  <nav class="nav">
+    <button class="nav-btn" data-page="home">Accueil</button>
+    <button class="nav-btn" data-page="upload">Publier</button>
+    <button class="nav-btn" data-page="explorer">Explorer</button>
+    <button class="nav-btn" data-page="news">Actualités</button>
+    <button class="nav-btn" data-page="profile">Profil</button>
+  </nav>
+
+  <div class="user-area" id="userArea"></div>
+
+  <!-- Install button -->
+  <button id="btnInstall" class="btn-ghost" style="display:none;margin-left:8px;">Installer</button>
+</header>
+
+<main class="container">
+  <!-- HOME -->
+  <section id="home" class="page">
+    <h1>À la une</h1>
+    <div id="homeGrid" class="grid"></div>
+  </section>
+
+  <!-- UPLOAD -->
+  <section id="upload" class="page" style="display:none;">
+    <h1>Publier un nouveau son</h1>
+    <div class="card form-card upload-card">
+      <div class="two-col">
+        <div class="col-left">
+          <label class="field-label">Nom d'artiste</label>
+          <input id="artist" type="text" class="field" placeholder="Ex : Juice WRLD">
+
+          <label class="field-label">Titre</label>
+          <input id="title" type="text" class="field" placeholder="Ex : LOVE AGAIN">
+
+          <label class="field-label">Couverture</label>
+          <div id="coverDrop" class="dropzone" tabindex="0">
+            <span class="dz-icon">📷</span>
+            <span class="dz-text">Glisser / déposer l'image ou <button type="button" class="linklike" id="coverBrowse">Parcourir</button></span>
+            <input id="cover" type="file" accept="image/*" class="visually-hidden">
+          </div>
+
+          <label class="field-label">Fichier audio</label>
+          <div id="audioDrop" class="dropzone" tabindex="0">
+            <span class="dz-icon">🎧</span>
+            <span class="dz-text">Glisser / déposer le MP3 ou <button type="button" class="linklike" id="audioBrowse">Parcourir</button></span>
+            <input id="audio" type="file" accept="audio/*" class="visually-hidden">
+          </div>
+
+          <div id="uploadErrors" class="form-errors" role="alert" aria-live="assertive"></div>
+
+          <div class="row" style="margin-top:12px;">
+            <button id="btnUpload" class="btn-primary">Publier</button>
+            <button id="btnClearUpload" class="btn-ghost">Annuler</button>
+          </div>
+          <small class="muted">Tu dois être connecté pour publier.</small>
+        </div>
+
+        <aside class="col-right">
+          <div class="preview card">
+            <div class="preview-image" id="coverPreviewWrap">
+              <img id="coverPreview" alt="Aperçu couverture" src="" />
+              <div id="noCover" class="muted small">Aucune couverture</div>
+            </div>
+
+            <div class="preview-audio" id="audioPreviewWrap">
+              <audio id="audioPreview" controls src=""></audio>
+              <div id="noAudio" class="muted small">Aucun son sélectionné</div>
+            </div>
+
+            <div class="muted small" style="margin-top:8px">Astuce : couverture carrée 800×800 px recommandée.</div>
+          </div>
+        </aside>
+      </div>
+    </div>
+  </section>
+
+  <!-- EXPLORER -->
+  <section id="explorer" class="page" style="display:none;">
+    <h1>Mes sons</h1>
+    <div id="explorerGrid" class="grid"></div>
+  </section>
+
+  <!-- NEWS -->
+  <section id="news" class="page" style="display:none;">
+    <h1>Actualités</h1>
+    <div class="card form-card news-card">
+      <label class="field-label">Titre</label>
+      <input id="newsTitle" class="field" placeholder="Titre...">
+      <label class="field-label">Artiste (optionnel)</label>
+      <input id="newsArtist" class="field" placeholder="Artiste...">
+      <label class="field-label">Contenu</label>
+      <textarea id="newsContent" rows="5" class="field" placeholder="Détail..."></textarea>
+
+      <div id="newsErrors" class="form-errors" role="alert" aria-live="assertive"></div>
+
+      <div class="row" style="margin-top:12px;">
+        <button id="btnAddNews" class="btn-primary">Publier l'actualité</button>
+        <button id="btnClearNews" class="btn-ghost">Effacer</button>
+      </div>
+    </div>
+
+    <div id="newsList" class="stack"></div>
+  </section>
+
+  <!-- PROFILE (ne touche pas) -->
+  <section id="profile" class="page" style="display:none;">
+    <h1>Mon profil</h1>
+    <div class="profile-card card">
+      <img id="profilePic" class="avatar" alt="Avatar">
+      <div class="profile-info">
+        <input id="profileNameInput" placeholder="Ton nom / pseudo" />
+        <div class="muted" id="profileEmailDisplay"></div>
+        <div class="row" style="margin-top:10px;">
+          <label class="file-label">
+            <input id="profileUpload" type="file" accept="image/*" hidden>
+            <span class="btn-ghost">Changer la photo</span>
+          </label>
+          <button id="btnSaveProfile" class="btn-primary">Sauvegarder</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="profile-actions">
+      <button class="btn-outline" onclick="showPage('upload')">🎵 Upload un son</button>
+      <button class="btn-outline" onclick="showLibrary()">📚 Ma bibliothèque</button>
+      <button class="btn-outline" onclick="showPlaylist()">❤️ Ma playlist</button>
+    </div>
+
+    <div id="profileContent" class="stack"></div>
+  </section>
+
+</main>
+
+<footer class="player">
+  <div class="player-left">
+    <img id="playerCover" class="player-cover" alt="">
+    <div>
+      <div id="playerTitle">Aucun morceau</div>
+      <div id="playerArtist" class="muted small"></div>
+    </div>
+  </div>
+
+  <div class="player-center">
+    <audio id="playerAudio" controls></audio>
+  </div>
+
+  <div class="player-right">
+    <button id="btnDownload" class="btn-ghost">⬇ Télécharger</button>
+  </div>
+</footer>
+
+<script src="app.js"></script>
+</body>
+</html>
