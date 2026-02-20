@@ -9,6 +9,9 @@ import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import AudioPlayer from '@/components/AudioPlayer';
 import SongCard from '@/components/SongCard';
+import LikeButton from '@/components/LikeButton';
+import FollowButton from '@/components/FollowButton';
+import EditProfileModal from '@/components/EditProfileModal';
 import { Link } from 'react-router-dom';
 
 const UserProfilePage = () => {
@@ -19,6 +22,7 @@ const UserProfilePage = () => {
   const [activeTab, setActiveTab] = useState('songs'); // songs, followers, following
   const [loading, setLoading] = useState(true);
   const [currentSong, setCurrentSong] = useState(null);
+  const [showEditModal, setShowEditModal] = useState(false);
 
   useEffect(() => {
     if (currentUser) {
@@ -162,7 +166,10 @@ const UserProfilePage = () => {
                   </button>
                 </div>
 
-                <Button className="bg-gray-800 hover:bg-gray-700 text-white border border-gray-700">
+                <Button 
+                  onClick={() => setShowEditModal(true)}
+                  className="bg-gray-800 hover:bg-gray-700 text-white border border-gray-700"
+                >
                   <Edit className="w-4 h-4 mr-2" />
                   Edit Profile
                 </Button>
@@ -243,6 +250,13 @@ const UserProfilePage = () => {
 
         <Footer />
         {currentSong && <AudioPlayer currentSong={currentSong} />}
+        
+        {/* Edit Profile Modal */}
+        <EditProfileModal 
+          isOpen={showEditModal} 
+          onClose={() => setShowEditModal(false)} 
+          user={currentUser}
+        />
       </div>
     </>
   );

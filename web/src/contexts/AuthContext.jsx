@@ -15,6 +15,10 @@ export const AuthProvider = ({ children }) => {
   const [currentUser, setCurrentUser] = useState(null);
   const [initialLoading, setInitialLoading] = useState(true);
 
+  const updateUser = (userData) => {
+    setCurrentUser(userData);
+  };
+
   useEffect(() => {
     // Check if user is already authenticated on mount
     if (pb.authStore.isValid && pb.authStore.model) {
@@ -119,6 +123,7 @@ export const AuthProvider = ({ children }) => {
     logout,
     resendVerification,
     updateProfile,
+    updateUser,
     initialLoading
   };
 

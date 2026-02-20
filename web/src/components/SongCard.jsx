@@ -4,6 +4,7 @@ import { motion } from 'framer-motion';
 import pb from '@/lib/pocketbaseClient';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
+import LikeButton from '@/components/LikeButton';
 
 const SongCard = ({ song, onPlay, isPlaying }) => {
   const { currentUser } = useAuth();
@@ -116,13 +117,12 @@ const SongCard = ({ song, onPlay, isPlaying }) => {
         <p className="text-gray-400 text-sm truncate mb-3">{song.artist}</p>
         
         <div className="flex items-center justify-between mt-2">
+          <LikeButton 
+            songId={song.id} 
+            initialLikes={song.likes || 0}
+            initialLiked={isLiked}
+          />
           <div className="flex items-center gap-3">
-            <button 
-              onClick={handleLike}
-              className={`transition-colors ${isLiked ? 'text-magenta-500' : 'text-gray-400 hover:text-magenta-500'}`}
-            >
-              <Heart className={`w-5 h-5 ${isLiked ? 'fill-current' : ''}`} />
-            </button>
             <button 
               onClick={handleDownload}
               className="text-gray-400 hover:text-cyan-400 transition-colors"

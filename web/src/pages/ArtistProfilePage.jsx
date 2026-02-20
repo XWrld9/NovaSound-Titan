@@ -9,6 +9,7 @@ import Footer from '@/components/Footer';
 import AudioPlayer from '@/components/AudioPlayer';
 import SongCard from '@/components/SongCard';
 import { Button } from '@/components/ui/button';
+import FollowButton from '@/components/FollowButton';
 import { Music, UserPlus, UserCheck, User } from 'lucide-react';
 
 const ArtistProfilePage = () => {
@@ -173,22 +174,11 @@ const ArtistProfilePage = () => {
                 </div>
 
                 {currentUser && currentUser.id !== artist.id && (
-                  <Button 
-                    onClick={handleFollow}
-                    className={`${isFollowing ? 'bg-gray-700 hover:bg-gray-600' : 'bg-cyan-600 hover:bg-cyan-700'} text-white min-w-[140px]`}
-                  >
-                    {isFollowing ? (
-                      <>
-                        <UserCheck className="w-4 h-4 mr-2" />
-                        Following
-                      </>
-                    ) : (
-                      <>
-                        <UserPlus className="w-4 h-4 mr-2" />
-                        Follow
-                      </>
-                    )}
-                  </Button>
+                  <FollowButton 
+                    userId={artist.id}
+                    initialFollowers={artist.followers || followers.length}
+                    initialFollowing={isFollowing}
+                  />
                 )}
               </div>
             </div>
