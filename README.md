@@ -1,8 +1,8 @@
 # NovaSound-Titan
 
-Plateforme musicale avec React et PocketBase.
+Plateforme musicale avec React et Supabase.
 
-## Fonctionnalités
+## 🎵 Fonctionnalités
 
 - Catalogue musical et exploration
 - Upload de musique
@@ -10,12 +10,8 @@ Plateforme musicale avec React et PocketBase.
 - Lecteur audio intégré
 - Authentification utilisateur
 - Interface responsive
-- **Système de likes** - Like/unlike les musiques
-- **Système d'abonnement** - Follow/unfollow les artistes
-- **Modification du profil** - Avatar, bio, informations
-- **Temps réel** - Mises à jour instantanées
 
-## Stack Technique
+## 🛠️ Stack Technique
 
 **Frontend**
 - React 18
@@ -26,10 +22,15 @@ Plateforme musicale avec React et PocketBase.
 - Framer Motion
 
 **Backend**
-- PocketBase (déployé sur Fly.io)
-- SQLite
+- Supabase (PostgreSQL cloud)
+- Authentification Supabase
+- Stockage Supabase
 
-## Installation
+## 👨‍💻 Développeur
+
+Ce projet a été développé par **Tetang Tanekou Morel Noel** pour **XWrld**.
+
+## 📦 Installation
 
 ### Développement Local
 ```bash
@@ -40,66 +41,77 @@ npm install
 npm run dev
 ```
 
-### PocketBase Local
-```bash
-cd pocketbase
-./pocketbase serve
-```
+### Configuration Supabase
+1. Créez un projet sur [supabase.com](https://supabase.com)
+2. Configurez les variables d'environnement :
+   ```
+   VITE_SUPABASE_URL=votre-url-supabase
+   VITE_SUPABASE_ANON_KEY=votre-clé-anon
+   ```
+3. Créez les tables nécessaires via l'interface Supabase
 
-## Déploiement
+## 🚀 Déploiement
 
 ### Frontend (Vercel)
 - Root Directory: `web`
 - Build Command: `npm run build`
 - Output Directory: `dist`
 
-### Backend (Fly.io)
-1. Installer Fly CLI: `curl -L https://fly.io/install.sh | sh`
-2. Se connecter: `fly auth login`
-3. Déployer: `fly deploy`
+### Backend (Supabase)
+- Base de données PostgreSQL hébergée
+- Authentification intégrée
+- Stockage de fichiers
+- Real-time subscriptions
 
-## Structure
+## 📁 Structure
 
 ```
 NovaSound-Titan/
 ├── web/           # Application React
-├── pocketbase/    # Backend PocketBase
-└── README.md
+├── README.md      # Documentation
+└── LICENSE        # Licence
 ```
 
-## Configuration
+## 🎯 Configuration
 
 ### Variables d'environnement
-- `POCKETBASE_URL` : URL de l'instance PocketBase
-- `VITE_POCKETBASE_URL` : URL pour le client
+- `VITE_SUPABASE_URL` : URL de l'instance Supabase
+- `VITE_SUPABASE_ANON_KEY` : Clé publique Supabase
 
 ### Base de données
-La base de données est automatiquement initialisée avec les tables :
-- `users` : Utilisateurs avec avatar, bio, followers, following
-- `songs` : Musiques avec likes, plays_count
-- `likes` : Likes des utilisateurs sur les musiques
+La base de données est configurée avec les tables :
+- `users` : Profils utilisateurs
+- `songs` : Musiques et métadonnées
+- `likes` : Likes des utilisateurs
 - `follows` : Relations follow/following
 
-## Fonctionnalités Sociales
+## 🎨 Design
 
-### Système de Likes
-- Like/unlike en temps réel
-- Compteur automatique
-- Animations fluides
-- Notifications (à implémenter)
+- Interface moderne et responsive
+- Animations fluides avec Framer Motion
+- Thème sombre/clair
+- Optimisé mobile
 
-### Système d'Abonnement
-- Follow/unfollow les artistes
-- Compteurs de followers/following
-- Listes des abonnés
-- Temps réel
+## 📈 Performance
 
-### Gestion du Profil
-- Upload d'avatar (max 5MB)
-- Modification username, email, bio
+- Optimisé pour Vercel Edge Network
+- Base de données PostgreSQL performante
+- Lazy loading des composants
+- Images optimisées
+
+## 🔐 Sécurité
+
+- Row Level Security (RLS) Supabase
+- Authentification sécurisée
 - Validation des entrées
-- Sauvegarde automatique
+- Protection XSS
 
-## Licence
+## 📞 Contact
+
+Pour toute question ou collaboration :
+- **Développeur** : Tetang Tanekou Morel Noel
+- **Organisation** : XWrld
+
+## 📄 Licence
 
 MIT License - voir [LICENSE](LICENSE)
