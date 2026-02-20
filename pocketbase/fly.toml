@@ -1,0 +1,42 @@
+# Configuration pour le déploiement sur Fly.io
+app = "novasound-pocketbase"
+
+[[services]]
+[services.concurrency]
+type = "connections"
+hard_limit = 25
+soft_limit = 20
+
+[http_service]
+  internal_port = 8080
+  force_https = true
+  auto_stop_machines = true
+  min_machines_running = 0
+  processes = ["app"]
+
+[checks]
+  [checks.alive]
+    type = "tcp"
+    interval = "15s"
+    timeout = "2s"
+    grace_period = "5s"
+    port = 8080
+
+[deploy]
+  [deploy.releases]
+    v1 = { 
+      image = "ghcr.io/muchdogesec/pocketbase:latest"
+      command = ["start", "--http=0.0.0.0:8080"]
+    }
+
+[[mounts]]
+  source = "pb_data"
+  destination = "/pb/pb_data"
+
+[[mounts]]
+  source = "pb_hooks"
+  destination = "/pb/pb_hooks"
+
+[[mounts]]
+  source = "pb_migrations"
+  destination = "/pb/pb_migrations"
