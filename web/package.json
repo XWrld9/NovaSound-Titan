@@ -14,7 +14,15 @@
     "react-dom": "^18.2.0",
     "react-router-dom": "^6.8.1",
     "react-helmet": "^6.1.0",
-    "lucide-react": "^0.263.1"
+    "lucide-react": "^0.263.1",
+    "framer-motion": "^10.16.4",
+    "@radix-ui/react-toast": "^1.1.5",
+    "@radix-ui/react-slider": "^1.1.2",
+    "@radix-ui/react-slot": "^1.0.2",
+    "class-variance-authority": "^0.7.0",
+    "clsx": "^2.0.0",
+    "tailwind-merge": "^1.14.0",
+    "pocketbase": "^0.21.1"
   },
   "devDependencies": {
     "@types/react": "^18.2.15",
