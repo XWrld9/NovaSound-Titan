@@ -3,8 +3,6 @@ import { Route, Routes, HashRouter as Router } from 'react-router-dom';
 import { AuthProvider } from '@/contexts/AuthContext';
 import ScrollToTop from '@/components/ScrollToTop';
 import ProtectedRoute from '@/components/ProtectedRoute';
-import ErrorBoundary from '@/components/ErrorBoundary';
-import ExtensionWarning from '@/components/ExtensionWarning';
 import HomePage from '@/pages/HomePage';
 import LoginPage from '@/pages/LoginPage';
 import SignupPage from '@/pages/SignupPage';
@@ -19,45 +17,42 @@ import CopyrightInfo from '@/pages/CopyrightInfo.jsx';
 
 function App() {
   return (
-    <ErrorBoundary>
-      <AuthProvider>
-        <Router>
-          <ScrollToTop />
-          <ExtensionWarning />
-          <Routes>
-            <Route path="/" element={<HomePage />} />
-            <Route path="/login" element={<LoginPage />} />
-            <Route path="/signup" element={<SignupPage />} />
-            <Route path="/explorer" element={<ExplorerPage />} />
-            <Route path="/news" element={<NewsPage />} />
-            <Route path="/artist/:id" element={<ArtistProfilePage />} />
-            <Route path="/song/:id" element={<ExplorerPage />} />
-            
-            {/* Legal Pages */}
-            <Route path="/privacy" element={<PrivacyPolicy />} />
-            <Route path="/terms" element={<TermsOfService />} />
-            <Route path="/copyright" element={<CopyrightInfo />} />
-            
-            <Route
-              path="/upload"
-              element={
-                <ProtectedRoute>
-                  <MusicUploadPage />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/profile"
-              element={
-                <ProtectedRoute>
-                  <UserProfilePage />
-                </ProtectedRoute>
-              }
-            />
-          </Routes>
-        </Router>
-      </AuthProvider>
-    </ErrorBoundary>
+    <AuthProvider>
+      <Router>
+        <ScrollToTop />
+        <Routes>
+          <Route path="/" element={<HomePage />} />
+          <Route path="/login" element={<LoginPage />} />
+          <Route path="/signup" element={<SignupPage />} />
+          <Route path="/explorer" element={<ExplorerPage />} />
+          <Route path="/news" element={<NewsPage />} />
+          <Route path="/artist/:id" element={<ArtistProfilePage />} />
+          <Route path="/song/:id" element={<ExplorerPage />} />
+          
+          {/* Legal Pages */}
+          <Route path="/privacy" element={<PrivacyPolicy />} />
+          <Route path="/terms" element={<TermsOfService />} />
+          <Route path="/copyright" element={<CopyrightInfo />} />
+          
+          <Route
+            path="/upload"
+            element={
+              <ProtectedRoute>
+                <MusicUploadPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/profile"
+            element={
+              <ProtectedRoute>
+                <UserProfilePage />
+              </ProtectedRoute>
+            }
+          />
+        </Routes>
+      </Router>
+    </AuthProvider>
   );
 }
 

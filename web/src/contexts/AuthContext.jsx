@@ -1,6 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { supabase } from '../lib/supabaseClient';
-import { safeFetch } from '../components/ExtensionSafeWrapper';
 
 const AuthContext = createContext();
 
@@ -15,7 +14,6 @@ export const useAuth = () => {
 export const AuthProvider = ({ children }) => {
   const [currentUser, setCurrentUser] = useState(null);
   const [initialLoading, setInitialLoading] = useState(true);
-  const [extensionWarning, setExtensionWarning] = useState(false);
 
   const getEmailRedirectTo = () => {
     try {
@@ -249,7 +247,6 @@ export const AuthProvider = ({ children }) => {
     updateProfile,
     updateUser,
     initialLoading,
-    extensionWarning,
     supabase // Exporter supabase pour les autres composants
   };
 
