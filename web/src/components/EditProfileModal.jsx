@@ -74,12 +74,12 @@ const EditProfileModal = ({ isOpen, onClose }) => {
         const fileExt = avatarFile.name.split('.').pop();
         const fileName = `${currentUser.id}-${Date.now()}.${fileExt}`;
 
-        // Utiliser le bucket 'public' au lieu de 'avatars'
+        // Utiliser le bucket 'avatars' dédié
         const { data: uploadData, error: uploadError } = await supabase.storage
-          .from('public')
-          .upload(`avatars/${fileName}`, avatarFile, {
+          .from('avatars')
+          .upload(`${fileName}`, avatarFile, {
             cacheControl: '3600',
-            upsert: false
+            upsert: true
           });
 
         if (uploadError) {
@@ -88,8 +88,8 @@ const EditProfileModal = ({ isOpen, onClose }) => {
           return;
         } else {
           const { data: { publicUrl } } = supabase.storage
-            .from('public')
-            .getPublicUrl(`avatars/${fileName}`);
+            .from('avatars')
+            .getPublicUrl(`${fileName}`);
 
           avatarUrl = publicUrl;
         }
@@ -106,7 +106,7 @@ const EditProfileModal = ({ isOpen, onClose }) => {
         updateData.avatar_url = avatarUrl;
       }
 
-      const { success, message, user } = await updateProfile(currentUser.id, updateData);
+      const { success, message, data } = await updateProfile(updateData);
 
       if (success) {
         alert('Profil mis à jour avec succès!');
