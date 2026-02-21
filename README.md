@@ -42,11 +42,11 @@ NovaSound-TITAN LUX n'est pas juste une plateforme de streaming, c'est un écosy
 - CDN global
 - SSL/TLS automatique
 
-## � Fonctionnalités
+## 🚀 Fonctionnalités
 
 ### 🎵 Pour les Artistes
-- � **Upload illimité** de musiques
-- 🎨 **Personnalisation du profil** avec avatar
+- 📤 **Upload illimité** de musiques
+- 🎨 **Personnalisation du profil** avec avatar et bio
 - 📊 **Statistiques détaillées** (plays, likes, followers)
 - 🔔 **Notifications en temps réel**
 - 📱 **Interface mobile optimisée**
@@ -55,14 +55,15 @@ NovaSound-TITAN LUX n'est pas juste une plateforme de streaming, c'est un écosy
 - 🔍 **Découverte intelligente** de nouveaux artistes
 - ❤️ **Système de likes** pour soutenir vos créateurs préférés
 - 👥 **Follow/Unfollow** pour ne rien manquer
-- 📝 **Commentaires et interactions**
+- � **Téléchargement** des musiques préférées
+- 🔗 **Partage** des chansons
 - 🎧 **Lecteur audio avancé**
+- ✏️ **Modification de profil** complète
 
 ### 🔐 Sécurité & Performance
 - 🛡️ **Row Level Security** - Protection des données
 - 🚀 **Performance optimisée** - Lazy loading
 - 📱 **Responsive design** - Parfait sur tous appareils
-- 🔒 **HTTPS obligatoire** - Connexions sécurisées
 
 ## 📦 Installation
 
@@ -155,11 +156,11 @@ La base de données est configurée avec les tables :
 
 ### Équipe Fondatrice
 - **Développeur Principal** : M. Tetang Tanekou M.N (EL_AX)
-- **Fondateur & Vision** : M. Tindo Arthur Ivan(XWrld)
+- **Fondateur & Vision** : M. Tindo Arthur (XWrld)
 
 ### Pour toute collaboration
 - 📧 **Technique** : Contactez M. Tetang Tanekou M.N
-- 🎯 **Stratégique** : Contactez M. Tindo Arthur Ivan
+- 🎯 **Stratégique** : Contactez M. Tindo Arthur
 - 🌐 **Plateforme** : [NovaSound-TITAN LUX](https://nova-sound-titan.vercel.app)
 
 ## 📄 Licence
