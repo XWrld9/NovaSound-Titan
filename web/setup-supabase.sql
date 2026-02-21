@@ -18,13 +18,38 @@ CREATE TABLE IF NOT EXISTS public.users (
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
--- Si la table users existe déjà mais n'a pas la colonne email, l'ajouter
+-- Si la table users existe déjà mais n'a pas les colonnes nécessaires, les ajouter
 DO $$
 BEGIN
   IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'users' AND table_schema = 'public') THEN
+    -- Ajouter la colonne email si elle n'existe pas
     IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'users' AND column_name = 'email' AND table_schema = 'public') THEN
       ALTER TABLE public.users ADD COLUMN email TEXT UNIQUE;
+    END IF;
+    
+    -- Ajouter la colonne username si elle n'existe pas
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'users' AND column_name = 'username' AND table_schema = 'public') THEN
       ALTER TABLE public.users ADD COLUMN username TEXT UNIQUE NOT NULL DEFAULT '';
+    END IF;
+    
+    -- Ajouter la colonne avatar_url si elle n'existe pas
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'users' AND column_name = 'avatar_url' AND table_schema = 'public') THEN
+      ALTER TABLE public.users ADD COLUMN avatar_url TEXT;
+    END IF;
+    
+    -- Ajouter la colonne bio si elle n'existe pas
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'users' AND column_name = 'bio' AND table_schema = 'public') THEN
+      ALTER TABLE public.users ADD COLUMN bio TEXT;
+    END IF;
+    
+    -- Ajouter la colonne followers_count si elle n'existe pas
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'users' AND column_name = 'followers_count' AND table_schema = 'public') THEN
+      ALTER TABLE public.users ADD COLUMN followers_count INTEGER DEFAULT 0;
+    END IF;
+    
+    -- Ajouter la colonne following_count si elle n'existe pas
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'users' AND column_name = 'following_count' AND table_schema = 'public') THEN
+      ALTER TABLE public.users ADD COLUMN following_count INTEGER DEFAULT 0;
     END IF;
   END IF;
 END $$;
