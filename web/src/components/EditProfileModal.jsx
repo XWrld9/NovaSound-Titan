@@ -63,6 +63,12 @@ const EditProfileModal = ({ isOpen, onClose }) => {
     try {
       let avatarUrl = currentUser.avatar_url;
 
+      if (!avatarFile && !formData.username && !formData.bio) {
+        alert('Aucune modification à enregistrer');
+        setIsLoading(false);
+        return;
+      }
+
       // Upload de l'avatar si un fichier est sélectionné
       if (avatarFile) {
         const fileExt = avatarFile.name.split('.').pop();
@@ -78,7 +84,8 @@ const EditProfileModal = ({ isOpen, onClose }) => {
 
         if (uploadError) {
           console.error('Upload error:', uploadError);
-          // Continuer sans l'avatar si l'upload échoue
+          alert('Erreur lors de l\'upload de l\'avatar: ' + uploadError.message);
+          return;
         } else {
           const { data: { publicUrl } } = supabase.storage
             .from('public')

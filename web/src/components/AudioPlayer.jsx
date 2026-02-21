@@ -165,7 +165,13 @@ const AudioPlayer = ({ currentSong, playlist = [], onNext, onPrevious }) => {
     e?.stopPropagation();
     const url = `${window.location.origin}/#/song/${currentSong.id}`;
     navigator.clipboard.writeText(url);
-    alert('Link copied!');
+    const toast = document.createElement('div');
+    toast.className = 'fixed top-4 right-4 bg-cyan-500 text-white px-4 py-2 rounded-lg shadow-lg z-50 animate-pulse';
+    toast.textContent = 'Lien copié!';
+    document.body.appendChild(toast);
+    setTimeout(() => {
+      document.body.removeChild(toast);
+    }, 2000);
   };
 
   const recordPlay = async () => {
