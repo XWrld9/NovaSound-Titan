@@ -121,31 +121,35 @@ const UserProfilePage = () => {
     }
   };
 
-  const UserListItem = ({ user, followId, isFollowingList }) => (
-    <Link to={`/artist/${user.id}`} className="flex items-center gap-4 p-4 bg-gray-900/50 border border-gray-800 rounded-xl hover:border-cyan-500/50 transition-all group relative">
-      {user.avatar_url ? (
-        <img src={user.avatar_url} alt={user.username} className="w-12 h-12 rounded-full object-cover" />
-      ) : (
-        <div className="w-12 h-12 rounded-full bg-gray-800 flex items-center justify-center">
-          <User className="w-6 h-6 text-gray-400" />
+  const UserListItem = ({ user, followId, isFollowingList }) => {
+    if (!user) return null;
+    
+    return (
+      <Link to={`/artist/${user.id}`} className="flex items-center gap-4 p-4 bg-gray-900/50 border border-gray-800 rounded-xl hover:border-cyan-500/50 transition-all group relative">
+        {user.avatar_url ? (
+          <img src={user.avatar_url} alt={user.username || 'User'} className="w-12 h-12 rounded-full object-cover" />
+        ) : (
+          <div className="w-12 h-12 rounded-full bg-gray-800 flex items-center justify-center">
+            <User className="w-6 h-6 text-gray-400" />
+          </div>
+        )}
+        <div className="flex-1 min-w-0">
+          <div className="font-bold text-white truncate">{user.username || 'Unknown User'}</div>
+          <div className="text-xs text-gray-500">View Profile</div>
         </div>
-      )}
-      <div className="flex-1 min-w-0">
-        <div className="font-bold text-white truncate">{user.username}</div>
-        <div className="text-xs text-gray-500">View Profile</div>
-      </div>
-      
-      {isFollowingList && (
-        <button
-          onClick={(e) => handleUnsubscribe(e, followId)}
-          className="p-2 text-gray-400 hover:text-red-400 hover:bg-red-500/10 rounded-full transition-colors opacity-0 group-hover:opacity-100"
-          title="Unsubscribe"
-        >
-          <UserMinus className="w-5 h-5" />
-        </button>
-      )}
-    </Link>
-  );
+        
+        {isFollowingList && followId && (
+          <button
+            onClick={(e) => handleUnsubscribe(e, followId)}
+            className="p-2 text-gray-400 hover:text-red-400 hover:bg-red-500/10 rounded-full transition-colors opacity-0 group-hover:opacity-100"
+            title="Unsubscribe"
+          >
+            <UserMinus className="w-5 h-5" />
+          </button>
+        )}
+      </Link>
+    );
+  };
 
   return (
     <>

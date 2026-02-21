@@ -119,10 +119,10 @@ const ArtistProfilePage = () => {
             <div className="absolute top-0 right-0 w-64 h-64 bg-cyan-500/10 rounded-full blur-3xl pointer-events-none" />
             
             <div className="flex flex-col md:flex-row items-center md:items-start gap-8 relative z-10">
-              {artist.avatar_url ? (
+              {artist?.avatar_url ? (
                 <img
                   src={artist.avatar_url}
-                  alt={artist.username}
+                  alt={artist.username || 'Artist'}
                   className="w-40 h-40 rounded-full object-cover border-4 border-cyan-500 shadow-xl"
                 />
               ) : (
@@ -132,24 +132,24 @@ const ArtistProfilePage = () => {
               )}
 
               <div className="flex-1 text-center md:text-left">
-                <h1 className="text-4xl font-bold text-white mb-2">{artist.username}</h1>
-                <p className="text-gray-400 mb-6 max-w-2xl">{artist.bio || 'No bio available'}</p>
+                <h1 className="text-4xl font-bold text-white mb-2">{artist?.username || 'Unknown Artist'}</h1>
+                <p className="text-gray-400 mb-6 max-w-2xl">{artist?.bio || 'No bio available'}</p>
                 
                 <div className="flex flex-wrap justify-center md:justify-start gap-6 mb-6">
                   <div className="text-center md:text-left">
-                    <div className="text-2xl font-bold text-white">{songs.length}</div>
+                    <div className="text-2xl font-bold text-white">{songs?.length || 0}</div>
                     <div className="text-sm text-gray-400">Songs</div>
                   </div>
                   <div className="text-center md:text-left">
-                    <div className="text-2xl font-bold text-white">{followers.length}</div>
+                    <div className="text-2xl font-bold text-white">{followers?.length || 0}</div>
                     <div className="text-sm text-gray-400">Followers</div>
                   </div>
                 </div>
 
-                {currentUser && currentUser.id !== artist.id && (
+                {currentUser && currentUser.id !== artist?.id && (
                   <FollowButton 
-                    userId={artist.id}
-                    initialFollowers={artist.followers_count || followers.length}
+                    userId={artist?.id}
+                    initialFollowers={artist?.followers_count || followers?.length || 0}
                   />
                 )}
               </div>
