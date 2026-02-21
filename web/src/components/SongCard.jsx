@@ -1,74 +1,23 @@
 import React, { useState, useEffect } from 'react';
 import { Play, Heart, Download, Share2, Music } from 'lucide-react';
 import { motion } from 'framer-motion';
-import pb from '@/lib/pocketbaseClient';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import LikeButton from '@/components/LikeButton';
 
 const SongCard = ({ song, onPlay, isPlaying }) => {
   const { currentUser } = useAuth();
-  const [isLiked, setIsLiked] = useState(false);
-  const [likeId, setLikeId] = useState(null);
-  const [likesCount, setLikesCount] = useState(0); // Local count for UI
   const [isHovered, setIsHovered] = useState(false);
-
-  useEffect(() => {
-    // Check if user has liked this song
-    if (currentUser) {
-      checkLikeStatus();
-    }
-    // In a real app with likes_count field, we'd use that. 
-    // Here we might fetch count or just show a placeholder if field missing.
-    // Assuming we don't have a direct count field on song yet, we'll just handle the toggle state.
-  }, [currentUser, song.id]);
-
-  const checkLikeStatus = async () => {
-    try {
-      const records = await pb.collection('likes').getList(1, 1, {
-        filter: `userId="${currentUser.id}" && songId="${song.id}"`,
-        $autoCancel: false
-      });
-      if (records.items.length > 0) {
-        setIsLiked(true);
-        setLikeId(records.items[0].id);
-      }
-    } catch (err) {
-      console.error('Error checking like status:', err);
-    }
-  };
-
-  const handleLike = async (e) => {
-    e.stopPropagation();
-    if (!currentUser) return alert('Please login to like songs');
-
-    try {
-      if (isLiked && likeId) {
-        await pb.collection('likes').delete(likeId);
-        setIsLiked(false);
-        setLikeId(null);
-        setLikesCount(prev => Math.max(0, prev - 1));
-      } else {
-        const record = await pb.collection('likes').create({
-          userId: currentUser.id,
-          songId: song.id
-        });
-        setIsLiked(true);
-        setLikeId(record.id);
-        setLikesCount(prev => prev + 1);
-      }
-    } catch (err) {
-      console.error('Error toggling like:', err);
-    }
-  };
 
   const handleDownload = (e) => {
     e.stopPropagation();
-    if (!song.audio_file) return;
-    const url = pb.files.getUrl(song, song.audio_file) + '?download=1';
+    if (!song.audio_file_url) return;
+    
+    // Créer un lien de téléchargement direct
     const link = document.createElement('a');
-    link.href = url;
-    link.download = song.title; // Suggest filename
+    link.href = song.audio_file_url;
+    link.download = `${song.title}.mp3`; // Suggest filename
+    link.target = '_blank';
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -78,7 +27,7 @@ const SongCard = ({ song, onPlay, isPlaying }) => {
     e.stopPropagation();
     const url = `${window.location.origin}/song/${song.id}`;
     navigator.clipboard.writeText(url);
-    alert('Link copied to clipboard!');
+    alert('Lien copié dans le presse-papiers!');
   };
 
   return (
@@ -89,9 +38,9 @@ const SongCard = ({ song, onPlay, isPlaying }) => {
       whileHover={{ y: -5 }}
     >
       <div className="relative aspect-square">
-        {song.album_cover ? (
+        {song.album_cover_url ? (
           <img
-            src={pb.files.getUrl(song, song.album_cover)}
+            src={song.album_cover_url}
             alt={song.title}
             className="w-full h-full object-cover"
           />
@@ -119,19 +68,20 @@ const SongCard = ({ song, onPlay, isPlaying }) => {
         <div className="flex items-center justify-between mt-2">
           <LikeButton 
             songId={song.id} 
-            initialLikes={song.likes || 0}
-            initialLiked={isLiked}
+            initialLikes={song.likes_count || 0}
           />
           <div className="flex items-center gap-3">
             <button 
               onClick={handleDownload}
               className="text-gray-400 hover:text-cyan-400 transition-colors"
+              title="Télécharger"
             >
               <Download className="w-5 h-5" />
             </button>
             <button 
               onClick={handleShare}
               className="text-gray-400 hover:text-white transition-colors"
+              title="Partager"
             >
               <Share2 className="w-5 h-5" />
             </button>
