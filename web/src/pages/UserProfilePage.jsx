@@ -2,24 +2,22 @@ import React, { useState, useEffect } from 'react';
 import { Helmet } from 'react-helmet';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
-import { Music, Users, Edit, Play, User, UserMinus } from 'lucide-react';
+import { Music, Upload, Heart, User, Edit3, LogOut } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { supabase } from '@/lib/supabaseClient';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import AudioPlayer from '@/components/AudioPlayer';
 import SongCard from '@/components/SongCard';
-import LikeButton from '@/components/LikeButton';
-import FollowButton from '@/components/FollowButton';
 import EditProfileModal from '@/components/EditProfileModal';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 
 const UserProfilePage = () => {
-  const { currentUser } = useAuth();
+  const { currentUser, logout } = useAuth();
+  const navigate = useNavigate();
   const [userSongs, setUserSongs] = useState([]);
-  const [followers, setFollowers] = useState([]);
-  const [following, setFollowing] = useState([]);
-  const [activeTab, setActiveTab] = useState('songs'); // songs, followers, following
+  const [favoriteSongs, setFavoriteSongs] = useState([]);
+  const [activeTab, setActiveTab] = useState('songs'); // songs, favorites
   const [loading, setLoading] = useState(true);
   const [currentSong, setCurrentSong] = useState(null);
   const [showEditModal, setShowEditModal] = useState(false);
@@ -30,7 +28,6 @@ const UserProfilePage = () => {
     }
   }, [currentUser]);
 
-  // Recharger les données après la fermeture de la modal d'édition
   useEffect(() => {
     if (!showEditModal && currentUser) {
       fetchUserData();
@@ -41,63 +38,28 @@ const UserProfilePage = () => {
     try {
       setLoading(true);
 
-      const [{ data: songsData, error: songsError }, { data: followersData, error: followersError }, { data: followingData, error: followingError }] = await Promise.all([
-        supabase
-          .from('songs')
-          .select('*')
-          .eq('uploader_id', currentUser.id)
-          .order('created_at', { ascending: false })
-          .limit(50),
-        supabase
-          .from('follows')
-          .select('*')
-          .eq('following_id', currentUser.id)
-          .order('created_at', { ascending: false })
-          .limit(50),
-        supabase
-          .from('follows')
-          .select('*')
-          .eq('follower_id', currentUser.id)
-          .order('created_at', { ascending: false })
-          .limit(50)
-      ]);
+      // Récupérer les chansons de l'utilisateur
+      const { data: songsData, error: songsError } = await supabase
+        .from('songs')
+        .select('*')
+        .eq('uploader_id', currentUser.id)
+        .order('created_at', { ascending: false })
+        .limit(50);
 
       if (songsError) throw songsError;
-      if (followersError) throw followersError;
-      if (followingError) throw followingError;
+
+      // Récupérer les chansons favorites (likes)
+      const { data: likesData, error: likesError } = await supabase
+        .from('likes')
+        .select('songs(*)')
+        .eq('user_id', currentUser.id);
+
+      if (likesError) throw likesError;
+
+      const favoriteSongsData = likesData?.map(like => like.songs).filter(Boolean) || [];
 
       setUserSongs(songsData || []);
-
-      // Followers: merge user profiles
-      const followerIds = (followersData || []).map((f) => f.follower_id);
-      if (followerIds.length > 0) {
-        const { data: followerUsers, error: followerUsersError } = await supabase
-          .from('users')
-          .select('*')
-          .in('id', followerIds);
-        if (followerUsersError) throw followerUsersError;
-
-        const byId = new Map((followerUsers || []).map((u) => [u.id, u]));
-        setFollowers((followersData || []).map((f) => ({ ...f, follower: byId.get(f.follower_id) || null })));
-      } else {
-        setFollowers([]);
-      }
-
-      // Following: merge user profiles
-      const followingIds = (followingData || []).map((f) => f.following_id);
-      if (followingIds.length > 0) {
-        const { data: followingUsers, error: followingUsersError } = await supabase
-          .from('users')
-          .select('*')
-          .in('id', followingIds);
-        if (followingUsersError) throw followingUsersError;
-
-        const byId = new Map((followingUsers || []).map((u) => [u.id, u]));
-        setFollowing((followingData || []).map((f) => ({ ...f, following: byId.get(f.following_id) || null })));
-      } else {
-        setFollowing([]);
-      }
-
+      setFavoriteSongs(favoriteSongsData);
     } catch (error) {
       console.error('Error fetching user data:', error);
     } finally {
@@ -105,196 +67,248 @@ const UserProfilePage = () => {
     }
   };
 
-  const handleUnsubscribe = async (e, followId) => {
-    e.preventDefault(); // Prevent navigation if inside Link
-    if (!window.confirm('Are you sure you want to unfollow this artist?')) return;
-    
+  const handleLogout = async () => {
+    await logout();
+    navigate('/login');
+  };
+
+  const handleDeleteSong = async (songId) => {
     try {
+      // Supprimer le fichier audio du storage
+      const { data: song } = await supabase
+        .from('songs')
+        .select('audio_url')
+        .eq('id', songId)
+        .single();
+
+      if (song?.audio_url) {
+        const filePath = song.audio_url.split('/').pop();
+        await supabase.storage.from('audio').remove([filePath]);
+      }
+
+      // Supprimer la chanson de la base de données
       const { error } = await supabase
-        .from('follows')
+        .from('songs')
         .delete()
-        .eq('id', followId);
+        .eq('id', songId);
+
       if (error) throw error;
-      // State update handled by subscription
-    } catch (err) {
-      console.error('Error unsubscribing:', err);
+
+      // Mettre à jour la liste
+      setUserSongs(prev => prev.filter(song => song.id !== songId));
+    } catch (error) {
+      console.error('Error deleting song:', error);
     }
   };
 
-  const UserListItem = ({ user, followId, isFollowingList }) => {
-    if (!user) return null;
-    
+  if (!currentUser) {
     return (
-      <Link to={`/artist/${user.id}`} className="flex items-center gap-4 p-4 bg-gray-900/50 border border-gray-800 rounded-xl hover:border-cyan-500/50 transition-all group relative">
-        {user.avatar_url ? (
-          <img src={user.avatar_url} alt={user.username || 'User'} className="w-12 h-12 rounded-full object-cover" />
-        ) : (
-          <div className="w-12 h-12 rounded-full bg-gray-800 flex items-center justify-center">
-            <User className="w-6 h-6 text-gray-400" />
-          </div>
-        )}
-        <div className="flex-1 min-w-0">
-          <div className="font-bold text-white truncate">{user.username || 'Unknown User'}</div>
-          <div className="text-xs text-gray-500">View Profile</div>
+      <div className="min-h-screen bg-gray-950 flex items-center justify-center">
+        <div className="text-center">
+          <h1 className="text-2xl font-bold text-white mb-4">Non connecté</h1>
+          <Link to="/login" className="text-cyan-400 hover:text-cyan-300">
+            Se connecter
+          </Link>
         </div>
-        
-        {isFollowingList && followId && (
-          <button
-            onClick={(e) => handleUnsubscribe(e, followId)}
-            className="p-2 text-gray-400 hover:text-red-400 hover:bg-red-500/10 rounded-full transition-colors opacity-0 group-hover:opacity-100"
-            title="Unsubscribe"
-          >
-            <UserMinus className="w-5 h-5" />
-          </button>
-        )}
-      </Link>
+      </div>
     );
-  };
+  }
 
   return (
     <>
       <Helmet>
-        <title>{`${currentUser?.username || 'Profile'} - NovaSound TITAN LUX`}</title>
+        <title>Profil - NovaSound-Titan</title>
+        <meta name="description" content="Votre profil utilisateur NovaSound-Titan" />
       </Helmet>
 
-      <div className="min-h-screen bg-gray-950 flex flex-col pb-32">
+      <div className="min-h-screen bg-gray-950 pb-24 md:pb-32">
         <Header />
 
-        <main className="flex-1 container mx-auto px-4 py-12">
-          {/* Profile Header */}
+        <main className="container mx-auto px-4 py-8">
+          {/* En-tête profil */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            className="bg-gradient-to-r from-cyan-500/10 to-magenta-500/10 backdrop-blur-xl border border-cyan-500/30 rounded-2xl p-8 mb-8"
+            className="bg-gray-900/50 backdrop-blur-xl border border-cyan-500/30 rounded-2xl p-6 mb-8"
           >
-            <div className="flex flex-col md:flex-row items-center md:items-start gap-8">
-              {currentUser?.avatar_url ? (
-                <img
-                  src={currentUser.avatar_url}
-                  alt={currentUser.username}
-                  className="w-32 h-32 rounded-full object-cover border-4 border-cyan-400 shadow-lg shadow-cyan-500/50"
-                />
-              ) : (
-                <div className="w-32 h-32 rounded-full bg-gradient-to-br from-cyan-500 to-magenta-500 flex items-center justify-center border-4 border-cyan-400 shadow-lg shadow-cyan-500/50">
-                  <Music className="w-16 h-16 text-white" />
+            <div className="flex flex-col md:flex-row items-center md:items-start gap-6">
+              {/* Avatar */}
+              <div className="relative">
+                <div className="w-24 h-24 md:w-32 md:h-32 bg-gradient-to-br from-cyan-500 to-magenta-500 rounded-full flex items-center justify-center">
+                  {currentUser.avatar_url ? (
+                    <img
+                      src={currentUser.avatar_url}
+                      alt="Avatar"
+                      className="w-full h-full rounded-full object-cover"
+                    />
+                  ) : (
+                    <User className="w-12 h-12 md:w-16 md:h-16 text-white" />
+                  )}
                 </div>
-              )}
-
-              <div className="flex-1 text-center md:text-left">
-                <h1 className="text-4xl font-bold text-white mb-2">{currentUser?.username}</h1>
-                <p className="text-gray-400 mb-4">{currentUser?.email}</p>
-                
-                {currentUser?.bio && (
-                  <p className="text-gray-300 mb-6 max-w-2xl">{currentUser.bio}</p>
-                )}
-
-                <div className="flex justify-center md:justify-start gap-8 mb-6">
-                  <button onClick={() => setActiveTab('songs')} className={`text-center ${activeTab === 'songs' ? 'text-cyan-400' : 'text-gray-400'}`}>
-                    <div className="text-2xl font-bold">{userSongs.length}</div>
-                    <div className="text-sm">Songs</div>
-                  </button>
-                  <button onClick={() => setActiveTab('followers')} className={`text-center ${activeTab === 'followers' ? 'text-cyan-400' : 'text-gray-400'}`}>
-                    <div className="text-2xl font-bold">{followers.length}</div>
-                    <div className="text-sm">Followers</div>
-                  </button>
-                  <button onClick={() => setActiveTab('following')} className={`text-center ${activeTab === 'following' ? 'text-cyan-400' : 'text-gray-400'}`}>
-                    <div className="text-2xl font-bold">{following.length}</div>
-                    <div className="text-sm">Following</div>
-                  </button>
-                </div>
-
-                <Button 
+                <button
                   onClick={() => setShowEditModal(true)}
-                  className="bg-gray-800 hover:bg-gray-700 text-white border border-gray-700"
+                  className="absolute bottom-0 right-0 bg-cyan-500 hover:bg-cyan-600 text-white p-2 rounded-full transition-colors"
                 >
-                  <Edit className="w-4 h-4 mr-2" />
-                  Edit Profile
-                </Button>
+                  <Edit3 className="w-4 h-4" />
+                </button>
+              </div>
+
+              {/* Infos profil */}
+              <div className="flex-1 text-center md:text-left">
+                <h1 className="text-2xl md:text-3xl font-bold text-white mb-2">
+                  {currentUser.username || currentUser.email}
+                </h1>
+                <p className="text-gray-400 mb-4">{currentUser.email}</p>
+                
+                <div className="flex flex-wrap gap-4 justify-center md:justify-start mb-4">
+                  <div className="text-center">
+                    <div className="text-xl font-bold text-cyan-400">{userSongs.length}</div>
+                    <div className="text-sm text-gray-400">Morceaux</div>
+                  </div>
+                  <div className="text-center">
+                    <div className="text-xl font-bold text-magenta-400">{favoriteSongs.length}</div>
+                    <div className="text-sm text-gray-400">Favoris</div>
+                  </div>
+                </div>
+
+                <div className="flex flex-wrap gap-3 justify-center md:justify-start">
+                  <Button
+                    onClick={() => setShowEditModal(true)}
+                    className="bg-gradient-to-r from-cyan-500 to-magenta-500 hover:from-cyan-600 hover:to-magenta-600"
+                  >
+                    <Edit3 className="w-4 h-4 mr-2" />
+                    Modifier le profil
+                  </Button>
+                  
+                  <Link to="/upload">
+                    <Button className="bg-green-500 hover:bg-green-600">
+                      <Upload className="w-4 h-4 mr-2" />
+                      Upload un son
+                    </Button>
+                  </Link>
+                  
+                  <Button
+                    onClick={handleLogout}
+                    variant="outline"
+                    className="border-red-500/50 text-red-400 hover:bg-red-500/10"
+                  >
+                    <LogOut className="w-4 h-4 mr-2" />
+                    Déconnexion
+                  </Button>
+                </div>
               </div>
             </div>
           </motion.div>
 
-          {/* Content Tabs */}
-          <div className="mb-6 border-b border-gray-800">
-            <div className="flex gap-6">
-              {['songs', 'followers', 'following'].map((tab) => (
-                <button
-                  key={tab}
-                  onClick={() => setActiveTab(tab)}
-                  className={`pb-3 text-sm font-medium capitalize transition-colors relative ${
-                    activeTab === tab ? 'text-cyan-400' : 'text-gray-400 hover:text-white'
-                  }`}
-                >
-                  {tab}
-                  {activeTab === tab && (
-                    <motion.div layoutId="activeTab" className="absolute bottom-0 left-0 right-0 h-0.5 bg-cyan-400" />
-                  )}
-                </button>
-              ))}
+          {/* Onglets */}
+          <div className="flex gap-4 mb-6 border-b border-gray-800">
+            <button
+              onClick={() => setActiveTab('songs')}
+              className={`px-4 py-2 font-semibold transition-colors ${
+                activeTab === 'songs'
+                  ? 'text-cyan-400 border-b-2 border-cyan-400'
+                  : 'text-gray-400 hover:text-white'
+              }`}
+            >
+              <Music className="w-4 h-4 inline mr-2" />
+              Mes morceaux
+            </button>
+            <button
+              onClick={() => setActiveTab('favorites')}
+              className={`px-4 py-2 font-semibold transition-colors ${
+                activeTab === 'favorites'
+                  ? 'text-magenta-400 border-b-2 border-magenta-400'
+                  : 'text-gray-400 hover:text-white'
+              }`}
+            >
+              <Heart className="w-4 h-4 inline mr-2" />
+              Mes favoris
+            </button>
+          </div>
+
+          {/* Contenu des onglets */}
+          {loading ? (
+            <div className="text-center py-12">
+              <div className="text-cyan-400 text-xl">Chargement...</div>
             </div>
-          </div>
-
-          {/* Tab Content */}
-          <div className="min-h-[300px]">
-            {loading ? (
-              <div className="text-center py-12 text-gray-500">Loading...</div>
-            ) : (
-              <>
-                {activeTab === 'songs' && (
-                  userSongs.length > 0 ? (
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                      {userSongs.map((song) => (
-                        <SongCard 
-                          key={song.id} 
-                          song={song} 
-                          onPlay={setCurrentSong} 
-                          isPlaying={currentSong?.id === song.id}
+          ) : (
+            <>
+              {activeTab === 'songs' && (
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 md:gap-6">
+                  {userSongs.length > 0 ? (
+                    userSongs.map((song, index) => (
+                      <motion.div
+                        key={song.id}
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: index * 0.05 }}
+                      >
+                        <SongCard
+                          song={song}
+                          currentSong={currentSong}
+                          setCurrentSong={setCurrentSong}
+                          showDelete={true}
+                          onDelete={handleDeleteSong}
                         />
-                      ))}
-                    </div>
+                      </motion.div>
+                    ))
                   ) : (
-                    <div className="text-center py-12 text-gray-500">No songs uploaded yet.</div>
-                  )
-                )}
+                    <div className="col-span-full text-center py-12 bg-gray-900/50 backdrop-blur-xl border border-cyan-500/30 rounded-xl">
+                      <Music className="w-16 h-16 text-gray-600 mx-auto mb-4" />
+                      <p className="text-gray-400 text-lg mb-4">Aucun morceau uploadé</p>
+                      <Link to="/upload">
+                        <Button className="bg-gradient-to-r from-cyan-500 to-magenta-500 hover:from-cyan-600 hover:to-magenta-600">
+                          <Upload className="w-4 h-4 mr-2" />
+                          Upload ton premier morceau
+                        </Button>
+                      </Link>
+                    </div>
+                  )}
+                </div>
+              )}
 
-                {activeTab === 'followers' && (
-                  followers.length > 0 ? (
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                      {followers.map((item) => (
-                        item.follower && <UserListItem key={item.id} user={item.follower} followId={item.id} isFollowingList={false} />
-                      ))}
-                    </div>
+              {activeTab === 'favorites' && (
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 md:gap-6">
+                  {favoriteSongs.length > 0 ? (
+                    favoriteSongs.map((song, index) => (
+                      <motion.div
+                        key={song.id}
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: index * 0.05 }}
+                      >
+                        <SongCard
+                          song={song}
+                          currentSong={currentSong}
+                          setCurrentSong={setCurrentSong}
+                        />
+                      </motion.div>
+                    ))
                   ) : (
-                    <div className="text-center py-12 text-gray-500">No followers yet.</div>
-                  )
-                )}
-
-                {activeTab === 'following' && (
-                  following.length > 0 ? (
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                      {following.map((item) => (
-                        item.following && <UserListItem key={item.id} user={item.following} followId={item.id} isFollowingList={true} />
-                      ))}
+                    <div className="col-span-full text-center py-12 bg-gray-900/50 backdrop-blur-xl border border-magenta-500/30 rounded-xl">
+                      <Heart className="w-16 h-16 text-gray-600 mx-auto mb-4" />
+                      <p className="text-gray-400 text-lg">Aucun favori</p>
+                      <p className="text-gray-500 text-sm mt-2">
+                        Ajoute des morceaux en favoris pour les retrouver ici
+                      </p>
                     </div>
-                  ) : (
-                    <div className="text-center py-12 text-gray-500">Not following anyone yet.</div>
-                  )
-                )}
-              </>
-            )}
-          </div>
+                  )}
+                </div>
+              )}
+            </>
+          )}
         </main>
 
         <Footer />
         {currentSong && <AudioPlayer currentSong={currentSong} />}
-        
-        {/* Edit Profile Modal */}
-        <EditProfileModal 
-          isOpen={showEditModal} 
-          onClose={() => setShowEditModal(false)} 
-          user={currentUser}
-        />
       </div>
+
+      {showEditModal && (
+        <EditProfileModal
+          isOpen={showEditModal}
+          onClose={() => setShowEditModal(false)}
+        />
+      )}
     </>
   );
 };
