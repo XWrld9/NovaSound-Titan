@@ -1,13 +1,58 @@
-import { createClient } from '@supabase/supabase-js';
+import { supabase } from './supabaseClient';
 
-// Configuration Supabase (remplace PocketBase)
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+const translatePocketBaseField = (field) => {
+  // Minimal translation layer for legacy PocketBase filters
+  if (!field) return field;
 
-const supabase = createClient(supabaseUrl, supabaseAnonKey);
+  return field
+    .replaceAll('uploader.id', 'uploader_id')
+    .replaceAll('uploader', 'uploader_id')
+    .replaceAll('following', 'following_id')
+    .replaceAll('follower', 'follower_id')
+    .replaceAll('songId', 'song_id')
+    .replaceAll('userId', 'user_id')
+    .replaceAll('created', 'created_at');
+};
+
+const applyPocketBaseFilter = (query, filter) => {
+  if (!filter) return query;
+
+  // Supports a small subset:
+  // - field = "value"
+  // - field="value"
+  // - multiple conditions joined by &&
+  // Unsupported patterns (like ~) are ignored.
+  const parts = filter.split('&&').map((s) => s.trim()).filter(Boolean);
+
+  let q = query;
+  for (const part of parts) {
+    const match = part.match(/^([a-zA-Z0-9_\.]+)\s*=\s*"([^"]*)"$/);
+    if (!match) continue;
+    const rawField = match[1];
+    const value = match[2];
+    const field = translatePocketBaseField(rawField);
+    q = q.eq(field, value);
+  }
+
+  return q;
+};
 
 // Interface compatible avec l'ancien PocketBase pour éviter de tout modifier
 const pb = {
+  // File URLs compatibility (PocketBase had pb.files.getUrl(record, filename))
+  files: {
+    getUrl: (record, _file) => {
+      // Supabase schema stores direct public URLs in *_url columns
+      if (!record) return '';
+      return (
+        record.audio_file_url ||
+        record.album_cover_url ||
+        record.avatar_url ||
+        ''
+      );
+    }
+  },
+
   // Authentification
   auth: {
     signUp: async (email, password, options) => {
@@ -50,12 +95,39 @@ const pb = {
 
   // Helper pour la compatibilité
   collection: (collectionName) => ({
+    getList: async (page = 1, perPage = 50, options = {}) => {
+      const from = supabase.from(collectionName).select('*');
+
+      const start = Math.max(0, (page - 1) * perPage);
+      const end = start + perPage - 1;
+
+      let q = from.range(start, end);
+
+      if (options?.sort) {
+        const sort = options.sort;
+        const desc = sort.startsWith('-');
+        const rawField = desc ? sort.slice(1) : sort;
+        const field = translatePocketBaseField(rawField);
+        q = q.order(field, { ascending: !desc });
+      }
+
+      q = applyPocketBaseFilter(q, options?.filter);
+
+      const { data, error, count } = await q;
+      if (error) throw error;
+
+      return {
+        items: data || [],
+        page,
+        perPage,
+        totalItems: typeof count === 'number' ? count : (data || []).length,
+      };
+    },
+
     getFirstListItem: async (filter, options = {}) => {
-      const { data, error } = await supabase
-        .from(collectionName)
-        .select('*')
-        .match(filter)
-        .single();
+      let q = supabase.from(collectionName).select('*');
+      q = applyPocketBaseFilter(q, filter);
+      const { data, error } = await q.single();
       
       if (error) throw error;
       return data;
@@ -116,6 +188,11 @@ const pb = {
           callback
         )
         .subscribe();
+    },
+
+    // PocketBase had unsubscribe; we keep a no-op to prevent runtime errors
+    unsubscribe: async () => {
+      return;
     }
   })
 };
