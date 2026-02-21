@@ -2,13 +2,15 @@ import React, { useState, useEffect } from 'react';
 import { Helmet } from 'react-helmet';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
-import { Music, Upload, Heart, User, Edit3, LogOut } from 'lucide-react';
+import { Music, Upload, Heart, User, Edit3, LogOut, Users, UserPlus } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { supabase } from '@/lib/supabaseClient';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import AudioPlayer from '@/components/AudioPlayer';
 import SongCard from '@/components/SongCard';
+import LikeButton from '@/components/LikeButton';
+import FollowButton from '@/components/FollowButton';
 import EditProfileModal from '@/components/EditProfileModal';
 import { Link, useNavigate } from 'react-router-dom';
 
@@ -17,7 +19,9 @@ const UserProfilePage = () => {
   const navigate = useNavigate();
   const [userSongs, setUserSongs] = useState([]);
   const [favoriteSongs, setFavoriteSongs] = useState([]);
-  const [activeTab, setActiveTab] = useState('songs'); // songs, favorites
+  const [followers, setFollowers] = useState([]);
+  const [following, setFollowing] = useState([]);
+  const [activeTab, setActiveTab] = useState('songs'); // songs, favorites, followers, following
   const [loading, setLoading] = useState(true);
   const [currentSong, setCurrentSong] = useState(null);
   const [showEditModal, setShowEditModal] = useState(false);
@@ -58,8 +62,26 @@ const UserProfilePage = () => {
 
       const favoriteSongsData = likesData?.map(like => like.songs).filter(Boolean) || [];
 
+      // Récupérer les followers
+      const { data: followersData, error: followersError } = await supabase
+        .from('follows')
+        .select('follower_id, users!follows_follower_id_fkey(*)')
+        .eq('following_id', currentUser.id);
+
+      if (followersError) throw followersError;
+
+      // Récupérer les following
+      const { data: followingData, error: followingError } = await supabase
+        .from('follows')
+        .select('following_id, users!follows_following_id_fkey(*)')
+        .eq('follower_id', currentUser.id);
+
+      if (followingError) throw followingError;
+
       setUserSongs(songsData || []);
       setFavoriteSongs(favoriteSongsData);
+      setFollowers(followersData || []);
+      setFollowing(followingData || []);
     } catch (error) {
       console.error('Error fetching user data:', error);
     } finally {
@@ -169,6 +191,14 @@ const UserProfilePage = () => {
                     <div className="text-xl font-bold text-magenta-400">{favoriteSongs.length}</div>
                     <div className="text-sm text-gray-400">Favoris</div>
                   </div>
+                  <div className="text-center">
+                    <div className="text-xl font-bold text-green-400">{followers.length}</div>
+                    <div className="text-sm text-gray-400">Abonnés</div>
+                  </div>
+                  <div className="text-center">
+                    <div className="text-xl font-bold text-blue-400">{following.length}</div>
+                    <div className="text-sm text-gray-400">Abonnements</div>
+                  </div>
                 </div>
 
                 <div className="flex flex-wrap gap-3 justify-center md:justify-start">
@@ -223,6 +253,28 @@ const UserProfilePage = () => {
             >
               <Heart className="w-4 h-4 inline mr-2" />
               Mes favoris
+            </button>
+            <button
+              onClick={() => setActiveTab('followers')}
+              className={`px-4 py-2 font-semibold transition-colors ${
+                activeTab === 'followers'
+                  ? 'text-green-400 border-b-2 border-green-400'
+                  : 'text-gray-400 hover:text-white'
+              }`}
+            >
+              <Users className="w-4 h-4 inline mr-2" />
+              Abonnés
+            </button>
+            <button
+              onClick={() => setActiveTab('following')}
+              className={`px-4 py-2 font-semibold transition-colors ${
+                activeTab === 'following'
+                  ? 'text-blue-400 border-b-2 border-blue-400'
+                  : 'text-gray-400 hover:text-white'
+              }`}
+            >
+              <UserPlus className="w-4 h-4 inline mr-2" />
+              Abonnements
             </button>
           </div>
 
@@ -290,6 +342,102 @@ const UserProfilePage = () => {
                       <p className="text-gray-400 text-lg">Aucun favori</p>
                       <p className="text-gray-500 text-sm mt-2">
                         Ajoute des morceaux en favoris pour les retrouver ici
+                      </p>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {activeTab === 'followers' && (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
+                  {followers.length > 0 ? (
+                    followers.map((follow, index) => (
+                      <motion.div
+                        key={follow.id}
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: index * 0.05 }}
+                        className="bg-gray-900/50 backdrop-blur-xl border border-green-500/30 rounded-xl p-4"
+                      >
+                        <Link to={`/artist/${follow.follower_id}`} className="flex items-center gap-3">
+                          {follow.users?.avatar_url ? (
+                            <img
+                              src={follow.users.avatar_url}
+                              alt={follow.users.username}
+                              className="w-12 h-12 rounded-full object-cover"
+                            />
+                          ) : (
+                            <div className="w-12 h-12 rounded-full bg-gray-800 flex items-center justify-center">
+                              <User className="w-6 h-6 text-gray-400" />
+                            </div>
+                          )}
+                          <div>
+                            <div className="font-bold text-white">
+                              {follow.users?.username || follow.users?.email}
+                            </div>
+                            <div className="text-sm text-gray-400">
+                              {follow.users?.email}
+                            </div>
+                          </div>
+                        </Link>
+                      </motion.div>
+                    ))
+                  ) : (
+                    <div className="col-span-full text-center py-12 bg-gray-900/50 backdrop-blur-xl border border-green-500/30 rounded-xl">
+                      <Users className="w-16 h-16 text-gray-600 mx-auto mb-4" />
+                      <p className="text-gray-400 text-lg">Aucun abonné</p>
+                      <p className="text-gray-500 text-sm mt-2">
+                        Les utilisateurs qui t'abonnent apparaîtront ici
+                      </p>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {activeTab === 'following' && (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
+                  {following.length > 0 ? (
+                    following.map((follow, index) => (
+                      <motion.div
+                        key={follow.id}
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: index * 0.05 }}
+                        className="bg-gray-900/50 backdrop-blur-xl border border-blue-500/30 rounded-xl p-4"
+                      >
+                        <Link to={`/artist/${follow.following_id}`} className="flex items-center gap-3">
+                          {follow.users?.avatar_url ? (
+                            <img
+                              src={follow.users.avatar_url}
+                              alt={follow.users.username}
+                              className="w-12 h-12 rounded-full object-cover"
+                            />
+                          ) : (
+                            <div className="w-12 h-12 rounded-full bg-gray-800 flex items-center justify-center">
+                              <User className="w-6 h-6 text-gray-400" />
+                            </div>
+                          )}
+                          <div>
+                            <div className="font-bold text-white">
+                              {follow.users?.username || follow.users?.email}
+                            </div>
+                            <div className="text-sm text-gray-400">
+                              {follow.users?.email}
+                            </div>
+                          </div>
+                          <FollowButton
+                            userId={follow.following_id}
+                            initialFollowing={true}
+                          />
+                        </Link>
+                      </motion.div>
+                    ))
+                  ) : (
+                    <div className="col-span-full text-center py-12 bg-gray-900/50 backdrop-blur-xl border border-blue-500/30 rounded-xl">
+                      <UserPlus className="w-16 h-16 text-gray-600 mx-auto mb-4" />
+                      <p className="text-gray-400 text-lg">Aucun abonnement</p>
+                      <p className="text-gray-500 text-sm mt-2">
+                        Les artistes que tu suis apparaîtront ici
                       </p>
                     </div>
                   )}
