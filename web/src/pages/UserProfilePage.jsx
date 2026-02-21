@@ -30,6 +30,13 @@ const UserProfilePage = () => {
     }
   }, [currentUser]);
 
+  // Recharger les données après la fermeture de la modal d'édition
+  useEffect(() => {
+    if (!showEditModal && currentUser) {
+      fetchUserData();
+    }
+  }, [showEditModal, currentUser]);
+
   const fetchUserData = async () => {
     try {
       setLoading(true);
