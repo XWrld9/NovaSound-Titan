@@ -91,9 +91,13 @@ const EditProfileModal = ({ isOpen, onClose }) => {
       // Mise à jour du profil
       const updateData = {
         username: formData.username,
-        bio: formData.bio,
-        avatar_url: avatarUrl
+        bio: formData.bio
       };
+
+      // N'inclure avatar_url que si un nouvel avatar a été uploadé
+      if (avatarUrl !== currentUser.avatar_url) {
+        updateData.avatar_url = avatarUrl;
+      }
 
       const { success, message, user } = await updateProfile(currentUser.id, updateData);
 

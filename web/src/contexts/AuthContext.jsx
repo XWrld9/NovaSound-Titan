@@ -15,6 +15,14 @@ export const AuthProvider = ({ children }) => {
   const [currentUser, setCurrentUser] = useState(null);
   const [initialLoading, setInitialLoading] = useState(true);
 
+  const getEmailRedirectTo = () => {
+    try {
+      return `${window.location.origin}/#/`;
+    } catch {
+      return undefined;
+    }
+  };
+
   const updateUser = (userData) => {
     setCurrentUser(userData);
   };
@@ -76,6 +84,7 @@ export const AuthProvider = ({ children }) => {
         email,
         password,
         options: {
+          emailRedirectTo: getEmailRedirectTo(),
           data: {
             username,
             emailVisibility: true
@@ -153,6 +162,9 @@ export const AuthProvider = ({ children }) => {
       const { error } = await supabase.auth.resend({
         type: 'signup',
         email: email,
+        options: {
+          emailRedirectTo: getEmailRedirectTo()
+        }
       });
       
       if (error) {
@@ -192,8 +204,15 @@ export const AuthProvider = ({ children }) => {
         };
       }
       
-      setCurrentUser(prev => ({ ...prev, ...updated }));
-      return { success: true, user: updated };
+      // Recharger les données complètes de l'utilisateur depuis Supabase
+      const { data: freshUser } = await supabase
+        .from('users')
+        .select('*')
+        .eq('id', userId)
+        .single();
+      
+      setCurrentUser(freshUser);
+      return { success: true, user: freshUser };
     } catch (error) {
       console.error('Update profile error:', error);
       return { 
