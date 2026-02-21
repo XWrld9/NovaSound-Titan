@@ -18,6 +18,17 @@ CREATE TABLE IF NOT EXISTS public.users (
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
+-- Si la table users existe déjà mais n'a pas la colonne email, l'ajouter
+DO $$
+BEGIN
+  IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'users' AND table_schema = 'public') THEN
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'users' AND column_name = 'email' AND table_schema = 'public') THEN
+      ALTER TABLE public.users ADD COLUMN email TEXT UNIQUE;
+      ALTER TABLE public.users ADD COLUMN username TEXT UNIQUE NOT NULL DEFAULT '';
+    END IF;
+  END IF;
+END $$;
+
 -- Table songs (corrigée avec audio_url au lieu de audio_file_url)
 CREATE TABLE IF NOT EXISTS public.songs (
   id TEXT PRIMARY KEY DEFAULT (gen_random_uuid()::text),
