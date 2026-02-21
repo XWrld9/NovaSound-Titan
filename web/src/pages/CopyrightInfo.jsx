@@ -29,9 +29,6 @@ const CopyrightInfo = () => {
                 <Copyright className="w-8 h-8 text-cyan-400" />
                 <h2 className="text-2xl font-bold text-white">Avis de Copyright</h2>
               </div>
-              <p className="text-xl font-semibold text-white mb-4">
-                Copyright (c) 2026 NovaSound TITAN LUX - XWrld
-              </p>
               <p>
                 Tous les droits sont réservés. Le contenu de cette plateforme, y compris mais sans s'y limiter, le texte, les graphiques, les images, les logos et le code logiciel, est la propriété de NovaSound TITAN LUX ou de ses fournisseurs de contenu et est protégé par les lois internationales sur le droit d'auteur.
               </p>

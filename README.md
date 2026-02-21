@@ -155,11 +155,11 @@ La base de données est configurée avec les tables :
 
 ### Équipe Fondatrice
 - **Développeur Principal** : M. Tetang Tanekou M.N (EL_AX)
-- **Fondateur & Vision** : M. Tindo Arthur (XWrld)
+- **Fondateur & Vision** : M. Tindo Arthur Ivan(XWrld)
 
 ### Pour toute collaboration
 - 📧 **Technique** : Contactez M. Tetang Tanekou M.N
-- 🎯 **Stratégique** : Contactez M. Tindo Arthur
+- 🎯 **Stratégique** : Contactez M. Tindo Arthur Ivan
 - 🌐 **Plateforme** : [NovaSound-TITAN LUX](https://nova-sound-titan.vercel.app)
 
 ## 📄 Licence

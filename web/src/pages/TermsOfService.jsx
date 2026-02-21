@@ -70,9 +70,6 @@ const TermsOfService = () => {
               <p>
                 Nous pouvons résilier ou suspendre votre compte immédiatement, sans préavis ni responsabilité, pour quelque raison que ce soit, y compris, sans s'y limiter, si vous violez les Conditions.
               </p>
-              <p className="mt-4">
-                Toutes les dispositions des Conditions qui, par leur nature, devraient survivre à la résiliation survivront à la résiliation, y compris, sans s'y limiter, les dispositions relatives à la propriété, les exclusions de garantie, l'indemnisation et les limitations de responsabilité.
-              </p>
             </section>
 
             <div className="text-center pt-8 border-t border-gray-800">
@@ -80,9 +77,6 @@ const TermsOfService = () => {
               <a href="mailto:eloadxfamily@gmail.com" className="text-cyan-400 hover:text-magenta-500 transition-colors font-semibold text-lg">
                 eloadxfamily@gmail.com
               </a>
-              <p className="mt-8 text-sm text-gray-600">
-                Copyright (c) 2026 NovaSound TITAN LUX - XWrld
-              </p>
             </div>
           </div>
         </main>

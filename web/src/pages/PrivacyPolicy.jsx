@@ -90,9 +90,6 @@ const PrivacyPolicy = () => {
               <a href="mailto:eloadxfamily@gmail.com" className="text-cyan-400 hover:text-magenta-500 transition-colors font-semibold text-lg">
                 eloadxfamily@gmail.com
               </a>
-              <p className="mt-8 text-sm text-gray-600">
-                Copyright (c) 2026 NovaSound TITAN LUX - XWrld
-              </p>
             </div>
           </div>
         </main>
