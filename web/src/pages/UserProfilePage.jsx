@@ -4,7 +4,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Music, Users, Edit, Play, User, UserMinus } from 'lucide-react';
 import { motion } from 'framer-motion';
-import pb from '@/lib/pocketbaseClient';
+import { supabase } from '@/lib/supabaseClient';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import AudioPlayer from '@/components/AudioPlayer';
@@ -27,47 +27,69 @@ const UserProfilePage = () => {
   useEffect(() => {
     if (currentUser) {
       fetchUserData();
-      
-      // Real-time subscription
-      pb.collection('follows').subscribe('*', (e) => {
-        if (e.record.follower === currentUser.id || e.record.following === currentUser.id) {
-          fetchUserData();
-        }
-      });
-
-      return () => {
-        pb.collection('follows').unsubscribe('*');
-      };
     }
   }, [currentUser]);
 
   const fetchUserData = async () => {
     try {
       setLoading(true);
-      
-      // Fetch songs
-      const songs = await pb.collection('songs').getList(1, 50, {
-        filter: `uploader.id = "${currentUser.id}"`,
-        sort: '-created',
-        $autoCancel: false
-      });
-      setUserSongs(songs.items);
 
-      // Fetch followers
-      const followersList = await pb.collection('follows').getList(1, 50, {
-        filter: `following = "${currentUser.id}"`,
-        expand: 'follower',
-        $autoCancel: false
-      });
-      setFollowers(followersList.items);
+      const [{ data: songsData, error: songsError }, { data: followersData, error: followersError }, { data: followingData, error: followingError }] = await Promise.all([
+        supabase
+          .from('songs')
+          .select('*')
+          .eq('uploader_id', currentUser.id)
+          .order('created_at', { ascending: false })
+          .limit(50),
+        supabase
+          .from('follows')
+          .select('*')
+          .eq('following_id', currentUser.id)
+          .order('created_at', { ascending: false })
+          .limit(50),
+        supabase
+          .from('follows')
+          .select('*')
+          .eq('follower_id', currentUser.id)
+          .order('created_at', { ascending: false })
+          .limit(50)
+      ]);
 
-      // Fetch following
-      const followingList = await pb.collection('follows').getList(1, 50, {
-        filter: `follower = "${currentUser.id}"`,
-        expand: 'following',
-        $autoCancel: false
-      });
-      setFollowing(followingList.items);
+      if (songsError) throw songsError;
+      if (followersError) throw followersError;
+      if (followingError) throw followingError;
+
+      setUserSongs(songsData || []);
+
+      // Followers: merge user profiles
+      const followerIds = (followersData || []).map((f) => f.follower_id);
+      if (followerIds.length > 0) {
+        const { data: followerUsers, error: followerUsersError } = await supabase
+          .from('users')
+          .select('*')
+          .in('id', followerIds);
+        if (followerUsersError) throw followerUsersError;
+
+        const byId = new Map((followerUsers || []).map((u) => [u.id, u]));
+        setFollowers((followersData || []).map((f) => ({ ...f, follower: byId.get(f.follower_id) || null })));
+      } else {
+        setFollowers([]);
+      }
+
+      // Following: merge user profiles
+      const followingIds = (followingData || []).map((f) => f.following_id);
+      if (followingIds.length > 0) {
+        const { data: followingUsers, error: followingUsersError } = await supabase
+          .from('users')
+          .select('*')
+          .in('id', followingIds);
+        if (followingUsersError) throw followingUsersError;
+
+        const byId = new Map((followingUsers || []).map((u) => [u.id, u]));
+        setFollowing((followingData || []).map((f) => ({ ...f, following: byId.get(f.following_id) || null })));
+      } else {
+        setFollowing([]);
+      }
 
     } catch (error) {
       console.error('Error fetching user data:', error);
@@ -81,7 +103,11 @@ const UserProfilePage = () => {
     if (!window.confirm('Are you sure you want to unfollow this artist?')) return;
     
     try {
-      await pb.collection('follows').delete(followId);
+      const { error } = await supabase
+        .from('follows')
+        .delete()
+        .eq('id', followId);
+      if (error) throw error;
       // State update handled by subscription
     } catch (err) {
       console.error('Error unsubscribing:', err);
@@ -90,8 +116,8 @@ const UserProfilePage = () => {
 
   const UserListItem = ({ user, followId, isFollowingList }) => (
     <Link to={`/artist/${user.id}`} className="flex items-center gap-4 p-4 bg-gray-900/50 border border-gray-800 rounded-xl hover:border-cyan-500/50 transition-all group relative">
-      {user.avatar ? (
-        <img src={pb.files.getUrl(user, user.avatar)} alt={user.username} className="w-12 h-12 rounded-full object-cover" />
+      {user.avatar_url ? (
+        <img src={user.avatar_url} alt={user.username} className="w-12 h-12 rounded-full object-cover" />
       ) : (
         <div className="w-12 h-12 rounded-full bg-gray-800 flex items-center justify-center">
           <User className="w-6 h-6 text-gray-400" />
@@ -131,9 +157,9 @@ const UserProfilePage = () => {
             className="bg-gradient-to-r from-cyan-500/10 to-magenta-500/10 backdrop-blur-xl border border-cyan-500/30 rounded-2xl p-8 mb-8"
           >
             <div className="flex flex-col md:flex-row items-center md:items-start gap-8">
-              {currentUser?.avatar ? (
+              {currentUser?.avatar_url ? (
                 <img
-                  src={pb.files.getUrl(currentUser, currentUser.avatar)}
+                  src={currentUser.avatar_url}
                   alt={currentUser.username}
                   className="w-32 h-32 rounded-full object-cover border-4 border-cyan-400 shadow-lg shadow-cyan-500/50"
                 />
@@ -224,7 +250,7 @@ const UserProfilePage = () => {
                   followers.length > 0 ? (
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                       {followers.map((item) => (
-                        item.expand?.follower && <UserListItem key={item.id} user={item.expand.follower} followId={item.id} isFollowingList={false} />
+                        item.follower && <UserListItem key={item.id} user={item.follower} followId={item.id} isFollowingList={false} />
                       ))}
                     </div>
                   ) : (
@@ -236,7 +262,7 @@ const UserProfilePage = () => {
                   following.length > 0 ? (
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                       {following.map((item) => (
-                        item.expand?.following && <UserListItem key={item.id} user={item.expand.following} followId={item.id} isFollowingList={true} />
+                        item.following && <UserListItem key={item.id} user={item.following} followId={item.id} isFollowingList={true} />
                       ))}
                     </div>
                   ) : (

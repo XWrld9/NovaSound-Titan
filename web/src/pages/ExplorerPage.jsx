@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Helmet } from 'react-helmet';
 import { motion } from 'framer-motion';
-import pb from '@/lib/pocketbaseClient';
+import { supabase } from '@/lib/supabaseClient';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import AudioPlayer from '@/components/AudioPlayer';
@@ -15,6 +15,7 @@ const ExplorerPage = () => {
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
   const [sortBy, setSortBy] = useState('-created'); // -created, -plays_count
+
   const [searchQuery, setSearchQuery] = useState('');
   const [debouncedSearch, setDebouncedSearch] = useState('');
 
@@ -33,24 +34,36 @@ const ExplorerPage = () => {
   const fetchSongs = async (pageNum, isNewSearch = false) => {
     try {
       setLoading(true);
-      const filter = debouncedSearch 
-        ? `title ~ "${debouncedSearch}" || artist ~ "${debouncedSearch}"` 
-        : '';
-      
-      const result = await pb.collection('songs').getList(pageNum, 20, {
-        sort: sortBy,
-        filter: filter,
-        expand: 'uploader',
-        $autoCancel: false
-      });
+      const perPage = 20;
+      const start = Math.max(0, (pageNum - 1) * perPage);
+      const end = start + perPage - 1;
 
-      if (isNewSearch) {
-        setSongs(result.items);
-      } else {
-        setSongs(prev => [...prev, ...result.items]);
+      const desc = sortBy.startsWith('-');
+      const rawField = desc ? sortBy.slice(1) : sortBy;
+      const field = rawField === 'created' ? 'created_at' : rawField;
+
+      let query = supabase
+        .from('songs')
+        .select('*')
+        .order(field, { ascending: !desc })
+        .range(start, end);
+
+      if (debouncedSearch?.trim()) {
+        const q = debouncedSearch.trim().replaceAll('%', '');
+        query = query.or(`title.ilike.%${q}%,artist.ilike.%${q}%`);
       }
-      
-      setHasMore(result.items.length === 20);
+
+      const { data, error } = await query;
+      if (error) throw error;
+
+      const items = data || [];
+      if (isNewSearch) {
+        setSongs(items);
+      } else {
+        setSongs((prev) => [...prev, ...items]);
+      }
+
+      setHasMore(items.length === perPage);
     } catch (error) {
       console.error('Error fetching songs:', error);
     } finally {

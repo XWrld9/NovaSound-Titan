@@ -5,7 +5,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Upload, Music, Image, AlertCircle, CheckCircle } from 'lucide-react';
 import { motion } from 'framer-motion';
-import pb from '@/lib/pocketbaseClient';
+import { supabase } from '@/lib/supabaseClient';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 
@@ -69,21 +69,55 @@ const MusicUploadPage = () => {
     setUploadProgress(10);
 
     try {
-      const data = new FormData();
-      data.append('title', formData.title);
-      data.append('artist', formData.artist);
-      data.append('description', formData.description);
-      data.append('uploader', currentUser.id);
-      data.append('audio_file', audioFile);
-      if (albumCover) {
-        data.append('album_cover', albumCover);
-      }
-      data.append('plays_count', 0);
-      data.append('created_at', new Date().toISOString());
-
       setUploadProgress(50);
 
-      const record = await pb.collection('songs').create(data, { $autoCancel: false });
+      // 1) Upload audio to Supabase Storage
+      const audioExt = audioFile.name.split('.').pop();
+      const audioPath = `songs/audio/${currentUser.id}-${Date.now()}.${audioExt}`;
+
+      const { error: audioUploadError } = await supabase.storage
+        .from('public')
+        .upload(audioPath, audioFile, { cacheControl: '3600', upsert: false });
+      if (audioUploadError) throw audioUploadError;
+
+      const { data: audioPublic } = supabase.storage
+        .from('public')
+        .getPublicUrl(audioPath);
+
+      let albumCoverUrl = null;
+
+      // 2) Upload cover (optional)
+      if (albumCover) {
+        const coverExt = albumCover.name.split('.').pop();
+        const coverPath = `songs/covers/${currentUser.id}-${Date.now()}.${coverExt}`;
+
+        const { error: coverUploadError } = await supabase.storage
+          .from('public')
+          .upload(coverPath, albumCover, { cacheControl: '3600', upsert: false });
+        if (coverUploadError) throw coverUploadError;
+
+        const { data: coverPublic } = supabase.storage
+          .from('public')
+          .getPublicUrl(coverPath);
+        albumCoverUrl = coverPublic?.publicUrl || null;
+      }
+
+      // 3) Insert song row
+      const insertPayload = {
+        title: formData.title,
+        artist: formData.artist,
+        uploader_id: currentUser.id,
+        audio_file_url: audioPublic?.publicUrl || null,
+        album_cover_url: albumCoverUrl,
+        plays_count: 0,
+        likes_count: 0,
+        created_at: new Date().toISOString()
+      };
+
+      const { error: insertError } = await supabase
+        .from('songs')
+        .insert(insertPayload);
+      if (insertError) throw insertError;
 
       setUploadProgress(100);
       setSuccess('Song uploaded successfully! Redirecting...');
@@ -95,6 +129,7 @@ const MusicUploadPage = () => {
       console.error('Upload error:', err);
       setError(err.message || 'Failed to upload song. Please try again.');
       setUploadProgress(0);
+
     } finally {
       setLoading(false);
     }

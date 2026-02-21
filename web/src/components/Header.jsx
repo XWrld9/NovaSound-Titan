@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Search, Upload, User, LogOut, Menu, X, Globe, Newspaper, Music } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
-import pb from '@/lib/pocketbaseClient';
+import { supabase } from '@/lib/supabaseClient';
 import { Button } from '@/components/ui/button';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -20,13 +20,15 @@ const Header = () => {
       if (searchQuery.trim().length > 0) {
         setIsSearching(true);
         try {
-          const songs = await pb.collection('songs').getFullList({
-            filter: `title ~ "${searchQuery}" || artist ~ "${searchQuery}"`,
-            expand: 'uploader',
-            sort: '-created',
-            $autoCancel: false
-          });
-          setSearchResults(songs);
+          const q = searchQuery.trim().replaceAll('%', '');
+          const { data, error } = await supabase
+            .from('songs')
+            .select('*')
+            .or(`title.ilike.%${q}%,artist.ilike.%${q}%`)
+            .order('created_at', { ascending: false })
+            .limit(20);
+          if (error) throw error;
+          setSearchResults(data || []);
           setShowResults(true);
         } catch (error) {
           console.error('Search error:', error);
@@ -101,9 +103,9 @@ const Header = () => {
                             className="flex items-center gap-3 p-3 hover:bg-cyan-500/10 rounded-lg transition-colors"
                             onClick={() => setShowResults(false)}
                           >
-                            {song.album_cover ? (
+                            {song.album_cover_url ? (
                               <img
-                                src={pb.files.getUrl(song, song.album_cover)}
+                                src={song.album_cover_url}
                                 alt={song.title}
                                 className="w-10 h-10 rounded object-cover"
                               />
@@ -149,9 +151,9 @@ const Header = () => {
                   
                   <div className="relative group">
                     <Link to="/profile" className="flex items-center gap-2 pl-4 border-l border-gray-800">
-                      {currentUser.avatar ? (
+                      {currentUser.avatar_url ? (
                         <img 
-                          src={pb.files.getUrl(currentUser, currentUser.avatar)} 
+                          src={currentUser.avatar_url} 
                           alt="Profile" 
                           className="w-8 h-8 rounded-full border border-cyan-500/50"
                         />

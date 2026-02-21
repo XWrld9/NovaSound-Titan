@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { Helmet } from 'react-helmet';
 import { Music, Play, TrendingUp, Newspaper } from 'lucide-react';
 import { motion } from 'framer-motion';
-import pb from '@/lib/pocketbaseClient';
+import { supabase } from '@/lib/supabaseClient';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import AudioPlayer from '@/components/AudioPlayer';
@@ -21,21 +21,27 @@ const HomePage = () => {
 
   const fetchData = async () => {
     try {
-      const [songs, news] = await Promise.all([
-        pb.collection('songs').getList(1, 12, {
-          sort: '-created',
-          expand: 'uploader',
-          $autoCancel: false
-        }),
-        pb.collection('news').getList(1, 6, {
-          sort: '-created',
-          expand: 'author',
-          $autoCancel: false
-        })
+      const [{ data: songs, error: songsError }, { data: news, error: newsError }] = await Promise.all([
+        supabase
+          .from('songs')
+          .select('*')
+          .order('created_at', { ascending: false })
+          .limit(12),
+        supabase
+          .from('news')
+          .select('*')
+          .order('created_at', { ascending: false })
+          .limit(6)
       ]);
 
-      setFeaturedSongs(songs.items);
-      setNewsItems(news.items);
+      if (songsError) throw songsError;
+      if (newsError) {
+        setNewsItems([]);
+      } else {
+        setNewsItems(news || []);
+      }
+
+      setFeaturedSongs(songs || []);
     } catch (error) {
       console.error('Error fetching data:', error);
     } finally {
@@ -122,9 +128,9 @@ const HomePage = () => {
                     className="bg-gray-900/50 backdrop-blur-xl border border-cyan-500/30 rounded-xl overflow-hidden hover:border-cyan-400 transition-all group"
                   >
                     <div className="relative aspect-square">
-                      {song.album_cover ? (
+                      {song.album_cover_url ? (
                         <img
-                          src={pb.files.getUrl(song, song.album_cover)}
+                          src={song.album_cover_url}
                           alt={song.title}
                           className="w-full h-full object-cover"
                         />
@@ -145,9 +151,9 @@ const HomePage = () => {
                     <div className="p-4">
                       <h3 className="text-white font-semibold truncate">{song.title}</h3>
                       <p className="text-gray-400 text-sm truncate">{song.artist}</p>
-                      {song.expand?.uploader && (
+                      {song.uploader_id && (
                         <p className="text-gray-500 text-xs mt-1 truncate">
-                          by {song.expand.uploader.username}
+                          by {song.uploader_id}
                         </p>
                       )}
                     </div>
@@ -185,10 +191,10 @@ const HomePage = () => {
                     <p className="text-gray-400 mb-4 line-clamp-3">{news.content}</p>
                     <div className="flex items-center justify-between text-sm">
                       <span className="text-gray-500">
-                        {news.expand?.author?.username || 'Anonymous'}
+                        {news.author_id || 'Anonymous'}
                       </span>
                       <span className="text-gray-500">
-                        {new Date(news.created).toLocaleDateString()}
+                        {new Date(news.created_at || Date.now()).toLocaleDateString()}
                       </span>
                     </div>
                     <div className="flex items-center gap-2 mt-4 text-magenta-400">

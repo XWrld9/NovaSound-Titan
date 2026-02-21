@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Helmet } from 'react-helmet';
 import { motion } from 'framer-motion';
-import pb from '@/lib/pocketbaseClient';
+import { supabase } from '@/lib/supabaseClient';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import NewsForm from '@/components/NewsForm';
@@ -19,12 +19,13 @@ const NewsPage = () => {
 
   const fetchNews = async () => {
     try {
-      const result = await pb.collection('news').getList(1, 50, {
-        sort: '-created',
-        expand: 'author',
-        $autoCancel: false
-      });
-      setNews(result.items);
+      const { data, error } = await supabase
+        .from('news')
+        .select('*')
+        .order('created_at', { ascending: false })
+        .limit(50);
+      if (error) throw error;
+      setNews(data || []);
     } catch (error) {
       console.error('Error fetching news:', error);
     } finally {
@@ -71,11 +72,11 @@ const NewsPage = () => {
                     <div className="flex items-center gap-4">
                       <span className="flex items-center gap-1">
                         <User className="w-4 h-4" />
-                        {item.expand?.author?.username || 'Anonymous'}
+                        {item.author_id || 'Anonymous'}
                       </span>
                       <span className="flex items-center gap-1">
                         <Calendar className="w-4 h-4" />
-                        {new Date(item.created).toLocaleDateString()}
+                        {new Date(item.created_at || Date.now()).toLocaleDateString()}
                       </span>
                     </div>
                   </div>

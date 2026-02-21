@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Play, Pause, SkipBack, SkipForward, Volume2, VolumeX, Shuffle, Repeat, Music, ChevronUp, ChevronDown, Heart, Download, Share2, UserPlus, UserCheck } from 'lucide-react';
 import { Slider } from '@/components/ui/slider';
-import pb from '@/lib/pocketbaseClient';
+import { supabase } from '@/lib/supabaseClient';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
@@ -24,63 +24,60 @@ const AudioPlayer = ({ currentSong, playlist = [], onNext, onPrevious }) => {
   const [followId, setFollowId] = useState(null);
 
   useEffect(() => {
-    if (audioRef.current && currentSong?.audio_file) {
-      const audioUrl = pb.files.getUrl(currentSong, currentSong.audio_file);
-      audioRef.current.src = audioUrl;
+    if (audioRef.current && currentSong?.audio_file_url) {
+      audioRef.current.src = currentSong.audio_file_url;
       audioRef.current.load();
       setPlayRecorded(false);
-      
+
       if (isPlaying) {
-        audioRef.current.play().catch(err => console.error('Play error:', err));
+        audioRef.current.play().catch((err) => console.error('Play error:', err));
       }
-      
-      // Check like and follow status for new song
+
       if (currentUser) {
         checkLikeStatus();
         checkFollowStatus();
+      } else {
+        setIsLiked(false);
+        setLikeId(null);
+        setIsFollowing(false);
+        setFollowId(null);
       }
     }
   }, [currentSong]);
 
   const checkLikeStatus = async () => {
     try {
-      const records = await pb.collection('likes').getList(1, 1, {
-        filter: `userId="${currentUser.id}" && songId="${currentSong.id}"`,
-        $autoCancel: false
-      });
-      if (records.items.length > 0) {
-        setIsLiked(true);
-        setLikeId(records.items[0].id);
-      } else {
-        setIsLiked(false);
-        setLikeId(null);
-      }
+      const { data, error } = await supabase
+        .from('likes')
+        .select('id')
+        .eq('user_id', currentUser.id)
+        .eq('song_id', currentSong.id)
+        .maybeSingle();
+      if (error) throw error;
+      setIsLiked(!!data);
+      setLikeId(data?.id || null);
     } catch (err) {
       console.error('Error checking like status:', err);
     }
   };
 
   const checkFollowStatus = async () => {
-    if (!currentSong.uploader) return;
-    
-    // Handle both expanded object and ID string
-    const uploaderId = typeof currentSong.uploader === 'object' ? currentSong.uploader.id : currentSong.uploader;
+    const uploaderId = currentSong?.uploader_id;
+    if (!uploaderId) return;
     
     // Don't check if user is the uploader
     if (uploaderId === currentUser.id) return;
 
     try {
-      const records = await pb.collection('follows').getList(1, 1, {
-        filter: `follower="${currentUser.id}" && following="${uploaderId}"`,
-        $autoCancel: false
-      });
-      if (records.items.length > 0) {
-        setIsFollowing(true);
-        setFollowId(records.items[0].id);
-      } else {
-        setIsFollowing(false);
-        setFollowId(null);
-      }
+      const { data, error } = await supabase
+        .from('follows')
+        .select('id')
+        .eq('follower_id', currentUser.id)
+        .eq('following_id', uploaderId)
+        .maybeSingle();
+      if (error) throw error;
+      setIsFollowing(!!data);
+      setFollowId(data?.id || null);
     } catch (err) {
       console.error('Error checking follow status:', err);
     }
@@ -92,16 +89,25 @@ const AudioPlayer = ({ currentSong, playlist = [], onNext, onPrevious }) => {
 
     try {
       if (isLiked && likeId) {
-        await pb.collection('likes').delete(likeId);
+        const { error } = await supabase
+          .from('likes')
+          .delete()
+          .eq('id', likeId);
+        if (error) throw error;
         setIsLiked(false);
         setLikeId(null);
       } else {
-        const record = await pb.collection('likes').create({
-          userId: currentUser.id,
-          songId: currentSong.id
-        });
+        const { data, error } = await supabase
+          .from('likes')
+          .insert({
+            user_id: currentUser.id,
+            song_id: currentSong.id
+          })
+          .select('id')
+          .single();
+        if (error) throw error;
         setIsLiked(true);
-        setLikeId(record.id);
+        setLikeId(data?.id || null);
       }
     } catch (err) {
       console.error('Error toggling like:', err);
@@ -111,22 +117,32 @@ const AudioPlayer = ({ currentSong, playlist = [], onNext, onPrevious }) => {
   const handleFollow = async (e) => {
     e?.stopPropagation();
     if (!currentUser) return;
-    
-    const uploaderId = typeof currentSong.uploader === 'object' ? currentSong.uploader.id : currentSong.uploader;
+
+    const uploaderId = currentSong?.uploader_id;
+    if (!uploaderId) return;
     if (uploaderId === currentUser.id) return;
 
     try {
       if (isFollowing && followId) {
-        await pb.collection('follows').delete(followId);
+        const { error } = await supabase
+          .from('follows')
+          .delete()
+          .eq('id', followId);
+        if (error) throw error;
         setIsFollowing(false);
         setFollowId(null);
       } else {
-        const record = await pb.collection('follows').create({
-          follower: currentUser.id,
-          following: uploaderId
-        });
+        const { data, error } = await supabase
+          .from('follows')
+          .insert({
+            follower_id: currentUser.id,
+            following_id: uploaderId
+          })
+          .select('id')
+          .single();
+        if (error) throw error;
         setIsFollowing(true);
-        setFollowId(record.id);
+        setFollowId(data?.id || null);
       }
     } catch (err) {
       console.error('Error toggling follow:', err);
@@ -135,8 +151,8 @@ const AudioPlayer = ({ currentSong, playlist = [], onNext, onPrevious }) => {
 
   const handleDownload = (e) => {
     e?.stopPropagation();
-    if (!currentSong.audio_file) return;
-    const url = pb.files.getUrl(currentSong, currentSong.audio_file) + '?download=1';
+    if (!currentSong.audio_file_url) return;
+    const url = currentSong.audio_file_url;
     const link = document.createElement('a');
     link.href = url;
     link.download = currentSong.title;
@@ -147,19 +163,20 @@ const AudioPlayer = ({ currentSong, playlist = [], onNext, onPrevious }) => {
 
   const handleShare = (e) => {
     e?.stopPropagation();
-    const url = `${window.location.origin}/song/${currentSong.id}`;
+    const url = `${window.location.origin}/#/song/${currentSong.id}`;
     navigator.clipboard.writeText(url);
     alert('Link copied!');
   };
 
   const recordPlay = async () => {
-    if (playRecorded || !currentUser) return;
+    if (playRecorded || !currentSong?.id) return;
     try {
-      await pb.collection('play_history').create({
-        userId: currentUser.id,
-        songId: currentSong.id,
-        timestamp: new Date().toISOString()
-      });
+      const nextPlays = (currentSong.plays_count || 0) + 1;
+      const { error } = await supabase
+        .from('songs')
+        .update({ plays_count: nextPlays })
+        .eq('id', currentSong.id);
+      if (error) throw error;
       setPlayRecorded(true);
     } catch (err) {
       console.error('Error recording play:', err);
@@ -244,8 +261,7 @@ const AudioPlayer = ({ currentSong, playlist = [], onNext, onPrevious }) => {
   if (!currentSong) return null;
 
   // Determine if we should show follow button (not own song, authenticated)
-  const showFollowButton = currentUser && 
-    (typeof currentSong.uploader === 'object' ? currentSong.uploader.id : currentSong.uploader) !== currentUser.id;
+  const showFollowButton = currentUser && currentSong?.uploader_id && currentSong.uploader_id !== currentUser.id;
 
   return (
     <AnimatePresence>
@@ -275,9 +291,9 @@ const AudioPlayer = ({ currentSong, playlist = [], onNext, onPrevious }) => {
           
           {isExpanded && (
             <div className="w-full aspect-square max-w-sm mx-auto rounded-2xl overflow-hidden shadow-2xl shadow-cyan-500/20 border border-cyan-500/20">
-              {currentSong.album_cover ? (
+              {currentSong.album_cover_url ? (
                 <img
-                  src={pb.files.getUrl(currentSong, currentSong.album_cover)}
+                  src={currentSong.album_cover_url}
                   alt={currentSong.title}
                   className="w-full h-full object-cover"
                 />
@@ -306,9 +322,9 @@ const AudioPlayer = ({ currentSong, playlist = [], onNext, onPrevious }) => {
           <div className={`flex items-center justify-between gap-4 ${isExpanded ? 'flex-col' : ''}`}>
             <div className={`flex items-center gap-4 flex-1 min-w-0 ${isExpanded ? 'flex-col text-center w-full' : ''}`}>
               {!isExpanded && (
-                currentSong.album_cover ? (
+                currentSong.album_cover_url ? (
                   <img
-                    src={pb.files.getUrl(currentSong, currentSong.album_cover)}
+                    src={currentSong.album_cover_url}
                     alt={currentSong.title}
                     className="w-12 h-12 md:w-16 md:h-16 rounded-lg object-cover shadow-lg"
                     onClick={() => setIsExpanded(true)}

@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
-import pb from '@/lib/pocketbaseClient';
+import { supabase } from '@/lib/supabaseClient';
 import { Button } from '@/components/ui/button';
 import { Send, AlertCircle, CheckCircle } from 'lucide-react';
 
@@ -24,11 +24,16 @@ const NewsForm = ({ onNewsCreated }) => {
       const data = {
         title,
         content,
-        author: currentUser.id,
-        likes_count: 0
+        author_id: currentUser.id,
+        likes_count: 0,
+        created_at: new Date().toISOString()
       };
 
-      await pb.collection('news').create(data);
+      const { error } = await supabase
+        .from('news')
+        .insert(data);
+      if (error) throw error;
+
       setSuccess('News posted successfully!');
       setTitle('');
       setContent('');

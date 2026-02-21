@@ -46,11 +46,23 @@ CREATE TABLE IF NOT EXISTS public.follows (
   CHECK(follower_id != following_id)
 );
 
+ -- Table news
+ CREATE TABLE IF NOT EXISTS public.news (
+   id TEXT PRIMARY KEY DEFAULT (gen_random_uuid()::text),
+   title TEXT NOT NULL,
+   content TEXT NOT NULL,
+   author_id TEXT REFERENCES public.users(id) ON DELETE SET NULL,
+   likes_count INTEGER DEFAULT 0,
+   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+ );
+
 -- Activer RLS sur toutes les tables
 ALTER TABLE public.users ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.songs ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.likes ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.follows ENABLE ROW LEVEL SECURITY;
+ ALTER TABLE public.news ENABLE ROW LEVEL SECURITY;
 
 -- Politiques pour users
 DROP POLICY IF EXISTS "Users can view all profiles" ON public.users;
@@ -86,6 +98,19 @@ CREATE POLICY "Users can view all follows" ON public.follows FOR SELECT USING (t
 DROP POLICY IF EXISTS "Users can manage own follows" ON public.follows;
 CREATE POLICY "Users can manage own follows" ON public.follows FOR ALL USING ((auth.uid())::text = follower_id);
 
+ -- Politiques pour news
+ DROP POLICY IF EXISTS "Anyone can view news" ON public.news;
+ CREATE POLICY "Anyone can view news" ON public.news FOR SELECT USING (true);
+
+ DROP POLICY IF EXISTS "Users can insert own news" ON public.news;
+ CREATE POLICY "Users can insert own news" ON public.news FOR INSERT WITH CHECK ((auth.uid())::text = author_id);
+
+ DROP POLICY IF EXISTS "Users can update own news" ON public.news;
+ CREATE POLICY "Users can update own news" ON public.news FOR UPDATE USING ((auth.uid())::text = author_id);
+
+ DROP POLICY IF EXISTS "Users can delete own news" ON public.news;
+ CREATE POLICY "Users can delete own news" ON public.news FOR DELETE USING ((auth.uid())::text = author_id);
+
 -- Index pour optimiser les performances
 CREATE INDEX IF NOT EXISTS idx_songs_uploader_id ON public.songs(uploader_id);
 CREATE INDEX IF NOT EXISTS idx_songs_created_at ON public.songs(created_at DESC);
@@ -93,3 +118,5 @@ CREATE INDEX IF NOT EXISTS idx_likes_user_id ON public.likes(user_id);
 CREATE INDEX IF NOT EXISTS idx_likes_song_id ON public.likes(song_id);
 CREATE INDEX IF NOT EXISTS idx_follows_follower_id ON public.follows(follower_id);
 CREATE INDEX IF NOT EXISTS idx_follows_following_id ON public.follows(following_id);
+ CREATE INDEX IF NOT EXISTS idx_news_created_at ON public.news(created_at DESC);
+ CREATE INDEX IF NOT EXISTS idx_news_author_id ON public.news(author_id);

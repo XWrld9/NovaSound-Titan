@@ -55,7 +55,7 @@ NovaSound-TITAN LUX n'est pas juste une plateforme de streaming, c'est un écosy
 - 🔍 **Découverte intelligente** de nouveaux artistes
 - ❤️ **Système de likes** pour soutenir vos créateurs préférés
 - 👥 **Follow/Unfollow** pour ne rien manquer
-- � **Téléchargement** des musiques préférées
+- 📥 **Téléchargement** des musiques préférées
 - 🔗 **Partage** des chansons
 - 🎧 **Lecteur audio avancé**
 - ✏️ **Modification de profil** complète
@@ -91,13 +91,23 @@ npm run dev
 - Root Directory: `web`
 - Build Command: `npm run build`
 - Output Directory: `dist`
-- Variables d'environnement pré-configurées
+- Variables d'environnement :
+  - `VITE_SUPABASE_URL`
+  - `VITE_SUPABASE_ANON_KEY`
 
 ### Backend (Supabase)
 - Base de données PostgreSQL hébergée
 - Authentification intégrée avec email verification
 - Stockage de fichiers pour avatars et médias
 - Real-time subscriptions
+
+## 🧭 Routing (important)
+
+Cette application utilise `HashRouter` (React Router) pour éviter les erreurs `404` au rafraîchissement sur Vercel.
+
+- **URL d'accueil** : `https://nova-sound-titan.vercel.app/#/`
+- **Profil** : `https://nova-sound-titan.vercel.app/#/profile`
+- **Explorer** : `https://nova-sound-titan.vercel.app/#/explorer`
 
 ## 📁 Architecture
 

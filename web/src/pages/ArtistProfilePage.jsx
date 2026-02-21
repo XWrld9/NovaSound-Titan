@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { Helmet } from 'react-helmet';
 import { motion } from 'framer-motion';
-import pb from '@/lib/pocketbaseClient';
+import { supabase } from '@/lib/supabaseClient';
 import { useAuth } from '@/contexts/AuthContext';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
@@ -20,47 +20,32 @@ const ArtistProfilePage = () => {
   const [followers, setFollowers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [currentSong, setCurrentSong] = useState(null);
-  const [isFollowing, setIsFollowing] = useState(false);
-  const [followId, setFollowId] = useState(null);
 
   useEffect(() => {
     fetchArtistData();
     fetchFollowers();
-
-    // Real-time subscription for followers
-    pb.collection('follows').subscribe('*', (e) => {
-      if (e.record.following === id) {
-        fetchFollowers();
-        // Also update follow status if the current user was involved
-        if (currentUser && e.record.follower === currentUser.id) {
-          if (e.action === 'create') {
-            setIsFollowing(true);
-            setFollowId(e.record.id);
-          } else if (e.action === 'delete') {
-            setIsFollowing(false);
-            setFollowId(null);
-          }
-        }
-      }
-    });
-
-    return () => {
-      pb.collection('follows').unsubscribe('*');
-    };
   }, [id, currentUser]);
 
   const fetchArtistData = async () => {
     try {
       setLoading(true);
-      const artistData = await pb.collection('users').getOne(id, { $autoCancel: false });
+      const [{ data: artistData, error: artistError }, { data: songsData, error: songsError }] = await Promise.all([
+        supabase
+          .from('users')
+          .select('*')
+          .eq('id', id)
+          .single(),
+        supabase
+          .from('songs')
+          .select('*')
+          .eq('uploader_id', id)
+          .order('created_at', { ascending: false })
+          .limit(50)
+      ]);
+      if (artistError) throw artistError;
+      if (songsError) throw songsError;
       setArtist(artistData);
-
-      const songsData = await pb.collection('songs').getList(1, 50, {
-        filter: `uploader.id="${id}"`,
-        sort: '-created',
-        $autoCancel: false
-      });
-      setSongs(songsData.items);
+      setSongs(songsData || []);
     } catch (error) {
       console.error('Error fetching artist data:', error);
     } finally {
@@ -70,46 +55,34 @@ const ArtistProfilePage = () => {
 
   const fetchFollowers = async () => {
     try {
-      const result = await pb.collection('follows').getList(1, 50, {
-        filter: `following.id="${id}"`,
-        expand: 'follower',
-        sort: '-created',
-        $autoCancel: false
-      });
-      setFollowers(result.items);
-      
-      // Check if current user is following
-      if (currentUser) {
-        const myFollow = result.items.find(item => item.follower === currentUser.id);
-        if (myFollow) {
-          setIsFollowing(true);
-          setFollowId(myFollow.id);
-        } else {
-          setIsFollowing(false);
-          setFollowId(null);
-        }
+      const { data: followsData, error: followsError } = await supabase
+        .from('follows')
+        .select('*')
+        .eq('following_id', id)
+        .order('created_at', { ascending: false })
+        .limit(50);
+      if (followsError) throw followsError;
+
+      const followerIds = (followsData || []).map((f) => f.follower_id);
+      if (followerIds.length === 0) {
+        setFollowers([]);
+        return;
       }
+
+      const { data: usersData, error: usersError } = await supabase
+        .from('users')
+        .select('*')
+        .in('id', followerIds);
+      if (usersError) throw usersError;
+
+      const byId = new Map((usersData || []).map((u) => [u.id, u]));
+      const merged = (followsData || []).map((f) => ({
+        ...f,
+        follower: byId.get(f.follower_id) || null,
+      }));
+      setFollowers(merged);
     } catch (error) {
       console.error('Error fetching followers:', error);
-    }
-  };
-
-  const handleFollow = async () => {
-    if (!currentUser) return alert('Please login to follow artists');
-    
-    try {
-      if (isFollowing && followId) {
-        await pb.collection('follows').delete(followId);
-        // State updates handled by subscription
-      } else {
-        await pb.collection('follows').create({
-          follower: currentUser.id,
-          following: id
-        });
-        // State updates handled by subscription
-      }
-    } catch (err) {
-      console.error('Error toggling follow:', err);
     }
   };
 
@@ -146,9 +119,9 @@ const ArtistProfilePage = () => {
             <div className="absolute top-0 right-0 w-64 h-64 bg-cyan-500/10 rounded-full blur-3xl pointer-events-none" />
             
             <div className="flex flex-col md:flex-row items-center md:items-start gap-8 relative z-10">
-              {artist.avatar ? (
+              {artist.avatar_url ? (
                 <img
-                  src={pb.files.getUrl(artist, artist.avatar)}
+                  src={artist.avatar_url}
                   alt={artist.username}
                   className="w-40 h-40 rounded-full object-cover border-4 border-cyan-500 shadow-xl"
                 />
@@ -176,8 +149,7 @@ const ArtistProfilePage = () => {
                 {currentUser && currentUser.id !== artist.id && (
                   <FollowButton 
                     userId={artist.id}
-                    initialFollowers={artist.followers || followers.length}
-                    initialFollowing={isFollowing}
+                    initialFollowers={artist.followers_count || followers.length}
                   />
                 )}
               </div>
@@ -213,13 +185,13 @@ const ArtistProfilePage = () => {
                 {followers.length > 0 ? (
                   <div className="space-y-4">
                     {followers.map((follow) => {
-                      const follower = follow.expand?.follower;
+                      const follower = follow.follower;
                       if (!follower) return null;
                       return (
                         <div key={follow.id} className="flex items-center gap-3 p-2 hover:bg-gray-800/50 rounded-lg transition-colors">
-                          {follower.avatar ? (
+                          {follower.avatar_url ? (
                             <img 
-                              src={pb.files.getUrl(follower, follower.avatar)} 
+                              src={follower.avatar_url} 
                               alt={follower.username} 
                               className="w-10 h-10 rounded-full object-cover"
                             />
@@ -231,7 +203,7 @@ const ArtistProfilePage = () => {
                           <div className="flex-1 min-w-0">
                             <div className="text-white font-medium truncate">{follower.username}</div>
                             <div className="text-xs text-gray-500">
-                              Followed {new Date(follow.created).toLocaleDateString()}
+                              Followed {new Date(follow.created_at || Date.now()).toLocaleDateString()}
                             </div>
                           </div>
                         </div>
