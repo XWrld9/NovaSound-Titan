@@ -174,14 +174,18 @@ export const AuthProvider = ({ children }) => {
 
   const updateProfile = async (userId, data) => {
     try {
+      // Ne pas mettre à jour l'email via cette fonction
+      const { email, ...profileData } = data;
+      
       const { data: updated, error } = await supabase
         .from('users')
-        .update(data)
+        .update(profileData)
         .eq('id', userId)
         .select()
         .single();
       
       if (error) {
+        console.error('Update profile error:', error);
         return { 
           success: false, 
           message: error.message || 'Échec de la mise à jour du profil' 

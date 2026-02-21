@@ -68,28 +68,29 @@ const EditProfileModal = ({ isOpen, onClose }) => {
         const fileExt = avatarFile.name.split('.').pop();
         const fileName = `${currentUser.id}-${Date.now()}.${fileExt}`;
 
+        // Utiliser le bucket 'public' au lieu de 'avatars'
         const { data: uploadData, error: uploadError } = await supabase.storage
-          .from('avatars')
-          .upload(fileName, avatarFile, {
+          .from('public')
+          .upload(`avatars/${fileName}`, avatarFile, {
             cacheControl: '3600',
             upsert: false
           });
 
         if (uploadError) {
-          throw uploadError;
+          console.error('Upload error:', uploadError);
+          // Continuer sans l'avatar si l'upload échoue
+        } else {
+          const { data: { publicUrl } } = supabase.storage
+            .from('public')
+            .getPublicUrl(`avatars/${fileName}`);
+
+          avatarUrl = publicUrl;
         }
-
-        const { data: { publicUrl } } = supabase.storage
-          .from('avatars')
-          .getPublicUrl(fileName);
-
-        avatarUrl = publicUrl;
       }
 
       // Mise à jour du profil
       const updateData = {
         username: formData.username,
-        email: formData.email,
         bio: formData.bio,
         avatar_url: avatarUrl
       };
@@ -180,20 +181,22 @@ const EditProfileModal = ({ isOpen, onClose }) => {
               />
             </div>
 
-            {/* Email */}
+            {/* Email - Read-only */}
             <div>
               <label className="flex items-center gap-2 text-sm font-medium text-gray-700 mb-1">
                 <Mail className="w-4 h-4" />
-                Email
+                Email (non modifiable)
               </label>
               <input
                 type="email"
                 name="email"
                 value={formData.email}
-                onChange={handleInputChange}
-                required
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                disabled
+                className="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-100 text-gray-500 cursor-not-allowed"
               />
+              <p className="text-xs text-gray-500 mt-1">
+                Pour modifier l'email, contactez le support
+              </p>
             </div>
 
             {/* Bio */}
