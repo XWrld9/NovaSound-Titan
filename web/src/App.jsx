@@ -4,6 +4,7 @@ import { AuthProvider } from '@/contexts/AuthContext';
 import ScrollToTop from '@/components/ScrollToTop';
 import ProtectedRoute from '@/components/ProtectedRoute';
 import ErrorBoundary from '@/components/ErrorBoundary';
+import ExtensionWarning from '@/components/ExtensionWarning';
 import HomePage from '@/pages/HomePage';
 import LoginPage from '@/pages/LoginPage';
 import SignupPage from '@/pages/SignupPage';
@@ -22,6 +23,7 @@ function App() {
       <AuthProvider>
         <Router>
           <ScrollToTop />
+          <ExtensionWarning />
           <Routes>
             <Route path="/" element={<HomePage />} />
             <Route path="/login" element={<LoginPage />} />

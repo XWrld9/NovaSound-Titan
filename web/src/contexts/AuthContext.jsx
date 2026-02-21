@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { supabase } from '../lib/supabaseClient';
+import { safeFetch } from '../components/ExtensionSafeWrapper';
 
 const AuthContext = createContext();
 
@@ -14,6 +15,7 @@ export const useAuth = () => {
 export const AuthProvider = ({ children }) => {
   const [currentUser, setCurrentUser] = useState(null);
   const [initialLoading, setInitialLoading] = useState(true);
+  const [extensionWarning, setExtensionWarning] = useState(false);
 
   const getEmailRedirectTo = () => {
     try {
@@ -25,6 +27,21 @@ export const AuthProvider = ({ children }) => {
 
   const updateUser = (userData) => {
     setCurrentUser(userData);
+  };
+
+  // Gérer les erreurs d'extensions dans les opérations Supabase
+  const safeSupabaseOperation = async (operation) => {
+    try {
+      return await operation();
+    } catch (error) {
+      // Si l'erreur vient d'une extension, essayer de continuer
+      if (error.message && error.message.includes('chrome-extension://')) {
+        console.warn('Extension interference in auth operation, continuing...');
+        setExtensionWarning(true);
+        return null;
+      }
+      throw error;
+    }
   };
 
   useEffect(() => {
@@ -232,6 +249,7 @@ export const AuthProvider = ({ children }) => {
     updateProfile,
     updateUser,
     initialLoading,
+    extensionWarning,
     supabase // Exporter supabase pour les autres composants
   };
 
