@@ -27,21 +27,6 @@ export const AuthProvider = ({ children }) => {
     setCurrentUser(userData);
   };
 
-  // Gérer les erreurs d'extensions dans les opérations Supabase
-  const safeSupabaseOperation = async (operation) => {
-    try {
-      return await operation();
-    } catch (error) {
-      // Si l'erreur vient d'une extension, essayer de continuer
-      if (error.message && error.message.includes('chrome-extension://')) {
-        console.warn('Extension interference in auth operation, continuing...');
-        setExtensionWarning(true);
-        return null;
-      }
-      throw error;
-    }
-  };
-
   useEffect(() => {
     // Vérifier l'utilisateur actuel au montage
     const initializeAuth = async () => {
@@ -135,8 +120,10 @@ export const AuthProvider = ({ children }) => {
       });
       
       if (error) {
-        // Vérifier si c'est une erreur de vérification email
-        if (error.message && error.message.includes('verify')) {
+        console.error('Supabase login error:', error);
+        
+        // Gérer les erreurs spécifiques de Supabase
+        if (error.message?.includes('Email not confirmed')) {
           return { 
             success: false, 
             message: 'Veuillez vérifier votre email avant de vous connecter. Consultez votre boîte de réception.',
@@ -144,18 +131,40 @@ export const AuthProvider = ({ children }) => {
           };
         }
         
+        if (error.message?.includes('Invalid login credentials')) {
+          return { 
+            success: false, 
+            message: 'Email ou mot de passe incorrect' 
+          };
+        }
+        
+        if (error.message?.includes('rate limit') || error.message?.includes('too many requests')) {
+          return { 
+            success: false, 
+            message: 'Trop de tentatives de connexion. Veuillez réessayer dans quelques minutes.' 
+          };
+        }
+        
+        if (error.message?.includes('Email rate limit exceeded')) {
+          return { 
+            success: false, 
+            message: 'Limite d\'email atteinte. Veuillez réessayer plus tard ou contacter le support.' 
+          };
+        }
+        
+        // Message générique pour les autres erreurs
         return { 
           success: false, 
-          message: error.message || 'Email ou mot de passe invalide' 
+          message: error.message || 'Erreur de connexion. Veuillez réessayer.' 
         };
       }
 
-      return { success: true };
+      return { success: true, user: data.user };
     } catch (error) {
       console.error('Login error:', error);
       return { 
         success: false, 
-        message: error.message || 'Email ou mot de passe invalide' 
+        message: 'Erreur de connexion. Veuillez réessayer.' 
       };
     }
   };
@@ -199,35 +208,30 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  const updateProfile = async (userId, data) => {
+  const updateProfile = async (updates) => {
     try {
-      // Ne pas mettre à jour l'email via cette fonction
-      const { email, ...profileData } = data;
+      const { data: { user } } = await supabase.auth.getUser();
       
-      const { data: updated, error } = await supabase
+      if (!user) {
+        return { success: false, message: 'Utilisateur non connecté' };
+      }
+
+      const { data, error } = await supabase
         .from('users')
-        .update(profileData)
-        .eq('id', userId)
+        .update(updates)
+        .eq('id', user.id)
         .select()
         .single();
       
       if (error) {
-        console.error('Update profile error:', error);
         return { 
           success: false, 
           message: error.message || 'Échec de la mise à jour du profil' 
         };
       }
       
-      // Recharger les données complètes de l'utilisateur depuis Supabase
-      const { data: freshUser } = await supabase
-        .from('users')
-        .select('*')
-        .eq('id', userId)
-        .single();
-      
-      setCurrentUser(freshUser);
-      return { success: true, user: freshUser };
+      setCurrentUser(prev => ({ ...prev, ...data }));
+      return { success: true, data };
     } catch (error) {
       console.error('Update profile error:', error);
       return { 
