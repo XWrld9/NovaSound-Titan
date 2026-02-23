@@ -171,17 +171,11 @@ export const AuthProvider = ({ children }) => {
     try {
       console.log('Tentative de connexion pour:', email);
       
-      // Timeout plus long pour éviter les faux timeouts
-      const loginPromise = supabase.auth.signInWithPassword({
+      // Connexion simple sans timeout manuel (Supabase gère ça nativement)
+      const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password
       });
-      
-      const timeoutPromise = new Promise((_, reject) => 
-        setTimeout(() => reject(new Error('Connection timeout - Vérifiez votre connexion internet')), 30000)
-      );
-      
-      const { data, error } = await Promise.race([loginPromise, timeoutPromise]);
       
       console.log('Résultat connexion:', { data, error });
       
@@ -218,13 +212,6 @@ export const AuthProvider = ({ children }) => {
           };
         }
         
-        if (error.message?.includes('timeout') || error.message?.includes('Timeout')) {
-          return { 
-            success: false, 
-            message: 'Connexion trop lente. Vérifiez votre connexion internet et réessayez.' 
-          };
-        }
-        
         return { 
           success: false, 
           message: error.message || 'Erreur de connexion. Veuillez réessayer.' 
@@ -238,6 +225,38 @@ export const AuthProvider = ({ children }) => {
         };
       }
 
+      // Vérifier et créer le profil utilisateur si nécessaire
+      try {
+        const { data: profile, error: profileError } = await supabase
+          .from('users')
+          .select('*')
+          .eq('id', data.user.id)
+          .single();
+        
+        if (profileError && profileError.code === 'PGRST116') {
+          // Le profil n'existe pas, le créer
+          console.log('Création du profil utilisateur pour:', data.user.email);
+          const { error: createError } = await supabase
+            .from('users')
+            .insert([
+              {
+                id: data.user.id,
+                email: data.user.email,
+                username: data.user.user_metadata?.username || data.user.email.split('@')[0],
+                created_at: new Date().toISOString()
+              }
+            ]);
+          
+          if (createError) {
+            console.error('Erreur création profil:', createError);
+            // Ne pas bloquer la connexion pour ça
+          }
+        }
+      } catch (profileErr) {
+        console.error('Erreur vérification profil:', profileErr);
+        // Ne pas bloquer la connexion
+      }
+
       return { 
         success: true, 
         message: 'Connexion réussie!' 
@@ -245,14 +264,6 @@ export const AuthProvider = ({ children }) => {
       
     } catch (error) {
       console.error('Login error:', error);
-      
-      if (error.message?.includes('timeout') || error.message?.includes('Timeout')) {
-        return { 
-          success: false, 
-          message: 'Connexion timeout. Vérifiez votre connexion internet et réessayez.' 
-        };
-      }
-      
       return { 
         success: false, 
         message: error.message || 'Erreur de connexion. Veuillez réessayer.' 
