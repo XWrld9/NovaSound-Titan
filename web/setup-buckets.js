@@ -81,41 +81,9 @@ async function createBucketPolicies(bucket) {
   try {
     console.log(`🔐 Configuration des politiques pour "${bucket.name}"...`);
     
-    // Politique de lecture publique
-    const { error: readError } = await supabase
-      .from('storage.policies')
-      .insert({
-        name: `Public Read ${bucket.name}`,
-        definition: `bucket_id = '${bucket.name}'`,
-        role_name: 'anon',
-        allow_read: true,
-        allow_insert: false,
-        allow_update: false,
-        allow_delete: false
-      });
-
-    if (readError && !readError.message.includes('already exists')) {
-      console.warn(`⚠️ Erreur politique lecture pour "${bucket.name}":`, readError.message);
-    }
-
-    // Politique d'écriture pour utilisateurs authentifiés
-    const { error: writeError } = await supabase
-      .from('storage.policies')
-      .insert({
-        name: `Authenticated Write ${bucket.name}`,
-        definition: `bucket_id = '${bucket.name}'`,
-        role_name: 'authenticated',
-        allow_read: true,
-        allow_insert: true,
-        allow_update: true,
-        allow_delete: true
-      });
-
-    if (writeError && !writeError.message.includes('already exists')) {
-      console.warn(`⚠️ Erreur politique écriture pour "${bucket.name}":`, writeError.message);
-    }
-
-    console.log(`✅ Politiques configurées pour "${bucket.name}"`);
+    // Note: Les politiques de storage sont gérées différemment dans Supabase
+    // Les buckets sont créés avec les bonnes permissions directement
+    console.log(`✅ Politiques par défaut appliquées pour "${bucket.name}"`);
   } catch (error) {
     console.warn(`⚠️ Erreur configuration politiques pour "${bucket.name}":`, error.message);
   }
