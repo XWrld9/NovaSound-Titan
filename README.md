@@ -102,7 +102,11 @@ npm run dev
    SUPABASE_SERVICE_KEY=votre-clé-service  # Pour créer les buckets
    ```
 3. **Exécutez le script SQL complet** dans `setup-supabase.sql`
-4. **Créez les buckets automatiquement** avec le script :
+4. **Installez les dépendances** (une seule fois) :
+   ```bash
+   npm install
+   ```
+5. **Créez les buckets automatiquement** avec le script :
    ```bash
    npm run setup:buckets
    ```
