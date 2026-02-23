@@ -234,6 +234,44 @@ La base de données est configurée avec les tables :
 - Système de likes avec animations
 - Profil utilisateur avec tous les onglets
 - Login/signup améliorés avec gestion d'erreurs
+- 📰 **Système de news communautaire** complet
+
+## 📰 Système de News Communautaire
+
+### 🎯 Fonctionnalités Actuelles
+- ✅ **Création de news** par les utilisateurs authentifiés
+- ✅ **Affichage chronologique** des 50 dernières news
+- ✅ **Interface moderne** avec animations Framer Motion
+- ✅ **Formulaire riche** avec validation
+- ✅ **Sécurité RLS** sur toutes les opérations
+- ✅ **Compteurs de likes** intégrés
+
+### 📝 Contenu des News
+- **Titre** : Accroche percutante (max 200 caractères)
+- **Contenu** : Texte riche avec formatage
+- **Auteur** : Profil de l'utilisateur avec avatar
+- **Date** : Timestamp automatique
+- **Likes** : Compteur d'appréciation
+
+### 🔐 Permissions et Sécurité
+- **Lecture** : Tous les utilisateurs (public)
+- **Création** : Utilisateurs authentifiés uniquement
+- **Modification** : Auteur de la news uniquement
+- **Suppression** : Auteur et administrateurs
+
+### 🚀 Utilisation Recommandée
+- **Annonces** : Nouveautés de la plateforme
+- **Événements** : Concerts, sorties, collaborations
+- **Tutoriels** : Guides pour les artistes
+- **Communauté** : Partages et discussions
+
+### 📈 Roadmap News (Version 2.1)
+- 🎯 **Likes interactifs** sur les news
+- 💬 **Commentaires** threaded
+- 📷 **Images** dans les news
+- 🏷️ **Catégories** (Annonces, Événements, Tutoriels...)
+- ⭐ **News épinglées** et mises en avant
+- 🔔 **Notifications** pour nouvelles news
 
 ## 🗺️ Roadmap & Versions Futures
 
