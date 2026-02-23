@@ -72,6 +72,11 @@ NovaSound-TITAN LUX n'est pas juste une plateforme de streaming, c'est un écosy
 
 ## 📦 Installation
 
+### Prérequis Système
+- **Node.js 24.x** ou supérieur (requis pour Vite 4.x)
+- **npm 9.x** ou supérieur
+- **Git** pour cloner le repository
+
 ### Développement Local
 ```bash
 git clone https://github.com/XWrld9/NovaSound-Titan.git
@@ -80,6 +85,13 @@ cd web
 npm install
 npm run dev
 ```
+
+### ⚠️ Points Critiques Avant Déploiement
+1. **Node.js Version** : Vérifiez `node --version` (doit être 24.x)
+2. **Variables d'environnement** : Toutes les 3 clés sont OBLIGATOIRES
+3. **Buckets Storage** : Doivent être créés AVANT le premier upload
+4. **Politiques RLS** : Activer manuellement si script échoue
+5. **Domaine Supabase** : Configurer les redirect URLs après déploiement
 
 ### Configuration Supabase
 1. Créez un projet sur [supabase.com](https://supabase.com)
@@ -219,6 +231,31 @@ La base de données est configurée avec les tables :
 - Profil utilisateur avec tous les onglets
 - Login/signup améliorés avec gestion d'erreurs
 
+## 🗺️ Roadmap & Versions Futures
+
+### Version 2.1 (Prochainement)
+- 🎵 **Player avancé** - Playlist, shuffle, repeat
+- 💬 **Commentaires** - Sur les chansons et profils
+- 🔔 **Notifications push** - Nouveaux followers et likes
+- 📊 **Analytics détaillées** - Stats artistes en temps réel
+
+### Version 2.2 (Q2 2026)
+- 🎥 **Live streaming** - Concerts en direct
+- 🤝 **Collaborations** - Duos entre artistes
+- 💰 **Monétisation** - Tips et abonnements
+- 🌍 **Multi-langues** - Internationalisation
+
+### Version 3.0 (2026)
+- 📱 **App mobile native** - iOS et Android
+- 🎧 **Podcasts intégrés** - Émissions et interviews
+- 🤖 **IA Music** - Recommandations intelligentes
+- 🎪 **Événements virtuels** - Concerts online
+
+### 🐛 Bugs Connus & En Cours
+- ⚠️ **Upload gros fichiers** > 50MB (limitation Supabase)
+- ⚠️ **Streaming sur mobile** - Optimisation en cours
+- ⚠️ **Recherche avancée** - Filtrage en développement
+
 ## �📞 Contact & Équipe
 
 ### Équipe Fondatrice
@@ -230,7 +267,87 @@ La base de données est configurée avec les tables :
 - 🎯 **Stratégique** : Contactez M. Tindo Arthur
 - 🌐 **Plateforme** : [NovaSound-TITAN LUX](https://nova-sound-titan.vercel.app)
 
-## 📄 Licence
+## � Dépannage & Erreurs Courantes
+
+### ❌ Erreurs Fréquentes
+
+**Build échoue**
+```bash
+# Vérifier version Node.js
+node --version  # Doit être 24.x
+
+# Nettoyer et réinstaller
+rm -rf node_modules package-lock.json
+npm install
+```
+
+**Variables d'environnement non trouvées**
+```bash
+# Créer fichier .env
+echo "VITE_SUPABASE_URL=votre-url" > .env
+echo "VITE_SUPABASE_ANON_KEY=votre-clé" >> .env
+echo "SUPABASE_SERVICE_KEY=votre-clé-service" >> .env
+```
+
+**Buckets non créés automatiquement**
+```bash
+# Vérifier clés Supabase
+node -e "console.log(process.env.SUPABASE_SERVICE_KEY)"
+
+# Créer manuellement si échoue
+npm run setup:buckets
+```
+
+**Upload d'avatar échoue**
+- ✅ Vérifier bucket `avatars` existe
+- ✅ Vérifier politiques RLS activées
+- ✅ Vérifier taille fichier < 5MB
+
+**Login/Signup ne fonctionne pas**
+- ✅ Vérifier email confirmation dans Supabase
+- ✅ Vérifier redirect URLs configurées
+- ✅ Vérifier RLS policies actives
+
+### 🚨 Solutions Rapides
+
+**Problème de CORS**
+```javascript
+// Dans Supabase Dashboard > Settings > API
+// Ajouter votre domaine Vercel dans les CORS allowed origins
+```
+
+**Problème de routing 404**
+```javascript
+// L'application utilise HashRouter (#/)
+// URLs correctes : https://votre-domaine.com/#/profile
+```
+
+**Problème de performance**
+```bash
+# Vider cache et rebuild
+npm run build --force
+```
+
+## 📞 Support & Aide
+
+### 🆘 Obtenir de l'Aide
+- **Documentation Supabase** : [supabase.com/docs](https://supabase.com/docs)
+- **Documentation Vercel** : [vercel.com/docs](https://vercel.com/docs)
+- **Issues GitHub** : [Signaler un bug](https://github.com/XWrld9/NovaSound-Titan/issues)
+
+### 📧 Contact Technique
+- **Développeur** : M. Tetang Tanekou M.N (EL_AX)
+- **Email** : elax@novasound-titan.com
+- **GitHub** : [@EL_AX](https://github.com/EL_AX)
+
+### ⏰ Temps de Réponse
+- **Support technique** : 24-48h
+- **Bugs critiques** : < 24h
+- **Fonctionnalités** : Selon roadmap
+
+---
+
+## �📄 Licence
 
 MIT License - voir [LICENSE](LICENSE)
 
