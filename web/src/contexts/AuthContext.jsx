@@ -28,53 +28,58 @@ export const AuthProvider = ({ children }) => {
   };
 
   useEffect(() => {
-    // Vérifier l'utilisateur actuel au montage
-    const initializeAuth = async () => {
-      try {
-        const { data: { user } } = await supabase.auth.getUser();
-        if (user) {
-          // Récupérer les données du profil utilisateur
-          const { data: profile } = await supabase
-            .from('users')
-            .select('*')
-            .eq('id', user.id)
-            .single();
-          
-          setCurrentUser({ ...user, ...profile });
-        }
-      } catch (error) {
-        console.error('Error initializing auth:', error);
-      } finally {
-        setInitialLoading(false);
-      }
-    };
-
-    initializeAuth();
-
     // Écouter les changements d'état d'authentification
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      console.log('🔄 Auth state change:', event, session?.user?.email);
+      
       if (session?.user) {
-        // Récupérer les données du profil utilisateur de manière asynchrone
-        // Ne pas bloquer le login, charger en arrière-plan
-        setCurrentUser({ ...session.user });
-        
-        // Récupérer le profil en arrière-plan
+        // Utilisateur connecté
         try {
-          const { data: profile } = await supabase
+          // Récupérer les données du profil utilisateur
+          const { data: profile, error: profileError } = await supabase
             .from('users')
             .select('*')
             .eq('id', session.user.id)
             .single();
           
-          if (profile) {
-            setCurrentUser(prev => ({ ...prev, ...profile }));
+          if (profileError) {
+            console.error('Erreur profil:', profileError);
+            // Créer le profil s'il n'existe pas
+            if (profileError.code === 'PGRST116') {
+              console.log('🔧 Création profil manquant...');
+              const { error: createError } = await supabase
+                .from('users')
+                .insert([
+                  {
+                    id: session.user.id,
+                    email: session.user.email,
+                    username: session.user.user_metadata?.username || session.user.email.split('@')[0],
+                    created_at: new Date().toISOString()
+                  }
+                ]);
+              
+              if (createError) {
+                console.error('Erreur création profil:', createError);
+              }
+            }
           }
+          
+          // Mettre à jour l'utilisateur avec ou sans profil
+          setCurrentUser({ ...session.user, ...(profile || {}) });
+          console.log('✅ Utilisateur connecté et profil chargé');
+          
         } catch (error) {
-          console.error('Erreur lors de la récupération du profil:', error);
+          console.error('Erreur chargement profil:', error);
+          // Mettre quand même l'utilisateur sans profil
+          setCurrentUser({ ...session.user });
         }
       } else {
+        // Utilisateur déconnecté
+        console.log('👋 Utilisateur déconnecté');
         setCurrentUser(null);
       }
+      
+      // Toujours arrêter le loading après traitement
       setInitialLoading(false);
     });
 
@@ -222,7 +227,10 @@ export const AuthProvider = ({ children }) => {
         };
       }
 
-      console.log('✅ CONNEXION RÉUSSIE !');
+      console.log('✅ CONNEXION RÉUSSIE ! Session persistante activée.');
+      
+      // Forcer la mise à jour de l'état immédiatement
+      setCurrentUser(data.user);
       
       // Créer le profil si nécessaire (simple et direct)
       try {
@@ -250,6 +258,9 @@ export const AuthProvider = ({ children }) => {
           } else {
             console.log('✅ Profil créé');
           }
+        } else if (profile) {
+          // Mettre à jour avec les données du profil
+          setCurrentUser({ ...data.user, ...profile });
         }
       } catch (profileErr) {
         console.error('⚠️ Erreur profil (non bloquant):', profileErr);

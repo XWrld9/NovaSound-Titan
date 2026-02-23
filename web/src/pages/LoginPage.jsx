@@ -36,7 +36,10 @@ const LoginPage = () => {
     
     if (result.success) {
       console.log('Login réussi, redirection vers /profile');
-      navigate('/profile');
+      // Petite attente pour s'assurer que l'état est mis à jour
+      setTimeout(() => {
+        navigate('/profile');
+      }, 500);
     } else {
       console.log('Login échoué:', result.message);
       setError(result.message);
