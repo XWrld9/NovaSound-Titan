@@ -25,6 +25,13 @@ const AudioPlayer = ({ currentSong, playlist = [], onNext, onPrevious }) => {
   const [isFollowing, setIsFollowing] = useState(false);
   const [followId, setFollowId] = useState(null);
 
+  // Synchroniser le volume avec l'élément audio
+  useEffect(() => {
+    if (audioRef.current) {
+      audioRef.current.volume = isMuted ? 0 : volume / 100;
+    }
+  }, [volume, isMuted]);
+
   useEffect(() => {
     if (audioRef.current && currentSong?.audio_url) {
       audioRef.current.src = currentSong.audio_url;

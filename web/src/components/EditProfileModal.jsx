@@ -5,137 +5,88 @@ import { useAuth } from '@/contexts/AuthContext';
 
 const EditProfileModal = ({ isOpen, onClose }) => {
   const { currentUser, updateProfile, supabase } = useAuth();
-  const [formData, setFormData] = useState({
-    username: '',
-    email: '',
-    bio: ''
-  });
+  const [formData, setFormData] = useState({ username: '', bio: '' });
   const [avatarFile, setAvatarFile] = useState(null);
   const [avatarPreview, setAvatarPreview] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
 
   useEffect(() => {
     if (currentUser && isOpen) {
       setFormData({
         username: currentUser.username || '',
-        email: currentUser.email || '',
         bio: currentUser.bio || ''
       });
       setAvatarPreview(currentUser.avatar_url || '');
+      setError('');
+      setSuccess('');
     }
   }, [currentUser, isOpen]);
 
   const handleInputChange = (e) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({
-      ...prev,
-      [name]: value
-    }));
+    setFormData(prev => ({ ...prev, [e.target.name]: e.target.value }));
   };
 
   const handleAvatarChange = (e) => {
     const file = e.target.files[0];
-    if (file) {
-      // Validation
-      if (file.size > 5 * 1024 * 1024) {
-        alert('L\'avatar ne doit pas dépasser 5MB');
-        return;
-      }
-
-      if (!file.type.startsWith('image/')) {
-        alert('Veuillez sélectionner une image valide');
-        return;
-      }
-
-      setAvatarFile(file);
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setAvatarPreview(reader.result);
-      };
-      reader.readAsDataURL(file);
+    if (!file) return;
+    if (file.size > 5 * 1024 * 1024) {
+      setError('L\'avatar ne doit pas dépasser 5 MB');
+      return;
     }
+    if (!file.type.startsWith('image/')) {
+      setError('Veuillez sélectionner une image valide');
+      return;
+    }
+    setAvatarFile(file);
+    setError('');
+    const reader = new FileReader();
+    reader.onloadend = () => setAvatarPreview(reader.result);
+    reader.readAsDataURL(file);
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setIsLoading(true);
+    setError('');
+    setSuccess('');
 
     try {
       let avatarUrl = currentUser.avatar_url;
 
-      if (!avatarFile && !formData.username && !formData.bio) {
-        alert('Aucune modification à enregistrer');
-        setIsLoading(false);
-        return;
-      }
-
-      // Upload de l'avatar si un fichier est sélectionné
+      // Upload avatar si sélectionné
       if (avatarFile) {
-        // Rafraîchir la session pour éviter les locks
-        await supabase.auth.refreshSession();
-        
         const fileExt = avatarFile.name.split('.').pop();
         const fileName = `${currentUser.id}-${Date.now()}.${fileExt}`;
 
-        // Utiliser le bucket 'avatars' dédié avec retry pour éviter le lock
-        let uploadData, uploadError;
-        let retryCount = 0;
-        const maxRetries = 3;
-
-        do {
-          const { data, error } = await supabase.storage
-            .from('avatars')
-            .upload(`${fileName}`, avatarFile, {
-              cacheControl: '3600',
-              upsert: true
-            });
-          
-          uploadData = data;
-          uploadError = error;
-          retryCount++;
-
-          if (uploadError && uploadError.message?.includes('Navigator LockManager')) {
-            // Attendre avant de réessayer
-            await new Promise(resolve => setTimeout(resolve, 1000 * retryCount));
-          }
-        } while (uploadError && uploadError.message?.includes('Navigator LockManager') && retryCount < maxRetries);
+        const { error: uploadError } = await supabase.storage
+          .from('avatars')
+          .upload(fileName, avatarFile, { cacheControl: '3600', upsert: true });
 
         if (uploadError) {
-          console.error('Upload error:', uploadError);
-          alert('Erreur lors de l\'upload de l\'avatar: ' + uploadError.message);
+          setError('Erreur upload avatar : ' + uploadError.message);
           setIsLoading(false);
           return;
-        } else {
-          const { data: { publicUrl } } = supabase.storage
-            .from('avatars')
-            .getPublicUrl(`${fileName}`);
-
-          avatarUrl = publicUrl;
         }
+
+        const { data: { publicUrl } } = supabase.storage.from('avatars').getPublicUrl(fileName);
+        avatarUrl = publicUrl;
       }
 
-      // Mise à jour du profil
-      const updateData = {
-        username: formData.username,
-        bio: formData.bio
-      };
+      const updateData = { username: formData.username, bio: formData.bio };
+      if (avatarUrl !== currentUser.avatar_url) updateData.avatar_url = avatarUrl;
 
-      // N'inclure avatar_url que si un nouvel avatar a été uploadé
-      if (avatarUrl !== currentUser.avatar_url) {
-        updateData.avatar_url = avatarUrl;
-      }
+      const { success: ok, message } = await updateProfile(updateData);
 
-      const { success, message, data } = await updateProfile(updateData);
-
-      if (success) {
-        alert('Profil mis à jour avec succès!');
-        onClose();
+      if (ok) {
+        setSuccess('Profil mis à jour avec succès !');
+        setTimeout(onClose, 1200);
       } else {
-        alert(message);
+        setError(message || 'Erreur lors de la mise à jour');
       }
-    } catch (error) {
-      console.error('Erreur lors de la mise à jour du profil:', error);
-      alert('Une erreur est survenue lors de la mise à jour du profil');
+    } catch (err) {
+      setError('Une erreur est survenue : ' + err.message);
     } finally {
       setIsLoading(false);
     }
@@ -149,36 +100,48 @@ const EditProfileModal = ({ isOpen, onClose }) => {
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
-        className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
+        className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4"
       >
         <motion.div
-          initial={{ scale: 0.9, opacity: 0 }}
-          animate={{ scale: 1, opacity: 1 }}
-          exit={{ scale: 0.9, opacity: 0 }}
-          className="bg-white rounded-lg p-6 w-full max-w-md mx-4"
+          initial={{ scale: 0.9, opacity: 0, y: 20 }}
+          animate={{ scale: 1, opacity: 1, y: 0 }}
+          exit={{ scale: 0.9, opacity: 0, y: 20 }}
+          className="bg-gray-900 border border-cyan-500/30 rounded-2xl p-6 w-full max-w-md shadow-2xl"
         >
-          <div className="flex justify-between items-center mb-4">
-            <h2 className="text-xl font-bold text-gray-800">Modifier le profil</h2>
+          {/* Header */}
+          <div className="flex justify-between items-center mb-6">
+            <h2 className="text-xl font-bold text-white">Modifier le profil</h2>
             <button
               onClick={onClose}
-              className="text-gray-500 hover:text-gray-700"
+              className="p-2 rounded-lg text-gray-400 hover:text-white hover:bg-white/10 transition-all"
             >
               <X className="w-5 h-5" />
             </button>
           </div>
 
-          <form onSubmit={handleSubmit} className="space-y-4">
+          {error && (
+            <div className="mb-4 p-3 bg-red-500/10 border border-red-500/30 rounded-lg text-red-400 text-sm">
+              {error}
+            </div>
+          )}
+          {success && (
+            <div className="mb-4 p-3 bg-cyan-500/10 border border-cyan-500/30 rounded-lg text-cyan-400 text-sm">
+              {success}
+            </div>
+          )}
+
+          <form onSubmit={handleSubmit} className="space-y-5">
             {/* Avatar */}
             <div className="flex flex-col items-center">
-              <div className="relative">
+              <div className="relative mb-2">
                 <img
-                  src={avatarPreview || `https://ui-avatars.com/api/?name=${formData.username}&background=random`}
+                  src={avatarPreview || '/profil par defaut.png'}
                   alt="Avatar"
-                  className="w-24 h-24 rounded-full object-cover border-4 border-gray-200"
+                  className="w-24 h-24 rounded-full object-cover border-2 border-cyan-500/50"
                 />
                 <label
                   htmlFor="avatar-upload"
-                  className="absolute bottom-0 right-0 bg-blue-500 text-white p-2 rounded-full cursor-pointer hover:bg-blue-600 transition-colors"
+                  className="absolute bottom-0 right-0 bg-gradient-to-r from-cyan-500 to-magenta-500 text-white p-2 rounded-full cursor-pointer hover:opacity-90 transition-opacity"
                 >
                   <Upload className="w-4 h-4" />
                 </label>
@@ -190,15 +153,13 @@ const EditProfileModal = ({ isOpen, onClose }) => {
                   className="hidden"
                 />
               </div>
-              <p className="text-sm text-gray-500 mt-2">
-                Taille max: 5MB, Formats: JPG, PNG, GIF
-              </p>
+              <p className="text-xs text-gray-500">Max 5 MB — JPG, PNG, GIF</p>
             </div>
 
             {/* Username */}
             <div>
-              <label className="flex items-center gap-2 text-sm font-medium text-gray-700 mb-1">
-                <User className="w-4 h-4" />
+              <label className="flex items-center gap-2 text-sm font-medium text-gray-300 mb-2">
+                <User className="w-4 h-4 text-cyan-400" />
                 Nom d'utilisateur
               </label>
               <input
@@ -207,60 +168,55 @@ const EditProfileModal = ({ isOpen, onClose }) => {
                 value={formData.username}
                 onChange={handleInputChange}
                 required
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-4 py-2.5 bg-gray-800 border border-cyan-500/30 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-cyan-400 focus:ring-2 focus:ring-cyan-400/20 transition-all"
               />
             </div>
 
-            {/* Email - Read-only */}
+            {/* Email readonly */}
             <div>
-              <label className="flex items-center gap-2 text-sm font-medium text-gray-700 mb-1">
-                <Mail className="w-4 h-4" />
-                Email (non modifiable)
+              <label className="flex items-center gap-2 text-sm font-medium text-gray-300 mb-2">
+                <Mail className="w-4 h-4 text-cyan-400" />
+                Email <span className="text-gray-500 text-xs">(non modifiable)</span>
               </label>
               <input
                 type="email"
-                name="email"
-                value={formData.email}
+                value={currentUser?.email || ''}
                 disabled
-                className="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-100 text-gray-500 cursor-not-allowed"
+                className="w-full px-4 py-2.5 bg-gray-800/50 border border-gray-700 rounded-lg text-gray-500 cursor-not-allowed"
               />
-              <p className="text-xs text-gray-500 mt-1">
-                Pour modifier l'email, contactez le support
-              </p>
             </div>
 
             {/* Bio */}
             <div>
-              <label className="flex items-center gap-2 text-sm font-medium text-gray-700 mb-1">
-                <FileText className="w-4 h-4" />
+              <label className="flex items-center gap-2 text-sm font-medium text-gray-300 mb-2">
+                <FileText className="w-4 h-4 text-cyan-400" />
                 Biographie
               </label>
               <textarea
                 name="bio"
                 value={formData.bio}
                 onChange={handleInputChange}
-                rows={4}
+                rows={3}
                 maxLength={500}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-4 py-2.5 bg-gray-800 border border-cyan-500/30 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-cyan-400 focus:ring-2 focus:ring-cyan-400/20 transition-all resize-none"
+                placeholder="Parle de toi..."
               />
-              <p className="text-sm text-gray-500">
-                {formData.bio.length}/500 caractères
-              </p>
+              <p className="text-xs text-gray-500 mt-1 text-right">{formData.bio.length}/500</p>
             </div>
 
-            {/* Boutons */}
-            <div className="flex gap-3 pt-4">
+            {/* Buttons */}
+            <div className="flex gap-3 pt-2">
               <button
                 type="button"
                 onClick={onClose}
-                className="flex-1 px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50"
+                className="flex-1 px-4 py-2.5 border border-gray-700 rounded-lg text-gray-400 hover:text-white hover:border-gray-600 transition-all"
               >
                 Annuler
               </button>
               <button
                 type="submit"
                 disabled={isLoading}
-                className="flex-1 px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 disabled:opacity-50"
+                className="flex-1 px-4 py-2.5 bg-gradient-to-r from-cyan-500 to-magenta-500 hover:from-cyan-600 hover:to-magenta-600 text-white rounded-lg font-medium transition-all disabled:opacity-60"
               >
                 {isLoading ? 'Enregistrement...' : 'Enregistrer'}
               </button>

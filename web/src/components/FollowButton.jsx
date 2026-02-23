@@ -22,99 +22,68 @@ const FollowButton = ({ userId, initialFollowing = false, initialFollowers = 0 }
         .select('id')
         .eq('follower_id', currentUser.id)
         .eq('following_id', userId)
-        .single();
-      
+        .maybeSingle();
       setIsFollowing(!!data);
-    } catch (error) {
+    } catch {
       setIsFollowing(false);
     }
   };
 
   const handleFollow = async () => {
-    if (!currentUser) {
-      alert('Veuillez vous connecter pour suivre un artiste');
-      return;
-    }
+    if (!currentUser || currentUser.id === userId || isLoading) return;
 
-    if (currentUser.id === userId) {
-      return; // Ne peut pas se suivre soi-même
-    }
-
+    // Optimistic update
+    const wasFollowing = isFollowing;
+    setIsFollowing(!wasFollowing);
+    setFollowersCount(prev => wasFollowing ? prev - 1 : prev + 1);
     setIsLoading(true);
-    try {
-      // Vérifier si déjà follow
-      const { data: existingFollow } = await supabase
-        .from('follows')
-        .select('id')
-        .eq('follower_id', currentUser.id)
-        .eq('following_id', userId)
-        .single();
 
-      if (existingFollow) {
-        // Unfollow
+    try {
+      if (wasFollowing) {
         const { error } = await supabase
           .from('follows')
           .delete()
           .eq('follower_id', currentUser.id)
           .eq('following_id', userId);
-        
         if (error) throw error;
-        
-        setIsFollowing(false);
-        setFollowersCount(prev => prev - 1);
       } else {
-        // Follow
-        const { data, error } = await supabase
+        const { error } = await supabase
           .from('follows')
-          .insert({
-            follower_id: currentUser.id,
-            following_id: userId
-          })
-          .select()
-          .single();
-        
+          .insert({ follower_id: currentUser.id, following_id: userId });
         if (error) throw error;
-        
-        setIsFollowing(true);
-        setFollowersCount(prev => prev + 1);
       }
     } catch (error) {
-      console.error('Erreur lors du follow:', error);
-      alert('Une erreur est survenue');
+      // Rollback
+      setIsFollowing(wasFollowing);
+      setFollowersCount(prev => wasFollowing ? prev + 1 : prev - 1);
+      console.error('Erreur follow:', error);
     } finally {
       setIsLoading(false);
     }
   };
 
-  // Ne pas afficher le bouton si c'est le profil de l'utilisateur connecté
-  if (currentUser && currentUser.id === userId) {
-    return null;
-  }
+  if (currentUser && currentUser.id === userId) return null;
 
   return (
     <motion.button
       onClick={handleFollow}
       disabled={isLoading}
-      className={`flex items-center gap-2 px-4 py-2 rounded-full transition-all ${
-        isFollowing 
-          ? 'bg-gray-500 text-white hover:bg-gray-600' 
-          : 'bg-blue-500 text-white hover:bg-blue-600'
+      className={`flex items-center gap-2 px-4 py-2 rounded-full font-medium transition-all disabled:opacity-60 ${
+        isFollowing
+          ? 'bg-gray-700 text-white hover:bg-gray-600 border border-gray-600'
+          : 'bg-gradient-to-r from-cyan-500 to-magenta-500 text-white hover:opacity-90'
       }`}
-      whileHover={{ scale: 1.05 }}
-      whileTap={{ scale: 0.95 }}
+      whileHover={{ scale: 1.03 }}
+      whileTap={{ scale: 0.97 }}
     >
       {isFollowing ? (
-        <>
-          <UserMinus className="w-5 h-5" />
-          <span className="font-medium">Ne plus suivre</span>
-        </>
+        <><UserMinus className="w-4 h-4" /><span>Ne plus suivre</span></>
       ) : (
-        <>
-          <UserPlus className="w-5 h-5" />
-          <span className="font-medium">Suivre</span>
-        </>
+        <><UserPlus className="w-4 h-4" /><span>Suivre</span></>
       )}
-      <span className="text-sm">({followersCount})</span>
+      {followersCount > 0 && (
+        <span className="text-xs opacity-75">({followersCount})</span>
+      )}
     </motion.button>
   );
 };

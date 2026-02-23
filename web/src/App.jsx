@@ -3,10 +3,9 @@ import { Route, Routes, HashRouter as Router } from 'react-router-dom';
 import { AuthProvider } from '@/contexts/AuthContext';
 import { HelmetProvider } from 'react-helmet-async';
 import { DialogProvider } from '@/components/ui/Dialog';
-import { ToastContainer } from '@/components/ui/Toast';
+import { ToastProvider } from '@/components/ui/Toast';
 import ScrollToTop from '@/components/ScrollToTop';
 import ProtectedRoute from '@/components/ProtectedRoute';
-import AuthDebugger from '@/components/AuthDebugger';
 import HomePage from '@/pages/HomePage';
 import LoginPage from '@/pages/LoginPage';
 import SignupPage from '@/pages/SignupPage';
@@ -23,54 +22,32 @@ import ModerationPanel from '@/pages/ModerationPanel.jsx';
 function App() {
   return (
     <HelmetProvider>
-      <AuthProvider>
-        <DialogProvider>
-          <Router>
-            <ScrollToTop />
-            <Routes>
-              <Route path="/" element={<HomePage />} />
-              <Route path="/login" element={<LoginPage />} />
-              <Route path="/signup" element={<SignupPage />} />
-              <Route path="/explorer" element={<ExplorerPage />} />
-              <Route path="/news" element={<NewsPage />} />
-              <Route path="/artist/:id" element={<ArtistProfilePage />} />
-              <Route path="/song/:id" element={<ExplorerPage />} />
-              
-              {/* Legal Pages */}
-              <Route path="/privacy" element={<PrivacyPolicy />} />
-              <Route path="/terms" element={<TermsOfService />} />
-              <Route path="/copyright" element={<CopyrightInfo />} />
-              
-              <Route
-                path="/upload"
-                element={
-                  <ProtectedRoute>
-                    <MusicUploadPage />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/profile"
-                element={
-                  <ProtectedRoute>
-                    <UserProfilePage />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/moderation"
-                element={
-                  <ProtectedRoute>
-                    <ModerationPanel />
-                  </ProtectedRoute>
-                }
-              />
-            </Routes>
-          </Router>
-          <ToastContainer />
-          <AuthDebugger />
-        </DialogProvider>
-      </AuthProvider>
+      {/* DialogProvider > ToastProvider > AuthProvider
+          Ordre important : Dialog et Toast doivent être disponibles DANS AuthProvider */}
+      <DialogProvider>
+        <ToastProvider>
+          <AuthProvider>
+            <Router>
+              <ScrollToTop />
+              <Routes>
+                <Route path="/" element={<HomePage />} />
+                <Route path="/login" element={<LoginPage />} />
+                <Route path="/signup" element={<SignupPage />} />
+                <Route path="/explorer" element={<ExplorerPage />} />
+                <Route path="/news" element={<NewsPage />} />
+                <Route path="/artist/:id" element={<ArtistProfilePage />} />
+                <Route path="/song/:id" element={<ExplorerPage />} />
+                <Route path="/privacy" element={<PrivacyPolicy />} />
+                <Route path="/terms" element={<TermsOfService />} />
+                <Route path="/copyright" element={<CopyrightInfo />} />
+                <Route path="/upload" element={<ProtectedRoute><MusicUploadPage /></ProtectedRoute>} />
+                <Route path="/profile" element={<ProtectedRoute><UserProfilePage /></ProtectedRoute>} />
+                <Route path="/moderation" element={<ProtectedRoute><ModerationPanel /></ProtectedRoute>} />
+              </Routes>
+            </Router>
+          </AuthProvider>
+        </ToastProvider>
+      </DialogProvider>
     </HelmetProvider>
   );
 }

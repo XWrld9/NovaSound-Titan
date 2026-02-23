@@ -71,33 +71,33 @@ const MusicUploadPage = () => {
     try {
       setUploadProgress(50);
 
-      // 1) Upload audio to Supabase Storage
+      // 1) Upload audio → bucket "audio"
       const audioExt = audioFile.name.split('.').pop();
-      const audioPath = `songs/audio/${currentUser.id}-${Date.now()}.${audioExt}`;
+      const audioPath = `${currentUser.id}-${Date.now()}.${audioExt}`;
 
       const { error: audioUploadError } = await supabase.storage
-        .from('public')
+        .from('audio')
         .upload(audioPath, audioFile, { cacheControl: '3600', upsert: false });
       if (audioUploadError) throw audioUploadError;
 
       const { data: audioPublic } = supabase.storage
-        .from('public')
+        .from('audio')
         .getPublicUrl(audioPath);
 
       let albumCoverUrl = null;
 
-      // 2) Upload cover (optional)
+      // 2) Upload cover (optional) → bucket "covers"
       if (albumCover) {
         const coverExt = albumCover.name.split('.').pop();
-        const coverPath = `songs/covers/${currentUser.id}-${Date.now()}.${coverExt}`;
+        const coverPath = `${currentUser.id}-${Date.now()}.${coverExt}`;
 
         const { error: coverUploadError } = await supabase.storage
-          .from('public')
+          .from('covers')
           .upload(coverPath, albumCover, { cacheControl: '3600', upsert: false });
         if (coverUploadError) throw coverUploadError;
 
         const { data: coverPublic } = supabase.storage
-          .from('public')
+          .from('covers')
           .getPublicUrl(coverPath);
         albumCoverUrl = coverPublic?.publicUrl || null;
       }

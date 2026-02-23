@@ -1,29 +1,14 @@
-import React from 'react';
+import React, { createContext, useContext, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { CheckCircle, AlertCircle, Info, AlertTriangle, X } from 'lucide-react';
 
-// Styles pour les différents types de toasts - Style NovaSound
+const ToastContext = createContext(null);
+
 const toastStyles = {
-  success: {
-    bg: 'bg-gradient-to-r from-cyan-500 to-magenta-500',
-    icon: 'text-white',
-    border: 'border-cyan-500/30'
-  },
-  error: {
-    bg: 'bg-gradient-to-r from-red-500 to-rose-500',
-    icon: 'text-white',
-    border: 'border-red-500/30'
-  },
-  warning: {
-    bg: 'bg-gradient-to-r from-amber-500 to-orange-500',
-    icon: 'text-white',
-    border: 'border-amber-500/30'
-  },
-  info: {
-    bg: 'bg-gradient-to-r from-cyan-500 to-magenta-500',
-    icon: 'text-white',
-    border: 'border-cyan-500/30'
-  }
+  success: { bg: 'bg-gradient-to-r from-cyan-500 to-cyan-600', border: 'border-cyan-400/30' },
+  error:   { bg: 'bg-gradient-to-r from-red-500 to-rose-600',  border: 'border-red-400/30'  },
+  warning: { bg: 'bg-gradient-to-r from-amber-500 to-orange-500', border: 'border-amber-400/30' },
+  info:    { bg: 'bg-gradient-to-r from-cyan-500 to-magenta-500', border: 'border-cyan-400/30' }
 };
 
 const icons = {
@@ -33,168 +18,104 @@ const icons = {
   info: Info
 };
 
-export const Toast = ({ 
-  message, 
-  type = 'info', 
-  isVisible, 
-  onClose, 
-  duration = 3000,
-  action = null 
-}) => {
-  const style = toastStyles[type] || toastStyles.info;
-  const Icon = icons[type] || Info;
-  
-  React.useEffect(() => {
-    if (isVisible && duration > 0) {
-      const timer = setTimeout(() => {
-        onClose();
-      }, duration);
-      
-      return () => clearTimeout(timer);
-    }
-  }, [isVisible, duration, onClose]);
-  
-  return (
-    <AnimatePresence>
-      {isVisible && (
-        <motion.div
-          initial={{ opacity: 0, y: -100, scale: 0.8 }}
-          animate={{ opacity: 1, y: 0, scale: 1 }}
-          exit={{ opacity: 0, y: -100, scale: 0.8 }}
-          transition={{ 
-            duration: 0.3, 
-            ease: [0.4, 0, 0.2, 1] 
-          }}
-          className={`fixed top-4 right-4 z-50 ${style.bg} ${style.border} border rounded-xl shadow-2xl backdrop-blur-xl min-w-[320px] max-w-md`}
-        >
-          <div className="flex items-center gap-3 p-4">
-            {/* Icon */}
-            <div className="flex-shrink-0">
-              <Icon className="w-5 h-5" />
-            </div>
-            
-            {/* Message */}
-            <div className="flex-1 min-w-0">
-              <p className="text-white text-sm font-medium leading-relaxed">
-                {message}
-              </p>
-              {action && (
-                <button
-                  onClick={action.onClick}
-                  className="text-white/80 text-xs underline hover:text-white transition-colors mt-1"
-                >
-                  {action.label}
-                </button>
-              )}
-            </div>
-            
-            {/* Close button */}
-            <button
-              onClick={onClose}
-              className="flex-shrink-0 p-1 rounded-lg text-white/60 hover:text-white hover:bg-white/20 transition-all"
-            >
-              <X className="w-4 h-4" />
-            </button>
-          </div>
-          
-          {/* Progress bar */}
-          {duration > 0 && (
-            <motion.div
-              initial={{ width: '100%' }}
-              animate={{ width: '0%' }}
-              transition={{ duration: duration / 1000, ease: 'linear' }}
-              className="h-1 bg-white/20"
-            />
-          )}
-        </motion.div>
-      )}
-    </AnimatePresence>
-  );
-};
+// ─── Provider (wraps the app) ─────────────────────────────────────────────────
+export const ToastProvider = ({ children }) => {
+  const [toasts, setToasts] = useState([]);
 
-// Hook pour gérer les toasts
-export const useToast = () => {
-  const [toasts, setToasts] = React.useState([]);
-  
   const addToast = (message, type = 'info', options = {}) => {
     const id = Date.now() + Math.random();
-    const newToast = { 
-      id, 
-      message, 
-      type, 
-      isVisible: true,
-      ...options 
-    };
-    
-    setToasts(prev => [...prev, newToast]);
-    
-    // Auto-remove
-    if (options.duration !== 0) {
-      setTimeout(() => {
-        removeToast(id);
-      }, options.duration || 3000);
+    setToasts(prev => [...prev, { id, message, type, ...options }]);
+    const duration = options.duration ?? 3500;
+    if (duration > 0) {
+      setTimeout(() => removeToast(id), duration);
     }
-    
     return id;
   };
-  
-  const removeToast = (id) => {
-    setToasts(prev => 
-      prev.map(toast => 
-        toast.id === id ? { ...toast, isVisible: false } : toast
-      )
-    );
-    
-    // Remove from array after animation
-    setTimeout(() => {
-      setToasts(prev => prev.filter(toast => toast.id !== id));
-    }, 300);
-  };
-  
-  const clearAllToasts = () => {
-    setToasts([]);
-  };
-  
-  // Méthodes pratiques
-  const success = (message, options = {}) => 
-    addToast(message, 'success', options);
-    
-  const error = (message, options = {}) => 
-    addToast(message, 'error', options);
-    
-  const warning = (message, options = {}) => 
-    addToast(message, 'warning', options);
-    
-  const info = (message, options = {}) => 
-    addToast(message, 'info', options);
-  
-  return {
-    toasts,
-    addToast,
-    removeToast,
-    clearAllToasts,
-    success,
-    error,
-    warning,
-    info
-  };
-};
 
-// Container pour les toasts
-export const ToastContainer = () => {
-  const { toasts, removeToast } = useToast();
-  
+  const removeToast = (id) => {
+    setToasts(prev => prev.filter(t => t.id !== id));
+  };
+
+  const api = {
+    success: (msg, opts) => addToast(msg, 'success', opts),
+    error:   (msg, opts) => addToast(msg, 'error',   opts),
+    warning: (msg, opts) => addToast(msg, 'warning', opts),
+    info:    (msg, opts) => addToast(msg, 'info',    opts),
+    remove:  removeToast,
+  };
+
   return (
-    <div className="fixed top-4 right-4 z-50 space-y-3">
-      <AnimatePresence>
-        {toasts.map((toast) => (
-          <Toast
-            key={toast.id}
-            {...toast}
-            onClose={() => removeToast(toast.id)}
-          />
-        ))}
-      </AnimatePresence>
-    </div>
+    <ToastContext.Provider value={api}>
+      {children}
+      <ToastContainer toasts={toasts} onClose={removeToast} />
+    </ToastContext.Provider>
   );
 };
+
+// ─── Hook ─────────────────────────────────────────────────────────────────────
+export const useToast = () => {
+  const ctx = useContext(ToastContext);
+  if (!ctx) throw new Error('useToast must be used within ToastProvider');
+  return ctx;
+};
+
+// ─── Toast item ───────────────────────────────────────────────────────────────
+const ToastItem = ({ id, message, type = 'info', duration = 3500, action, onClose }) => {
+  const style = toastStyles[type] || toastStyles.info;
+  const Icon  = icons[type] || Info;
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, x: 100 }}
+      animate={{ opacity: 1, x: 0 }}
+      exit={{ opacity: 0, x: 100 }}
+      transition={{ duration: 0.3, ease: [0.4, 0, 0.2, 1] }}
+      className={`${style.bg} ${style.border} border rounded-xl shadow-2xl min-w-[300px] max-w-sm overflow-hidden`}
+    >
+      <div className="flex items-center gap-3 p-4">
+        <Icon className="w-5 h-5 text-white flex-shrink-0" />
+        <div className="flex-1 min-w-0">
+          <p className="text-white text-sm font-medium leading-relaxed">{message}</p>
+          {action && (
+            <button
+              onClick={action.onClick}
+              className="text-white/80 text-xs underline hover:text-white mt-1"
+            >
+              {action.label}
+            </button>
+          )}
+        </div>
+        <button
+          onClick={() => onClose(id)}
+          className="p-1 rounded-lg text-white/60 hover:text-white hover:bg-white/20 transition-all flex-shrink-0"
+        >
+          <X className="w-4 h-4" />
+        </button>
+      </div>
+      {/* Progress bar */}
+      {duration > 0 && (
+        <motion.div
+          initial={{ width: '100%' }}
+          animate={{ width: '0%' }}
+          transition={{ duration: duration / 1000, ease: 'linear' }}
+          className="h-1 bg-white/25"
+        />
+      )}
+    </motion.div>
+  );
+};
+
+// ─── Container (rendered inside Provider) ─────────────────────────────────────
+export const ToastContainer = ({ toasts = [], onClose }) => (
+  <div className="fixed top-4 right-4 z-[9999] flex flex-col gap-3 pointer-events-none">
+    <AnimatePresence mode="popLayout">
+      {toasts.map(toast => (
+        <div key={toast.id} className="pointer-events-auto">
+          <ToastItem {...toast} onClose={onClose} />
+        </div>
+      ))}
+    </AnimatePresence>
+  </div>
+);
+
+export default ToastItem;

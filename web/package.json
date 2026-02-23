@@ -1,14 +1,14 @@
 {
   "name": "novasound-titan",
-  "version": "1.0.0",
+  "version": "3.1.0",
   "private": true,
   "type": "module",
   "engines": {
-    "node": "24.x"
+    "node": ">=18.0.0"
   },
   "scripts": {
     "dev": "vite",
-    "build": "vite build && npm run setup:buckets",
+    "build": "vite build",
     "preview": "vite preview",
     "lint": "eslint . --ext js,jsx --report-unused-disable-directives --max-warnings 0",
     "setup:buckets": "node setup-buckets.js"
@@ -29,8 +29,7 @@
     "react-helmet-async": "^1.3.0",
     "react-router-dom": "^6.8.1",
     "tailwind-merge": "^2.0.0",
-    "tailwindcss-animate": "^1.0.7",
-    "vite": "^4.4.5"
+    "tailwindcss-animate": "^1.0.7"
   },
   "devDependencies": {
     "@types/react": "^18.2.15",

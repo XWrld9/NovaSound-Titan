@@ -81,8 +81,7 @@ const UserProfilePage = () => {
 
         if (userError || !userData) {
           console.error('Utilisateur non trouvé dans la base de données:', userError);
-          // Rediriger vers l'accueil si l'utilisateur n'existe pas
-          navigate('/');
+          // Profil DB absent mais auth OK — ne pas rediriger, afficher vide
           return;
         }
 
@@ -146,11 +145,8 @@ const UserProfilePage = () => {
 
     } catch (error) {
       console.error('Error fetching user data:', error);
-      if (error.message === 'Timeout') {
-        console.log('Timeout du chargement du profil, redirection vers l\'accueil');
-      }
-      // En cas d'erreur ou timeout, rediriger vers l'accueil
-      navigate('/');
+      // Ne pas rediriger brutalement - laisser l'utilisateur sur la page
+      // Les listes seront vides mais l'en-tête du profil restera visible
     } finally {
       setLoading(false);
     }
@@ -224,9 +220,9 @@ const UserProfilePage = () => {
               {/* Avatar */}
               <div className="relative">
                 <div className="w-24 h-24 md:w-32 md:h-32 bg-gradient-to-br from-cyan-500 to-magenta-500 rounded-full flex items-center justify-center">
-                  {currentUser.avatar_url ? (
+                  {(profile?.avatar_url || currentUser.avatar_url) ? (
                     <img
-                      src={currentUser.avatar_url}
+                      src={profile?.avatar_url || currentUser.avatar_url}
                       alt="Avatar"
                       className="w-full h-full rounded-full object-cover"
                     />
@@ -249,9 +245,12 @@ const UserProfilePage = () => {
               {/* Infos profil */}
               <div className="flex-1 text-center md:text-left">
                 <h1 className="text-2xl md:text-3xl font-bold text-white mb-2">
-                  {currentUser.username || currentUser.email}
+                  {profile?.username || currentUser.username || currentUser.email}
                 </h1>
-                <p className="text-gray-400 mb-4">{currentUser.email}</p>
+                {profile?.bio && (
+                  <p className="text-gray-400 mb-2 text-sm max-w-md">{profile.bio}</p>
+                )}
+                <p className="text-gray-500 text-sm mb-4">{currentUser.email}</p>
                 
                 <div className="flex flex-wrap gap-4 justify-center md:justify-start mb-4">
                   <div className="text-center">

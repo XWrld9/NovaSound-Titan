@@ -67,10 +67,9 @@ ${!isAuthenticated && !initialLoading ? '✅ État normal → Essayez de vous re
     window.location.reload(true);
   };
 
-  // Ne pas afficher en production
-  if (window.location.hostname === 'nova-sound-titan.vercel.app') {
-    return null;
-  }
+  // Ne pas afficher en production (Vercel ou tout domaine non-localhost)
+  const isProduction = !['localhost', '127.0.0.1'].includes(window.location.hostname);
+  if (isProduction) return null;
 
   return (
     <div className="fixed bottom-4 left-4 z-50 bg-gray-900/90 backdrop-blur-xl border border-cyan-500/30 rounded-lg p-4 shadow-xl max-w-sm">

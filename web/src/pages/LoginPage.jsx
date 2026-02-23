@@ -15,6 +15,7 @@ const LoginPage = () => {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [needsVerification, setNeedsVerification] = useState(false);
+  const [successMessage, setSuccessMessage] = useState('');
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -50,7 +51,9 @@ const LoginPage = () => {
     const result = await resendVerification(email);
     if (result.success) {
       setError('');
-      alert(result.message);
+      setNeedsVerification(false);
+      // Réutiliser error pour afficher le succès (message positif)
+      setSuccessMessage(result.message);
     } else {
       setError(result.message);
     }
@@ -83,6 +86,12 @@ const LoginPage = () => {
 
           <div className="bg-gray-900/50 backdrop-blur-xl border border-cyan-500/30 rounded-2xl p-8 shadow-2xl">
             <form onSubmit={handleSubmit} className="space-y-6">
+              {successMessage && (
+                <div className="bg-cyan-500/10 border border-cyan-500/30 rounded-lg p-4 flex items-start gap-3">
+                  <p className="text-cyan-400 text-sm">{successMessage}</p>
+                </div>
+              )}
+
               {error && (
                 <div className="bg-red-500/10 border border-red-500/30 rounded-lg p-4 flex items-start gap-3">
                   <AlertCircle className="w-5 h-5 text-red-400 flex-shrink-0 mt-0.5" />

@@ -24,61 +24,43 @@ const LikeButton = ({ songId, initialLikes = 0, initialLiked = false }) => {
         .select('id')
         .eq('user_id', currentUser.id)
         .eq('song_id', songId)
-        .single();
+        .maybeSingle();
       
       setIsLiked(!!data);
-    } catch (error) {
+    } catch {
       setIsLiked(false);
     }
   };
 
   const handleLike = async () => {
-    if (!currentUser) {
-      alert('Veuillez vous connecter pour aimer une musique');
-      return;
-    }
+    if (!currentUser) return;
+    if (isLoading) return;
 
+    // Optimistic update
+    const wasLiked = isLiked;
+    setIsLiked(!wasLiked);
+    setLikes(prev => wasLiked ? prev - 1 : prev + 1);
     setIsLoading(true);
-    try {
-      // Vérifier si déjà liké
-      const { data: existingLike } = await supabase
-        .from('likes')
-        .select('id')
-        .eq('user_id', currentUser.id)
-        .eq('song_id', songId)
-        .single();
 
-      if (existingLike) {
-        // Unlike
+    try {
+      if (wasLiked) {
         const { error } = await supabase
           .from('likes')
           .delete()
           .eq('user_id', currentUser.id)
           .eq('song_id', songId);
-        
         if (error) throw error;
-        
-        setIsLiked(false);
-        setLikes(prev => prev - 1);
       } else {
-        // Like
-        const { data, error } = await supabase
+        const { error } = await supabase
           .from('likes')
-          .insert({
-            user_id: currentUser.id,
-            song_id: songId
-          })
-          .select()
-          .single();
-        
+          .insert({ user_id: currentUser.id, song_id: songId });
         if (error) throw error;
-        
-        setIsLiked(true);
-        setLikes(prev => prev + 1);
       }
     } catch (error) {
-      console.error('Erreur lors du like:', error);
-      alert('Une erreur est survenue');
+      // Rollback on error
+      setIsLiked(wasLiked);
+      setLikes(prev => wasLiked ? prev + 1 : prev - 1);
+      console.error('Erreur like:', error);
     } finally {
       setIsLoading(false);
     }
