@@ -82,6 +82,8 @@ export const AuthProvider = ({ children }) => {
   }, []);
 
   const signup = async (email, password, passwordConfirm, username) => {
+    console.log('🚀 INSCRIPTION SIMPLE ET DIRECTE pour:', email);
+    
     if (password !== passwordConfirm) {
       return { 
         success: false, 
@@ -89,40 +91,36 @@ export const AuthProvider = ({ children }) => {
       };
     }
 
+    // Nettoyer les données
+    const cleanEmail = email.trim().toLowerCase();
+    const cleanUsername = username.trim();
+
     try {
+      // Inscription DIRECTE sans retry
       const { data, error } = await supabase.auth.signUp({
-        email,
+        email: cleanEmail,
         password,
         options: {
           emailRedirectTo: getEmailRedirectTo(),
           data: {
-            username,
+            username: cleanUsername,
             emailVisibility: true
           }
         }
       });
       
+      console.log('📍 Résultat inscription directe:', { data, error });
+      
       if (error) {
-        // Si l'email est déjà utilisé, vérifier si l'utilisateur existe dans la base de données
-        if (error.message.includes('already registered')) {
-          const { data: existingUser } = await supabase
-            .from('users')
-            .select('*')
-            .eq('email', email)
-            .single();
-          
-          if (existingUser) {
-            return { 
-              success: false, 
-              message: 'Cet email est déjà utilisé. Veuillez vous connecter.' 
-            };
-          } else {
-            // L'utilisateur existe dans auth mais pas dans la base de données
-            return { 
-              success: false, 
-              message: 'Compte existant mais profil incomplet. Veuillez contacter le support.' 
-            };
-          }
+        console.error('❌ Erreur inscription:', error);
+        
+        // Gérer les erreurs simples
+        if (error.message?.includes('already registered') || 
+            error.message?.includes('User already registered')) {
+          return { 
+            success: false, 
+            message: 'Cet email est déjà utilisé. Veuillez vous connecter.' 
+          };
         }
         
         return { 
@@ -131,84 +129,83 @@ export const AuthProvider = ({ children }) => {
         };
       }
 
-      // Créer le profil utilisateur dans la base de données
-      if (data.user && !error) {
-        try {
-          const { error: profileError } = await supabase
-            .from('users')
-            .insert([
-              {
-                id: data.user.id,
-                email: email,
-                username: username,
-                created_at: new Date().toISOString()
-              }
-            ]);
-          
-          if (profileError) {
-            console.error('Erreur création profil:', profileError);
-            // Ne pas bloquer l'inscription si le profil échoue
-          }
-        } catch (profileErr) {
-          console.error('Erreur création profil:', profileErr);
-        }
+      if (!data?.user) {
+        return { 
+          success: false, 
+          message: 'Échec de la création du compte. Veuillez réessayer.' 
+        };
       }
 
+      console.log('✅ INSCRIPTION RÉUSSIE !');
+      
+      // Création du profil utilisateur
+      try {
+        console.log('� Création du profil utilisateur...');
+        const { error: profileError } = await supabase
+          .from('users')
+          .insert([
+            {
+              id: data.user.id,
+              email: cleanEmail,
+              username: cleanUsername,
+              created_at: new Date().toISOString()
+            }
+          ]);
+        
+        if (profileError) {
+          console.error('⚠️ Erreur création profil:', profileError);
+        } else {
+          console.log('✅ Profil créé avec succès');
+        }
+      } catch (profileErr) {
+        console.error('⚠️ Erreur création profil:', profileErr);
+      }
+      
       return { 
         success: true, 
         message: 'Compte créé! Veuillez vérifier votre email pour activer votre compte.' 
       };
+      
     } catch (error) {
-      console.error('Signup error:', error);
+      console.error('💥 ERREUR INSCRIPTION:', error);
       return { 
         success: false, 
-        message: error.message || 'Inscription échouée. Veuillez réessayer.' 
+        message: error.message || 'Erreur technique lors de l\'inscription. Veuillez réessayer.' 
       };
     }
   };
 
   const login = async (email, password) => {
+    console.log('🚀 CONNEXION SIMPLE ET DIRECTE pour:', email);
+    
+    // Nettoyer l'email
+    const cleanEmail = email.trim().toLowerCase();
+    
     try {
-      console.log('Tentative de connexion pour:', email);
-      
-      // Connexion simple sans timeout manuel (Supabase gère ça nativement)
+      // Connexion DIRECTE sans retry, sans timeout, sans complexité
       const { data, error } = await supabase.auth.signInWithPassword({
-        email,
-        password
+        email: cleanEmail,
+        password: password // Utiliser le mot de passe exactement comme fourni
       });
       
-      console.log('Résultat connexion:', { data, error });
+      console.log('📍 Résultat connexion directe:', { data, error, passwordLength: password?.length });
       
       if (error) {
-        console.error('Supabase login error:', error);
+        console.error('❌ Erreur Supabase:', error);
         
-        // Gérer les erreurs spécifiques de Supabase
-        if (error.message?.includes('Email not confirmed')) {
-          return { 
-            success: false, 
-            message: 'Veuillez vérifier votre email avant de vous connecter. Consultez votre boîte de réception.',
-            needsVerification: true
-          };
-        }
-        
+        // Messages d'erreur simples et clairs
         if (error.message?.includes('Invalid login credentials')) {
           return { 
             success: false, 
-            message: 'Email ou mot de passe incorrect' 
+            message: 'Email ou mot de passe incorrect. Vérifiez la casse (majuscules/minuscules).' 
           };
         }
         
-        if (error.message?.includes('rate limit') || error.message?.includes('too many requests')) {
+        if (error.message?.includes('Email not confirmed')) {
           return { 
             success: false, 
-            message: 'Trop de tentatives de connexion. Veuillez réessayer dans quelques minutes.' 
-          };
-        }
-        
-        if (error.message?.includes('Email rate limit exceeded')) {
-          return { 
-            success: false, 
-            message: 'Limite d\'email atteinte. Veuillez réessayer plus tard ou contacter le support.' 
+            message: 'Veuillez vérifier votre email avant de vous connecter.',
+            needsVerification: true
           };
         }
         
@@ -218,14 +215,16 @@ export const AuthProvider = ({ children }) => {
         };
       }
 
-      if (!data.user) {
+      if (!data?.user) {
         return { 
           success: false, 
-          message: 'Utilisateur non trouvé. Veuillez vérifier vos identifiants.' 
+          message: 'Utilisateur non trouvé. Vérifiez vos identifiants.' 
         };
       }
 
-      // Vérifier et créer le profil utilisateur si nécessaire
+      console.log('✅ CONNEXION RÉUSSIE !');
+      
+      // Créer le profil si nécessaire (simple et direct)
       try {
         const { data: profile, error: profileError } = await supabase
           .from('users')
@@ -233,9 +232,8 @@ export const AuthProvider = ({ children }) => {
           .eq('id', data.user.id)
           .single();
         
-        if (profileError && profileError.code === 'PGRST116') {
-          // Le profil n'existe pas, le créer
-          console.log('Création du profil utilisateur pour:', data.user.email);
+        if (profileError && (profileError.code === 'PGRST116' || profileError.message?.includes('No rows found'))) {
+          console.log('🔧 Création du profil utilisateur...');
           const { error: createError } = await supabase
             .from('users')
             .insert([
@@ -248,44 +246,110 @@ export const AuthProvider = ({ children }) => {
             ]);
           
           if (createError) {
-            console.error('Erreur création profil:', createError);
-            // Ne pas bloquer la connexion pour ça
+            console.error('⚠️ Erreur création profil:', createError);
+          } else {
+            console.log('✅ Profil créé');
           }
         }
       } catch (profileErr) {
-        console.error('Erreur vérification profil:', profileErr);
-        // Ne pas bloquer la connexion
+        console.error('⚠️ Erreur profil (non bloquant):', profileErr);
       }
 
       return { 
         success: true, 
-        message: 'Connexion réussie!' 
+        message: 'Connexion réussie !' 
       };
       
     } catch (error) {
-      console.error('Login error:', error);
+      console.error('💥 ERREUR CONNEXION:', error);
       return { 
         success: false, 
-        message: error.message || 'Erreur de connexion. Veuillez réessayer.' 
+        message: error.message || 'Erreur technique. Veuillez réessayer.' 
       };
     }
   };
 
   const logout = async () => {
+    console.log('🚀 DÉBUT LOGOUT ULTRA-ROBUSTE');
+    
     try {
-      const { error } = await supabase.auth.signOut();
-      if (error) {
-        console.error('Logout error:', error);
-        // Forcer la déconnexion même en cas d'erreur
-        setCurrentUser(null);
-        return { success: false, error: error.message };
+      // ÉTAPE 1: Déconnexion Supabase avec retry
+      let attempts = 0;
+      const maxAttempts = 3;
+      
+      while (attempts < maxAttempts) {
+        attempts++;
+        console.log(`📍 Tentative logout ${attempts}/${maxAttempts}`);
+        
+        try {
+          const { error } = await supabase.auth.signOut();
+          
+          if (!error) {
+            console.log('✅ LOGOUT SUPABASE RÉUSSI');
+            
+            // ÉTAPE 2: Nettoyage complet de l'état local
+            try {
+              setCurrentUser(null);
+              console.log('✅ État local nettoyé');
+              
+              // ÉTAPE 3: Nettoyage du localStorage (fallback)
+              try {
+                localStorage.removeItem('supabase.auth.token');
+                localStorage.removeItem('supabase.auth.refreshToken');
+                console.log('✅ LocalStorage nettoyé');
+              } catch (storageError) {
+                console.warn('⚠️ Erreur nettoyage localStorage:', storageError);
+              }
+              
+              return { success: true };
+              
+            } catch (stateError) {
+              console.error('❌ Erreur nettoyage état:', stateError);
+              // Forcer le retour succès même si erreur
+              return { success: true };
+            }
+          } else {
+            console.error(`❌ Erreur logout ${attempts}:`, error);
+            
+            // Si c'est une erreur réseau, réessayer
+            if (attempts < maxAttempts && 
+                (error.message?.includes('timeout') || 
+                 error.message?.includes('network') ||
+                 error.message?.includes('fetch'))) {
+              console.log(`🔄 Attente avant retry ${attempts + 1}...`);
+              await new Promise(resolve => setTimeout(resolve, 1000 * attempts));
+              continue;
+            }
+            
+            // Erreur fatale mais forcer le logout local
+            setCurrentUser(null);
+            return { success: true, error: error.message };
+          }
+        } catch (attemptError) {
+          console.error(`❌ Erreur critique logout ${attempts}:`, attemptError);
+          if (attempts < maxAttempts) {
+            await new Promise(resolve => setTimeout(resolve, 1000 * attempts));
+          }
+        }
       }
+      
+      // Forcer le logout local après toutes les tentatives
+      console.log('🔄 FORCAGE LOGOUT LOCAL');
       setCurrentUser(null);
       return { success: true };
-    } catch (error) {
-      console.error('Logout error:', error);
-      setCurrentUser(null);
-      return { success: false, error: error.message };
+      
+    } catch (globalError) {
+      console.error('💥 ERREUR GLOBALE LOGOUT:', globalError);
+      
+      // Forcer le logout local en dernier recours
+      try {
+        setCurrentUser(null);
+        localStorage.clear();
+        return { success: true };
+      } catch (forceError) {
+        console.error('❌ Erreur forcage logout:', forceError);
+        return { success: false, error: 'Erreur critique lors de la déconnexion.' };
+      }
     }
   };
 
@@ -349,6 +413,57 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
+  // Fonction de diagnostic pour aider à résoudre les problèmes
+  const diagnoseConnection = async () => {
+    console.log('🔍 DÉBUT DIAGNOSTIC CONNEXION');
+    
+    const diagnosis = {
+      timestamp: new Date().toISOString(),
+      supabaseUrl: import.meta.env.VITE_SUPABASE_URL,
+      hasAnonKey: !!import.meta.env.VITE_SUPABASE_ANON_KEY,
+      browser: navigator.userAgent,
+      online: navigator.onLine,
+      localStorage: !!window.localStorage,
+      sessionStorage: !!window.sessionStorage
+    };
+    
+    console.log('📊 Diagnostic:', diagnosis);
+    
+    try {
+      // Test de connexion basique
+      const { data, error } = await supabase
+        .from('users')
+        .select('count')
+        .limit(1);
+      
+      diagnosis.databaseConnection = !error;
+      diagnosis.databaseError = error?.message;
+      
+      if (error) {
+        console.error('❌ Erreur connexion base:', error);
+      } else {
+        console.log('✅ Connexion base OK');
+      }
+    } catch (testError) {
+      diagnosis.databaseConnection = false;
+      diagnosis.databaseError = testError.message;
+      console.error('❌ Erreur test base:', testError);
+    }
+    
+    // Test de connexion auth
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      diagnosis.hasSession = !!session;
+      diagnosis.sessionError = null;
+    } catch (authError) {
+      diagnosis.hasSession = false;
+      diagnosis.sessionError = authError.message;
+    }
+    
+    console.log('🏁 Diagnostic final:', diagnosis);
+    return diagnosis;
+  };
+
   const value = {
     currentUser,
     isAuthenticated: !!currentUser,
@@ -359,6 +474,7 @@ export const AuthProvider = ({ children }) => {
     updateProfile,
     updateUser,
     initialLoading,
+    diagnoseConnection, // Exporter la fonction de diagnostic
     supabase // Exporter supabase pour les autres composants
   };
 

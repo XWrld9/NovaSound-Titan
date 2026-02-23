@@ -195,7 +195,7 @@ const SignupPage = () => {
                 disabled={loading || success}
                 className="w-full bg-gradient-to-r from-cyan-500 to-magenta-500 hover:from-cyan-600 hover:to-magenta-600 text-white py-3 text-lg font-semibold shadow-lg shadow-cyan-500/30"
               >
-                {loading ? 'Creating Account...' : 'Sign Up'}
+                {loading ? 'Sign Up...' : 'Sign Up'}
               </Button>
             </form>
 
