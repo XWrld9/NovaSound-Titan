@@ -253,112 +253,145 @@ export const AuthProvider = ({ children }) => {
     // Nettoyer l'email
     const cleanEmail = email.trim().toLowerCase();
     
-    try {
-      // Connexion DIRECTE sans retry, sans timeout, sans complexité
-      console.log('📍 Appel signInWithPassword...');
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email: cleanEmail,
-        password: password // Utiliser le mot de passe exactement comme fourni
-      });
-      
-      console.log('📍 Résultat connexion directe:', { 
-        data: data ? 'OK' : 'NULL', 
-        error: error?.message || 'NONE', 
-        passwordLength: password?.length,
-        userId: data?.user?.id,
-        userEmail: data?.user?.email
-      });
-      
-      if (error) {
-        console.error('❌ Erreur Supabase:', error);
-        
-        // Messages d'erreur simples et clairs
-        if (error.message?.includes('Invalid login credentials')) {
-          return { 
-            success: false, 
-            message: 'Email ou mot de passe incorrect. Vérifiez la casse (majuscules/minuscules).' 
-          };
-        }
-        
-        if (error.message?.includes('Email not confirmed')) {
-          return { 
-            success: false, 
-            message: 'Veuillez vérifier votre email avant de vous connecter.',
-            needsVerification: true
-          };
-        }
-        
-        return { 
-          success: false, 
-          message: error.message || 'Erreur de connexion. Veuillez réessayer.' 
-        };
-      }
-
-      if (!data?.user) {
-        console.error('❌ Pas de user dans la réponse');
-        return { 
-          success: false, 
-          message: 'Utilisateur non trouvé. Vérifiez vos identifiants.' 
-        };
-      }
-
-      console.log('✅ CONNEXION RÉUSSIE ! Session persistante activée.');
-      console.log('📍 User ID:', data.user.id);
-      console.log('📍 User Email:', data.user.email);
-      
-      // Forcer la mise à jour de l'état immédiatement
-      setCurrentUser(data.user);
-      
-      // Créer le profil si nécessaire (simple et direct)
-      try {
-        console.log('🔍 Vérification profil utilisateur...');
-        const { data: profile, error: profileError } = await supabase
-          .from('users')
-          .select('*')
-          .eq('id', data.user.id)
-          .single();
-        
-        if (profileError && (profileError.code === 'PGRST116' || profileError.message?.includes('No rows found'))) {
-          console.log('🔧 Création du profil utilisateur...');
-          const { error: createError } = await supabase
-            .from('users')
-            .insert([
-              {
-                id: data.user.id,
-                email: data.user.email,
-                username: data.user.user_metadata?.username || data.user.email.split('@')[0],
-                created_at: new Date().toISOString()
-              }
-            ]);
+    // Fonction de retry pour les timeouts réseau
+    const retryLogin = async (maxRetries = 3, delay = 1000) => {
+      for (let attempt = 1; attempt <= maxRetries; attempt++) {
+        try {
+          console.log(`📍 Tentative ${attempt}/${maxRetries} signInWithPassword...`);
           
-          if (createError) {
-            console.error('⚠️ Erreur création profil:', createError);
-          } else {
-            console.log('✅ Profil créé');
+          const { data, error } = await supabase.auth.signInWithPassword({
+            email: cleanEmail,
+            password: password,
+            options: {
+              // Augmenter le timeout pour les connexions lentes
+              captchaToken: undefined
+            }
+          });
+          
+          console.log('📍 Résultat connexion directe:', { 
+            data: data ? 'OK' : 'NULL', 
+            error: error?.message || 'NONE', 
+            passwordLength: password?.length,
+            userId: data?.user?.id,
+            userEmail: data?.user?.email,
+            attempt
+          });
+          
+          if (error) {
+            console.error('❌ Erreur Supabase:', error);
+            
+            // Messages d'erreur simples et clairs
+            if (error.message?.includes('Invalid login credentials')) {
+              return { 
+                success: false, 
+                message: 'Email ou mot de passe incorrect. Vérifiez la casse (majuscules/minuscules).' 
+              };
+            }
+            
+            if (error.message?.includes('Email not confirmed')) {
+              return { 
+                success: false, 
+                message: 'Veuillez vérifier votre email avant de vous connecter.',
+                needsVerification: true
+              };
+            }
+            
+            // Si c'est une erreur réseau, réessayer
+            if (error.message?.includes('Failed to fetch') || error.message?.includes('timeout')) {
+              if (attempt < maxRetries) {
+                console.log(`⏳ Erreur réseau, retry dans ${delay}ms...`);
+                await new Promise(resolve => setTimeout(resolve, delay));
+                continue;
+              } else {
+                return { 
+                  success: false, 
+                  message: 'Problème de connexion réseau. Vérifiez votre internet et réessayez.' 
+                };
+              }
+            }
+            
+            return { 
+              success: false, 
+              message: error.message || 'Erreur de connexion. Veuillez réessayer.' 
+            };
           }
-        } else if (profile) {
-          // Mettre à jour avec les données du profil
-          console.log('✅ Profil trouvé, mise à jour utilisateur');
-          setCurrentUser({ ...data.user, ...profile });
-        } else {
-          console.log('✅ Profil déjà à jour');
-        }
-      } catch (profileErr) {
-        console.error('⚠️ Erreur profil (non bloquant):', profileErr);
-      }
 
-      return { 
-        success: true, 
-        message: 'Connexion réussie !' 
-      };
-      
-    } catch (error) {
-      console.error('💥 ERREUR CONNEXION:', error);
-      return { 
-        success: false, 
-        message: error.message || 'Erreur technique. Veuillez réessayer.' 
-      };
-    }
+          if (!data?.user) {
+            console.error('❌ Pas de user dans la réponse');
+            return { 
+              success: false, 
+              message: 'Utilisateur non trouvé. Vérifiez vos identifiants.' 
+            };
+          }
+
+          console.log('✅ CONNEXION RÉUSSIE ! Session persistante activée.');
+          console.log('📍 User ID:', data.user.id);
+          console.log('📍 User Email:', data.user.email);
+          
+          // Forcer la mise à jour de l'état immédiatement
+          setCurrentUser(data.user);
+          
+          // Créer le profil si nécessaire (simple et direct)
+          try {
+            console.log('🔍 Vérification profil utilisateur...');
+            const { data: profile, error: profileError } = await supabase
+              .from('users')
+              .select('*')
+              .eq('id', data.user.id)
+              .single();
+            
+            if (profileError && (profileError.code === 'PGRST116' || profileError.message?.includes('No rows found'))) {
+              console.log('🔧 Création du profil utilisateur...');
+              const { error: createError } = await supabase
+                .from('users')
+                .insert([
+                  {
+                    id: data.user.id,
+                    email: data.user.email,
+                    username: data.user.user_metadata?.username || data.user.email.split('@')[0],
+                    created_at: new Date().toISOString()
+                  }
+                ]);
+              
+              if (createError) {
+                console.error('⚠️ Erreur création profil:', createError);
+              } else {
+                console.log('✅ Profil créé');
+              }
+            } else if (profile) {
+              // Mettre à jour avec les données du profil
+              console.log('✅ Profil trouvé, mise à jour utilisateur');
+              setCurrentUser({ ...data.user, ...profile });
+            } else {
+              console.log('✅ Profil déjà à jour');
+            }
+          } catch (profileErr) {
+            console.error('⚠️ Erreur profil (non bloquant):', profileErr);
+          }
+
+          return { 
+            success: true, 
+            message: 'Connexion réussie !' 
+          };
+          
+        } catch (error) {
+          console.error(`💥 ERREUR CONNEXION (tentative ${attempt}):`, error);
+          
+          if (attempt < maxRetries && (error.message?.includes('Failed to fetch') || error.message?.includes('timeout'))) {
+            console.log(`⏳ Erreur réseau, retry dans ${delay}ms...`);
+            await new Promise(resolve => setTimeout(resolve, delay));
+            continue;
+          }
+          
+          return { 
+            success: false, 
+            message: error.message || 'Erreur technique. Veuillez réessayer.' 
+          };
+        }
+      }
+    };
+    
+    return await retryLogin();
   };
 
   const logout = async () => {

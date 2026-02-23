@@ -14,14 +14,40 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
     storageKey: 'supabase.auth.token', // Clé de stockage explicite
     debug: true, // Activer les logs de debug Supabase
     flowType: 'pkce', // Flow PKCE plus sécurisé
-    redirectTo: window.location.origin // Redirection explicite
+    redirectTo: window.location.origin, // Redirection explicite
+    // Augmenter les timeouts pour éviter les erreurs réseau
+    db: {
+      schema: 'public'
+    },
+    global: {
+      headers: {
+        'X-Client-Info': 'novasound-titan-web/1.0.0'
+      },
+      // Configuration fetch pour les timeouts
+      fetch: (url, options = {}) => {
+        return fetch(url, {
+          ...options,
+          // Timeout de 15 secondes au lieu de 10 par défaut
+          signal: AbortSignal.timeout(15000)
+        });
+      }
+    }
   },
+  // Options globales pour la connexion
   db: {
     schema: 'public'
   },
   global: {
     headers: {
       'X-Client-Info': 'novasound-titan-web/1.0.0'
+    },
+    // Timeout global pour toutes les requêtes
+    fetch: (url, options = {}) => {
+      return fetch(url, {
+        ...options,
+        // Timeout de 15 secondes
+        signal: AbortSignal.timeout(15000)
+      });
     }
   }
 });
