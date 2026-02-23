@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { supabase } from '../lib/supabaseClient';
 import { networkDetector } from '../lib/networkDetector';
+import { useDialog } from '../components/ui/Dialog';
 
 const AuthContext = createContext();
 
@@ -15,6 +16,7 @@ export const useAuth = () => {
 export const AuthProvider = ({ children }) => {
   const [currentUser, setCurrentUser] = useState(null);
   const [initialLoading, setInitialLoading] = useState(true);
+  const dialog = useDialog();
 
   const getEmailRedirectTo = () => {
     try {
@@ -260,6 +262,11 @@ export const AuthProvider = ({ children }) => {
     console.log('📊 Qualité réseau:', networkTest);
     
     if (networkDetector.getNetworkQuality() === 'offline') {
+      dialog.error(
+        'Connexion impossible',
+        'Vous êtes hors ligne. Vérifiez votre connexion internet et réessayez.',
+        { duration: 5000 }
+      );
       return {
         success: false,
         message: 'Vous êtes hors ligne. Vérifiez votre connexion internet.'
@@ -267,14 +274,29 @@ export const AuthProvider = ({ children }) => {
     }
     
     if (networkTest.packetLoss) {
-      console.log('⚠️ Perte de paquets détectée, utilisation de retry étendu...');
+      dialog.warning(
+        'Connexion instable',
+        'Votre connexion internet est instable. La connexion peut prendre plus de temps que d\'habitude.',
+        { duration: 3000 }
+      );
     }
     
     // 2. Fonction de retry adaptative selon la qualité réseau
     const retryLogin = async (maxRetries = networkTest.packetLoss ? 5 : 3, delay = networkTest.packetLoss ? 2000 : 1000) => {
+      let loadingDialogId = null;
+      
       for (let attempt = 1; attempt <= maxRetries; attempt++) {
         try {
           console.log(`📍 Tentative ${attempt}/${maxRetries} signInWithPassword...`);
+          
+          // Afficher le dialogue de chargement
+          if (attempt === 1) {
+            loadingDialogId = dialog.loading(
+              'Connexion en cours',
+              `Tentative de connexion ${attempt}/${maxRetries}...`,
+              { showCloseButton: false }
+            );
+          }
           
           // Attendre une meilleure connexion si le réseau est mauvais
           if (networkDetector.getNetworkQuality() === 'poor' && attempt > 1) {
@@ -305,6 +327,12 @@ export const AuthProvider = ({ children }) => {
             
             // Messages d'erreur simples et clairs
             if (error.message?.includes('Invalid login credentials')) {
+              if (loadingDialogId) dialog.closeDialog(loadingDialogId);
+              dialog.error(
+                'Identifiants incorrects',
+                'Email ou mot de passe incorrect. Vérifiez la casse (majuscules/minuscules).',
+                { duration: 5000 }
+              );
               return { 
                 success: false, 
                 message: 'Email ou mot de passe incorrect. Vérifiez la casse (majuscules/minuscules).' 
@@ -312,6 +340,24 @@ export const AuthProvider = ({ children }) => {
             }
             
             if (error.message?.includes('Email not confirmed')) {
+              if (loadingDialogId) dialog.closeDialog(loadingDialogId);
+              dialog.warning(
+                'Email non confirmé',
+                'Veuillez vérifier votre email avant de vous connecter. Regardez dans vos spams.',
+                {
+                  duration: 0,
+                  actions: [
+                    {
+                      label: 'Renvoyer l\'email',
+                      primary: true,
+                      onClick: () => {
+                        // TODO: Implémenter le renvoi d'email
+                        dialog.info('Email renvoyé', 'Un nouvel email de confirmation a été envoyé.');
+                      }
+                    }
+                  ]
+                }
+              );
               return { 
                 success: false, 
                 message: 'Veuillez vérifier votre email avant de vous connecter.',
@@ -328,6 +374,12 @@ export const AuthProvider = ({ children }) => {
                 await new Promise(resolve => setTimeout(resolve, waitTime));
                 continue;
               } else {
+                if (loadingDialogId) dialog.closeDialog(loadingDialogId);
+                dialog.error(
+                  'Problème de connexion réseau',
+                  `Problème de connexion réseau (${networkTest.successRate * 100}% de réussite). Essayez de vous rapprocher de votre routeur ou changez de réseau.`,
+                  { duration: 6000 }
+                );
                 return { 
                   success: false, 
                   message: `Problème de connexion réseau (${networkTest.successRate * 100}% de réussite). Essayez de vous rapprocher de votre routeur ou changez de réseau.` 
@@ -335,6 +387,12 @@ export const AuthProvider = ({ children }) => {
               }
             }
             
+            if (loadingDialogId) dialog.closeDialog(loadingDialogId);
+            dialog.error(
+              'Erreur de connexion',
+              error.message || 'Erreur de connexion. Veuillez réessayer.',
+              { duration: 5000 }
+            );
             return { 
               success: false, 
               message: error.message || 'Erreur de connexion. Veuillez réessayer.' 
@@ -343,6 +401,12 @@ export const AuthProvider = ({ children }) => {
 
           if (!data?.user) {
             console.error('❌ Pas de user dans la réponse');
+            if (loadingDialogId) dialog.closeDialog(loadingDialogId);
+            dialog.error(
+              'Utilisateur non trouvé',
+              'Utilisateur non trouvé. Vérifiez vos identifiants.',
+              { duration: 5000 }
+            );
             return { 
               success: false, 
               message: 'Utilisateur non trouvé. Vérifiez vos identifiants.' 
@@ -353,6 +417,16 @@ export const AuthProvider = ({ children }) => {
           console.log('📍 User ID:', data.user.id);
           console.log('📍 User Email:', data.user.email);
           console.log('📊 Qualité réseau finale:', networkDetector.getNetworkQuality());
+          
+          // Fermer le dialogue de chargement
+          if (loadingDialogId) dialog.closeDialog(loadingDialogId);
+          
+          // Afficher le succès
+          dialog.success(
+            'Connexion réussie',
+            `Bienvenue ${data.user.email.split('@')[0]} ! Vous êtes maintenant connecté.`,
+            { duration: 3000 }
+          );
           
           // Forcer la mise à jour de l'état immédiatement
           setCurrentUser(data.user);
@@ -410,6 +484,12 @@ export const AuthProvider = ({ children }) => {
             continue;
           }
           
+          if (loadingDialogId) dialog.closeDialog(loadingDialogId);
+          dialog.error(
+            'Erreur technique',
+            `Erreur de connexion (${networkTest.successRate * 100}% de fiabilité réseau). Réessayez plus tard.`,
+            { duration: 5000 }
+          );
           return { 
             success: false, 
             message: `Erreur de connexion (${networkTest.successRate * 100}% de fiabilité réseau). Réessayez plus tard.` 
