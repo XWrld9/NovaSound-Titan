@@ -15,6 +15,7 @@ import ArtistProfilePage from '@/pages/ArtistProfilePage';
 import PrivacyPolicy from '@/pages/PrivacyPolicy.jsx';
 import TermsOfService from '@/pages/TermsOfService.jsx';
 import CopyrightInfo from '@/pages/CopyrightInfo.jsx';
+import ModerationPanel from '@/pages/ModerationPanel.jsx';
 
 function App() {
   return (
@@ -49,6 +50,14 @@ function App() {
               element={
                 <ProtectedRoute>
                   <UserProfilePage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/moderation"
+              element={
+                <ProtectedRoute>
+                  <ModerationPanel />
                 </ProtectedRoute>
               }
             />

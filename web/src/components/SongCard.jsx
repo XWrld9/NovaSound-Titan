@@ -4,6 +4,7 @@ import { motion } from 'framer-motion';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import LikeButton from '@/components/LikeButton';
+import ReportButton from './ReportButton';
 
 const SongCard = ({ song, onPlay, isPlaying }) => {
   const { currentUser } = useAuth();
@@ -93,6 +94,10 @@ const SongCard = ({ song, onPlay, isPlaying }) => {
             >
               <Share2 className="w-5 h-5" />
             </button>
+            <ReportButton 
+              contentType="song" 
+              contentId={song.id}
+            />
           </div>
           
           <div className="text-xs text-gray-500 font-mono">

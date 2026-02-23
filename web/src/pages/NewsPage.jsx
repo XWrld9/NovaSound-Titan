@@ -5,6 +5,7 @@ import { supabase } from '@/lib/supabaseClient';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import NewsForm from '@/components/NewsForm';
+import ReportButton from '@/components/ReportButton';
 import { useAuth } from '@/contexts/AuthContext';
 import { Newspaper, Calendar, User } from 'lucide-react';
 
@@ -79,6 +80,10 @@ const NewsPage = () => {
                         {new Date(item.created_at || Date.now()).toLocaleDateString()}
                       </span>
                     </div>
+                    <ReportButton 
+                      contentType="news" 
+                      contentId={item.id}
+                    />
                   </div>
                 </motion.div>
               ))

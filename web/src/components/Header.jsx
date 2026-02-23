@@ -186,7 +186,7 @@ const Header = () => {
               ) : (
                 <div className="flex items-center gap-2">
                   <Link to="/login">
-                    <Button variant="ghost" className="text-gray-300 hover:text-white hover:bg-white/5 font-medium">
+                    <Button className="bg-cyan-600 hover:bg-cyan-700 text-white rounded-full font-medium shadow-lg shadow-cyan-500/20">
                       Login
                     </Button>
                   </Link>
@@ -311,10 +311,10 @@ const Header = () => {
                 ) : (
                   <div className="grid grid-cols-2 gap-3">
                     <Link to="/login" onClick={() => setIsMobileMenuOpen(false)}>
-                      <Button variant="outline" className="w-full border-gray-700 text-gray-300">Login</Button>
+                      <Button className="w-full bg-cyan-600 hover:bg-cyan-700 text-white rounded-full">Login</Button>
                     </Link>
                     <Link to="/signup" onClick={() => setIsMobileMenuOpen(false)}>
-                      <Button className="w-full bg-cyan-600 hover:bg-cyan-700 text-white">Sign Up</Button>
+                      <Button className="w-full bg-cyan-600 hover:bg-cyan-700 text-white rounded-full">Sign Up</Button>
                     </Link>
                   </div>
                 )}

@@ -273,7 +273,42 @@ La base de données est configurée avec les tables :
 - ⭐ **News épinglées** et mises en avant
 - 🔔 **Notifications** pour nouvelles news
 
-## 🗺️ Roadmap & Versions Futures
+## �️ Système de Modération
+
+### 🎯 Fonctionnalités de Sécurité
+- ✅ **Signalement de contenu** - Songs, news, utilisateurs
+- ✅ **Panneau de modération** - Interface admin complète
+- ✅ **Rôles utilisateurs** - Admin, Modérateur, Utilisateur
+- ✅ **Bannissement automatique** - Temporaire ou permanent
+- ✅ **Logs de modération** - Traçabilité complète
+- ✅ **Protection anti-spam** - Vérification automatique
+
+### 🔐 Permissions et Sécurité
+- **Signalement** : Tous les utilisateurs authentifiés
+- **Modération** : Admins et modérateurs uniquement
+- **Bannissement** : Admins uniquement
+- **Logs** : Accessibles aux admins seulement
+- **RLS** : Sécurité granulaire sur toutes les tables
+
+### 🚀 Utilisation du Système
+1. **Signaler** : Cliquez sur l'icône 🚩 sur tout contenu
+2. **Modérer** : Accédez à `/moderation` (admins/modérateurs)
+3. **Gérer** : Consultez, résolvez, bannissez si nécessaire
+4. **Traiter** : Actions automatiques et manuelles
+
+### 📊 Tables de Modération
+- `reports` : Signalements utilisateurs
+- `user_roles` : Rôles et permissions
+- `moderation_logs` : Historique des actions
+- `banned_users` : Utilisateurs bannis
+
+### 🎛️ Panneau d'Administration
+- **Statistiques** : Signalements en attente, résolus, rejetés
+- **Actions rapides** : Résoudre, rejeter, bannir
+- **Détails** : Informations complètes sur chaque signalement
+- **Historique** : Logs de toutes les actions de modération
+
+## �🗺️ Roadmap & Versions Futures
 
 ### Version 2.1 (Prochainement)
 - 🎵 **Player avancé** - Playlist, shuffle, repeat
