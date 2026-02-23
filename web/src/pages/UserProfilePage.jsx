@@ -221,7 +221,7 @@ const UserProfilePage = () => {
                     <div className="text-sm text-gray-400">Morceaux</div>
                   </div>
                   <div className="text-center">
-                    <div className="text-xl font-bold text-magenta-400">{favoriteSongs.length}</div>
+                    <div className="text-xl font-bold text-pink-400">{favoriteSongs.length}</div>
                     <div className="text-sm text-gray-400">Favoris</div>
                   </div>
                   <div className="text-center">
