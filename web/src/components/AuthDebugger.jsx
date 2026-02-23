@@ -73,30 +73,30 @@ ${!isAuthenticated && !initialLoading ? '✅ État normal → Essayez de vous re
   }
 
   return (
-    <div className="fixed bottom-4 left-4 z-50 bg-gray-900 border border-gray-700 rounded-lg p-4 shadow-xl max-w-sm">
+    <div className="fixed bottom-4 left-4 z-50 bg-gray-900/90 backdrop-blur-xl border border-cyan-500/30 rounded-lg p-4 shadow-xl max-w-sm">
       <div className="flex items-center gap-2 mb-3">
-        <Bug className="w-4 h-4 text-yellow-400" />
-        <span className="text-sm font-medium text-gray-300">Debug Auth</span>
+        <Bug className="w-4 h-4 text-cyan-400" />
+        <span className="text-sm font-medium text-cyan-400">Debug Auth</span>
       </div>
       
       <div className="space-y-2 text-xs">
         <div className="flex justify-between">
           <span className="text-gray-400">État:</span>
-          <span className={isAuthenticated ? "text-green-400" : "text-red-400"}>
+          <span className={isAuthenticated ? "text-cyan-400" : "text-red-400"}>
             {isAuthenticated ? 'Connecté' : 'Déconnecté'}
           </span>
         </div>
         
         <div className="flex justify-between">
           <span className="text-gray-400">Loading:</span>
-          <span className={initialLoading ? "text-yellow-400" : "text-green-400"}>
+          <span className={initialLoading ? "text-yellow-400" : "text-cyan-400"}>
             {initialLoading ? '⏳' : '✅'}
           </span>
         </div>
         
         <div className="flex justify-between">
           <span className="text-gray-400">User:</span>
-          <span className="text-gray-300 truncate max-w-[120px]">
+          <span className="text-cyan-300 truncate max-w-[120px]">
             {currentUser?.email?.split('@')[0] || 'Aucun'}
           </span>
         </div>
@@ -107,7 +107,7 @@ ${!isAuthenticated && !initialLoading ? '✅ État normal → Essayez de vous re
           onClick={handleDiagnose}
           size="sm"
           variant="outline"
-          className="w-full text-xs"
+          className="w-full text-xs border-cyan-500/50 text-cyan-400 hover:bg-cyan-500/10"
         >
           <AlertCircle className="w-3 h-3 mr-1" />
           Diagnostic Complet
@@ -117,7 +117,7 @@ ${!isAuthenticated && !initialLoading ? '✅ État normal → Essayez de vous re
           onClick={handleClearSession}
           size="sm"
           variant="outline"
-          className="w-full text-xs"
+          className="w-full text-xs border-cyan-500/50 text-cyan-400 hover:bg-cyan-500/10"
         >
           <Trash2 className="w-3 h-3 mr-1" />
           Nettoyer Session
@@ -127,7 +127,7 @@ ${!isAuthenticated && !initialLoading ? '✅ État normal → Essayez de vous re
           onClick={handleHardRefresh}
           size="sm"
           variant="outline"
-          className="w-full text-xs"
+          className="w-full text-xs border-cyan-500/50 text-cyan-400 hover:bg-cyan-500/10"
         >
           <RefreshCw className="w-3 h-3 mr-1" />
           Hard Refresh

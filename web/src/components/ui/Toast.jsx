@@ -2,12 +2,12 @@ import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { CheckCircle, AlertCircle, Info, AlertTriangle, X } from 'lucide-react';
 
-// Styles pour les différents types de toasts
+// Styles pour les différents types de toasts - Style NovaSound
 const toastStyles = {
   success: {
-    bg: 'bg-gradient-to-r from-green-500 to-emerald-500',
+    bg: 'bg-gradient-to-r from-cyan-500 to-magenta-500',
     icon: 'text-white',
-    border: 'border-green-500/30'
+    border: 'border-cyan-500/30'
   },
   error: {
     bg: 'bg-gradient-to-r from-red-500 to-rose-500',
@@ -20,7 +20,7 @@ const toastStyles = {
     border: 'border-amber-500/30'
   },
   info: {
-    bg: 'bg-gradient-to-r from-cyan-500 to-blue-500',
+    bg: 'bg-gradient-to-r from-cyan-500 to-magenta-500',
     icon: 'text-white',
     border: 'border-cyan-500/30'
   }

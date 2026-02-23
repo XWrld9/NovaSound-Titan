@@ -2,14 +2,14 @@ import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, CheckCircle, AlertCircle, Info, AlertTriangle, Loader2 } from 'lucide-react';
 
-// Styles pour les différents types de dialogues
+// Styles pour les différents types de dialogues - Style NovaSound
 const dialogStyles = {
   success: {
-    bg: 'bg-gradient-to-r from-green-500/10 to-emerald-500/10',
-    border: 'border-green-500/30',
-    icon: 'text-green-400',
-    iconBg: 'bg-green-500/20',
-    title: 'text-green-400'
+    bg: 'bg-gradient-to-r from-cyan-500/10 to-magenta-500/10',
+    border: 'border-cyan-500/30',
+    icon: 'text-cyan-400',
+    iconBg: 'bg-cyan-500/20',
+    title: 'text-cyan-400'
   },
   error: {
     bg: 'bg-gradient-to-r from-red-500/10 to-rose-500/10',
@@ -26,18 +26,18 @@ const dialogStyles = {
     title: 'text-amber-400'
   },
   info: {
-    bg: 'bg-gradient-to-r from-cyan-500/10 to-blue-500/10',
+    bg: 'bg-gradient-to-r from-cyan-500/10 to-magenta-500/10',
     border: 'border-cyan-500/30',
     icon: 'text-cyan-400',
     iconBg: 'bg-cyan-500/20',
     title: 'text-cyan-400'
   },
   loading: {
-    bg: 'bg-gradient-to-r from-purple-500/10 to-violet-500/10',
-    border: 'border-purple-500/30',
-    icon: 'text-purple-400',
-    iconBg: 'bg-purple-500/20',
-    title: 'text-purple-400'
+    bg: 'bg-gradient-to-r from-cyan-500/10 to-magenta-500/10',
+    border: 'border-cyan-500/30',
+    icon: 'text-cyan-400',
+    iconBg: 'bg-cyan-500/20',
+    title: 'text-cyan-400'
   }
 };
 
@@ -136,9 +136,9 @@ export const Dialog = ({
                   <button
                     key={index}
                     onClick={action.onClick || onClose}
-                    className={`px-6 py-2.5 rounded-xl font-medium transition-all transform hover:scale-105 ${
+                    className={`px-6 py-2.5 rounded-xl font-medium transition-all transform hover:scale-105 shadow-lg ${
                       action.primary
-                        ? 'bg-gradient-to-r from-cyan-500 to-magenta-500 text-white hover:from-cyan-600 hover:to-magenta-600 shadow-lg shadow-cyan-500/25'
+                        ? 'bg-gradient-to-r from-cyan-500 to-magenta-500 text-white hover:from-cyan-600 hover:to-magenta-600 shadow-cyan-500/25'
                         : 'bg-gray-800 text-gray-300 hover:bg-gray-700 border border-gray-700'
                     }`}
                   >
