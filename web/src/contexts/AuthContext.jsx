@@ -103,10 +103,55 @@ export const AuthProvider = ({ children }) => {
       });
       
       if (error) {
+        // Si l'email est déjà utilisé, vérifier si l'utilisateur existe dans la base de données
+        if (error.message.includes('already registered')) {
+          const { data: existingUser } = await supabase
+            .from('users')
+            .select('*')
+            .eq('email', email)
+            .single();
+          
+          if (existingUser) {
+            return { 
+              success: false, 
+              message: 'Cet email est déjà utilisé. Veuillez vous connecter.' 
+            };
+          } else {
+            // L'utilisateur existe dans auth mais pas dans la base de données
+            return { 
+              success: false, 
+              message: 'Compte existant mais profil incomplet. Veuillez contacter le support.' 
+            };
+          }
+        }
+        
         return { 
           success: false, 
           message: error.message || 'Inscription échouée. Veuillez réessayer.' 
         };
+      }
+
+      // Créer le profil utilisateur dans la base de données
+      if (data.user && !error) {
+        try {
+          const { error: profileError } = await supabase
+            .from('users')
+            .insert([
+              {
+                id: data.user.id,
+                email: email,
+                username: username,
+                created_at: new Date().toISOString()
+              }
+            ]);
+          
+          if (profileError) {
+            console.error('Erreur création profil:', profileError);
+            // Ne pas bloquer l'inscription si le profil échoue
+          }
+        } catch (profileErr) {
+          console.error('Erreur création profil:', profileErr);
+        }
       }
 
       return { 

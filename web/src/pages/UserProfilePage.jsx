@@ -42,6 +42,20 @@ const UserProfilePage = () => {
     try {
       setLoading(true);
 
+      // Vérifier si l'utilisateur existe dans la base de données
+      const { data: userData, error: userError } = await supabase
+        .from('users')
+        .select('*')
+        .eq('id', currentUser.id)
+        .single();
+
+      if (userError || !userData) {
+        console.error('Utilisateur non trouvé dans la base de données:', userError);
+        // Rediriger vers signup si l'utilisateur n'existe pas
+        navigate('/signup');
+        return;
+      }
+
       // Récupérer les chansons de l'utilisateur
       const { data: songsData, error: songsError } = await supabase
         .from('songs')
@@ -97,6 +111,8 @@ const UserProfilePage = () => {
       setFollowing(followingData || []);
     } catch (error) {
       console.error('Error fetching user data:', error);
+      // En cas d'erreur, rediriger vers signup
+      navigate('/signup');
     } finally {
       setLoading(false);
     }
