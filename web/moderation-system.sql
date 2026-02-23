@@ -100,7 +100,7 @@ DROP POLICY IF EXISTS "Admins can view all reports" ON public.reports;
 CREATE POLICY "Admins can view all reports" ON public.reports FOR SELECT USING (
   EXISTS (
     SELECT 1 FROM public.user_roles 
-    WHERE user_id = auth.uid() AND role IN ('admin', 'moderator') AND is_active = true
+    WHERE user_id = (auth.uid())::text AND role IN ('admin', 'moderator') AND is_active = true
   )
 );
 
@@ -109,7 +109,7 @@ DROP POLICY IF EXISTS "Admins can manage roles" ON public.user_roles;
 CREATE POLICY "Admins can manage roles" ON public.user_roles FOR ALL USING (
   EXISTS (
     SELECT 1 FROM public.user_roles 
-    WHERE user_id = auth.uid() AND role = 'admin' AND is_active = true
+    WHERE user_id = (auth.uid())::text AND role = 'admin' AND is_active = true
   )
 );
 
@@ -121,7 +121,7 @@ DROP POLICY IF EXISTS "Admins can manage logs" ON public.moderation_logs;
 CREATE POLICY "Admins can manage logs" ON public.moderation_logs FOR ALL USING (
   EXISTS (
     SELECT 1 FROM public.user_roles 
-    WHERE user_id = auth.uid() AND role IN ('admin', 'moderator') AND is_active = true
+    WHERE user_id = (auth.uid())::text AND role IN ('admin', 'moderator') AND is_active = true
   )
 );
 
@@ -198,7 +198,7 @@ LANGUAGE plpgsql
 SECURITY DEFINER
 AS $$
 BEGIN
-  IF is_user_banned(auth.uid()) THEN
+  IF is_user_banned((auth.uid())::text) THEN
     RAISE EXCEPTION 'User is banned and cannot perform this action';
   END IF;
   RETURN NEW;
@@ -206,14 +206,17 @@ END;
 $$;
 
 -- Appliquer le trigger sur les tables sensibles
+DROP TRIGGER IF EXISTS check_ban_before_song_insert ON public.songs;
 CREATE TRIGGER check_ban_before_song_insert
   BEFORE INSERT ON public.songs
   FOR EACH ROW EXECUTE FUNCTION check_user_ban();
 
+DROP TRIGGER IF EXISTS check_ban_before_news_insert ON public.news;
 CREATE TRIGGER check_ban_before_news_insert
   BEFORE INSERT ON public.news
   FOR EACH ROW EXECUTE FUNCTION check_user_ban();
 
+DROP TRIGGER IF EXISTS check_ban_before_follow_insert ON public.follows;
 CREATE TRIGGER check_ban_before_follow_insert
   BEFORE INSERT ON public.follows
   FOR EACH ROW EXECUTE FUNCTION check_user_ban();
