@@ -89,7 +89,54 @@ npm run dev
    VITE_SUPABASE_ANON_KEY=votre-clé-anon
    ```
 3. **Exécutez le script SQL complet fourni dans `setup-supabase.sql`** (version irréprochable)
-4. Créez les buckets Storage : `avatars`, `audio`, `covers`
+4. **Créez les buckets Storage manuellement** (étape obligatoire) :
+
+#### 📁 Création des Buckets Storage
+1. Allez dans votre dashboard Supabase → **Storage**
+2. Cliquez sur **"New bucket"** et créez les 3 buckets suivants :
+
+**Bucket 1 : `avatars`**
+- Nom : `avatars`
+- Public bucket : ✅ OUI
+- Taille max fichier : 5MB
+- Formats autorisés : jpg, jpeg, png, gif, webp
+
+**Bucket 2 : `audio`**
+- Nom : `audio`
+- Public bucket : ✅ OUI
+- Taille max fichier : 50MB
+- Formats autorisés : mp3, wav, flac, aac
+
+**Bucket 3 : `covers`**
+- Nom : `covers`
+- Public bucket : ✅ OUI
+- Taille max fichier : 10MB
+- Formats autorisés : jpg, jpeg, png, webp
+
+3. **Configurez les politiques RLS pour chaque bucket** (après création) :
+   - Allez dans Settings → Policies pour chaque bucket
+   - Activez les politiques de lecture publique
+   - Activez les politiques d'écriture pour les utilisateurs authentifiés
+
+⚠️ **Important** : Les buckets doivent être PUBLICS pour que les fichiers soient accessibles via URL publique.
+
+#### 🔧 Dépannage Buckets
+**Problème : "Bucket not found"**
+- ✅ Vérifiez que vous avez bien créé les 3 buckets
+- ✅ Vérifiez l'orthographe exacte (avatars, audio, covers)
+
+**Problème : "Permission denied"**
+- ✅ Vérifiez que les buckets sont PUBLICS
+- ✅ Configurez les politiques RLS correctement
+- ✅ Vérifiez que l'utilisateur est authentifié
+
+**Problème : "File too large"**
+- ✅ Vérifiez les tailles maximales configurées
+- ✅ Compressez les fichiers avant upload
+
+**Problème : "CORS error"**
+- ✅ Configurez les CORS dans les paramètres du bucket
+- ✅ Vérifiez que les buckets sont publics
 
 ## 🚀 Déploiement
 

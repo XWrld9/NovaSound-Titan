@@ -52,11 +52,24 @@ const UserProfilePage = () => {
 
       if (songsError) throw songsError;
 
-      // Récupérer les chansons favorites (likes)
+      // Récupérer les chansons favorites (likes) - requête optimisée
       const { data: likesData, error: likesError } = await supabase
         .from('likes')
-        .select('songs(*)')
-        .eq('user_id', currentUser.id);
+        .select(`
+          song_id,
+          songs (
+            id,
+            title,
+            artist,
+            cover_url,
+            audio_url,
+            created_at,
+            plays_count,
+            likes_count
+          )
+        `)
+        .eq('user_id', currentUser.id)
+        .order('created_at', { ascending: false });
 
       if (likesError) throw likesError;
 
@@ -143,7 +156,7 @@ const UserProfilePage = () => {
         <meta name="description" content="Votre profil utilisateur NovaSound-Titan" />
       </Helmet>
 
-      <div className="min-h-screen bg-gray-950 pb-24 md:pb-32">
+      <div className="min-h-screen bg-gray-950 pb-24 md:pb-32 overflow-x-hidden">
         <Header />
 
         <main className="container mx-auto px-4 py-8">
@@ -285,7 +298,10 @@ const UserProfilePage = () => {
           {/* Contenu des onglets */}
           {loading ? (
             <div className="text-center py-12">
-              <div className="text-cyan-400 text-xl">Chargement...</div>
+              <div className="flex flex-col items-center gap-4">
+                <div className="w-8 h-8 rounded-full border-2 border-cyan-500/30 border-t-cyan-500 animate-spin"></div>
+                <div className="text-cyan-400 text-lg">Chargement du profil...</div>
+              </div>
             </div>
           ) : (
             <>

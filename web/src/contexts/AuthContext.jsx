@@ -54,14 +54,24 @@ export const AuthProvider = ({ children }) => {
     // Écouter les changements d'état d'authentification
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       if (session?.user) {
-        // Récupérer les données du profil utilisateur
-        const { data: profile } = await supabase
-          .from('users')
-          .select('*')
-          .eq('id', session.user.id)
-          .single();
+        // Récupérer les données du profil utilisateur de manière asynchrone
+        // Ne pas bloquer le login, charger en arrière-plan
+        setCurrentUser({ ...session.user });
         
-        setCurrentUser({ ...session.user, ...profile });
+        // Récupérer le profil en arrière-plan
+        try {
+          const { data: profile } = await supabase
+            .from('users')
+            .select('*')
+            .eq('id', session.user.id)
+            .single();
+          
+          if (profile) {
+            setCurrentUser(prev => ({ ...prev, ...profile }));
+          }
+        } catch (error) {
+          console.error('Erreur lors de la récupération du profil:', error);
+        }
       } else {
         setCurrentUser(null);
       }
@@ -114,10 +124,17 @@ export const AuthProvider = ({ children }) => {
 
   const login = async (email, password) => {
     try {
-      const { data, error } = await supabase.auth.signInWithPassword({
+      // Timeout pour éviter les attentes infinies
+      const loginPromise = supabase.auth.signInWithPassword({
         email,
         password
       });
+      
+      const timeoutPromise = new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('Timeout')), 10000)
+      );
+      
+      const { data, error } = await Promise.race([loginPromise, timeoutPromise]);
       
       if (error) {
         console.error('Supabase login error:', error);
@@ -152,6 +169,13 @@ export const AuthProvider = ({ children }) => {
           };
         }
         
+        if (error.message?.includes('Timeout')) {
+          return { 
+            success: false, 
+            message: 'Délai de connexion dépassé. Veuillez vérifier votre connexion et réessayer.' 
+          };
+        }
+        
         // Message générique pour les autres erreurs
         return { 
           success: false, 
@@ -164,7 +188,7 @@ export const AuthProvider = ({ children }) => {
       console.error('Login error:', error);
       return { 
         success: false, 
-        message: 'Erreur de connexion. Veuillez réessayer.' 
+        message: error.message || 'Erreur de connexion. Veuillez réessayer.' 
       };
     }
   };

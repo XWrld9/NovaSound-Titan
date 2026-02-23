@@ -69,7 +69,7 @@ const SignupPage = () => {
         <meta name="description" content="Create your NovaSound-Titan account to start uploading and sharing music" />
       </Helmet>
 
-      <div className="min-h-screen bg-gray-950 flex items-center justify-center px-4 py-12">
+      <div className="min-h-screen bg-gray-950 flex items-center justify-center px-4 py-12 overflow-x-hidden">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -106,11 +106,12 @@ const SignupPage = () => {
               )}
 
               <div>
-                <label className="block text-sm font-medium text-gray-300 mb-2">Username</label>
+                <label htmlFor="username" className="block text-sm font-medium text-gray-300 mb-2">Username</label>
                 <div className="relative">
                   <User className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-cyan-400" />
                   <input
                     type="text"
+                    id="username"
                     name="username"
                     value={formData.username}
                     onChange={handleChange}
@@ -122,11 +123,12 @@ const SignupPage = () => {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-300 mb-2">Email</label>
+                <label htmlFor="email" className="block text-sm font-medium text-gray-300 mb-2">Email</label>
                 <div className="relative">
                   <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-cyan-400" />
                   <input
                     type="email"
+                    id="email"
                     name="email"
                     value={formData.email}
                     onChange={handleChange}
@@ -138,11 +140,12 @@ const SignupPage = () => {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-300 mb-2">Password</label>
+                <label htmlFor="password" className="block text-sm font-medium text-gray-300 mb-2">Password</label>
                 <div className="relative">
                   <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-cyan-400" />
                   <input
                     type="password"
+                    id="password"
                     name="password"
                     value={formData.password}
                     onChange={handleChange}
@@ -156,7 +159,7 @@ const SignupPage = () => {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-300 mb-2">Confirm Password</label>
+                <label htmlFor="passwordConfirm" className="block text-sm font-medium text-gray-300 mb-2">Confirm Password</label>
                 <div className="relative">
                   <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-cyan-400" />
                   <input

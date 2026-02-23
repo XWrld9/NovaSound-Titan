@@ -91,7 +91,7 @@ const LikeButton = ({ songId, initialLikes = 0, initialLiked = false }) => {
       className={`flex items-center gap-2 px-4 py-2 rounded-full transition-all ${
         isLiked 
           ? 'bg-red-500 text-white hover:bg-red-600' 
-          : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+          : 'bg-gray-800 text-cyan-400 hover:bg-gray-700 border border-cyan-500/30'
       }`}
       whileHover={{ scale: 1.05 }}
       whileTap={{ scale: 0.95 }}

@@ -20,6 +20,11 @@ const HomePage = () => {
   }, []);
 
   const fetchData = async () => {
+    // Timeout de sécurité pour éviter le loading infini
+    const loadingTimeout = setTimeout(() => {
+      setLoading(false);
+    }, 5000); // 5 secondes max
+
     try {
       const [{ data: songs, error: songsError }, { data: news, error: newsError }] = await Promise.all([
         supabase
@@ -44,7 +49,11 @@ const HomePage = () => {
       setFeaturedSongs(songs || []);
     } catch (error) {
       console.error('Error fetching data:', error);
+      // En cas d'erreur, afficher quand même les données vides
+      setFeaturedSongs([]);
+      setNewsItems([]);
     } finally {
+      clearTimeout(loadingTimeout);
       setLoading(false);
     }
   };
@@ -60,7 +69,7 @@ const HomePage = () => {
         <meta name="description" content="Stream and discover the latest music on NovaSound-Titan. Upload your tracks and connect with music lovers worldwide." />
       </Helmet>
 
-      <div className="min-h-screen bg-gray-950 flex flex-col pb-24 md:pb-32 relative">
+      <div className="min-h-screen bg-gray-950 flex flex-col pb-24 md:pb-32 relative overflow-x-hidden">
         {/* Background personnalisé */}
         <div 
           className="absolute inset-0 bg-cover bg-center bg-fixed"
@@ -77,8 +86,7 @@ const HomePage = () => {
           {/* Hero Section */}
           <section className="relative h-[500px] md:h-[600px] overflow-hidden">
             <div
-              className="absolute inset-0 bg-gradient-to-b from-gray-950/80 via-gray-950/60 to-gray-950"
-              className="absolute inset-0 bg-cover bg-center"
+              className="absolute inset-0 bg-gradient-to-b from-gray-950/80 via-gray-950/60 to-gray-950 bg-cover bg-center"
               style={{
                 backgroundImage: 'url(https://horizons-cdn.hostinger.com/83c37f40-fa54-4cc6-8247-95b1353f3eba/e8ebebbd32c0e37f6ab462c275dd560a.jpg)'
               }}
@@ -126,7 +134,10 @@ const HomePage = () => {
 
             {loading ? (
               <div className="text-center py-12">
-                <div className="text-cyan-400 text-xl">Loading tracks...</div>
+                <div className="flex flex-col items-center gap-4">
+                  <div className="w-8 h-8 rounded-full border-2 border-cyan-500/30 border-t-cyan-500 animate-spin"></div>
+                  <div className="text-cyan-400 text-lg">Chargement des morceaux...</div>
+                </div>
               </div>
             ) : featuredSongs.length > 0 ? (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 md:gap-6">

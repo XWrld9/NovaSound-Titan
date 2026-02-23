@@ -71,20 +71,39 @@ const EditProfileModal = ({ isOpen, onClose }) => {
 
       // Upload de l'avatar si un fichier est sélectionné
       if (avatarFile) {
+        // Rafraîchir la session pour éviter les locks
+        await supabase.auth.refreshSession();
+        
         const fileExt = avatarFile.name.split('.').pop();
         const fileName = `${currentUser.id}-${Date.now()}.${fileExt}`;
 
-        // Utiliser le bucket 'avatars' dédié
-        const { data: uploadData, error: uploadError } = await supabase.storage
-          .from('avatars')
-          .upload(`${fileName}`, avatarFile, {
-            cacheControl: '3600',
-            upsert: true
-          });
+        // Utiliser le bucket 'avatars' dédié avec retry pour éviter le lock
+        let uploadData, uploadError;
+        let retryCount = 0;
+        const maxRetries = 3;
+
+        do {
+          const { data, error } = await supabase.storage
+            .from('avatars')
+            .upload(`${fileName}`, avatarFile, {
+              cacheControl: '3600',
+              upsert: true
+            });
+          
+          uploadData = data;
+          uploadError = error;
+          retryCount++;
+
+          if (uploadError && uploadError.message?.includes('Navigator LockManager')) {
+            // Attendre avant de réessayer
+            await new Promise(resolve => setTimeout(resolve, 1000 * retryCount));
+          }
+        } while (uploadError && uploadError.message?.includes('Navigator LockManager') && retryCount < maxRetries);
 
         if (uploadError) {
           console.error('Upload error:', uploadError);
           alert('Erreur lors de l\'upload de l\'avatar: ' + uploadError.message);
+          setIsLoading(false);
           return;
         } else {
           const { data: { publicUrl } } = supabase.storage

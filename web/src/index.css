@@ -9,3 +9,31 @@
 body {
 	font-family: 'DM Sans', sans-serif;
 }
+
+/* Corriger l'overflow horizontal sur mobile */
+html, body {
+	overflow-x: hidden;
+	max-width: 100vw;
+}
+
+/* Empêcher le scroll horizontal sur tous les conteneurs */
+* {
+	box-sizing: border-box;
+}
+
+/* Corriger les éléments qui débordent */
+img, video, iframe {
+	max-width: 100%;
+	height: auto;
+}
+
+/* Corriger le scroll sur les conteneurs flex */
+.flex {
+	min-width: 0;
+}
+
+/* Corriger les textes longs */
+.text-break {
+	word-break: break-word;
+	overflow-wrap: break-word;
+}
