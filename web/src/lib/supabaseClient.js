@@ -4,14 +4,25 @@ import { createClient } from '@supabase/supabase-js';
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
-// Instance unique Supabase avec persistance de session garantie
+// Instance unique Supabase avec persistance de session garantie et debug
 export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
   auth: {
     persistSession: true,
     autoRefreshToken: true,
     detectSessionInUrl: true,
     storage: window.localStorage, // Force localStorage pour la persistance
-    storageKey: 'supabase.auth.token' // Clé de stockage explicite
+    storageKey: 'supabase.auth.token', // Clé de stockage explicite
+    debug: true, // Activer les logs de debug Supabase
+    flowType: 'pkce', // Flow PKCE plus sécurisé
+    redirectTo: window.location.origin // Redirection explicite
+  },
+  db: {
+    schema: 'public'
+  },
+  global: {
+    headers: {
+      'X-Client-Info': 'novasound-titan-web/1.0.0'
+    }
   }
 });
 

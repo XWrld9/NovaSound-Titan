@@ -28,12 +28,81 @@ export const AuthProvider = ({ children }) => {
   };
 
   useEffect(() => {
-    // Écouter les changements d'état d'authentification
+    // Récupérer la session existante AU DÉBUT
+    const initializeSession = async () => {
+      try {
+        console.log('🔍 Vérification session initiale...');
+        const { data: { session }, error } = await supabase.auth.getSession();
+        
+        if (error) {
+          console.error('❌ Erreur getSession:', error);
+          setInitialLoading(false);
+          return;
+        }
+        
+        if (session?.user) {
+          console.log('✅ Session trouvée:', session.user.email);
+          setCurrentUser({ ...session.user });
+          
+          // Récupérer le profil en arrière-plan
+          try {
+            const { data: profile, error: profileError } = await supabase
+              .from('users')
+              .select('*')
+              .eq('id', session.user.id)
+              .single();
+            
+            if (profileError) {
+              console.error('Erreur profil:', profileError);
+              // Créer le profil s'il n'existe pas
+              if (profileError.code === 'PGRST116') {
+                console.log('🔧 Création profil manquant...');
+                const { error: createError } = await supabase
+                  .from('users')
+                  .insert([
+                    {
+                      id: session.user.id,
+                      email: session.user.email,
+                      username: session.user.user_metadata?.username || session.user.email.split('@')[0],
+                      created_at: new Date().toISOString()
+                    }
+                  ]);
+                
+                if (createError) {
+                  console.error('Erreur création profil:', createError);
+                }
+              }
+            }
+            
+            // Mettre à jour avec les données du profil
+            if (profile) {
+              setCurrentUser(prev => ({ ...prev, ...profile }));
+            }
+          } catch (profileErr) {
+            console.error('Erreur chargement profil:', profileErr);
+          }
+        } else {
+          console.log('👋 Aucune session trouvée');
+          setCurrentUser(null);
+        }
+      } catch (err) {
+        console.error('💥 Erreur initialiseSession:', err);
+        setCurrentUser(null);
+      } finally {
+        // TOUJOURS arrêter le loading
+        setInitialLoading(false);
+      }
+    };
+
+    // Exécuter l'initialisation
+    initializeSession();
+
+    // Ensuite, écouter les changements d'état d'authentification
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       console.log('🔄 Auth state change:', event, session?.user?.email);
       
-      if (session?.user) {
-        // Utilisateur connecté
+      if (event === 'SIGNED_IN' && session?.user) {
+        // Utilisateur vient de se connecter
         try {
           // Récupérer les données du profil utilisateur
           const { data: profile, error: profileError } = await supabase
@@ -73,14 +142,12 @@ export const AuthProvider = ({ children }) => {
           // Mettre quand même l'utilisateur sans profil
           setCurrentUser({ ...session.user });
         }
-      } else {
+      } else if (event === 'SIGNED_OUT') {
         // Utilisateur déconnecté
         console.log('👋 Utilisateur déconnecté');
         setCurrentUser(null);
       }
-      
-      // Toujours arrêter le loading après traitement
-      setInitialLoading(false);
+      // PAS BESOIN de setInitialLoading(false) ici, déjà fait dans initializeSession
     });
 
     return () => subscription.unsubscribe();
@@ -188,12 +255,19 @@ export const AuthProvider = ({ children }) => {
     
     try {
       // Connexion DIRECTE sans retry, sans timeout, sans complexité
+      console.log('📍 Appel signInWithPassword...');
       const { data, error } = await supabase.auth.signInWithPassword({
         email: cleanEmail,
         password: password // Utiliser le mot de passe exactement comme fourni
       });
       
-      console.log('📍 Résultat connexion directe:', { data, error, passwordLength: password?.length });
+      console.log('📍 Résultat connexion directe:', { 
+        data: data ? 'OK' : 'NULL', 
+        error: error?.message || 'NONE', 
+        passwordLength: password?.length,
+        userId: data?.user?.id,
+        userEmail: data?.user?.email
+      });
       
       if (error) {
         console.error('❌ Erreur Supabase:', error);
@@ -221,6 +295,7 @@ export const AuthProvider = ({ children }) => {
       }
 
       if (!data?.user) {
+        console.error('❌ Pas de user dans la réponse');
         return { 
           success: false, 
           message: 'Utilisateur non trouvé. Vérifiez vos identifiants.' 
@@ -228,12 +303,15 @@ export const AuthProvider = ({ children }) => {
       }
 
       console.log('✅ CONNEXION RÉUSSIE ! Session persistante activée.');
+      console.log('📍 User ID:', data.user.id);
+      console.log('📍 User Email:', data.user.email);
       
       // Forcer la mise à jour de l'état immédiatement
       setCurrentUser(data.user);
       
       // Créer le profil si nécessaire (simple et direct)
       try {
+        console.log('🔍 Vérification profil utilisateur...');
         const { data: profile, error: profileError } = await supabase
           .from('users')
           .select('*')
@@ -260,7 +338,10 @@ export const AuthProvider = ({ children }) => {
           }
         } else if (profile) {
           // Mettre à jour avec les données du profil
+          console.log('✅ Profil trouvé, mise à jour utilisateur');
           setCurrentUser({ ...data.user, ...profile });
+        } else {
+          console.log('✅ Profil déjà à jour');
         }
       } catch (profileErr) {
         console.error('⚠️ Erreur profil (non bloquant):', profileErr);
