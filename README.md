@@ -273,91 +273,17 @@ La base de données est configurée avec les tables :
 - ⭐ **News épinglées** et mises en avant
 - 🔔 **Notifications** pour nouvelles news
 
-## �️ Système de Modération
-
-### 🎯 Fonctionnalités de Sécurité
-- ✅ **Signalement de contenu** - Songs, news, utilisateurs
-- ✅ **Panneau de modération** - Interface admin complète
-- ✅ **Rôles utilisateurs** - Admin, Modérateur, Utilisateur
-- ✅ **Bannissement automatique** - Temporaire ou permanent
-- ✅ **Logs de modération** - Traçabilité complète
-- ✅ **Protection anti-spam** - Vérification automatique
-
-### 🔐 Permissions et Sécurité
-- **Signalement** : Tous les utilisateurs authentifiés
-- **Modération** : Admins et modérateurs uniquement
-- **Bannissement** : Admins uniquement
-- **Logs** : Accessibles aux admins seulement
-- **RLS** : Sécurité granulaire sur toutes les tables
-
-### 🚀 Utilisation du Système
-1. **Signaler** : Cliquez sur l'icône 🚩 sur tout contenu
-2. **Modérer** : Accédez à `/moderation` (admins/modérateurs)
-3. **Gérer** : Consultez, résolvez, bannissez si nécessaire
-4. **Traiter** : Actions automatiques et manuelles
-
-### 📊 Tables de Modération
-- `reports` : Signalements utilisateurs
-- `user_roles` : Rôles et permissions
-- `moderation_logs` : Historique des actions
-- `banned_users` : Utilisateurs bannis
-
-### 🎛️ Panneau d'Administration
-- **Statistiques** : Signalements en attente, résolus, rejetés
-- **Actions rapides** : Résoudre, rejeter, bannir
-- **Détails** : Informations complètes sur chaque signalement
-- **Historique** : Logs de toutes les actions de modération
-
-## �🗺️ Roadmap & Versions Futures
-
-### Version 2.1 (Prochainement)
-- 🎵 **Player avancé** - Playlist, shuffle, repeat
-- 💬 **Commentaires** - Sur les chansons et profils
-- 🔔 **Notifications push** - Nouveaux followers et likes
-- 📊 **Analytics détaillées** - Stats artistes en temps réel
-
-### Version 2.2 (Q2 2026)
-- 🎥 **Live streaming** - Concerts en direct
-- 🤝 **Collaborations** - Duos entre artistes
-- 💰 **Monétisation** - Tips et abonnements
-- 🌍 **Multi-langues** - Internationalisation
-
-### Version 3.0 (2026)
-- 📱 **App mobile native** - iOS et Android
-- 🎧 **Podcasts intégrés** - Émissions et interviews
-- 🤖 **IA Music** - Recommandations intelligentes
-- 🎪 **Événements virtuels** - Concerts online
-
-### 🐛 Bugs Connus & En Cours
-- ⚠️ **Upload gros fichiers** > 50MB (limitation Supabase)
-- ⚠️ **Streaming sur mobile** - Optimisation en cours
-- ⚠️ **Recherche avancée** - Filtrage en développement
-
-## �📞 Contact & Équipe
-
-### Équipe Fondatrice
-- **Développeur Principal** : M. Tetang Tanekou M.N (EL_AX)
-- **Fondateur & Vision** : M. Tindo Arthur
-
-### Pour toute collaboration
-- 📧 **Technique** : Contactez M. Tetang Tanekou M.N
-- 🎯 **Stratégique** : Contactez M. Tindo Arthur
-- 🌐 **Plateforme** : [NovaSound-TITAN LUX](https://nova-sound-titan.vercel.app)
-
-## � Dépannage & Erreurs Courantes
-
-### ❌ Erreurs Fréquentes
-
-**Build échoue**
 ```bash
-# Vérifier version Node.js
-node --version  # Doit être 24.x
-
-# Nettoyer et réinstaller
-rm -rf node_modules package-lock.json
 npm install
+npm run build
+npm run preview
 ```
 
+**Environment Variables :**
+```env
+VITE_SUPABASE_URL=https://tleuzlyfelrnykpbwhkc.supabase.co
+VITE_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+SUPABASE_SERVICE_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
 **Variables d'environnement non trouvées**
 ```bash
 # Créer fichier .env
