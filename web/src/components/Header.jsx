@@ -45,10 +45,23 @@ const Header = () => {
     return () => clearTimeout(searchTimeout);
   }, [searchQuery]);
 
-  const handleLogout = () => {
-    logout();
-    navigate('/');
-    setIsMobileMenuOpen(false);
+  const handleLogout = async () => {
+    try {
+      const result = await logout();
+      if (result?.success) {
+        navigate('/');
+        setIsMobileMenuOpen(false);
+      } else {
+        // Forcer la redirection même en cas d'erreur
+        navigate('/');
+        setIsMobileMenuOpen(false);
+      }
+    } catch (error) {
+      console.error('Logout handler error:', error);
+      // Forcer la redirection même en cas d'erreur critique
+      navigate('/');
+      setIsMobileMenuOpen(false);
+    }
   };
 
   return (

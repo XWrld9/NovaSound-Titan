@@ -198,10 +198,16 @@ export const AuthProvider = ({ children }) => {
       const { error } = await supabase.auth.signOut();
       if (error) {
         console.error('Logout error:', error);
+        // Forcer la déconnexion même en cas d'erreur
+        setCurrentUser(null);
+        return { success: false, error: error.message };
       }
       setCurrentUser(null);
+      return { success: true };
     } catch (error) {
       console.error('Logout error:', error);
+      setCurrentUser(null);
+      return { success: false, error: error.message };
     }
   };
 
