@@ -424,9 +424,9 @@ npm run build --force
 - **Issues GitHub** : [Signaler un bug](https://github.com/XWrld9/NovaSound-Titan/issues)
 
 ### 📧 Contact Technique
-- **Développeur** : M. Tetang Tanekou M.N (EL_AX)
+- **Développeur** : M. Tetang Tanekou M.N (EL-AX)
 - **Email** : eloadxfamily@gmail.com
-- **GitHub** : [@EL_AX](https://github.com/EL_AX)
+- **GitHub** : [@EL-AX](https://github.com/EL-AX)
 
 ### ⏰ Temps de Réponse
 - **Support technique** : 24-48h
