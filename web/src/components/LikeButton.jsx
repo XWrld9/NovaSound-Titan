@@ -90,19 +90,14 @@ const LikeButton = ({ songId, initialLikes = 0, initialLiked = false }) => {
       disabled={isLoading}
       className={`flex items-center gap-2 px-4 py-2 rounded-full transition-all ${
         isLiked 
-          ? 'bg-red-500 text-white hover:bg-red-600' 
+          ? 'bg-red-500 text-pink-100 hover:bg-red-600' 
           : 'bg-gray-800 text-cyan-400 hover:bg-gray-700 border border-cyan-500/30'
       }`}
       whileHover={{ scale: 1.05 }}
       whileTap={{ scale: 0.95 }}
     >
       {isLiked ? (
-        <LottieAnimation 
-          animationData={heartAnimation} 
-          width={20} 
-          height={20} 
-          loop={false}
-        />
+        <Heart className="w-5 h-5 text-pink-100" />
       ) : (
         <Heart className="w-5 h-5" />
       )}

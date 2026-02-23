@@ -280,7 +280,7 @@ const UserProfilePage = () => {
               onClick={() => setActiveTab('favorites')}
               className={`px-4 py-2 font-semibold transition-colors ${
                 activeTab === 'favorites'
-                  ? 'text-magenta-400 border-b-2 border-magenta-400'
+                  ? 'text-pink-400 border-b-2 border-pink-400'
                   : 'text-gray-400 hover:text-white'
               }`}
             >
@@ -373,7 +373,7 @@ const UserProfilePage = () => {
                       </motion.div>
                     ))
                   ) : (
-                    <div className="col-span-full text-center py-12 bg-gray-900/50 backdrop-blur-xl border border-magenta-500/30 rounded-xl">
+                    <div className="col-span-full text-center py-12 bg-gray-900/50 backdrop-blur-xl border border-pink-500/30 rounded-xl">
                       <Heart className="w-16 h-16 text-gray-600 mx-auto mb-4" />
                       <p className="text-gray-400 text-lg">Aucun favori</p>
                       <p className="text-gray-500 text-sm mt-2">
