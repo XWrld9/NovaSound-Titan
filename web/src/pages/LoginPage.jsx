@@ -8,19 +8,13 @@ import { Button } from '@/components/ui/button';
 
 const LoginPage = () => {
   const navigate = useNavigate();
-  const { login, resendVerification, diagnoseConnection } = useAuth();
+  const { login, resendVerification } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [needsVerification, setNeedsVerification] = useState(false);
-
-  const handleDiagnose = async () => {
-    console.log(' LANCEMENT DU DIAGNOSTIC COMPLET');
-    const diagnosis = await diagnoseConnection();
-    alert(`DIAGNOSTIC:\n\nURL Supabase: ${diagnosis.supabaseUrl}\nClé API: ${diagnosis.hasAnonKey ? ' ' : ' '}\nEn ligne: ${diagnosis.online ? ' ' : ' '}\nLocalStorage: ${diagnosis.localStorage ? ' ' : ' '}\nSessionStorage: ${diagnosis.sessionStorage ? ' ' : ' '}\nConnexion DB: ${diagnosis.databaseConnection ? ' ' : ' '}\nSession active: ${diagnosis.hasSession ? ' ' : ' '}\n\nErreurs:\n${diagnosis.databaseError || 'Aucune'}\n${diagnosis.sessionError || 'Aucune'}`);
-  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -165,15 +159,7 @@ const LoginPage = () => {
                   Sign up
                 </Link>
               </p>
-              {/* Bouton de diagnostic */}
               <div className="mt-4 pt-4 border-t border-gray-700">
-                <button
-                  type="button"
-                  onClick={handleDiagnose}
-                  className="text-xs text-gray-500 hover:text-cyan-400 underline"
-                >
-                  🔍 Diagnostic connexion
-                </button>
               </div>
             </div>
           </div>

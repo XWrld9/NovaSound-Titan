@@ -370,17 +370,11 @@ node -e "console.log(process.env.VITE_SUPABASE_URL)"
 npm run build && npm run preview
 ```
 
-**Environment Variables :**
-```env
-VITE_SUPABASE_URL=https://tleuzlyfelrnykpbwhkc.supabase.co
-VITE_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
-SUPABASE_SERVICE_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
 **Variables d'environnement non trouvées**
 ```bash
 # Créer fichier .env
 echo "VITE_SUPABASE_URL=votre-url" > .env
 echo "VITE_SUPABASE_ANON_KEY=votre-clé" >> .env
-echo "SUPABASE_SERVICE_KEY=votre-clé-service" >> .env
 ```
 
 **Buckets non créés automatiquement**
@@ -431,7 +425,7 @@ npm run build --force
 
 ### 📧 Contact Technique
 - **Développeur** : M. Tetang Tanekou M.N (EL_AX)
-- **Email** : elax@novasound-titan.com
+- **Email** : eloadxfamily@gmail.com
 - **GitHub** : [@EL_AX](https://github.com/EL_AX)
 
 ### ⏰ Temps de Réponse
