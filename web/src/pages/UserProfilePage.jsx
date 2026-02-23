@@ -17,6 +17,7 @@ import { Link, useNavigate } from 'react-router-dom';
 const UserProfilePage = () => {
   const { currentUser, logout } = useAuth();
   const navigate = useNavigate();
+  const [profile, setProfile] = useState(null);
   const [userSongs, setUserSongs] = useState([]);
   const [favoriteSongs, setFavoriteSongs] = useState([]);
   const [followers, setFollowers] = useState([]);
@@ -25,6 +26,29 @@ const UserProfilePage = () => {
   const [loading, setLoading] = useState(true);
   const [currentSong, setCurrentSong] = useState(null);
   const [showEditModal, setShowEditModal] = useState(false);
+
+  // Charger le profil séparément comme demandé par ChatGPT
+  useEffect(() => {
+    if (!currentUser) return;
+
+    const loadProfile = async () => {
+      try {
+        const { data } = await supabase
+          .from('users')
+          .select('*')
+          .eq('id', currentUser.id)
+          .single();
+
+        if (data) {
+          setProfile(data);
+        }
+      } catch (error) {
+        console.error('Erreur chargement profil:', error);
+      }
+    };
+
+    loadProfile();
+  }, [currentUser]);
 
   useEffect(() => {
     if (currentUser) {

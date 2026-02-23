@@ -49,95 +49,24 @@ export const AuthProvider = ({ children }) => {
   };
 
   useEffect(() => {
-    // 🚀 SOLUTION: Utiliser UNIQUEMENT onAuthStateChange pour gérer l'état
-    // Pas d'appel getSession() séparé qui peut bloquer
-    
-    let mounted = true;
-    let sessionChecked = false;
+  const { data: { subscription } } = supabase.auth.onAuthStateChange(
+    (event, session) => {
+      console.log('Auth event:', event);
 
-    // Écouter les changements d'état d'authentification
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-      console.log('🔄 Auth state change:', event, session?.user?.email);
-      
-      // Éviter les traitements multiples
-      if (!mounted) return;
-      
-      if (event === 'INITIAL_SESSION' || event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
-        if (session?.user) {
-          console.log('✅ Session trouvée:', session.user.email);
-          setCurrentUser({ ...session.user });
-          
-          // Récupérer le profil en arrière-plan (non bloquant)
-          if (!sessionChecked) {
-            sessionChecked = true;
-            try {
-              const { data: profile, error: profileError } = await supabase
-                .from('users')
-                .select('*')
-                .eq('id', session.user.id)
-                .single();
-              
-              if (profileError) {
-                console.error('Erreur profil:', profileError);
-                // Créer le profil s'il n'existe pas
-                if (profileError.code === 'PGRST116') {
-                  console.log('🔧 Création profil manquant...');
-                  const { error: createError } = await supabase
-                    .from('users')
-                    .insert([
-                      {
-                        id: session.user.id,
-                        email: session.user.email,
-                        username: session.user.user_metadata?.username || session.user.email.split('@')[0],
-                        created_at: new Date().toISOString()
-                      }
-                    ]);
-                  
-                  if (createError) {
-                    console.error('Erreur création profil:', createError);
-                  }
-                }
-              }
-              
-              // Mettre à jour avec les données du profil
-              if (profile) {
-                setCurrentUser(prev => ({ ...prev, ...profile }));
-              }
-            } catch (profileErr) {
-              console.error('Erreur chargement profil:', profileErr);
-            }
-          }
-        } else {
-          console.log('👋 Aucune session trouvée');
-          setCurrentUser(null);
-        }
-      } else if (event === 'SIGNED_OUT') {
-        console.log('� Utilisateur déconnecté');
+      if (session?.user) {
+        setCurrentUser(session.user);
+      } else {
         setCurrentUser(null);
-        sessionChecked = false;
       }
-      
-      // 🎯 CRUCIAL: Arrêter le loading DÈS LE PREMIER ÉVÉNEMENT
-      if (initialLoading) {
-        console.log('🎯 Arrêt du loading initial');
-        setInitialLoading(false);
-      }
-    });
 
-    // Timeout de sécurité au cas où onAuthStateChange ne se déclenche pas
-    const safetyTimeout = setTimeout(() => {
-      if (mounted && initialLoading) {
-        console.log('⏰ Timeout de sécurité: arrêt du loading');
-        setInitialLoading(false);
-      }
-    }, 3000); // 3 secondes max
+      setInitialLoading(false);
+    }
+  );
 
-    return () => {
-      mounted = false;
-      subscription.unsubscribe();
-      clearTimeout(safetyTimeout);
-    };
-  }, [initialLoading]);
+  return () => {
+    subscription.unsubscribe();
+  };
+}, []); // TABLEAU VIDE
 
   const signup = async (email, password, passwordConfirm, username) => {
     console.log('🚀 INSCRIPTION SIMPLE ET DIRECTE pour:', email);
@@ -410,9 +339,6 @@ export const AuthProvider = ({ children }) => {
             `Bienvenue ${data.user.email.split('@')[0]} ! Vous êtes maintenant connecté.`,
             { duration: 3000 }
           );
-          
-          // Forcer la mise à jour de l'état immédiatement
-          setCurrentUser(data.user);
           
           // Créer le profil si nécessaire (simple et direct)
           try {
