@@ -87,56 +87,26 @@ npm run dev
    ```env
    VITE_SUPABASE_URL=votre-url-supabase
    VITE_SUPABASE_ANON_KEY=votre-clé-anon
+   SUPABASE_SERVICE_KEY=votre-clé-service  # Pour créer les buckets
    ```
-3. **Exécutez le script SQL complet fourni dans `setup-supabase.sql`** (version irréprochable)
-4. **Créez les buckets Storage manuellement** (étape obligatoire) :
+3. **Exécutez le script SQL complet** dans `setup-supabase.sql`
+4. **Créez les buckets automatiquement** avec le script :
+   ```bash
+   npm run setup:buckets
+   ```
 
-#### 📁 Création des Buckets Storage
-1. Allez dans votre dashboard Supabase → **Storage**
-2. Cliquez sur **"New bucket"** et créez les 3 buckets suivants :
+#### 🤖 Script Automatisé de Buckets
+Le script `setup-buckets.js` crée automatiquement :
+- ✅ **Bucket `avatars`** - Photos de profil (5MB max, public)
+- ✅ **Bucket `audio`** - Fichiers audio (50MB max, public)  
+- ✅ **Bucket `covers`** - Pochettes d'albums (10MB max, public)
+- ✅ **Politiques RLS** automatiques pour chaque bucket
+- ✅ **Permissions** lecture publique + écriture authentifiée
 
-**Bucket 1 : `avatars`**
-- Nom : `avatars`
-- Public bucket : ✅ OUI
-- Taille max fichier : 5MB
-- Formats autorisés : jpg, jpeg, png, gif, webp
-
-**Bucket 2 : `audio`**
-- Nom : `audio`
-- Public bucket : ✅ OUI
-- Taille max fichier : 50MB
-- Formats autorisés : mp3, wav, flac, aac
-
-**Bucket 3 : `covers`**
-- Nom : `covers`
-- Public bucket : ✅ OUI
-- Taille max fichier : 10MB
-- Formats autorisés : jpg, jpeg, png, webp
-
-3. **Configurez les politiques RLS pour chaque bucket** (après création) :
-   - Allez dans Settings → Policies pour chaque bucket
-   - Activez les politiques de lecture publique
-   - Activez les politiques d'écriture pour les utilisateurs authentifiés
-
-⚠️ **Important** : Les buckets doivent être PUBLICS pour que les fichiers soient accessibles via URL publique.
-
-#### 🔧 Dépannage Buckets
-**Problème : "Bucket not found"**
-- ✅ Vérifiez que vous avez bien créé les 3 buckets
-- ✅ Vérifiez l'orthographe exacte (avatars, audio, covers)
-
-**Problème : "Permission denied"**
-- ✅ Vérifiez que les buckets sont PUBLICS
-- ✅ Configurez les politiques RLS correctement
-- ✅ Vérifiez que l'utilisateur est authentifié
-
-**Problème : "File too large"**
-- ✅ Vérifiez les tailles maximales configurées
-- ✅ Compressez les fichiers avant upload
-
-**Problème : "CORS error"**
-- ✅ Configurez les CORS dans les paramètres du bucket
-- ✅ Vérifiez que les buckets sont publics
+**Prérequis pour le script :**
+- Installer les dépendances : `npm install @supabase/supabase-js dotenv`
+- Créer une clé service dans Supabase Dashboard > Settings > API
+- Ajouter `SUPABASE_SERVICE_KEY` dans votre `.env`
 
 ## 🚀 Déploiement
 
@@ -180,6 +150,7 @@ NovaSound-Titan/
 │   ├── public/             # Fichiers statiques
 │   │   ├── background.png  # Background personnalisé
 │   │   └── profil par defaut.png # Avatar par défaut
+│   ├── setup-buckets.js   # Script automatisé buckets
 │   └── package.json        # Dépendances
 ├── README.md              # Documentation
 └── LICENSE                # Licence
@@ -190,6 +161,7 @@ NovaSound-Titan/
 ### Variables d'environnement
 - `VITE_SUPABASE_URL` : URL de l'instance Supabase
 - `VITE_SUPABASE_ANON_KEY` : Clé publique Supabase
+- `SUPABASE_SERVICE_KEY` : Clé service (pour buckets)
 
 ### Base de données
 La base de données est configurée avec les tables :
@@ -233,9 +205,10 @@ La base de données est configurée avec les tables :
 
 ### ✨ Améliorations récentes
 - 🎨 **Background personnalisé** - Utilise `background.png`
-- � **Avatar par défaut** - Utilise `profil par defaut.png`
+- 👤 **Avatar par défaut** - Utilise `profil par defaut.png`
 - 🎬 **Animations Lottie** - Type Spotify pour likes et play
 - 🔧 **SQL complet** - Script `setup-supabase.sql` irréprochable
+- 🤖 **Buckets automatisés** - Script `setup-buckets.js`
 - 📱 **Micro-interactions** - LoadingSpinner et transitions fluides
 - 🚀 **Performance** - Optimisations et responsive design
 
