@@ -169,17 +169,21 @@ export const AuthProvider = ({ children }) => {
 
   const login = async (email, password) => {
     try {
-      // Timeout pour éviter les attentes infinies
+      console.log('Tentative de connexion pour:', email);
+      
+      // Timeout plus long pour éviter les faux timeouts
       const loginPromise = supabase.auth.signInWithPassword({
         email,
         password
       });
       
       const timeoutPromise = new Promise((_, reject) => 
-        setTimeout(() => reject(new Error('Timeout')), 10000)
+        setTimeout(() => reject(new Error('Connection timeout - Vérifiez votre connexion internet')), 30000)
       );
       
       const { data, error } = await Promise.race([loginPromise, timeoutPromise]);
+      
+      console.log('Résultat connexion:', { data, error });
       
       if (error) {
         console.error('Supabase login error:', error);
@@ -214,23 +218,41 @@ export const AuthProvider = ({ children }) => {
           };
         }
         
-        if (error.message?.includes('Timeout')) {
+        if (error.message?.includes('timeout') || error.message?.includes('Timeout')) {
           return { 
             success: false, 
-            message: 'Délai de connexion dépassé. Veuillez vérifier votre connexion et réessayer.' 
+            message: 'Connexion trop lente. Vérifiez votre connexion internet et réessayez.' 
           };
         }
         
-        // Message générique pour les autres erreurs
         return { 
           success: false, 
           message: error.message || 'Erreur de connexion. Veuillez réessayer.' 
         };
       }
 
-      return { success: true, user: data.user };
+      if (!data.user) {
+        return { 
+          success: false, 
+          message: 'Utilisateur non trouvé. Veuillez vérifier vos identifiants.' 
+        };
+      }
+
+      return { 
+        success: true, 
+        message: 'Connexion réussie!' 
+      };
+      
     } catch (error) {
       console.error('Login error:', error);
+      
+      if (error.message?.includes('timeout') || error.message?.includes('Timeout')) {
+        return { 
+          success: false, 
+          message: 'Connexion timeout. Vérifiez votre connexion internet et réessayez.' 
+        };
+      }
+      
       return { 
         success: false, 
         message: error.message || 'Erreur de connexion. Veuillez réessayer.' 

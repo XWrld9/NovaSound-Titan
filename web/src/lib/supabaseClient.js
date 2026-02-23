@@ -4,8 +4,28 @@ import { createClient } from '@supabase/supabase-js';
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
-// Instance unique Supabase
-export const supabase = createClient(supabaseUrl, supabaseAnonKey);
+// Instance unique Supabase avec configuration optimisée
+export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
+  auth: {
+    persistSession: true,
+    autoRefreshToken: true,
+    detectSessionInUrl: true,
+    flow: 'pkce' // Meilleur pour la sécurité et les timeouts
+  },
+  global: {
+    headers: {
+      'X-Client-Info': 'novasound-titan-web'
+    }
+  },
+  db: {
+    schema: 'public'
+  },
+  realtime: {
+    params: {
+      eventsPerSecond: 10
+    }
+  }
+});
 
 // Fonctions utilitaires pour la compatibilité
 export const supabaseClient = {
