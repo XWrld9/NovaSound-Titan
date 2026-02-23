@@ -6,6 +6,7 @@ import { DialogProvider } from '@/components/ui/Dialog';
 import { ToastContainer } from '@/components/ui/Toast';
 import ScrollToTop from '@/components/ScrollToTop';
 import ProtectedRoute from '@/components/ProtectedRoute';
+import AuthDebugger from '@/components/AuthDebugger';
 import HomePage from '@/pages/HomePage';
 import LoginPage from '@/pages/LoginPage';
 import SignupPage from '@/pages/SignupPage';
@@ -67,6 +68,7 @@ function App() {
             </Routes>
           </Router>
           <ToastContainer />
+          <AuthDebugger />
         </DialogProvider>
       </AuthProvider>
     </HelmetProvider>
