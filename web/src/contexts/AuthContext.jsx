@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { supabase } from '../lib/supabaseClient';
+import { networkDetector } from '../lib/networkDetector';
 
 const AuthContext = createContext();
 
@@ -253,17 +254,38 @@ export const AuthProvider = ({ children }) => {
     // Nettoyer l'email
     const cleanEmail = email.trim().toLowerCase();
     
-    // Fonction de retry pour les timeouts réseau
-    const retryLogin = async (maxRetries = 3, delay = 1000) => {
+    // 1. Test de la qualité réseau AVANT la connexion
+    console.log('🌐 Test de la qualité réseau...');
+    const networkTest = await networkDetector.testMultiplePings();
+    console.log('📊 Qualité réseau:', networkTest);
+    
+    if (networkDetector.getNetworkQuality() === 'offline') {
+      return {
+        success: false,
+        message: 'Vous êtes hors ligne. Vérifiez votre connexion internet.'
+      };
+    }
+    
+    if (networkTest.packetLoss) {
+      console.log('⚠️ Perte de paquets détectée, utilisation de retry étendu...');
+    }
+    
+    // 2. Fonction de retry adaptative selon la qualité réseau
+    const retryLogin = async (maxRetries = networkTest.packetLoss ? 5 : 3, delay = networkTest.packetLoss ? 2000 : 1000) => {
       for (let attempt = 1; attempt <= maxRetries; attempt++) {
         try {
           console.log(`📍 Tentative ${attempt}/${maxRetries} signInWithPassword...`);
+          
+          // Attendre une meilleure connexion si le réseau est mauvais
+          if (networkDetector.getNetworkQuality() === 'poor' && attempt > 1) {
+            console.log('⏳ Attente d\'une meilleure connexion...');
+            await networkDetector.waitForBetterConnection(5000);
+          }
           
           const { data, error } = await supabase.auth.signInWithPassword({
             email: cleanEmail,
             password: password,
             options: {
-              // Augmenter le timeout pour les connexions lentes
               captchaToken: undefined
             }
           });
@@ -274,7 +296,8 @@ export const AuthProvider = ({ children }) => {
             passwordLength: password?.length,
             userId: data?.user?.id,
             userEmail: data?.user?.email,
-            attempt
+            attempt,
+            networkQuality: networkDetector.getNetworkQuality()
           });
           
           if (error) {
@@ -296,16 +319,18 @@ export const AuthProvider = ({ children }) => {
               };
             }
             
-            // Si c'est une erreur réseau, réessayer
+            // Si c'est une erreur réseau, réessayer avec plus de patience
             if (error.message?.includes('Failed to fetch') || error.message?.includes('timeout')) {
               if (attempt < maxRetries) {
-                console.log(`⏳ Erreur réseau, retry dans ${delay}ms...`);
-                await new Promise(resolve => setTimeout(resolve, delay));
+                const waitTime = delay * attempt; // Délai progressif
+                console.log(`⏳ Erreur réseau, retry dans ${waitTime}ms...`);
+                console.log('📊 Qualité réseau actuelle:', networkDetector.getNetworkQuality());
+                await new Promise(resolve => setTimeout(resolve, waitTime));
                 continue;
               } else {
                 return { 
                   success: false, 
-                  message: 'Problème de connexion réseau. Vérifiez votre internet et réessayez.' 
+                  message: `Problème de connexion réseau (${networkTest.successRate * 100}% de réussite). Essayez de vous rapprocher de votre routeur ou changez de réseau.` 
                 };
               }
             }
@@ -327,6 +352,7 @@ export const AuthProvider = ({ children }) => {
           console.log('✅ CONNEXION RÉUSSIE ! Session persistante activée.');
           console.log('📍 User ID:', data.user.id);
           console.log('📍 User Email:', data.user.email);
+          console.log('📊 Qualité réseau finale:', networkDetector.getNetworkQuality());
           
           // Forcer la mise à jour de l'état immédiatement
           setCurrentUser(data.user);
@@ -378,14 +404,15 @@ export const AuthProvider = ({ children }) => {
           console.error(`💥 ERREUR CONNEXION (tentative ${attempt}):`, error);
           
           if (attempt < maxRetries && (error.message?.includes('Failed to fetch') || error.message?.includes('timeout'))) {
-            console.log(`⏳ Erreur réseau, retry dans ${delay}ms...`);
-            await new Promise(resolve => setTimeout(resolve, delay));
+            const waitTime = delay * attempt;
+            console.log(`⏳ Erreur réseau, retry dans ${waitTime}ms...`);
+            await new Promise(resolve => setTimeout(resolve, waitTime));
             continue;
           }
           
           return { 
             success: false, 
-            message: error.message || 'Erreur technique. Veuillez réessayer.' 
+            message: `Erreur de connexion (${networkTest.successRate * 100}% de fiabilité réseau). Réessayez plus tard.` 
           };
         }
       }
