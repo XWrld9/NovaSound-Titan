@@ -99,7 +99,7 @@ L'application utilise `HashRouter` pour éviter les erreurs 404 sur Vercel.
 - News : `/#/news`
 - Artiste : `/#/artist/:id`
 
-## 📁 Architecture (v3.5)
+## 📁 Architecture (v3.7)
 
 ```
 NovaSound-Titan/
@@ -117,7 +117,7 @@ NovaSound-Titan/
     │   │   ├── Header.jsx
     │   │   ├── LikeButton.jsx        # Likes chansons avec animation cœur
     │   │   ├── NewsLikeButton.jsx    # Likes news avec animation cœur
-    │   │   ├── SongCard.jsx          # React.memo + lazy images
+    │   │   ├── SongCard.jsx          # Modifier + Supprimer pour le propriétaire
     │   │   └── ...
     │   ├── contexts/
     │   │   └── AuthContext.jsx       # Auth + enrichissement profil DB
@@ -127,13 +127,16 @@ NovaSound-Titan/
     │   ├── pages/
     │   │   ├── HomePage.jsx          # Modal lecture news + likes
     │   │   ├── ExplorerPage.jsx      # Scroll throttle
-    │   │   ├── UserProfilePage.jsx
+    │   │   ├── UserProfilePage.jsx   # Callback onUpdated pour SongCard
     │   │   ├── ArtistProfilePage.jsx
     │   │   ├── LoginPage.jsx
     │   │   ├── SignupPage.jsx
     │   │   ├── MusicUploadPage.jsx
-    │   │   ├── NewsPage.jsx          # Likes interactifs
-    │   │   └── ModerationPanel.jsx
+    │   │   ├── NewsPage.jsx          # Modifier + Supprimer pour l'auteur
+    │   │   ├── ModerationPanel.jsx
+    │   │   ├── PrivacyPolicy.jsx     # Page enrichie (RGPD, RLS, conservation)
+    │   │   ├── TermsOfService.jsx    # Page enrichie (modération, limitation)
+    │   │   └── CopyrightInfo.jsx     # Page enrichie (DMCA, artistes, Fair Use)
     │   ├── animations/
     │   │   ├── heart-animation.json  # Explosion cœurs au like
     │   │   └── play-animation.json   # Equalizer 3 barres
@@ -144,6 +147,7 @@ NovaSound-Titan/
     ├── setup-buckets.js
     ├── setup-supabase.sql
     ├── news-likes.sql                # ⚠️ À exécuter dans Supabase
+    ├── owner-edit-delete-rls.sql     # ⚠️ À exécuter dans Supabase (v3.7)
     ├── .env.example
     └── package.json
 ```
@@ -159,6 +163,8 @@ NovaSound-Titan/
 | `news` | Actualités communautaires |
 | `news_likes` | Likes utilisateurs sur les news ⚠️ créer via `news-likes.sql` |
 
+> Les politiques RLS de modification/suppression par l'auteur sont dans `owner-edit-delete-rls.sql` ⚠️
+
 ## 🔐 Sécurité
 
 - Row Level Security (RLS) sur toutes les tables
@@ -170,11 +176,13 @@ NovaSound-Titan/
 
 ## 🎵 Fonctionnalités
 
-**Artistes** — Upload audio (50 MB max), pochette album, profil personnalisable (avatar, bio), statistiques (plays, likes, followers)
+**Artistes** — Upload audio (50 MB max), pochette album, profil personnalisable (avatar, bio), statistiques (plays, likes, followers), **modification et suppression de ses propres musiques**
 
 **Fans** — Découverte, likes avec animations Lottie, follow/unfollow, téléchargement, partage, lecteur audio complet (equalizer animé, shuffle, repeat, volume)
 
-**Communauté** — Système de news avec lecture complète en modal, likes sur les news, modération, profils artistes publics
+**Communauté** — Système de news avec lecture complète en modal, likes sur les news, **modification et suppression de ses propres news**, modération, profils artistes publics
+
+**Pages légales** — Politique de Confidentialité (RGPD), Conditions d'Utilisation, Droits d'Auteur (DMCA)
 
 ## ⚡ Performance
 
@@ -209,6 +217,14 @@ npm run setup:buckets
 > Exécutez `news-likes.sql` dans le SQL Editor de votre dashboard Supabase
 
 ## 📝 Changelog
+
+### v3.7 (2026-02-24)
+- ✨ Modification et suppression des **news** par l'auteur — édition inline avec confirmation
+- ✨ Modification des **musiques** (titre, artiste) par l'uploader — édition inline dans SongCard
+- ✨ Confirmation "Oui / Non" avant toute suppression (news + musiques)
+- ✨ Sécurité double : vérification `author_id` / `uploader_id` côté client + politiques RLS Supabase
+- 📄 `owner-edit-delete-rls.sql` — nouvelles politiques UPDATE/DELETE pour `news` et `songs`
+- 📄 Pages légales enrichies : Politique de Confidentialité (RGPD complet), Conditions d'Utilisation (modération, limitation), Droits d'Auteur (DMCA complet, responsabilité artistes)
 
 ### v3.5 (2026-02-24)
 - ✨ Modal lecture complète des news (clic sur une carte)

@@ -134,6 +134,10 @@ const UserProfilePage = () => {
     navigate('/login');
   };
 
+  const handleUpdateSong = (songId, updates) => {
+    setUserSongs(prev => prev.map(s => s.id === songId ? { ...s, ...updates } : s));
+  };
+
   const handleDeleteSong = async (songId) => {
     try {
       // Supprimer le fichier audio du storage
@@ -327,6 +331,7 @@ const UserProfilePage = () => {
                           setCurrentSong={setCurrentSong}
                           showDelete={true}
                           onDelete={handleDeleteSong}
+                          onUpdated={handleUpdateSong}
                         />
                       </motion.div>
                     ))
