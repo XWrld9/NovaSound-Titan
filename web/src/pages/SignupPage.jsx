@@ -15,8 +15,8 @@ const SignupPage = () => {
     password: '',
     passwordConfirm: ''
   });
-  const [showMot de passe, setShowMot de passe] = useState(false);
-  const [showMot de passeConfirm, setShowMot de passeConfirm] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showPasswordConfirm, setShowPasswordConfirm] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [loading, setLoading] = useState(false);
@@ -146,7 +146,7 @@ const SignupPage = () => {
                 <div className="relative">
                   <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-cyan-400" />
                   <input
-                    type={showMot de passe ? "text" : "password"}
+                    type={showPassword ? "text" : "password"}
                     id="password"
                     name="password"
                     value={formData.password}
@@ -158,7 +158,7 @@ const SignupPage = () => {
                   />
                   <button
                     type="button"
-                    onClick={() => setShowMot de passe(!showMot de passe)}
+                    onClick={() => setShowPassword(!showPassword)}
                     className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-cyan-400 transition-colors"
                   >
                     {showMot de passe ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
@@ -172,7 +172,7 @@ const SignupPage = () => {
                 <div className="relative">
                   <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-cyan-400" />
                   <input
-                    type={showMot de passeConfirm ? "text" : "password"}
+                    type={showPasswordConfirm ? "text" : "password"}
                     name="passwordConfirm"
                     value={formData.passwordConfirm}
                     onChange={handleChange}
@@ -182,7 +182,7 @@ const SignupPage = () => {
                   />
                   <button
                     type="button"
-                    onClick={() => setShowMot de passeConfirm(!showMot de passeConfirm)}
+                    onClick={() => setShowPasswordConfirm(!showPasswordConfirm)}
                     className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-cyan-400 transition-colors"
                   >
                     {showMot de passeConfirm ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
@@ -195,7 +195,7 @@ const SignupPage = () => {
                 disabled={loading || success}
                 className="w-full bg-gradient-to-r from-cyan-500 to-magenta-500 hover:from-cyan-600 hover:to-magenta-600 text-white py-3 text-lg font-semibold shadow-lg shadow-cyan-500/30"
               >
-                {loading ? 'Inscription...' : 'S'inscrire'}
+                {loading ? 'Inscription...' : "S'inscrire"}
               </Button>
             </form>
 

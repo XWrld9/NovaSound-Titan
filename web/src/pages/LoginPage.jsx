@@ -10,8 +10,8 @@ const LoginPage = () => {
   const navigate = useNavigate();
   const { login, resendVerification } = useAuth();
   const [email, setEmail] = useState('');
-  const [password, setMot de passe] = useState('');
-  const [showMot de passe, setShowMot de passe] = useState(false);
+  const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [needsVerification, setNeedsVerification] = useState(false);
@@ -126,7 +126,7 @@ const LoginPage = () => {
                 <div className="relative">
                   <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-cyan-400" />
                   <input
-                    type={showMot de passe ? "text" : "password"}
+                    type={showPassword ? "text" : "password"}
                     id="password"
                     name="password"
                     value={password}
@@ -137,7 +137,7 @@ const LoginPage = () => {
                   />
                   <button
                     type="button"
-                    onClick={() => setShowMot de passe(!showMot de passe)}
+                    onClick={() => setShowPassword(!showPassword)}
                     className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-cyan-400 transition-colors"
                   >
                     {showMot de passe ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
@@ -150,7 +150,7 @@ const LoginPage = () => {
                 disabled={loading}
                 className="w-full bg-gradient-to-r from-cyan-500 to-magenta-500 hover:from-cyan-600 hover:to-magenta-600 text-white py-3 text-lg font-semibold shadow-lg shadow-cyan-500/30"
               >
-                {loading ? 'Connexion...' : 'Se connecter'}
+                {loading ? 'Connexion...' : "Se connecter"}
               </Button>
             </form>
 
