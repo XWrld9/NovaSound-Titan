@@ -36,7 +36,7 @@ const HomePage = () => {
           .limit(12),
         supabase
           .from('news')
-          .select('*')
+          .select('*, users:author_id(username)')
           .order('created_at', { ascending: false })
           .limit(6)
       ]);
@@ -214,7 +214,7 @@ const HomePage = () => {
                     <p className="text-gray-400 mb-4 line-clamp-3">{news.content}</p>
                     <div className="flex items-center justify-between text-sm">
                       <span className="text-gray-500">
-                        {news.author_id || 'Anonymous'}
+                        {news.users?.username || 'Anonymous'}
                       </span>
                       <span className="text-gray-500">
                         {new Date(news.created_at || Date.now()).toLocaleDateString()}
