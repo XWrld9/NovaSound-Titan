@@ -1,14 +1,15 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
-import { Music, Play, TrendingUp, Newspaper } from 'lucide-react';
-import { motion } from 'framer-motion';
+import { Music, Play, TrendingUp, Newspaper, X, Calendar, User } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { supabase } from '@/lib/supabaseClient';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import AudioPlayer from '@/components/AudioPlayer';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/contexts/AuthContext';
+import NewsLikeButton from '@/components/NewsLikeButton';
 
 const HomePage = () => {
   const { isAuthenticated } = useAuth();
@@ -16,6 +17,7 @@ const HomePage = () => {
   const [newsItems, setNewsItems] = useState([]);
   const [loading, setLoading] = useState(true);
   const [currentSong, setCurrentSong] = useState(null);
+  const [selectedNews, setSelectedNews] = useState(null);
 
   useEffect(() => {
     fetchData();
@@ -207,21 +209,23 @@ const HomePage = () => {
                     key={news.id}
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: index * 0.1 }}
-                    className="bg-gray-900/50 backdrop-blur-xl border border-magenta-500/30 rounded-xl p-6 hover:border-magenta-400 transition-all"
+                    transition={{ delay: index * 0.03, duration: 0.3 }}
+                    onClick={() => setSelectedNews(news)}
+                    className="bg-gray-900/80 border border-magenta-500/30 rounded-xl p-6 hover:border-magenta-400 transition-all cursor-pointer hover:shadow-lg hover:shadow-magenta-500/10 group"
                   >
-                    <h3 className="text-xl font-bold text-white mb-3">{news.title}</h3>
+                    <h3 className="text-xl font-bold text-white mb-3 group-hover:text-magenta-300 transition-colors">{news.title}</h3>
                     <p className="text-gray-400 mb-4 line-clamp-3">{news.content}</p>
                     <div className="flex items-center justify-between text-sm">
-                      <span className="text-gray-500">
-                        {news.users?.username || 'Anonymous'}
-                      </span>
-                      <span className="text-gray-500">
-                        {new Date(news.created_at || Date.now()).toLocaleDateString()}
-                      </span>
+                      <span className="text-gray-500">{news.users?.username || 'Anonymous'}</span>
+                      <span className="text-gray-500">{new Date(news.created_at || Date.now()).toLocaleDateString()}</span>
                     </div>
-                    <div className="flex items-center gap-2 mt-4 text-magenta-400">
-                      <span>❤️ {news.likes_count || 0} likes</span>
+                    <div className="flex items-center gap-2 mt-4">
+                      <NewsLikeButton
+                        newsId={news.id}
+                        initialLikes={news.likes_count || 0}
+                        authorId={news.author_id}
+                      />
+                      <span className="text-xs text-magenta-400/60 ml-auto">Lire la suite →</span>
                     </div>
                   </motion.div>
                 ))}
@@ -237,6 +241,72 @@ const HomePage = () => {
 
         <Footer />
         {currentSong && <AudioPlayer currentSong={currentSong} />}
+
+        {/* Modal lecture complète d'une news */}
+        <AnimatePresence>
+          {selectedNews && (
+            <>
+              {/* Backdrop */}
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                onClick={() => setSelectedNews(null)}
+                className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50"
+              />
+              {/* Modal */}
+              <motion.div
+                initial={{ opacity: 0, scale: 0.95, y: 20 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.95, y: 20 }}
+                transition={{ type: 'spring', damping: 25, stiffness: 300 }}
+                className="fixed inset-0 z-50 flex items-center justify-center p-4 pointer-events-none"
+              >
+                <div
+                  className="bg-gray-900 border border-magenta-500/30 rounded-2xl shadow-2xl shadow-magenta-500/10 w-full max-w-2xl max-h-[80vh] overflow-y-auto pointer-events-auto"
+                  onClick={e => e.stopPropagation()}
+                >
+                  {/* Header modal */}
+                  <div className="flex items-start justify-between p-6 border-b border-gray-800">
+                    <h2 className="text-2xl font-bold text-white pr-4 leading-tight">{selectedNews.title}</h2>
+                    <button
+                      onClick={() => setSelectedNews(null)}
+                      className="flex-shrink-0 p-2 text-gray-400 hover:text-white hover:bg-gray-800 rounded-lg transition-colors"
+                    >
+                      <X className="w-5 h-5" />
+                    </button>
+                  </div>
+
+                  {/* Contenu complet */}
+                  <div className="p-6">
+                    <p className="text-gray-300 leading-relaxed whitespace-pre-wrap text-base">
+                      {selectedNews.content}
+                    </p>
+                  </div>
+
+                  {/* Footer modal */}
+                  <div className="flex items-center justify-between px-6 pb-6 pt-2 border-t border-gray-800 mt-2">
+                    <div className="flex items-center gap-4 text-sm text-gray-500">
+                      <span className="flex items-center gap-1">
+                        <User className="w-4 h-4" />
+                        {selectedNews.users?.username || 'Anonymous'}
+                      </span>
+                      <span className="flex items-center gap-1">
+                        <Calendar className="w-4 h-4" />
+                        {new Date(selectedNews.created_at || Date.now()).toLocaleDateString()}
+                      </span>
+                    </div>
+                    <NewsLikeButton
+                      newsId={selectedNews.id}
+                      initialLikes={selectedNews.likes_count || 0}
+                      authorId={selectedNews.author_id}
+                    />
+                  </div>
+                </div>
+              </motion.div>
+            </>
+          )}
+        </AnimatePresence>
       </div>
     </>
   );

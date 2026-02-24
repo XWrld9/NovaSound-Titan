@@ -8,6 +8,7 @@ import NewsForm from '@/components/NewsForm';
 import ReportButton from '@/components/ReportButton';
 import { useAuth } from '@/contexts/AuthContext';
 import { Newspaper, Calendar, User } from 'lucide-react';
+import NewsLikeButton from '@/components/NewsLikeButton';
 
 const NewsPage = () => {
   const { isAuthenticated } = useAuth();
@@ -80,10 +81,17 @@ const NewsPage = () => {
                         {new Date(item.created_at || Date.now()).toLocaleDateString()}
                       </span>
                     </div>
-                    <ReportButton 
-                      contentType="news" 
-                      contentId={item.id}
-                    />
+                    <div className="flex items-center gap-3">
+                      <NewsLikeButton
+                        newsId={item.id}
+                        initialLikes={item.likes_count || 0}
+                        authorId={item.author_id}
+                      />
+                      <ReportButton 
+                        contentType="news" 
+                        contentId={item.id}
+                      />
+                    </div>
                   </div>
                 </motion.div>
               ))
