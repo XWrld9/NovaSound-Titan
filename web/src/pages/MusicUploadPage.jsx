@@ -127,7 +127,7 @@ const MusicUploadPage = () => {
       }, 2000);
     } catch (err) {
       console.error('Upload error:', err);
-      setError(err.message || 'Échec de l'upload. Veuillez réessayer.');
+      setError(err.message || "Échec de l'upload. Veuillez réessayer.");
       setUploadProgress(0);
 
     } finally {
