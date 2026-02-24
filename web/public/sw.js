@@ -1,9 +1,13 @@
-const CACHE_NAME = 'novasound-titan-v1';
+const CACHE_NAME = 'novasound-titan-v2';
 const STATIC_ASSETS = [
   '/',
   '/index.html',
   '/manifest.json',
   '/favicon.ico',
+  '/favicon.png',
+  '/apple-touch-icon.png',
+  '/icon-192.png',
+  '/icon-512.png',
 ];
 
 self.addEventListener('install', (event) => {

@@ -7,6 +7,7 @@ import { ToastProvider } from '@/components/ui/Toast';
 import ScrollToTop from '@/components/ScrollToTop';
 import ProtectedRoute from '@/components/ProtectedRoute';
 import LoadingSpinner from '@/components/LoadingSpinner';
+import InstallBanner from '@/components/InstallBanner';
 
 // Pages chargées immédiatement (critiques)
 import HomePage from '@/pages/HomePage';
@@ -33,6 +34,7 @@ function App() {
           <AuthProvider>
             <Router>
               <ScrollToTop />
+              <InstallBanner />
               <Suspense fallback={<div className="min-h-screen bg-gray-950 flex items-center justify-center"><LoadingSpinner /></div>}>
                 <Routes>
                   <Route path="/" element={<HomePage />} />
