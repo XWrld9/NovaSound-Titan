@@ -250,6 +250,12 @@ NovaSound-Titan/
 
 ## 📝 Changelog
 
+### v4.3 (2026-02-24)
+- 🐛 Fix **partage news** : suppression image logo externe (CORS bloquait `html-to-image`) → logo SVG inline
+- 🐛 Fix **partage news** : avatar auteur remplacé par initiale inline (CORS Supabase Storage)
+- 🐛 Fix **AudioPlayer** : `handleShare` rendu async + `clipboard.writeText` avec `await` + fallback `execCommand`
+- 🌐 Traduction **NewsForm** : "Post News Update" → "Publier une actualité", "News Headline" → "Titre de l'actualité", "What's happening?" → "Quoi de neuf ?", "Post News" → "Publier", messages succès/erreur en français
+
 ### v4.2 (2026-02-24)
 - ✨ `SongPage` : page dédiée par morceau (`/#/song/:id`) avec pochette grande format
 - ✨ Meta Open Graph complètes (og:image, og:title, twitter:card) — la pochette s'affiche dans WhatsApp, Discord, Telegram, Twitter

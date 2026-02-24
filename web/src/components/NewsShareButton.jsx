@@ -134,12 +134,14 @@ const NewsShareButton = ({ news }) => {
         >
           {/* Logo + nom plateforme */}
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '24px' }}>
-            <img
-              src="https://horizons-cdn.hostinger.com/83c37f40-fa54-4cc6-8247-95b1353f3eba/a4885bba5290b1958f05bcdb82731c39.jpg"
-              alt="NovaSound"
-              style={{ width: '32px', height: '32px', borderRadius: '50%', border: '2px solid #22d3ee' }}
-              crossOrigin="anonymous"
-            />
+            <div style={{
+              width: '32px', height: '32px', borderRadius: '50%',
+              background: 'linear-gradient(135deg, #22d3ee, #a855f7)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              border: '2px solid #22d3ee', flexShrink: 0,
+            }}>
+              <span style={{ fontSize: '14px', fontWeight: '800', color: '#fff' }}>N</span>
+            </div>
             <span style={{ fontSize: '14px', fontWeight: '600', color: '#22d3ee', letterSpacing: '0.05em' }}>
               NovaSound TITAN LUX
             </span>
@@ -198,25 +200,16 @@ const NewsShareButton = ({ news }) => {
             paddingTop: '20px',
             borderTop: '1px solid rgba(255,255,255,0.08)',
           }}>
-            {/* Auteur */}
+            {/* Auteur — initiale uniquement pour éviter CORS sur avatars Supabase */}
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              {news?.users?.avatar_url ? (
-                <img
-                  src={news.users.avatar_url}
-                  alt=""
-                  style={{ width: '28px', height: '28px', borderRadius: '50%', objectFit: 'cover' }}
-                  crossOrigin="anonymous"
-                />
-              ) : (
-                <div style={{
-                  width: '28px', height: '28px', borderRadius: '50%',
-                  background: 'linear-gradient(135deg,#22d3ee,#a855f7)',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  fontSize: '12px', color: '#fff', fontWeight: '700',
-                }}>
-                  {(news?.users?.username || 'A')[0].toUpperCase()}
-                </div>
-              )}
+              <div style={{
+                width: '28px', height: '28px', borderRadius: '50%',
+                background: 'linear-gradient(135deg,#22d3ee,#a855f7)',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                fontSize: '12px', color: '#fff', fontWeight: '700', flexShrink: 0,
+              }}>
+                {(news?.users?.username || 'A')[0].toUpperCase()}
+              </div>
               <span style={{ fontSize: '13px', color: '#9ca3af' }}>
                 {news?.users?.username || 'NovaSound'}
               </span>
