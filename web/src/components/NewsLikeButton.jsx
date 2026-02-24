@@ -95,23 +95,29 @@ const NewsLikeButton = ({ newsId, initialLikes = 0, authorId }) => {
         )}
       </AnimatePresence>
 
-      <motion.button
-        onClick={handleLike}
-        disabled={isLoading || isOwnNews}
-        whileHover={!isOwnNews ? { scale: 1.05 } : {}}
-        whileTap={!isOwnNews ? { scale: 0.95 } : {}}
-        className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-sm font-medium transition-all ${
-          isOwnNews
-            ? 'text-gray-600 cursor-not-allowed'
-            : isLiked
+      {isOwnNews ? (
+        // Auteur : voit le compteur mais ne peut pas liker
+        <div className="flex items-center gap-2 px-3 py-1.5 rounded-full text-sm text-gray-500 border border-gray-700/50 cursor-default" title="Vous ne pouvez pas liker votre propre news">
+          <Heart className="w-4 h-4" />
+          <span>{likes}</span>
+        </div>
+      ) : (
+        <motion.button
+          onClick={handleLike}
+          disabled={isLoading}
+          whileHover={{ scale: 1.05 }}
+          whileTap={{ scale: 0.95 }}
+          className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-sm font-medium transition-all ${
+            isLiked
               ? 'bg-red-500/20 text-red-400 border border-red-500/40'
-              : 'text-gray-400 hover:text-magenta-400 hover:bg-magenta-500/10 border border-transparent hover:border-magenta-500/30'
-        }`}
-        title={isOwnNews ? "Vous ne pouvez pas liker votre propre news" : isLiked ? "Je n'aime plus" : "J'aime"}
-      >
-        <Heart className={`w-4 h-4 ${isLiked ? 'fill-current text-red-400' : ''}`} />
-        <span>{likes}</span>
-      </motion.button>
+              : 'text-gray-400 hover:text-fuchsia-400 hover:bg-fuchsia-500/10 border border-transparent hover:border-fuchsia-500/30'
+          }`}
+          title={isLiked ? "Je n'aime plus" : "J'aime"}
+        >
+          <Heart className={`w-4 h-4 ${isLiked ? 'fill-current text-red-400' : ''}`} />
+          <span>{likes}</span>
+        </motion.button>
+      )}
     </div>
   );
 };

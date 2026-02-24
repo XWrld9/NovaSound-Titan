@@ -194,67 +194,100 @@ const HomePage = () => {
           </section>
 
           {/* News Feed */}
-          <section className="container mx-auto px-4 py-12 md:py-16">
-            <div className="flex items-center justify-between mb-6 md:mb-8">
-              <h2 className="text-2xl md:text-3xl font-bold text-white flex items-center gap-3">
-                <Newspaper className="w-6 h-6 md:w-8 md:h-8 text-magenta-400" />
-                Latest News
-              </h2>
-            </div>
+          <section className="relative py-12 md:py-16 overflow-hidden">
+            {/* Fond lumineux pour distinguer visuellement la section */}
+            <div className="absolute inset-0 bg-gradient-to-b from-transparent via-fuchsia-950/25 to-transparent pointer-events-none" />
+            {/* Ligne séparatrice haute */}
+            <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-fuchsia-500/40 to-transparent" />
+            {/* Ligne séparatrice basse */}
+            <div className="absolute bottom-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-fuchsia-500/40 to-transparent" />
 
-            {newsItems.length > 0 ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {newsItems.map((news, index) => (
-                  <motion.div
-                    key={news.id}
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: index * 0.03, duration: 0.3 }}
-                    onClick={() => setSelectedNews(news)}
-                    className="bg-gray-900/80 border border-magenta-500/30 rounded-xl p-6 hover:border-magenta-400 transition-all cursor-pointer hover:shadow-lg hover:shadow-magenta-500/10 group"
-                  >
-                    <h3 className="text-xl font-bold text-white mb-3 group-hover:text-magenta-300 transition-colors">{news.title}</h3>
-                    <p className="text-gray-400 mb-4 line-clamp-3">{news.content}</p>
-                    <div className="flex items-center justify-between text-sm">
-                      <span className="text-gray-500">{news.users?.username || 'Anonymous'}</span>
-                      <span className="text-gray-500">{new Date(news.created_at || Date.now()).toLocaleDateString()}</span>
-                    </div>
-                    <div className="flex items-center gap-2 mt-4">
-                      <NewsLikeButton
-                        newsId={news.id}
-                        initialLikes={news.likes_count || 0}
-                        authorId={news.author_id}
-                      />
-                      <span className="text-xs text-magenta-400/60 ml-auto">Lire la suite →</span>
-                    </div>
-                  </motion.div>
-                ))}
+            <div className="container mx-auto px-4 relative">
+              {/* En-tête section */}
+              <div className="flex items-center justify-between mb-8">
+                <div className="flex items-center gap-3">
+                  <div className="w-1 h-8 bg-gradient-to-b from-fuchsia-400 to-purple-600 rounded-full" />
+                  <h2 className="text-2xl md:text-3xl font-bold text-white flex items-center gap-3">
+                    <Newspaper className="w-6 h-6 md:w-8 md:h-8 text-fuchsia-400" />
+                    Latest News
+                  </h2>
+                </div>
+                <Link to="/news" className="text-sm text-fuchsia-400 hover:text-fuchsia-300 transition-colors font-medium">
+                  Voir tout →
+                </Link>
               </div>
-            ) : (
-              <div className="text-center py-12 bg-gray-900/50 backdrop-blur-xl border border-magenta-500/30 rounded-xl">
-                <Newspaper className="w-16 h-16 text-gray-600 mx-auto mb-4" />
-                <p className="text-gray-400 text-lg">No news available yet</p>
-              </div>
-            )}
+
+              {newsItems.length > 0 ? (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+                  {newsItems.map((news, index) => (
+                    <motion.div
+                      key={news.id}
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: index * 0.05, duration: 0.35 }}
+                      onClick={() => setSelectedNews(news)}
+                      className="relative bg-gray-800/90 border border-fuchsia-500/50 rounded-2xl p-5 hover:border-fuchsia-400 hover:bg-gray-800 transition-all cursor-pointer hover:shadow-xl hover:shadow-fuchsia-500/20 group overflow-hidden"
+                    >
+                      {/* Lueur coin */}
+                      <div className="absolute -top-4 -right-4 w-28 h-28 bg-fuchsia-500/15 rounded-full blur-2xl pointer-events-none group-hover:bg-fuchsia-500/25 transition-all" />
+
+                      {/* Date + auteur */}
+                      <div className="flex items-center justify-between mb-3">
+                        <span className="text-xs text-fuchsia-300 font-medium bg-fuchsia-500/15 px-2.5 py-0.5 rounded-full border border-fuchsia-500/30">
+                          {new Date(news.created_at || Date.now()).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' })}
+                        </span>
+                        {news.users?.username && (
+                          <span className="text-xs text-gray-400 font-medium truncate max-w-[120px]">
+                            {news.users.username}
+                          </span>
+                        )}
+                      </div>
+
+                      <h3 className="text-base font-bold text-white mb-2 group-hover:text-fuchsia-300 transition-colors line-clamp-2 leading-snug">
+                        {news.title}
+                      </h3>
+                      <p className="text-gray-300 text-sm mb-4 line-clamp-3 leading-relaxed">{news.content}</p>
+
+                      <div className="flex items-center justify-between pt-3 border-t border-gray-700/60">
+                        <div onClick={e => e.stopPropagation()}>
+                          <NewsLikeButton
+                            newsId={news.id}
+                            initialLikes={news.likes_count || 0}
+                            authorId={news.author_id}
+                          />
+                        </div>
+                        <span className="text-xs text-fuchsia-400 font-semibold group-hover:translate-x-1 transition-transform">
+                          Lire la suite →
+                        </span>
+                      </div>
+                    </motion.div>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-16 bg-gray-800/50 border border-fuchsia-500/30 rounded-2xl">
+                  <Newspaper className="w-14 h-14 text-fuchsia-600/40 mx-auto mb-3" />
+                  <p className="text-gray-400">Aucune news pour l'instant</p>
+                  <Link to="/news" className="text-fuchsia-400 text-sm hover:underline mt-2 inline-block">
+                    Sois le premier à publier →
+                  </Link>
+                </div>
+              )}
+            </div>
           </section>
         </main>
 
         <Footer />
         {currentSong && <AudioPlayer currentSong={currentSong} />}
 
-        {/* Modal lecture complète d'une news */}
+        {/* Modal lecture complète d'une news — accessible à tous y compris l'auteur */}
         <AnimatePresence>
           {selectedNews && (
             <>
-              {/* Backdrop */}
               <motion.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
+                initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
                 onClick={() => setSelectedNews(null)}
                 className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50"
               />
-              {/* Modal */}
               <motion.div
                 initial={{ opacity: 0, scale: 0.95, y: 20 }}
                 animate={{ opacity: 1, scale: 1, y: 0 }}
@@ -263,12 +296,17 @@ const HomePage = () => {
                 className="fixed inset-0 z-50 flex items-center justify-center p-4 pointer-events-none"
               >
                 <div
-                  className="bg-gray-900 border border-magenta-500/30 rounded-2xl shadow-2xl shadow-magenta-500/10 w-full max-w-2xl max-h-[80vh] overflow-y-auto pointer-events-auto"
+                  className="bg-gray-900 border border-fuchsia-500/40 rounded-2xl shadow-2xl shadow-fuchsia-500/15 w-full max-w-2xl max-h-[85vh] flex flex-col pointer-events-auto"
                   onClick={e => e.stopPropagation()}
                 >
-                  {/* Header modal */}
-                  <div className="flex items-start justify-between p-6 border-b border-gray-800">
-                    <h2 className="text-2xl font-bold text-white pr-4 leading-tight">{selectedNews.title}</h2>
+                  {/* Header */}
+                  <div className="flex items-start justify-between p-6 border-b border-gray-800 flex-shrink-0">
+                    <div className="flex-1 pr-4">
+                      <span className="text-xs text-fuchsia-300 font-medium bg-fuchsia-500/15 px-2.5 py-0.5 rounded-full border border-fuchsia-500/30 inline-block mb-3">
+                        {new Date(selectedNews.created_at || Date.now()).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })}
+                      </span>
+                      <h2 className="text-2xl font-bold text-white leading-tight">{selectedNews.title}</h2>
+                    </div>
                     <button
                       onClick={() => setSelectedNews(null)}
                       className="flex-shrink-0 p-2 text-gray-400 hover:text-white hover:bg-gray-800 rounded-lg transition-colors"
@@ -277,25 +315,20 @@ const HomePage = () => {
                     </button>
                   </div>
 
-                  {/* Contenu complet */}
-                  <div className="p-6">
+                  {/* Contenu scrollable */}
+                  <div className="p-6 overflow-y-auto flex-1">
                     <p className="text-gray-300 leading-relaxed whitespace-pre-wrap text-base">
                       {selectedNews.content}
                     </p>
                   </div>
 
-                  {/* Footer modal */}
-                  <div className="flex items-center justify-between px-6 pb-6 pt-2 border-t border-gray-800 mt-2">
-                    <div className="flex items-center gap-4 text-sm text-gray-500">
-                      <span className="flex items-center gap-1">
-                        <User className="w-4 h-4" />
-                        {selectedNews.users?.username || 'Anonymous'}
-                      </span>
-                      <span className="flex items-center gap-1">
-                        <Calendar className="w-4 h-4" />
-                        {new Date(selectedNews.created_at || Date.now()).toLocaleDateString()}
-                      </span>
+                  {/* Footer */}
+                  <div className="flex items-center justify-between px-6 py-4 border-t border-gray-800 flex-shrink-0 bg-gray-800/30 rounded-b-2xl">
+                    <div className="flex items-center gap-2 text-sm text-gray-400">
+                      <User className="w-4 h-4" />
+                      <span className="font-medium">{selectedNews.users?.username || 'Anonyme'}</span>
                     </div>
+                    {/* L'auteur peut voir les likes mais pas liker sa propre news */}
                     <NewsLikeButton
                       newsId={selectedNews.id}
                       initialLikes={selectedNews.likes_count || 0}
