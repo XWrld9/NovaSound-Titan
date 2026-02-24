@@ -22,7 +22,7 @@ const NewsPage = () => {
     try {
       const { data, error } = await supabase
         .from('news')
-        .select('*, users:author_id(display_name, username)')
+        .select('*, users:author_id(username)')
         .order('created_at', { ascending: false })
         .limit(50);
       if (error) throw error;
@@ -73,7 +73,7 @@ const NewsPage = () => {
                     <div className="flex items-center gap-4">
                       <span className="flex items-center gap-1">
                         <User className="w-4 h-4" />
-                        {item.users?.display_name || item.users?.username || 'Anonymous'}
+                        {item.users?.username || 'Anonymous'}
                       </span>
                       <span className="flex items-center gap-1">
                         <Calendar className="w-4 h-4" />
