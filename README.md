@@ -202,4 +202,5 @@ MIT License — voir [LICENSE](LICENSE)
 
 ---
 
-> *"Ici chaque écoute compte. Bienvenue dans la nouvelle ère de la musique digitale."*
+> *"Ici chaque écoute compte. Bienvenue dans la nouvelle ère de la musique digitale."*  
+> **NovaSound-TITAN LUX — Votre scène, votre musique, votre communauté.**

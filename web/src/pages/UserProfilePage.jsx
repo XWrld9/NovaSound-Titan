@@ -300,52 +300,28 @@ const UserProfilePage = () => {
             </div>
           </motion.div>
 
-          {/* Onglets */}
-          <div className="flex gap-4 mb-6 border-b border-gray-800">
-            <button
-              onClick={() => setActiveTab('songs')}
-              className={`px-4 py-2 font-semibold transition-colors ${
-                activeTab === 'songs'
-                  ? 'text-cyan-400 border-b-2 border-cyan-400'
-                  : 'text-gray-400 hover:text-white'
-              }`}
-            >
-              <Music className="w-4 h-4 inline mr-2" />
-              Mes morceaux
-            </button>
-            <button
-              onClick={() => setActiveTab('favorites')}
-              className={`px-4 py-2 font-semibold transition-colors ${
-                activeTab === 'favorites'
-                  ? 'text-pink-400 border-b-2 border-pink-400'
-                  : 'text-gray-400 hover:text-white'
-              }`}
-            >
-              <Heart className="w-4 h-4 inline mr-2" />
-              Mes favoris
-            </button>
-            <button
-              onClick={() => setActiveTab('followers')}
-              className={`px-4 py-2 font-semibold transition-colors ${
-                activeTab === 'followers'
-                  ? 'text-green-400 border-b-2 border-green-400'
-                  : 'text-gray-400 hover:text-white'
-              }`}
-            >
-              <Users className="w-4 h-4 inline mr-2" />
-              Abonnés
-            </button>
-            <button
-              onClick={() => setActiveTab('following')}
-              className={`px-4 py-2 font-semibold transition-colors ${
-                activeTab === 'following'
-                  ? 'text-blue-400 border-b-2 border-blue-400'
-                  : 'text-gray-400 hover:text-white'
-              }`}
-            >
-              <UserPlus className="w-4 h-4 inline mr-2" />
-              Abonnements
-            </button>
+          {/* Onglets — scroll horizontal sur mobile */}
+          <div className="flex gap-1 mb-6 border-b border-gray-800 overflow-x-auto scrollbar-hide">
+            {[
+              { id: 'songs',     icon: Music,    label: 'Morceaux',    mobileLabel: 'Sons',    color: 'cyan'  },
+              { id: 'favorites', icon: Heart,    label: 'Favoris',     mobileLabel: 'Favoris', color: 'pink'  },
+              { id: 'followers', icon: Users,    label: 'Abonnés',     mobileLabel: 'Abonnés', color: 'green' },
+              { id: 'following', icon: UserPlus, label: 'Abonnements', mobileLabel: 'Suivis',  color: 'blue'  },
+            ].map(({ id, icon: Icon, label, mobileLabel, color }) => (
+              <button
+                key={id}
+                onClick={() => setActiveTab(id)}
+                className={`flex items-center gap-1.5 px-3 py-2.5 font-semibold whitespace-nowrap transition-colors flex-shrink-0 text-sm ${
+                  activeTab === id
+                    ? `text-${color}-400 border-b-2 border-${color}-400`
+                    : 'text-gray-400 hover:text-white'
+                }`}
+              >
+                <Icon className="w-4 h-4" />
+                <span className="hidden sm:inline">{label}</span>
+                <span className="sm:hidden">{mobileLabel}</span>
+              </button>
+            ))}
           </div>
 
           {/* Contenu des onglets */}
