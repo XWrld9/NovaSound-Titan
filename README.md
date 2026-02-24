@@ -98,7 +98,7 @@ L'application utilise `HashRouter` pour éviter les erreurs 404 sur Vercel.
 - News : `/#/news`
 - Artiste : `/#/artist/:id`
 
-## 📁 Architecture (v3.1)
+## 📁 Architecture (v3.3)
 
 ```
 NovaSound-Titan/

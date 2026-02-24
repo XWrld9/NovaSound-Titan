@@ -8,8 +8,10 @@ import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import AudioPlayer from '@/components/AudioPlayer';
 import { Button } from '@/components/ui/button';
+import { useAuth } from '@/contexts/AuthContext';
 
 const HomePage = () => {
+  const { isAuthenticated } = useAuth();
   const [featuredSongs, setFeaturedSongs] = useState([]);
   const [newsItems, setNewsItems] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -108,11 +110,13 @@ const HomePage = () => {
                   Discover, stream, and share music that moves you. Join the revolution.
                 </p>
                 <div className="flex flex-col sm:flex-row gap-4 justify-center md:justify-start">
-                  <Link to="/signup" className="w-full sm:w-auto">
-                    <Button className="w-full sm:w-auto bg-gradient-to-r from-cyan-500 to-magenta-500 hover:from-cyan-600 hover:to-magenta-600 text-white text-lg px-8 py-6 font-semibold shadow-lg shadow-cyan-500/30">
-                      Get Started
-                    </Button>
-                  </Link>
+                  {!isAuthenticated && (
+                    <Link to="/signup" className="w-full sm:w-auto">
+                      <Button className="w-full sm:w-auto bg-gradient-to-r from-cyan-500 to-magenta-500 hover:from-cyan-600 hover:to-magenta-600 text-white text-lg px-8 py-6 font-semibold shadow-lg shadow-cyan-500/30">
+                        Get Started
+                      </Button>
+                    </Link>
+                  )}
                   <Link to="/upload" className="w-full sm:w-auto">
                     <Button variant="outline" className="w-full sm:w-auto border-cyan-500/50 text-cyan-400 hover:bg-cyan-500/10 text-lg px-8 py-6 font-semibold">
                       Upload Music

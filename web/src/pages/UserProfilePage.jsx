@@ -2,14 +2,13 @@ import React, { useState, useEffect } from 'react';
 import { Helmet } from 'react-helmet-async';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
-import { Music, Upload, Heart, User, Edit3, LogOut, Users, UserPlus } from 'lucide-react';
+import { Music, Upload, Heart, Edit3, LogOut, Users, UserPlus } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { supabase } from '@/lib/supabaseClient';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import AudioPlayer from '@/components/AudioPlayer';
 import SongCard from '@/components/SongCard';
-import LikeButton from '@/components/LikeButton';
 import FollowButton from '@/components/FollowButton';
 import EditProfileModal from '@/components/EditProfileModal';
 import { Link, useNavigate } from 'react-router-dom';
@@ -27,29 +26,7 @@ const UserProfilePage = () => {
   const [currentSong, setCurrentSong] = useState(null);
   const [showEditModal, setShowEditModal] = useState(false);
 
-  // Charger le profil séparément comme demandé par ChatGPT
-  useEffect(() => {
-    if (!currentUser) return;
-
-    const loadProfile = async () => {
-      try {
-        const { data } = await supabase
-          .from('users')
-          .select('*')
-          .eq('id', currentUser.id)
-          .single();
-
-        if (data) {
-          setProfile(data);
-        }
-      } catch (error) {
-        console.error('Erreur chargement profil:', error);
-      }
-    };
-
-    loadProfile();
-  }, [currentUser]);
-
+  // Charger le profil et les données en une seule fois
   useEffect(() => {
     if (currentUser) {
       fetchUserData();
@@ -60,7 +37,7 @@ const UserProfilePage = () => {
     if (!showEditModal && currentUser) {
       fetchUserData();
     }
-  }, [showEditModal, currentUser]);
+  }, [showEditModal]);
 
   const fetchUserData = async () => {
     try {

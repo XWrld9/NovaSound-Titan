@@ -1,14 +1,22 @@
 import React, { useState, useEffect } from 'react';
-import { Play, Heart, Download, Share2, Music } from 'lucide-react';
+import { Play, Heart, Download, Share2, Music, Trash2 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import LikeButton from '@/components/LikeButton';
 import ReportButton from './ReportButton';
 
-const SongCard = ({ song, onPlay, isPlaying }) => {
+const SongCard = ({ song, onPlay, isPlaying, setCurrentSong, currentSong, showDelete, onDelete }) => {
   const { currentUser } = useAuth();
   const [isHovered, setIsHovered] = useState(false);
+
+  // Support both onPlay and setCurrentSong prop patterns
+  const handlePlay = () => {
+    if (onPlay) onPlay(song);
+    else if (setCurrentSong) setCurrentSong(song);
+  };
+
+  const isCurrentlyPlaying = isPlaying || (currentSong?.id === song?.id);
 
   const handleDownload = (e) => {
     e.stopPropagation();
@@ -62,7 +70,7 @@ const SongCard = ({ song, onPlay, isPlaying }) => {
         {/* Overlay */}
         <div className={`absolute inset-0 bg-black/60 flex items-center justify-center transition-opacity duration-300 ${isHovered ? 'opacity-100' : 'opacity-0'}`}>
           <button
-            onClick={() => onPlay(song)}
+            onClick={() => handlePlay()}
             className="p-4 rounded-full bg-gradient-to-r from-cyan-500 to-magenta-500 hover:from-cyan-600 hover:to-magenta-600 transform hover:scale-110 transition-all shadow-lg shadow-cyan-500/50"
           >
             <Play className="w-8 h-8 text-white fill-current" />
@@ -98,6 +106,15 @@ const SongCard = ({ song, onPlay, isPlaying }) => {
               contentType="song" 
               contentId={song.id}
             />
+            {showDelete && onDelete && (
+              <button
+                onClick={(e) => { e.stopPropagation(); onDelete(song.id); }}
+                className="text-gray-400 hover:text-red-400 transition-colors"
+                title="Supprimer"
+              >
+                <Trash2 className="w-5 h-5" />
+              </button>
+            )}
           </div>
           
           <div className="text-xs text-gray-500 font-mono">

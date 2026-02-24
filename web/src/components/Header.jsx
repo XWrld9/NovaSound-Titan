@@ -144,6 +144,10 @@ const Header = () => {
 
             {/* Desktop Navigation */}
             <nav className="hidden md:flex items-center gap-4">
+              <Link to="/" className="text-gray-300 hover:text-cyan-400 transition-colors flex items-center gap-2 font-medium">
+                <Music className="w-4 h-4" />
+                Accueil
+              </Link>
               <Link to="/explorer" className="text-gray-300 hover:text-cyan-400 transition-colors flex items-center gap-2 font-medium">
                 <Globe className="w-4 h-4" />
                 Explorer

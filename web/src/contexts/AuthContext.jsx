@@ -16,9 +16,22 @@ export const AuthProvider = ({ children }) => {
   // ── Auth state listener ──────────────────────────────────────────────────
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event, session) => {
-        console.log('Auth event:', event);
-        setCurrentUser(session?.user ?? null);
+      async (event, session) => {
+        if (session?.user) {
+          // Enrichir avec les données profil de la table users
+          try {
+            const { data: profile } = await supabase
+              .from('users')
+              .select('username, display_name, avatar_url, bio')
+              .eq('id', session.user.id)
+              .single();
+            setCurrentUser({ ...session.user, ...(profile || {}) });
+          } catch {
+            setCurrentUser(session.user);
+          }
+        } else {
+          setCurrentUser(null);
+        }
         setInitialLoading(false);
       }
     );

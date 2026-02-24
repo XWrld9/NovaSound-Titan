@@ -354,7 +354,19 @@ const AudioPlayer = ({ currentSong, playlist = [], onNext, onPrevious }) => {
                 )
               )}
               <div className="min-w-0 flex-1" onClick={() => !isExpanded && setIsExpanded(true)}>
-                <div className={`text-white font-semibold truncate ${isExpanded ? 'text-2xl mb-1' : ''}`}>{currentSong.title}</div>
+                <div className={`text-white font-semibold truncate ${isExpanded ? 'text-2xl mb-1' : ''} flex items-center gap-2`}>
+                  {currentSong.title}
+                  {isPlaying && (
+                    <LottieAnimation
+                      animationData={playAnimation}
+                      width={isExpanded ? 28 : 20}
+                      height={isExpanded ? 28 : 20}
+                      loop={true}
+                      autoplay={true}
+                      className="flex-shrink-0 opacity-90"
+                    />
+                  )}
+                </div>
                 <div className={`flex items-center gap-2 ${isExpanded ? 'justify-center' : ''}`}>
                   <div className={`text-gray-400 text-sm truncate ${isExpanded ? 'text-lg' : ''}`}>{currentSong.artist}</div>
                   

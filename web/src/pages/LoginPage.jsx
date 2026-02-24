@@ -23,20 +23,13 @@ const LoginPage = () => {
     setLoading(true);
     setNeedsVerification(false);
 
-    console.log('Tentative de login avec:', email);
-
     const result = await login(email, password);
     
-    console.log('Résultat du login:', result);
-    
     if (result.success) {
-      console.log('Login réussi, redirection vers /profile');
-      // Petite attente pour s'assurer que l'état est mis à jour
       setTimeout(() => {
         navigate('/profile');
       }, 500);
     } else {
-      console.log('Login échoué:', result.message);
       setError(result.message);
       if (result.needsVerification) {
         setNeedsVerification(true);

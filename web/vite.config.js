@@ -12,6 +12,13 @@ export default defineConfig({
   },
   build: {
     outDir: 'dist',
-    chunkSizeWarningLimit: 2000
+    chunkSizeWarningLimit: 2000,
+    rollupOptions: {
+      onwarn(warning, warn) {
+        // Ignorer le warning eval de lottie-web (bibliothèque tierce, non modifiable)
+        if (warning.code === 'EVAL' && warning.id?.includes('lottie')) return;
+        warn(warning);
+      }
+    }
   }
 })

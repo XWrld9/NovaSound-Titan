@@ -1,15 +1,16 @@
 {
   "name": "novasound-titan",
-  "version": "3.1.0",
+  "version": "3.3.0",
   "private": true,
   "type": "module",
   "engines": {
-    "node": "20.x"
+    "node": "22.x"
   },
   "scripts": {
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
+    "postinstall": "npx update-browserslist-db@latest --yes",
     "lint": "eslint . --ext js,jsx --report-unused-disable-directives --max-warnings 0",
     "setup:buckets": "node setup-buckets.js"
   },

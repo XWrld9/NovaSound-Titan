@@ -22,9 +22,12 @@ const ArtistProfilePage = () => {
   const [currentSong, setCurrentSong] = useState(null);
 
   useEffect(() => {
-    fetchArtistData();
-    fetchFollowers();
-  }, [id, currentUser]);
+    if (id) {
+      fetchArtistData();
+      fetchFollowers();
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [id]);
 
   const fetchArtistData = async () => {
     try {
