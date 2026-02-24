@@ -184,7 +184,7 @@ const UserProfilePage = () => {
     <>
       <Helmet>
         <title>Profil - NovaSound-Titan</title>
-        <meta name="description" content="Votre profil utilisateur NovaSound-Titan" />
+        <meta name="description" content="Votre profil - NovaSound-Titan" />
       </Helmet>
 
       <div className="min-h-screen bg-gray-950 pb-24 md:pb-32 overflow-x-hidden">
@@ -210,7 +210,7 @@ const UserProfilePage = () => {
                   ) : (
                     <img
                       src="/profil par defaut.png"
-                      alt="Default Avatar"
+                      alt="Avatar par défaut"
                       className="w-full h-full rounded-full object-cover"
                     />
                   )}

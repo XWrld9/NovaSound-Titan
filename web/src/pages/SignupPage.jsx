@@ -15,8 +15,8 @@ const SignupPage = () => {
     password: '',
     passwordConfirm: ''
   });
-  const [showPassword, setShowPassword] = useState(false);
-  const [showPasswordConfirm, setShowPasswordConfirm] = useState(false);
+  const [showMot de passe, setShowMot de passe] = useState(false);
+  const [showMot de passeConfirm, setShowMot de passeConfirm] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [loading, setLoading] = useState(false);
@@ -34,12 +34,12 @@ const SignupPage = () => {
     setSuccess('');
 
     if (formData.password !== formData.passwordConfirm) {
-      setError('Passwords do not match');
+      setError('Les mots de passe ne correspondent pas');
       return;
     }
 
     if (formData.password.length < 8) {
-      setError('Password must be at least 8 characters long');
+      setError('Le mot de passe doit contenir au moins 8 caractères');
       return;
     }
 
@@ -67,8 +67,8 @@ const SignupPage = () => {
   return (
     <>
       <Helmet>
-        <title>Sign Up - NovaSound-Titan</title>
-        <meta name="description" content="Create your NovaSound-Titan account to start uploading and sharing music" />
+        <title>Inscription - NovaSound-Titan</title>
+        <meta name="description" content="Créez votre compte NovaSound-Titan pour uploader et partager votre musique" />
       </Helmet>
 
       <div className="min-h-screen bg-gray-950 flex items-center justify-center px-4 py-12 overflow-x-hidden">
@@ -84,8 +84,8 @@ const SignupPage = () => {
                 NovaSound-Titan
               </span>
             </div>
-            <h1 className="text-2xl font-bold text-white mb-2">Create Account</h1>
-            <p className="text-gray-400">Join the music revolution today</p>
+            <h1 className="text-2xl font-bold text-white mb-2">Créer un compte</h1>
+            <p className="text-gray-400">Rejoignez la révolution musicale</p>
           </div>
 
           <div className="bg-gray-900/50 backdrop-blur-xl border border-cyan-500/30 rounded-2xl p-8 shadow-2xl">
@@ -102,13 +102,13 @@ const SignupPage = () => {
                   <CheckCircle className="w-5 h-5 text-green-400 flex-shrink-0 mt-0.5" />
                   <div className="flex-1">
                     <p className="text-green-400 text-sm">{success}</p>
-                    <p className="text-gray-400 text-xs mt-1">Redirecting to login...</p>
+                    <p className="text-gray-400 text-xs mt-1">Redirection vers la connexion...</p>
                   </div>
                 </div>
               )}
 
               <div>
-                <label htmlFor="username" className="block text-sm font-medium text-gray-300 mb-2">Username</label>
+                <label htmlFor="username" className="block text-sm font-medium text-gray-300 mb-2">Nom d'utilisateur</label>
                 <div className="relative">
                   <User className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-cyan-400" />
                   <input
@@ -142,11 +142,11 @@ const SignupPage = () => {
               </div>
 
               <div>
-                <label htmlFor="password" className="block text-sm font-medium text-gray-300 mb-2">Password</label>
+                <label htmlFor="password" className="block text-sm font-medium text-gray-300 mb-2">Mot de passe</label>
                 <div className="relative">
                   <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-cyan-400" />
                   <input
-                    type={showPassword ? "text" : "password"}
+                    type={showMot de passe ? "text" : "password"}
                     id="password"
                     name="password"
                     value={formData.password}
@@ -158,21 +158,21 @@ const SignupPage = () => {
                   />
                   <button
                     type="button"
-                    onClick={() => setShowPassword(!showPassword)}
+                    onClick={() => setShowMot de passe(!showMot de passe)}
                     className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-cyan-400 transition-colors"
                   >
-                    {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                    {showMot de passe ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                   </button>
                 </div>
-                <p className="text-xs text-gray-500 mt-1">Minimum 8 characters</p>
+                <p className="text-xs text-gray-500 mt-1">8 caractères minimum</p>
               </div>
 
               <div>
-                <label htmlFor="passwordConfirm" className="block text-sm font-medium text-gray-300 mb-2">Confirm Password</label>
+                <label htmlFor="passwordConfirm" className="block text-sm font-medium text-gray-300 mb-2">Confirm Mot de passe</label>
                 <div className="relative">
                   <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-cyan-400" />
                   <input
-                    type={showPasswordConfirm ? "text" : "password"}
+                    type={showMot de passeConfirm ? "text" : "password"}
                     name="passwordConfirm"
                     value={formData.passwordConfirm}
                     onChange={handleChange}
@@ -182,10 +182,10 @@ const SignupPage = () => {
                   />
                   <button
                     type="button"
-                    onClick={() => setShowPasswordConfirm(!showPasswordConfirm)}
+                    onClick={() => setShowMot de passeConfirm(!showMot de passeConfirm)}
                     className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-cyan-400 transition-colors"
                   >
-                    {showPasswordConfirm ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                    {showMot de passeConfirm ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                   </button>
                 </div>
               </div>
@@ -195,13 +195,13 @@ const SignupPage = () => {
                 disabled={loading || success}
                 className="w-full bg-gradient-to-r from-cyan-500 to-magenta-500 hover:from-cyan-600 hover:to-magenta-600 text-white py-3 text-lg font-semibold shadow-lg shadow-cyan-500/30"
               >
-                {loading ? 'Sign Up...' : 'Sign Up'}
+                {loading ? 'Inscription...' : 'S'inscrire'}
               </Button>
             </form>
 
             <div className="mt-6 text-center">
               <p className="text-gray-400">
-                Already have an account?{' '}
+                Vous avez déjà un compte ?{' '}
                 <Link to="/login" className="text-cyan-400 hover:text-cyan-300 font-semibold">
                   Login
                 </Link>

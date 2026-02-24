@@ -69,8 +69,8 @@ const HomePage = () => {
   return (
     <>
       <Helmet>
-        <title>NovaSound-Titan - Discover Amazing Music</title>
-        <meta name="description" content="Stream and discover the latest music on NovaSound-Titan. Upload your tracks and connect with music lovers worldwide." />
+        <title>NovaSound-Titan - Découvrez une musique incroyable</title>
+        <meta name="description" content="Streamez et découvrez les dernières musiques sur NovaSound-Titan. Uploadez vos sons et connectez-vous avec des passionnés de musique." />
       </Helmet>
 
       <div className="min-h-screen bg-gray-950 flex flex-col pb-24 md:pb-32 relative overflow-x-hidden">
@@ -109,19 +109,19 @@ const HomePage = () => {
                   Feel the Sound Wave
                 </h1>
                 <p className="text-lg md:text-2xl text-gray-300 mb-6 md:mb-8 max-w-xl mx-auto md:mx-0">
-                  Discover, stream, and share music that moves you. Join the revolution.
+                  Découvrez, streamez et partagez la musique qui vous touche. Rejoignez la révolution.
                 </p>
                 <div className="flex flex-col sm:flex-row gap-4 justify-center md:justify-start">
                   {!isAuthenticated && (
                     <Link to="/signup" className="w-full sm:w-auto">
                       <Button className="w-full sm:w-auto bg-gradient-to-r from-cyan-500 to-magenta-500 hover:from-cyan-600 hover:to-magenta-600 text-white text-lg px-8 py-6 font-semibold shadow-lg shadow-cyan-500/30">
-                        Get Started
+                        Commencer
                       </Button>
                     </Link>
                   )}
                   <Link to="/upload" className="w-full sm:w-auto">
                     <Button variant="outline" className="w-full sm:w-auto border-cyan-500/50 text-cyan-400 hover:bg-cyan-500/10 text-lg px-8 py-6 font-semibold">
-                      Upload Music
+                      Uploader
                     </Button>
                   </Link>
                 </div>
@@ -141,7 +141,7 @@ const HomePage = () => {
                   <div className="w-1 h-8 bg-gradient-to-b from-cyan-400 to-cyan-600 rounded-full" />
                   <h2 className="text-2xl md:text-3xl font-bold text-white flex items-center gap-3">
                     <TrendingUp className="w-6 h-6 md:w-8 md:h-8 text-cyan-400" />
-                    Featured Tracks
+                    Morceaux à la une
                   </h2>
                 </div>
                 <Link to="/explorer" className="text-sm text-cyan-400 hover:text-cyan-300 transition-colors font-medium">

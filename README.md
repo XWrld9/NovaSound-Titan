@@ -218,6 +218,10 @@ npm run setup:buckets
 
 ## 📝 Changelog
 
+### v3.8 (2026-02-24)
+- 🌐 Uniformisation de la langue : interface entièrement en **français** (pages, boutons, placeholders, messages d'erreur/succès, nav)
+- 🌐 Fichiers traduits : Header, Footer, MobileMenu, LoginPage, SignupPage, MusicUploadPage, ExplorerPage, HomePage, NewsForm, NewsPage, AudioPlayer, ArtistProfilePage, UserProfilePage
+
 ### v3.7 (2026-02-24)
 - ✨ Modification et suppression des **news** par l'auteur — édition inline avec confirmation
 - ✨ Modification des **musiques** (titre, artiste) par l'uploader — édition inline dans SongCard

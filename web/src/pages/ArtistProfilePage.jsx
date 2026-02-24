@@ -176,7 +176,7 @@ const ArtistProfilePage = () => {
                 </div>
               ) : (
                 <div className="text-center py-12 text-gray-500">
-                  No songs uploaded yet.
+                  Aucun morceau uploadé pour l'instant.
                 </div>
               )}
             </div>
@@ -206,7 +206,7 @@ const ArtistProfilePage = () => {
                           <div className="flex-1 min-w-0">
                             <div className="text-white font-medium truncate">{follower.username}</div>
                             <div className="text-xs text-gray-500">
-                              Followed {new Date(follow.created_at || Date.now()).toLocaleDateString()}
+                              Abonné depuis le {new Date(follow.created_at || Date.now()).toLocaleDateString()}
                             </div>
                           </div>
                         </div>

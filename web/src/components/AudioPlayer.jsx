@@ -379,7 +379,7 @@ const AudioPlayer = ({ currentSong, playlist = [], onNext, onPrevious }) => {
                           ? 'bg-cyan-500/20 border-cyan-500 text-cyan-400 hover:bg-red-500/20 hover:border-red-500 hover:text-red-400' 
                           : 'bg-transparent border-gray-600 text-gray-400 hover:border-cyan-500 hover:text-cyan-400'
                       }`}
-                      title={isFollowing ? "Unsubscribe" : "Subscribe"}
+                      title={isFollowing ? "Se désabonner" : "S'abonner"}
                     >
                       {isFollowing ? (
                         <>

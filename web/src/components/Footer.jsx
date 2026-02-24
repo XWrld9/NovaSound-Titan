@@ -41,7 +41,7 @@ const Footer = () => {
               <li>
                 <Link to="/upload" className="text-gray-400 hover:text-cyan-400 transition-colors text-sm flex items-center gap-2">
                   <span className="w-1 h-1 bg-cyan-500 rounded-full opacity-0 hover:opacity-100 transition-opacity" />
-                  Upload Music
+                  Uploader
                 </Link>
               </li>
             </ul>

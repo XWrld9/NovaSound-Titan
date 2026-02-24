@@ -10,8 +10,8 @@ const LoginPage = () => {
   const navigate = useNavigate();
   const { login, resendVerification } = useAuth();
   const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [showPassword, setShowPassword] = useState(false);
+  const [password, setMot de passe] = useState('');
+  const [showMot de passe, setShowMot de passe] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [needsVerification, setNeedsVerification] = useState(false);
@@ -56,8 +56,8 @@ const LoginPage = () => {
   return (
     <>
       <Helmet>
-        <title>Login - NovaSound-Titan</title>
-        <meta name="description" content="Login to NovaSound-Titan to access your music library and upload tracks" />
+        <title>Connexion - NovaSound-Titan</title>
+        <meta name="description" content="Connectez-vous à NovaSound-Titan pour accéder à votre bibliothèque et uploader vos sons" />
       </Helmet>
 
       <div className="min-h-screen bg-gray-950 flex items-center justify-center px-4 py-12 overflow-x-hidden">
@@ -73,8 +73,8 @@ const LoginPage = () => {
                 NovaSound-Titan
               </span>
             </div>
-            <h1 className="text-2xl font-bold text-white mb-2">Welcome Back</h1>
-            <p className="text-gray-400">Login to continue your musical journey</p>
+            <h1 className="text-2xl font-bold text-white mb-2">Bon retour !</h1>
+            <p className="text-gray-400">Connectez-vous pour continuer votre aventure musicale</p>
           </div>
 
           <div className="bg-gray-900/50 backdrop-blur-xl border border-cyan-500/30 rounded-2xl p-8 shadow-2xl">
@@ -97,7 +97,7 @@ const LoginPage = () => {
                         className="text-cyan-400 text-sm underline mt-2 hover:text-cyan-300"
                         disabled={loading}
                       >
-                        Resend verification email
+                        Renvoyer l'email de vérification
                       </button>
                     )}
                   </div>
@@ -122,25 +122,25 @@ const LoginPage = () => {
               </div>
 
               <div>
-                <label htmlFor="password" className="block text-sm font-medium text-gray-300 mb-2">Password</label>
+                <label htmlFor="password" className="block text-sm font-medium text-gray-300 mb-2">Mot de passe</label>
                 <div className="relative">
                   <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-cyan-400" />
                   <input
-                    type={showPassword ? "text" : "password"}
+                    type={showMot de passe ? "text" : "password"}
                     id="password"
                     name="password"
                     value={password}
-                    onChange={(e) => setPassword(e.target.value)}
+                    onChange={(e) => setMot de passe(e.target.value)}
                     required
                     className="w-full pl-10 pr-12 py-3 bg-gray-900/50 border border-cyan-500/30 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-cyan-400 focus:ring-2 focus:ring-cyan-400/20 transition-all"
                     placeholder="••••••••"
                   />
                   <button
                     type="button"
-                    onClick={() => setShowPassword(!showPassword)}
+                    onClick={() => setShowMot de passe(!showMot de passe)}
                     className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-cyan-400 transition-colors"
                   >
-                    {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                    {showMot de passe ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                   </button>
                 </div>
               </div>
@@ -150,15 +150,15 @@ const LoginPage = () => {
                 disabled={loading}
                 className="w-full bg-gradient-to-r from-cyan-500 to-magenta-500 hover:from-cyan-600 hover:to-magenta-600 text-white py-3 text-lg font-semibold shadow-lg shadow-cyan-500/30"
               >
-                {loading ? 'Login...' : 'Login'}
+                {loading ? 'Connexion...' : 'Se connecter'}
               </Button>
             </form>
 
             <div className="mt-6 text-center">
               <p className="text-gray-400">
-                Don't have an account?{' '}
+                Pas encore de compte ?{' '}
                 <Link to="/signup" className="text-cyan-400 hover:text-cyan-300 font-semibold">
-                  Sign up
+                  S'inscrire
                 </Link>
               </p>
               <div className="mt-4 pt-4 border-t border-gray-700">

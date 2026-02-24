@@ -109,8 +109,8 @@ const NewsPage = () => {
   return (
     <>
       <Helmet>
-        <title>News - NovaSound TITAN LUX</title>
-        <meta name="description" content="Latest updates and news from the NovaSound community" />
+        <title>Actualités - NovaSound TITAN LUX</title>
+        <meta name="description" content="Dernières actualités et mises à jour de la communauté NovaSound" />
       </Helmet>
 
       <div className="min-h-screen bg-gray-950 flex flex-col">
@@ -120,7 +120,7 @@ const NewsPage = () => {
           <div className="flex items-center gap-3 mb-8">
             <div className="w-1 h-8 bg-gradient-to-b from-fuchsia-500 to-purple-600 rounded-full" />
             <Newspaper className="w-8 h-8 text-fuchsia-400" />
-            <h1 className="text-3xl font-bold text-white">Community News</h1>
+            <h1 className="text-3xl font-bold text-white">Actualités de la communauté</h1>
           </div>
 
           {isAuthenticated && (

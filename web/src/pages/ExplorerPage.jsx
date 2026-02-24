@@ -98,7 +98,7 @@ const ExplorerPage = () => {
     <>
       <Helmet>
         <title>Explorer - NovaSound TITAN LUX</title>
-        <meta name="description" content="Explore the vast library of music on NovaSound TITAN LUX" />
+        <meta name="description" content="Explorez la vaste bibliothèque musicale de NovaSound TITAN LUX" />
       </Helmet>
 
       <div className="min-h-screen bg-gray-950 flex flex-col pb-32">
@@ -113,7 +113,7 @@ const ExplorerPage = () => {
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
                 <input
                   type="text"
-                  placeholder="Search library..."
+                  placeholder="Rechercher..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   className="w-full pl-9 pr-4 py-2 bg-gray-900 border border-gray-800 rounded-lg text-white focus:border-cyan-500 focus:outline-none"
@@ -127,9 +127,9 @@ const ExplorerPage = () => {
                   onChange={(e) => setSortBy(e.target.value)}
                   className="pl-9 pr-8 py-2 bg-gray-900 border border-gray-800 rounded-lg text-white focus:border-cyan-500 focus:outline-none appearance-none cursor-pointer"
                 >
-                  <option value="-created">Newest First</option>
-                  <option value="created">Oldest First</option>
-                  <option value="-plays_count">Most Played</option>
+                  <option value="-created">Plus récents</option>
+                  <option value="created">Plus anciens</option>
+                  <option value="-plays_count">Plus écoutés</option>
                   {/* Note: Most Liked requires a counter field on song record which we simulate with plays for now or omit if strict */}
                 </select>
               </div>
@@ -155,7 +155,7 @@ const ExplorerPage = () => {
 
           {!loading && songs.length === 0 && (
             <div className="text-center py-12 text-gray-500">
-              No songs found matching your criteria.
+              Aucun morceau trouvé pour votre recherche.
             </div>
           )}
         </main>

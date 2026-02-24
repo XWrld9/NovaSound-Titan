@@ -35,7 +35,7 @@ const MusicUploadPage = () => {
     const file = e.target.files[0];
     if (file) {
       if (file.size > 104857600) { // 100MB
-        setError('Audio file must be less than 100MB');
+        setError('Le fichier audio doit faire moins de 100 Mo');
         return;
       }
       setAudioFile(file);
@@ -47,7 +47,7 @@ const MusicUploadPage = () => {
     const file = e.target.files[0];
     if (file) {
       if (file.size > 20971520) { // 20MB
-        setError('Album cover must be less than 20MB');
+        setError('La pochette doit faire moins de 20 Mo');
         return;
       }
       setAlbumCover(file);
@@ -61,7 +61,7 @@ const MusicUploadPage = () => {
     setSuccess('');
 
     if (!audioFile) {
-      setError('Please select an audio file');
+      setError('Veuillez sélectionner un fichier audio');
       return;
     }
 
@@ -120,14 +120,14 @@ const MusicUploadPage = () => {
       if (insertError) throw insertError;
 
       setUploadProgress(100);
-      setSuccess('Song uploaded successfully! Redirecting...');
+      setSuccess('Morceau uploadé avec succès ! Redirection...');
 
       setTimeout(() => {
         navigate('/');
       }, 2000);
     } catch (err) {
       console.error('Upload error:', err);
-      setError(err.message || 'Failed to upload song. Please try again.');
+      setError(err.message || 'Échec de l'upload. Veuillez réessayer.');
       setUploadProgress(0);
 
     } finally {
@@ -138,8 +138,8 @@ const MusicUploadPage = () => {
   return (
     <>
       <Helmet>
-        <title>Upload Music - NovaSound-Titan</title>
-        <meta name="description" content="Upload your music to NovaSound-Titan and share it with the world" />
+        <title>Uploader - NovaSound-Titan</title>
+        <meta name="description" content="Uploadez votre musique sur NovaSound-Titan et partagez-la avec le monde" />
       </Helmet>
 
       <div className="min-h-screen bg-gray-950 flex flex-col">
@@ -153,9 +153,9 @@ const MusicUploadPage = () => {
           >
             <div className="text-center mb-8">
               <h1 className="text-4xl font-bold bg-gradient-to-r from-cyan-400 to-magenta-500 bg-clip-text text-transparent mb-4">
-                Upload Your Music
+                Uploadez votre musique
               </h1>
-              <p className="text-gray-400">Share your tracks with the world</p>
+              <p className="text-gray-400">Partagez vos sons avec le monde</p>
             </div>
 
             <div className="bg-gray-900/50 backdrop-blur-xl border border-cyan-500/30 rounded-2xl p-8 shadow-2xl">
@@ -177,7 +177,7 @@ const MusicUploadPage = () => {
                 {loading && uploadProgress > 0 && (
                   <div className="space-y-2">
                     <div className="flex justify-between text-sm text-gray-400">
-                      <span>Uploading...</span>
+                      <span>Upload en cours...</span>
                       <span>{uploadProgress}%</span>
                     </div>
                     <div className="w-full bg-gray-800 rounded-full h-2 overflow-hidden">
@@ -190,7 +190,7 @@ const MusicUploadPage = () => {
                 )}
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-300 mb-2">Song Title *</label>
+                  <label className="block text-sm font-medium text-gray-300 mb-2">Titre du morceau *</label>
                   <input
                     type="text"
                     name="title"
@@ -198,12 +198,12 @@ const MusicUploadPage = () => {
                     onChange={handleChange}
                     required
                     className="w-full px-4 py-3 bg-gray-900/50 border border-cyan-500/30 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-cyan-400 focus:ring-2 focus:ring-cyan-400/20 transition-all"
-                    placeholder="Enter song title"
+                    placeholder="Titre du morceau"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-300 mb-2">Artist Name *</label>
+                  <label className="block text-sm font-medium text-gray-300 mb-2">Nom de l'artiste *</label>
                   <input
                     type="text"
                     name="artist"
@@ -211,7 +211,7 @@ const MusicUploadPage = () => {
                     onChange={handleChange}
                     required
                     className="w-full px-4 py-3 bg-gray-900/50 border border-cyan-500/30 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-cyan-400 focus:ring-2 focus:ring-cyan-400/20 transition-all"
-                    placeholder="Enter artist name"
+                    placeholder="Nom de l'artiste"
                   />
                 </div>
 
@@ -223,12 +223,12 @@ const MusicUploadPage = () => {
                     onChange={handleChange}
                     rows={4}
                     className="w-full px-4 py-3 bg-gray-900/50 border border-cyan-500/30 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-cyan-400 focus:ring-2 focus:ring-cyan-400/20 transition-all resize-none"
-                    placeholder="Tell us about your song..."
+                    placeholder="Décrivez votre morceau..."
                   />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-300 mb-2">Audio File * (Max 100MB)</label>
+                  <label className="block text-sm font-medium text-gray-300 mb-2">Fichier audio * (Max 100 Mo)</label>
                   <div className="relative">
                     <input
                       type="file"
@@ -243,14 +243,14 @@ const MusicUploadPage = () => {
                     >
                       <Music className="w-6 h-6 text-cyan-400" />
                       <span className="text-gray-300">
-                        {audioFile ? audioFile.name : 'Click to upload audio file'}
+                        {audioFile ? audioFile.name : 'Cliquez pour uploader un fichier audio'}
                       </span>
                     </label>
                   </div>
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-300 mb-2">Album Cover (Max 20MB)</label>
+                  <label className="block text-sm font-medium text-gray-300 mb-2">Pochette d'album (Max 20 Mo)</label>
                   <div className="relative">
                     <input
                       type="file"
@@ -265,7 +265,7 @@ const MusicUploadPage = () => {
                     >
                       <Image className="w-6 h-6 text-magenta-400" />
                       <span className="text-gray-300">
-                        {albumCover ? albumCover.name : 'Click to upload album cover (optional)'}
+                        {albumCover ? albumCover.name : 'Cliquez pour uploader une pochette (optionnel)'}
                       </span>
                     </label>
                   </div>
@@ -276,7 +276,7 @@ const MusicUploadPage = () => {
                   disabled={loading}
                   className="w-full bg-gradient-to-r from-cyan-500 to-magenta-500 hover:from-cyan-600 hover:to-magenta-600 text-white py-3 text-lg font-semibold shadow-lg shadow-cyan-500/30"
                 >
-                  {loading ? 'Uploading...' : 'Upload Song'}
+                  {loading ? 'Upload en cours...' : 'Uploader le morceau'}
                   {!loading && <Upload className="w-5 h-5 ml-2" />}
                 </Button>
               </form>

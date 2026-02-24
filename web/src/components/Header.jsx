@@ -163,13 +163,13 @@ const Header = () => {
                       {currentUser.avatar_url ? (
                         <img 
                           src={currentUser.avatar_url} 
-                          alt="Profile" 
+                          alt="Profil" 
                           className="w-8 h-8 rounded-full border border-cyan-500/50"
                         />
                       ) : (
                         <img 
                           src="/profil par defaut.png" 
-                          alt="Default Profile" 
+                          alt="Profil par défaut" 
                           className="w-8 h-8 rounded-full border border-cyan-500/50"
                         />
                       )}
@@ -292,7 +292,7 @@ const Header = () => {
                         className="flex items-center gap-3 px-4 py-3 text-gray-300 hover:bg-cyan-500/10 hover:text-cyan-400 rounded-lg transition-colors"
                       >
                         <Upload className="w-5 h-5" />
-                        Upload Music
+                        Uploader
                       </Link>
                       <Link 
                         to="/profile" 
@@ -320,10 +320,10 @@ const Header = () => {
                 ) : (
                   <div className="grid grid-cols-2 gap-3">
                     <Link to="/login" onClick={() => setIsMobileMenuOpen(false)}>
-                      <Button className="w-full bg-cyan-600 hover:bg-cyan-700 text-white rounded-full">Login</Button>
+                      <Button className="w-full bg-cyan-600 hover:bg-cyan-700 text-white rounded-full">Connexion</Button>
                     </Link>
                     <Link to="/signup" onClick={() => setIsMobileMenuOpen(false)}>
-                      <Button className="w-full bg-cyan-600 hover:bg-cyan-700 text-white rounded-full">Sign Up</Button>
+                      <Button className="w-full bg-cyan-600 hover:bg-cyan-700 text-white rounded-full">S'inscrire</Button>
                     </Link>
                   </div>
                 )}
