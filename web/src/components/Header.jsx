@@ -1,14 +1,16 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Search, Upload, User, LogOut, Menu, X, Globe, Newspaper, Music } from 'lucide-react';
+import { Search, Upload, User, LogOut, Menu, X, Globe, Newspaper, Music, Download } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/lib/supabaseClient';
 import { Button } from '@/components/ui/button';
 import { motion, AnimatePresence } from 'framer-motion';
+import usePWAInstall from '@/hooks/usePWAInstall';
 
 const Header = () => {
   const { currentUser, isAuthenticated, logout } = useAuth();
   const navigate = useNavigate();
+  const { canInstall, install } = usePWAInstall();
   const [searchQuery, setSearchQuery]           = useState('');
   const [searchResults, setSearchResults]       = useState([]);
   const [showResults, setShowResults]           = useState(false);
@@ -137,6 +139,22 @@ const Header = () => {
               <Link to="/news" className="text-gray-300 hover:text-cyan-400 transition-colors flex items-center gap-2 font-medium">
                 <Newspaper className="w-4 h-4" />Actualités
               </Link>
+
+              {/* Bouton installer PWA — visible seulement si le navigateur le propose */}
+              {canInstall && (
+                <motion.button
+                  onClick={install}
+                  initial={{ opacity: 0, scale: 0.9 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  className="flex items-center gap-2 px-4 py-2 rounded-full border border-purple-500/50 text-purple-300 hover:bg-purple-500/10 hover:border-purple-400 hover:text-purple-200 transition-all text-sm font-medium"
+                  title="Installer l'application sur ton appareil"
+                >
+                  <Download className="w-4 h-4" />
+                  Installer l'app
+                </motion.button>
+              )}
 
               {isAuthenticated ? (
                 <>
@@ -300,7 +318,17 @@ const Header = () => {
               </div>
 
               {/* Pied */}
-              <div className="p-4 border-t border-cyan-500/20 bg-gray-900/50">
+              <div className="p-4 border-t border-cyan-500/20 bg-gray-900/50 space-y-3">
+                {/* Bouton installer PWA mobile */}
+                {canInstall && (
+                  <button
+                    onClick={() => { install(); closeMenu(); }}
+                    className="w-full flex items-center justify-center gap-2 py-3 rounded-xl border border-purple-500/40 text-purple-300 hover:bg-purple-500/10 transition-all text-sm font-medium"
+                  >
+                    <Download className="w-4 h-4" />
+                    Télécharger NovaST LUX
+                  </button>
+                )}
                 {isAuthenticated ? (
                   <Button onClick={handleLogout} variant="outline" className="w-full border-red-500/30 text-red-400 hover:bg-red-500/10 hover:text-red-300 justify-start">
                     <LogOut className="w-4 h-4 mr-2" />Déconnexion

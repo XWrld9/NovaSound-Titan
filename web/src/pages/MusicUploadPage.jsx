@@ -65,20 +65,45 @@ const MusicUploadPage = () => {
       return;
     }
 
+    // Limite de taille : 50 MB
+    if (audioFile.size > 50 * 1024 * 1024) {
+      setError('Le fichier audio est trop volumineux (max 50 MB)');
+      return;
+    }
+
     setLoading(true);
     setUploadProgress(10);
 
-    try {
-      setUploadProgress(50);
+    // Fonction upload avec retry automatique (3 tentatives)
+    const uploadWithRetry = async (bucket, path, file, options = {}, maxRetries = 3) => {
+      let lastError;
+      for (let attempt = 1; attempt <= maxRetries; attempt++) {
+        try {
+          const { error } = await supabase.storage
+            .from(bucket)
+            .upload(path, file, { cacheControl: '3600', upsert: false, ...options });
+          if (!error) return { success: true };
+          // Si le fichier existe déjà, ce n'est pas une erreur bloquante
+          if (error.message?.includes('already exists')) return { success: true };
+          lastError = error;
+        } catch (err) {
+          lastError = err;
+          // Attendre avant retry (backoff)
+          if (attempt < maxRetries) await new Promise(r => setTimeout(r, attempt * 1500));
+        }
+      }
+      throw lastError;
+    };
 
-      // 1) Upload audio → bucket "audio"
+    try {
+      setUploadProgress(20);
+
+      // 1) Upload audio → bucket "audio" avec retry
       const audioExt = audioFile.name.split('.').pop();
       const audioPath = `${currentUser.id}-${Date.now()}.${audioExt}`;
 
-      const { error: audioUploadError } = await supabase.storage
-        .from('audio')
-        .upload(audioPath, audioFile, { cacheControl: '3600', upsert: false });
-      if (audioUploadError) throw audioUploadError;
+      await uploadWithRetry('audio', audioPath, audioFile);
+      setUploadProgress(60);
 
       const { data: audioPublic } = supabase.storage
         .from('audio')
@@ -86,21 +111,21 @@ const MusicUploadPage = () => {
 
       let albumCoverUrl = null;
 
-      // 2) Upload cover (optional) → bucket "covers"
+      // 2) Upload cover (optionnel) → bucket "covers" avec retry
       if (albumCover) {
         const coverExt = albumCover.name.split('.').pop();
         const coverPath = `${currentUser.id}-${Date.now()}.${coverExt}`;
 
-        const { error: coverUploadError } = await supabase.storage
-          .from('covers')
-          .upload(coverPath, albumCover, { cacheControl: '3600', upsert: false });
-        if (coverUploadError) throw coverUploadError;
+        await uploadWithRetry('covers', coverPath, albumCover);
+        setUploadProgress(80);
 
         const { data: coverPublic } = supabase.storage
           .from('covers')
           .getPublicUrl(coverPath);
         albumCoverUrl = coverPublic?.publicUrl || null;
       }
+
+      setUploadProgress(90);
 
       // 3) Insert song row
       const insertPayload = {
@@ -127,7 +152,20 @@ const MusicUploadPage = () => {
       }, 2000);
     } catch (err) {
       console.error('Upload error:', err);
-      setError(err.message || "Échec de l'upload. Veuillez réessayer.");
+      // Traduire les erreurs techniques
+      let message = "Échec de l'upload. Veuillez réessayer.";
+      if (err?.message?.includes('aborted') || err?.message?.includes('abort')) {
+        message = 'Connexion interrompue. Vérifiez votre réseau et réessayez.';
+      } else if (err?.message?.includes('network') || err?.message?.includes('fetch')) {
+        message = 'Erreur réseau. Vérifiez votre connexion internet.';
+      } else if (err?.message?.includes('exceeded') || err?.message?.includes('quota')) {
+        message = 'Espace de stockage insuffisant.';
+      } else if (err?.message?.includes('unauthorized') || err?.message?.includes('403')) {
+        message = 'Non autorisé. Reconnectez-vous et réessayez.';
+      } else if (err?.message) {
+        message = err.message;
+      }
+      setError(message);
       setUploadProgress(0);
 
     } finally {

@@ -89,6 +89,15 @@ export const AuthProvider = ({ children }) => {
         if (error.message?.includes('already registered')) {
           return { success: false, message: 'Cet email est déjà utilisé. Connectez-vous.' };
         }
+        if (error.message?.includes('rate limit') || error.message?.includes('email rate')) {
+          return { success: false, message: 'Trop de tentatives d\'inscription. Attendez quelques minutes avant de réessayer.' };
+        }
+        if (error.message?.includes('invalid email')) {
+          return { success: false, message: 'Adresse email invalide.' };
+        }
+        if (error.message?.includes('weak password') || error.message?.includes('Password should')) {
+          return { success: false, message: 'Mot de passe trop faible. Utilisez au moins 8 caractères.' };
+        }
         return { success: false, message: error.message };
       }
 

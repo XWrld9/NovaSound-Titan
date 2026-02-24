@@ -250,6 +250,13 @@ NovaSound-Titan/
 
 ## 📝 Changelog
 
+### v4.4 (2026-02-24)
+- 🐛 Fix **"email rate limit exceeded"** → message traduit en français avec conseil d'attente
+- 🐛 Fix **"Fetch is aborted"** upload mobile → retry automatique (3 tentatives avec backoff), vérification taille fichier (max 50 MB), messages d'erreur réseau traduits
+- ✨ **PWA complète** : `manifest.json`, `sw.js` (service worker), icônes 192×512px
+- ✨ **Bouton "Installer l'app"** dans le header desktop et **"Télécharger NovaST LUX"** dans le menu mobile — apparaît automatiquement quand le navigateur le supporte (Chrome, Edge, Samsung Internet…)
+- ✨ Support **Apple iOS** : `apple-mobile-web-app-capable`, `apple-touch-icon`, ajout via Safari → "Sur l'écran d'accueil"
+
 ### v4.3 (2026-02-24)
 - 🐛 Fix **partage news** : suppression image logo externe (CORS bloquait `html-to-image`) → logo SVG inline
 - 🐛 Fix **partage news** : avatar auteur remplacé par initiale inline (CORS Supabase Storage)
