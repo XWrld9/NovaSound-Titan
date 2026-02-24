@@ -16,27 +16,36 @@ export const AuthProvider = ({ children }) => {
   // ── Auth state listener ──────────────────────────────────────────────────
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
-        if (session?.user) {
-          // Enrichir avec les données profil de la table users
-          try {
-            const { data: profile } = await supabase
-              .from('users')
-              .select('username, display_name, avatar_url, bio')
-              .eq('id', session.user.id)
-              .single();
-            setCurrentUser({ ...session.user, ...(profile || {}) });
-          } catch {
-            setCurrentUser(session.user);
-          }
-        } else {
-          setCurrentUser(null);
-        }
+      (event, session) => {
+        // Callback SYNC obligatoire pour Supabase
+        setCurrentUser(session?.user ?? null);
         setInitialLoading(false);
       }
     );
     return () => subscription.unsubscribe();
   }, []);
+
+  // ── Enrichissement profil DB (séparé du listener auth) ───────────────────
+  useEffect(() => {
+    if (!currentUser?.id) return;
+    // Ne pas re-enrichir si le profil est déjà chargé
+    if (currentUser.username || currentUser.avatar_url) return;
+
+    const loadProfile = async () => {
+      try {
+        const { data: profile } = await supabase
+          .from('users')
+          .select('username, display_name, avatar_url, bio')
+          .eq('id', currentUser.id)
+          .single();
+        if (profile) {
+          setCurrentUser(prev => ({ ...prev, ...profile }));
+        }
+      } catch { /* non-bloquant */ }
+    };
+
+    loadProfile();
+  }, [currentUser?.id]);
 
   // ── Helpers ──────────────────────────────────────────────────────────────
   const getEmailRedirectTo = () => {
