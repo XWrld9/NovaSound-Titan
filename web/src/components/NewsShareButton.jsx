@@ -1,41 +1,185 @@
-import React, { useState, useRef, useCallback } from 'react';
+import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Share2, Download, X, Loader2, Check } from 'lucide-react';
-import { toPng } from 'html-to-image';
 
 /**
- * NewsShareButton
- * Génère une image de la news (style card) et la partage via
- * navigator.share (mobile) ou téléchargement direct (desktop).
+ * NewsShareButton v2
+ * Génère une image de la news via Canvas natif (zéro CORS, zéro dépendance externe).
+ * Partage via navigator.share (mobile) ou téléchargement (desktop).
  */
 const NewsShareButton = ({ news }) => {
   const [isGenerating, setIsGenerating] = useState(false);
   const [showPreview, setShowPreview]   = useState(false);
   const [imgDataUrl, setImgDataUrl]     = useState(null);
   const [shared, setShared]             = useState(false);
-  const cardRef                         = useRef(null);
 
-  // ─── Formater la date en français ───
   const dateLabel = news?.created_at
     ? new Date(news.created_at).toLocaleDateString('fr-FR', {
         day: 'numeric', month: 'long', year: 'numeric',
       })
     : '';
 
-  // ─── Tronquer le contenu pour la card image ───
-  const shortContent = news?.content?.length > 320
-    ? news.content.slice(0, 317) + '…'
-    : news?.content || '';
+  // ─── Dessiner la card sur un Canvas 2D ───
+  const generateImage = async () => {
+    const W = 600, H = 400;
+    const canvas = document.createElement('canvas');
+    canvas.width  = W * 2; // retina
+    canvas.height = H * 2;
+    const ctx = canvas.getContext('2d');
+    ctx.scale(2, 2);
 
-  // ─── Générer l'image depuis le DOM ───
-  const generateImage = useCallback(async () => {
-    if (!cardRef.current) return null;
-    return toPng(cardRef.current, {
-      cacheBust: true,
-      pixelRatio: 2,          // haute résolution
-      backgroundColor: '#111827',
+    // Fond dégradé
+    const grad = ctx.createLinearGradient(0, 0, W, H);
+    grad.addColorStop(0, '#111827');
+    grad.addColorStop(1, '#1a1040');
+    ctx.fillStyle = grad;
+    roundRect(ctx, 0, 0, W, H, 20);
+    ctx.fill();
+
+    // Bordure violette
+    ctx.strokeStyle = 'rgba(168,85,247,0.4)';
+    ctx.lineWidth = 1.5;
+    roundRect(ctx, 0.75, 0.75, W - 1.5, H - 1.5, 20);
+    ctx.stroke();
+
+    // ── Logo "N" ──
+    const logoGrad = ctx.createLinearGradient(40, 40, 72, 72);
+    logoGrad.addColorStop(0, '#22d3ee');
+    logoGrad.addColorStop(1, '#a855f7');
+    ctx.fillStyle = logoGrad;
+    ctx.beginPath();
+    ctx.arc(56, 56, 16, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = '#fff';
+    ctx.font = 'bold 16px system-ui, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText('N', 56, 56);
+
+    // Nom plateforme
+    ctx.fillStyle = '#22d3ee';
+    ctx.font = '600 13px system-ui, sans-serif';
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'middle';
+    ctx.fillText('NovaSound TITAN LUX', 80, 56);
+
+    // Badge date
+    const badgeX = 40, badgeY = 90;
+    ctx.fillStyle = 'rgba(168,85,247,0.15)';
+    ctx.strokeStyle = 'rgba(168,85,247,0.35)';
+    ctx.lineWidth = 1;
+    const dateW = ctx.measureText(dateLabel).width + 24;
+    roundRect(ctx, badgeX, badgeY, dateW, 24, 12);
+    ctx.fill();
+    ctx.stroke();
+    ctx.fillStyle = '#c084fc';
+    ctx.font = '12px system-ui, sans-serif';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(dateLabel, badgeX + 12, badgeY + 12);
+
+    // Titre
+    ctx.fillStyle = '#ffffff';
+    ctx.font = 'bold 22px system-ui, sans-serif';
+    ctx.textBaseline = 'top';
+    const title = news?.title || '';
+    const titleLines = wrapText(ctx, title, W - 80, 22);
+    titleLines.slice(0, 2).forEach((line, i) => {
+      ctx.fillText(line, 40, 128 + i * 30);
     });
-  }, []);
+
+    // Ligne séparatrice
+    const sepY = 128 + Math.min(titleLines.length, 2) * 30 + 14;
+    const lineGrad = ctx.createLinearGradient(40, sepY, W - 40, sepY);
+    lineGrad.addColorStop(0, 'rgba(168,85,247,0.5)');
+    lineGrad.addColorStop(1, 'rgba(168,85,247,0)');
+    ctx.strokeStyle = lineGrad;
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(40, sepY);
+    ctx.lineTo(W - 40, sepY);
+    ctx.stroke();
+
+    // Contenu tronqué
+    ctx.fillStyle = '#d1d5db';
+    ctx.font = '14px system-ui, sans-serif';
+    ctx.textBaseline = 'top';
+    const content = news?.content || '';
+    const contentLines = wrapText(ctx, content, W - 80, 14);
+    contentLines.slice(0, 4).forEach((line, i) => {
+      ctx.fillText(line, 40, sepY + 14 + i * 22);
+    });
+
+    // Footer — ligne séparatrice
+    const footerY = H - 52;
+    ctx.strokeStyle = 'rgba(255,255,255,0.08)';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(40, footerY);
+    ctx.lineTo(W - 40, footerY);
+    ctx.stroke();
+
+    // Auteur — avatar initiale
+    const username = news?.users?.username || 'NovaSound';
+    const avatarGrad = ctx.createLinearGradient(40, footerY + 10, 68, footerY + 38);
+    avatarGrad.addColorStop(0, '#22d3ee');
+    avatarGrad.addColorStop(1, '#a855f7');
+    ctx.fillStyle = avatarGrad;
+    ctx.beginPath();
+    ctx.arc(54, footerY + 24, 14, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = '#fff';
+    ctx.font = 'bold 12px system-ui, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(username[0].toUpperCase(), 54, footerY + 24);
+
+    // Nom auteur
+    ctx.fillStyle = '#9ca3af';
+    ctx.font = '13px system-ui, sans-serif';
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(username, 76, footerY + 24);
+
+    // Watermark
+    ctx.fillStyle = 'rgba(255,255,255,0.2)';
+    ctx.font = '11px system-ui, sans-serif';
+    ctx.textAlign = 'right';
+    ctx.fillText('nova-sound-titan.vercel.app', W - 40, footerY + 24);
+
+    return canvas.toDataURL('image/png');
+  };
+
+  // ─── Helpers ───
+  function roundRect(ctx, x, y, w, h, r) {
+    ctx.beginPath();
+    ctx.moveTo(x + r, y);
+    ctx.lineTo(x + w - r, y);
+    ctx.quadraticCurveTo(x + w, y, x + w, y + r);
+    ctx.lineTo(x + w, y + h - r);
+    ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+    ctx.lineTo(x + r, y + h);
+    ctx.quadraticCurveTo(x, y + h, x, y + h - r);
+    ctx.lineTo(x, y + r);
+    ctx.quadraticCurveTo(x, y, x + r, y);
+    ctx.closePath();
+  }
+
+  function wrapText(ctx, text, maxWidth, fontSize) {
+    const words = text.split(' ');
+    const lines = [];
+    let current = '';
+    for (const word of words) {
+      const test = current ? `${current} ${word}` : word;
+      if (ctx.measureText(test).width > maxWidth && current) {
+        lines.push(current);
+        current = word;
+      } else {
+        current = test;
+      }
+    }
+    if (current) lines.push(current);
+    return lines;
+  }
 
   const handleShare = async () => {
     setIsGenerating(true);
@@ -50,26 +194,22 @@ const NewsShareButton = ({ news }) => {
     }
   };
 
-  // ─── Télécharger l'image ───
   const handleDownload = () => {
     if (!imgDataUrl) return;
     const a = document.createElement('a');
     a.href = imgDataUrl;
-    a.download = `novasound-news-${news?.id?.slice(0,8) || 'post'}.png`;
+    a.download = `novasound-news-${news?.id?.slice(0, 8) || 'post'}.png`;
     a.click();
     setShared(true);
     setTimeout(() => setShared(false), 2000);
   };
 
-  // ─── Partage natif (mobile) ou copie lien (desktop) ───
   const handleNativeShare = async () => {
     if (!imgDataUrl) return;
     try {
-      // Convertir dataUrl → Blob → File
-      const res   = await fetch(imgDataUrl);
-      const blob  = await res.blob();
-      const file  = new File([blob], `novasound-news.png`, { type: 'image/png' });
-
+      const res  = await fetch(imgDataUrl);
+      const blob = await res.blob();
+      const file = new File([blob], 'novasound-news.png', { type: 'image/png' });
       if (navigator.share && navigator.canShare?.({ files: [file] })) {
         await navigator.share({
           title: news?.title || 'NovaSound TITAN LUX',
@@ -77,21 +217,17 @@ const NewsShareButton = ({ news }) => {
           files: [file],
         });
       } else {
-        // Fallback desktop : télécharger
         handleDownload();
       }
       setShared(true);
       setTimeout(() => setShared(false), 2000);
     } catch (err) {
-      if (err.name !== 'AbortError') {
-        handleDownload(); // fallback si share échoue
-      }
+      if (err.name !== 'AbortError') handleDownload();
     }
   };
 
   return (
     <>
-      {/* ── Bouton déclencheur ── */}
       <motion.button
         onClick={handleShare}
         disabled={isGenerating}
@@ -107,127 +243,6 @@ const NewsShareButton = ({ news }) => {
         <span className="hidden sm:inline">Partager</span>
       </motion.button>
 
-      {/* ── Card invisible utilisée comme source pour html-to-image ── */}
-      {/* Rendu hors écran mais dans le DOM pour que html-to-image puisse la capturer */}
-      <div
-        style={{
-          position: 'fixed',
-          top: '-9999px',
-          left: '-9999px',
-          width: '600px',
-          zIndex: -1,
-          pointerEvents: 'none',
-        }}
-      >
-        <div
-          ref={cardRef}
-          style={{
-            width: '600px',
-            background: 'linear-gradient(135deg, #111827 0%, #1a1040 100%)',
-            borderRadius: '20px',
-            padding: '40px',
-            fontFamily: 'system-ui, -apple-system, sans-serif',
-            color: '#fff',
-            border: '1px solid rgba(168,85,247,0.3)',
-            boxShadow: '0 0 60px rgba(168,85,247,0.15)',
-          }}
-        >
-          {/* Logo + nom plateforme */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '24px' }}>
-            <div style={{
-              width: '32px', height: '32px', borderRadius: '50%',
-              background: 'linear-gradient(135deg, #22d3ee, #a855f7)',
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              border: '2px solid #22d3ee', flexShrink: 0,
-            }}>
-              <span style={{ fontSize: '14px', fontWeight: '800', color: '#fff' }}>N</span>
-            </div>
-            <span style={{ fontSize: '14px', fontWeight: '600', color: '#22d3ee', letterSpacing: '0.05em' }}>
-              NovaSound TITAN LUX
-            </span>
-          </div>
-
-          {/* Badge date */}
-          <div style={{
-            display: 'inline-block',
-            background: 'rgba(168,85,247,0.15)',
-            border: '1px solid rgba(168,85,247,0.35)',
-            borderRadius: '999px',
-            padding: '3px 12px',
-            fontSize: '12px',
-            color: '#c084fc',
-            marginBottom: '14px',
-          }}>
-            {dateLabel}
-          </div>
-
-          {/* Titre */}
-          <h2 style={{
-            fontSize: '26px',
-            fontWeight: '800',
-            lineHeight: '1.25',
-            marginBottom: '20px',
-            color: '#ffffff',
-            wordBreak: 'break-word',
-          }}>
-            {news?.title}
-          </h2>
-
-          {/* Ligne séparatrice */}
-          <div style={{
-            height: '1px',
-            background: 'linear-gradient(to right, rgba(168,85,247,0.4), transparent)',
-            marginBottom: '20px',
-          }} />
-
-          {/* Contenu tronqué */}
-          <p style={{
-            fontSize: '15px',
-            lineHeight: '1.7',
-            color: '#d1d5db',
-            whiteSpace: 'pre-line',
-            wordBreak: 'break-word',
-          }}>
-            {shortContent}
-          </p>
-
-          {/* Footer */}
-          <div style={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            marginTop: '32px',
-            paddingTop: '20px',
-            borderTop: '1px solid rgba(255,255,255,0.08)',
-          }}>
-            {/* Auteur — initiale uniquement pour éviter CORS sur avatars Supabase */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <div style={{
-                width: '28px', height: '28px', borderRadius: '50%',
-                background: 'linear-gradient(135deg,#22d3ee,#a855f7)',
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                fontSize: '12px', color: '#fff', fontWeight: '700', flexShrink: 0,
-              }}>
-                {(news?.users?.username || 'A')[0].toUpperCase()}
-              </div>
-              <span style={{ fontSize: '13px', color: '#9ca3af' }}>
-                {news?.users?.username || 'NovaSound'}
-              </span>
-            </div>
-
-            {/* Watermark */}
-            <span style={{
-              fontSize: '11px',
-              color: 'rgba(255,255,255,0.25)',
-              letterSpacing: '0.08em',
-            }}>
-              nova-sound-titan.vercel.app
-            </span>
-          </div>
-        </div>
-      </div>
-
-      {/* ── Modal de prévisualisation + partage ── */}
       <AnimatePresence>
         {showPreview && imgDataUrl && (
           <>
@@ -247,7 +262,6 @@ const NewsShareButton = ({ news }) => {
                 className="bg-gray-900 border border-fuchsia-500/30 rounded-2xl shadow-2xl w-full max-w-lg pointer-events-auto overflow-hidden"
                 onClick={e => e.stopPropagation()}
               >
-                {/* Header */}
                 <div className="flex items-center justify-between px-5 py-4 border-b border-gray-800">
                   <h3 className="text-white font-semibold flex items-center gap-2">
                     <Share2 className="w-4 h-4 text-fuchsia-400" />
@@ -261,7 +275,6 @@ const NewsShareButton = ({ news }) => {
                   </button>
                 </div>
 
-                {/* Aperçu image */}
                 <div className="p-5">
                   <div className="rounded-xl overflow-hidden border border-gray-700/50 shadow-lg">
                     <img src={imgDataUrl} alt="Aperçu" className="w-full" />
@@ -271,9 +284,7 @@ const NewsShareButton = ({ news }) => {
                   </p>
                 </div>
 
-                {/* Boutons d'action */}
                 <div className="flex gap-3 px-5 pb-5">
-                  {/* Partage natif (WhatsApp, Instagram, etc. sur mobile) */}
                   <motion.button
                     onClick={handleNativeShare}
                     whileHover={{ scale: 1.02 }}
@@ -285,8 +296,6 @@ const NewsShareButton = ({ news }) => {
                       : <><Share2 className="w-4 h-4" /> Partager sur les réseaux</>
                     }
                   </motion.button>
-
-                  {/* Télécharger */}
                   <motion.button
                     onClick={handleDownload}
                     whileHover={{ scale: 1.02 }}

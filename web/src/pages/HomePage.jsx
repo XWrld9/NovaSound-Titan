@@ -108,7 +108,7 @@ const HomePage = () => {
                 className="max-w-3xl"
               >
                 <h1 className="text-4xl sm:text-5xl md:text-7xl font-bold mb-4 md:mb-6 bg-gradient-to-r from-cyan-400 via-white to-magenta-500 bg-clip-text text-transparent leading-tight">
-                  Feel the Sound Wave
+                  Ressens la vague sonore
                 </h1>
                 <p className="text-lg md:text-2xl text-gray-300 mb-6 md:mb-8 max-w-xl mx-auto md:mx-0">
                   Découvre, écoute et partage la musique qui te fait vibrer. Rejoins la révolution.
@@ -234,7 +234,7 @@ const HomePage = () => {
                   <div className="w-1 h-8 bg-gradient-to-b from-fuchsia-400 to-purple-600 rounded-full" />
                   <h2 className="text-2xl md:text-3xl font-bold text-white flex items-center gap-3">
                     <Newspaper className="w-6 h-6 md:w-8 md:h-8 text-fuchsia-400" />
-                    Latest News
+                    Dernières actualités
                   </h2>
                 </div>
                 <Link to="/news" className="text-sm text-fuchsia-400 hover:text-fuchsia-300 transition-colors font-medium">

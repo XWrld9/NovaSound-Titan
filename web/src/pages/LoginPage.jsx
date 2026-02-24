@@ -154,15 +154,15 @@ const LoginPage = () => {
                 disabled={loading}
                 className="w-full bg-gradient-to-r from-cyan-500 to-magenta-500 hover:from-cyan-600 hover:to-magenta-600 text-white py-3 text-lg font-semibold shadow-lg shadow-cyan-500/30"
               >
-                {loading ? 'Login...' : 'Login'}
+                {loading ? 'Connexion...' : 'Se connecter'}
               </Button>
             </form>
 
             <div className="mt-6 text-center">
               <p className="text-gray-400">
-                Don't have an account?{' '}
+                Pas encore de compte ?{' '}
                 <Link to="/signup" className="text-cyan-400 hover:text-cyan-300 font-semibold">
-                  Sign up
+                  S'inscrire
                 </Link>
               </p>
               <div className="mt-4 pt-4 border-t border-gray-700">
