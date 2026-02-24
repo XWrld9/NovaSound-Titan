@@ -192,7 +192,7 @@ BEGIN
     UPDATE public.songs SET likes_count = likes_count + 1 WHERE id = NEW.song_id;
     RETURN NEW;
   ELSIF TG_OP = 'DELETE' THEN
-    UPDATE public.songs SET likes_count = likes_count - 1 WHERE id = OLD.song_id;
+    UPDATE public.songs SET likes_count = GREATEST(0, likes_count - 1) WHERE id = OLD.song_id;
     RETURN OLD;
   END IF;
   RETURN NULL;
@@ -213,8 +213,8 @@ BEGIN
     UPDATE public.users SET following_count = following_count + 1 WHERE id = NEW.follower_id;
     RETURN NEW;
   ELSIF TG_OP = 'DELETE' THEN
-    UPDATE public.users SET followers_count = followers_count - 1 WHERE id = OLD.following_id;
-    UPDATE public.users SET following_count = following_count - 1 WHERE id = OLD.follower_id;
+    UPDATE public.users SET followers_count = GREATEST(0, followers_count - 1) WHERE id = OLD.following_id;
+    UPDATE public.users SET following_count = GREATEST(0, following_count - 1) WHERE id = OLD.follower_id;
     RETURN OLD;
   END IF;
   RETURN NULL;

@@ -1,6 +1,6 @@
 -- ============================================================
--- TABLE news_likes + fonctions atomiques pour les compteurs
--- Compatible avec schéma TEXT de NovaSound
+-- TABLE news_likes + trigger auto pour likes_count
+-- Compatible schéma TEXT de NovaSound
 -- À exécuter dans Supabase Dashboard > SQL Editor
 -- ============================================================
 
@@ -17,11 +17,13 @@ CREATE TABLE public.news_likes (
 CREATE INDEX IF NOT EXISTS idx_news_likes_user_id ON public.news_likes(user_id);
 CREATE INDEX IF NOT EXISTS idx_news_likes_news_id ON public.news_likes(news_id);
 
+-- RLS
 ALTER TABLE public.news_likes ENABLE ROW LEVEL SECURITY;
 
 CREATE POLICY "news_likes_select" ON public.news_likes
   FOR SELECT USING (true);
 
+-- Tout utilisateur connecté peut liker sauf l'auteur
 CREATE POLICY "news_likes_insert" ON public.news_likes
   FOR INSERT WITH CHECK (
     (auth.uid())::text = user_id
@@ -32,7 +34,7 @@ CREATE POLICY "news_likes_delete" ON public.news_likes
   FOR DELETE USING ((auth.uid())::text = user_id);
 
 -- ============================================================
--- Colonne likes_count si absente
+-- Colonne likes_count sur news si absente
 -- ============================================================
 DO $$ BEGIN
   IF NOT EXISTS (
@@ -44,23 +46,25 @@ DO $$ BEGIN
 END $$;
 
 -- ============================================================
--- Fonctions atomiques (évite les race conditions)
+-- Trigger atomique pour maintenir news.likes_count
+-- (même pattern que le trigger update_likes_count pour songs)
+-- Pas besoin d'update manuel dans le code JS
 -- ============================================================
+CREATE OR REPLACE FUNCTION update_news_likes_count()
+RETURNS TRIGGER AS $$
+BEGIN
+  IF TG_OP = 'INSERT' THEN
+    UPDATE public.news SET likes_count = likes_count + 1 WHERE id = NEW.news_id;
+    RETURN NEW;
+  ELSIF TG_OP = 'DELETE' THEN
+    UPDATE public.news SET likes_count = GREATEST(0, likes_count - 1) WHERE id = OLD.news_id;
+    RETURN OLD;
+  END IF;
+  RETURN NULL;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
 
-CREATE OR REPLACE FUNCTION increment_news_likes(news_id_param TEXT)
-RETURNS void AS $$
-  UPDATE public.news
-  SET likes_count = (
-    SELECT COUNT(*) FROM public.news_likes WHERE news_id = news_id_param
-  )
-  WHERE id = news_id_param;
-$$ LANGUAGE sql SECURITY DEFINER;
-
-CREATE OR REPLACE FUNCTION decrement_news_likes(news_id_param TEXT)
-RETURNS void AS $$
-  UPDATE public.news
-  SET likes_count = (
-    SELECT COUNT(*) FROM public.news_likes WHERE news_id = news_id_param
-  )
-  WHERE id = news_id_param;
-$$ LANGUAGE sql SECURITY DEFINER;
+DROP TRIGGER IF EXISTS trigger_update_news_likes_count ON public.news_likes;
+CREATE TRIGGER trigger_update_news_likes_count
+  AFTER INSERT OR DELETE ON public.news_likes
+  FOR EACH ROW EXECUTE FUNCTION update_news_likes_count();

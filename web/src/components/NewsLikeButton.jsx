@@ -7,34 +7,34 @@ import heartAnimation from '@/animations/heart-animation.json';
 
 const NewsLikeButton = ({ newsId, initialLikes = 0, authorId }) => {
   const { currentUser, supabase } = useAuth();
-  const [likes, setLikes] = useState(initialLikes);
-  const [isLiked, setIsLiked] = useState(false);
+  const [likes, setLikes]         = useState(initialLikes);
+  const [isLiked, setIsLiked]     = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [showBurst, setShowBurst] = useState(false);
-  const likesRef = useRef(initialLikes); // Référence toujours à jour pour éviter les closures stale
+  const likesRef                  = useRef(initialLikes);
 
   const isOwnNews = currentUser && authorId && currentUser.id === authorId;
 
-  // Charger le vrai compteur + état liked depuis la DB
-  // Y compris pour l'auteur (pour voir les likes des autres)
+  // Charger le vrai compteur + état liked depuis la DB (auteur inclus)
   useEffect(() => {
     if (!newsId) return;
     loadLikesData();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentUser, newsId]);
 
   const loadLikesData = async () => {
     try {
-      // 1. Compter les vrais likes dans la DB
+      // Compter les vraies lignes (source de vérité, pas likes_count)
       const { count } = await supabase
         .from('news_likes')
         .select('id', { count: 'exact', head: true })
         .eq('news_id', newsId);
 
-      const realCount = count ?? initialLikes;
-      setLikes(realCount);
-      likesRef.current = realCount;
+      const real = count ?? initialLikes;
+      setLikes(real);
+      likesRef.current = real;
 
-      // 2. Vérifier si l'utilisateur connecté a liké (sauf auteur)
+      // Vérifier si l'utilisateur courant a liké
       if (currentUser && !isOwnNews) {
         const { data } = await supabase
           .from('news_likes')
@@ -45,20 +45,20 @@ const NewsLikeButton = ({ newsId, initialLikes = 0, authorId }) => {
         setIsLiked(!!data);
       }
     } catch {
-      // Table pas encore créée — fallback silencieux
+      // La table n'existe pas encore — fallback silencieux
     }
   };
 
   const handleLike = async () => {
     if (!currentUser || isLoading || isOwnNews) return;
 
-    const wasLiked = isLiked;
-    const newLikes = wasLiked ? likesRef.current - 1 : likesRef.current + 1;
+    const wasLiked  = isLiked;
+    const newLikes  = wasLiked ? likesRef.current - 1 : likesRef.current + 1;
 
-    // Update optimiste immédiat
+    // Update optimiste
     setIsLiked(!wasLiked);
-    setLikes(newLikes);
-    likesRef.current = newLikes;
+    setLikes(Math.max(0, newLikes));
+    likesRef.current = Math.max(0, newLikes);
 
     if (!wasLiked) {
       setShowBurst(true);
@@ -74,37 +74,16 @@ const NewsLikeButton = ({ newsId, initialLikes = 0, authorId }) => {
           .eq('user_id', currentUser.id)
           .eq('news_id', newsId);
         if (error) throw error;
-
-        // Décrémenter dans news
-        await supabase.rpc('decrement_news_likes', { news_id_param: newsId })
-          .then(({ error: rpcErr }) => {
-            if (rpcErr) {
-              // Fallback manuel si la fonction RPC n'existe pas
-              return supabase
-                .from('news')
-                .update({ likes_count: newLikes })
-                .eq('id', newsId);
-            }
-          });
       } else {
         const { error } = await supabase
           .from('news_likes')
           .insert({ user_id: currentUser.id, news_id: newsId });
         if (error) throw error;
-
-        // Incrémenter dans news
-        await supabase.rpc('increment_news_likes', { news_id_param: newsId })
-          .then(({ error: rpcErr }) => {
-            if (rpcErr) {
-              return supabase
-                .from('news')
-                .update({ likes_count: newLikes })
-                .eq('id', newsId);
-            }
-          });
       }
+      // NOTE : pas d'update manuel de news.likes_count
+      // Le trigger SQL s'en charge automatiquement côté Supabase
 
-      // Recharger le vrai compteur depuis la DB après l'opération
+      // Resync depuis la DB pour confirmer
       const { count } = await supabase
         .from('news_likes')
         .select('id', { count: 'exact', head: true })
@@ -117,7 +96,7 @@ const NewsLikeButton = ({ newsId, initialLikes = 0, authorId }) => {
     } catch {
       // Rollback
       setIsLiked(wasLiked);
-      setLikes(likesRef.current = wasLiked ? newLikes + 1 : newLikes - 1);
+      setLikes(likesRef.current = wasLiked ? newLikes + 1 : Math.max(0, newLikes - 1));
     } finally {
       setIsLoading(false);
     }
@@ -140,11 +119,11 @@ const NewsLikeButton = ({ newsId, initialLikes = 0, authorId }) => {
       </AnimatePresence>
 
       {isOwnNews ? (
-        // Auteur : voit le vrai compteur en lecture seule
+        // Auteur : voit le vrai compteur, ne peut pas liker
         <div
           className="flex items-center gap-2 px-3 py-1.5 rounded-full text-sm border border-gray-700/50 cursor-default"
-          style={{ color: likes > 0 ? '#f472b6' : '#6b7280' }}
           title="Compteur de likes de votre news"
+          style={{ color: likes > 0 ? '#f472b6' : '#6b7280' }}
         >
           <Heart className={`w-4 h-4 ${likes > 0 ? 'fill-current text-pink-400' : ''}`} />
           <span>{likes}</span>

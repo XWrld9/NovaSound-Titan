@@ -134,10 +134,6 @@ const UserProfilePage = () => {
     navigate('/login');
   };
 
-  const handleUpdateSong = (songId, updates) => {
-    setUserSongs(prev => prev.map(s => s.id === songId ? { ...s, ...updates } : s));
-  };
-
   const handleDeleteSong = async (songId) => {
     try {
       // Supprimer le fichier audio du storage
@@ -184,7 +180,7 @@ const UserProfilePage = () => {
     <>
       <Helmet>
         <title>Profil - NovaSound-Titan</title>
-        <meta name="description" content="Votre profil - NovaSound-Titan" />
+        <meta name="description" content="Votre profil utilisateur NovaSound-Titan" />
       </Helmet>
 
       <div className="min-h-screen bg-gray-950 pb-24 md:pb-32 overflow-x-hidden">
@@ -210,7 +206,7 @@ const UserProfilePage = () => {
                   ) : (
                     <img
                       src="/profil par defaut.png"
-                      alt="Avatar par défaut"
+                      alt="Default Avatar"
                       className="w-full h-full rounded-full object-cover"
                     />
                   )}
@@ -231,7 +227,7 @@ const UserProfilePage = () => {
                 {profile?.bio && (
                   <p className="text-gray-400 mb-2 text-sm max-w-md">{profile.bio}</p>
                 )}
-                <p className="text-gray-500 text-sm mb-4">{currentUser.email}</p>
+                <p className="text-gray-500 text-sm mb-4 truncate max-w-[260px] md:max-w-sm" title={currentUser.email}>{currentUser.email}</p>
                 
                 <div className="flex flex-wrap gap-4 justify-center md:justify-start mb-4">
                   <div className="text-center">
@@ -331,7 +327,6 @@ const UserProfilePage = () => {
                           setCurrentSong={setCurrentSong}
                           showDelete={true}
                           onDelete={handleDeleteSong}
-                          onUpdated={handleUpdateSong}
                         />
                       </motion.div>
                     ))

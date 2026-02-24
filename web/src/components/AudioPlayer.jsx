@@ -185,16 +185,19 @@ const AudioPlayer = ({ currentSong, playlist = [], onNext, onPrevious }) => {
 
   const recordPlay = async () => {
     if (playRecorded || !currentSong?.id) return;
+    setPlayRecorded(true); // Bloquer immédiatement pour éviter les doublons
     try {
-      const nextPlays = (currentSong.plays_count || 0) + 1;
-      const { error } = await supabase
-        .from('songs')
-        .update({ plays_count: nextPlays })
-        .eq('id', currentSong.id);
-      if (error) throw error;
-      setPlayRecorded(true);
+      // Incrémentation atomique via RPC (pas de race condition)
+      const { error } = await supabase.rpc('increment_plays', { song_id_param: currentSong.id });
+      if (error) {
+        // Fallback si la fonction RPC n'existe pas encore dans Supabase
+        await supabase
+          .from('songs')
+          .update({ plays_count: (currentSong.plays_count || 0) + 1 })
+          .eq('id', currentSong.id);
+      }
     } catch (err) {
-      console.error('Error recording play:', err);
+      console.error('Erreur enregistrement écoute:', err);
     }
   };
 
@@ -379,7 +382,7 @@ const AudioPlayer = ({ currentSong, playlist = [], onNext, onPrevious }) => {
                           ? 'bg-cyan-500/20 border-cyan-500 text-cyan-400 hover:bg-red-500/20 hover:border-red-500 hover:text-red-400' 
                           : 'bg-transparent border-gray-600 text-gray-400 hover:border-cyan-500 hover:text-cyan-400'
                       }`}
-                      title={isFollowing ? "Se désabonner" : "S'abonner"}
+                      title={isFollowing ? "Unsubscribe" : "Subscribe"}
                     >
                       {isFollowing ? (
                         <>

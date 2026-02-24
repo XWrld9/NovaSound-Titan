@@ -241,7 +241,7 @@ const ModerationPanel = () => {
                             {getContentIcon(report.content_type)}
                             <span className="font-medium text-white capitalize">{report.content_type}</span>
                             <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(report.status)}`}>
-                              {report.status}
+                              {report.status === 'pending' ? 'En attente' : report.status === 'reviewed' ? 'En cours' : report.status === 'resolved' ? 'Résolu' : 'Rejeté'}
                             </span>
                           </div>
                           <div className="text-sm text-gray-300 mb-2">
@@ -303,14 +303,14 @@ const ModerationPanel = () => {
                     <label className="text-sm text-gray-400">Type de contenu</label>
                     <div className="flex items-center gap-2 mt-1">
                       {getContentIcon(selectedReport.content_type)}
-                      <span className="text-white capitalize">{selectedReport.content_type}</span>
+                      <span className="text-white">{selectedReport.content_type === 'song' ? 'Morceau' : selectedReport.content_type === 'news' ? 'Actualité' : selectedReport.content_type}</span>
                     </div>
                   </div>
                   <div>
                     <label className="text-sm text-gray-400">Statut</label>
                     <div className="mt-1">
                       <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(selectedReport.status)}`}>
-                        {selectedReport.status}
+                        {selectedReport.status === 'pending' ? 'En attente' : selectedReport.status === 'reviewed' ? 'En cours' : selectedReport.status === 'resolved' ? 'Résolu' : 'Rejeté'}
                       </span>
                     </div>
                   </div>

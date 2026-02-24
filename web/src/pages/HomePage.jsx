@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
-import { Music, Play, TrendingUp, Newspaper, X, Calendar, User } from 'lucide-react';
+import { Music, Play, TrendingUp, Newspaper, X, Calendar, User, Headphones } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { supabase } from '@/lib/supabaseClient';
+import { formatPlays } from '@/lib/utils';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import AudioPlayer from '@/components/AudioPlayer';
@@ -69,8 +70,8 @@ const HomePage = () => {
   return (
     <>
       <Helmet>
-        <title>NovaSound-Titan - Découvrez une musique incroyable</title>
-        <meta name="description" content="Streamez et découvrez les dernières musiques sur NovaSound-Titan. Uploadez vos sons et connectez-vous avec des passionnés de musique." />
+        <title>NovaSound-Titan - Discover Amazing Music</title>
+        <meta name="description" content="Stream and discover the latest music on NovaSound-Titan. Upload your tracks and connect with music lovers worldwide." />
       </Helmet>
 
       <div className="min-h-screen bg-gray-950 flex flex-col pb-24 md:pb-32 relative overflow-x-hidden">
@@ -109,19 +110,19 @@ const HomePage = () => {
                   Feel the Sound Wave
                 </h1>
                 <p className="text-lg md:text-2xl text-gray-300 mb-6 md:mb-8 max-w-xl mx-auto md:mx-0">
-                  Découvrez, streamez et partagez la musique qui vous touche. Rejoignez la révolution.
+                  Discover, stream, and share music that moves you. Join the revolution.
                 </p>
                 <div className="flex flex-col sm:flex-row gap-4 justify-center md:justify-start">
                   {!isAuthenticated && (
                     <Link to="/signup" className="w-full sm:w-auto">
                       <Button className="w-full sm:w-auto bg-gradient-to-r from-cyan-500 to-magenta-500 hover:from-cyan-600 hover:to-magenta-600 text-white text-lg px-8 py-6 font-semibold shadow-lg shadow-cyan-500/30">
-                        Commencer
+                        Get Started
                       </Button>
                     </Link>
                   )}
                   <Link to="/upload" className="w-full sm:w-auto">
                     <Button variant="outline" className="w-full sm:w-auto border-cyan-500/50 text-cyan-400 hover:bg-cyan-500/10 text-lg px-8 py-6 font-semibold">
-                      Uploader
+                      Upload Music
                     </Button>
                   </Link>
                 </div>
@@ -141,7 +142,7 @@ const HomePage = () => {
                   <div className="w-1 h-8 bg-gradient-to-b from-cyan-400 to-cyan-600 rounded-full" />
                   <h2 className="text-2xl md:text-3xl font-bold text-white flex items-center gap-3">
                     <TrendingUp className="w-6 h-6 md:w-8 md:h-8 text-cyan-400" />
-                    Morceaux à la une
+                    Featured Tracks
                   </h2>
                 </div>
                 <Link to="/explorer" className="text-sm text-cyan-400 hover:text-cyan-300 transition-colors font-medium">
@@ -187,9 +188,19 @@ const HomePage = () => {
                           </button>
                         </div>
                       </div>
-                      <div className="p-4 border-t border-gray-700/50">
-                        <h3 className="text-white font-semibold truncate">{song.title}</h3>
-                        <p className="text-gray-400 text-sm truncate mt-0.5">{song.artist}</p>
+                      <div className="p-3 border-t border-gray-700/50">
+                        <h3 className="text-white font-semibold truncate text-sm">{song.title}</h3>
+                        {song.uploader_id ? (
+                          <Link to={`/artist/${song.uploader_id}`} className="text-gray-400 text-xs truncate block hover:text-cyan-400 transition-colors mt-0.5">
+                            {song.artist}
+                          </Link>
+                        ) : (
+                          <p className="text-gray-400 text-xs truncate mt-0.5">{song.artist}</p>
+                        )}
+                        <div className="flex items-center gap-1 mt-1.5">
+                          <Headphones className="w-3 h-3 text-cyan-500/70" />
+                          <span className="text-xs text-gray-500">{formatPlays(song.plays_count)} écoutes</span>
+                        </div>
                       </div>
                     </motion.div>
                   ))}

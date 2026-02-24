@@ -3,7 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
-import { Music, Mail, Lock, User, AlertCircle, CheckCircle, Eye, EyeOff } from 'lucide-react';
+import { Mail, Lock, User, AlertCircle, CheckCircle, Eye, EyeOff } from 'lucide-react';
 import { motion } from 'framer-motion';
 
 const SignupPage = () => {
@@ -67,8 +67,8 @@ const SignupPage = () => {
   return (
     <>
       <Helmet>
-        <title>Inscription - NovaSound-Titan</title>
-        <meta name="description" content="Créez votre compte NovaSound-Titan pour uploader et partager votre musique" />
+        <title>Inscription — NovaSound TITAN LUX</title>
+        <meta name="description" content="Crée ton compte NovaSound TITAN LUX et commence à partager ta musique" />
       </Helmet>
 
       <div className="min-h-screen bg-gray-950 flex items-center justify-center px-4 py-12 overflow-x-hidden">
@@ -78,14 +78,18 @@ const SignupPage = () => {
           className="w-full max-w-md"
         >
           <div className="text-center mb-8">
-            <div className="flex items-center justify-center gap-2 mb-4">
-              <Music className="w-12 h-12 text-cyan-400" />
-              <span className="text-3xl font-bold bg-gradient-to-r from-cyan-400 to-magenta-500 bg-clip-text text-transparent">
-                NovaSound-Titan
+            <div className="flex items-center justify-center gap-3 mb-4">
+              <img
+                src="https://horizons-cdn.hostinger.com/83c37f40-fa54-4cc6-8247-95b1353f3eba/a4885bba5290b1958f05bcdb82731c39.jpg"
+                alt="NovaSound TITAN LUX"
+                className="w-12 h-12 rounded-full border-2 border-cyan-400 shadow-lg shadow-cyan-500/30"
+              />
+              <span className="text-2xl font-bold bg-gradient-to-r from-cyan-400 to-magenta-500 bg-clip-text text-transparent">
+                NovaSound <span className="text-lg font-semibold">TITAN LUX</span>
               </span>
             </div>
-            <h1 className="text-2xl font-bold text-white mb-2">Créer un compte</h1>
-            <p className="text-gray-400">Rejoignez la révolution musicale</p>
+            <h1 className="text-2xl font-bold text-white mb-2">Crée ton compte 🎵</h1>
+            <p className="text-gray-400">Rejoins la révolution musicale dès aujourd'hui</p>
           </div>
 
           <div className="bg-gray-900/50 backdrop-blur-xl border border-cyan-500/30 rounded-2xl p-8 shadow-2xl">
@@ -108,7 +112,7 @@ const SignupPage = () => {
               )}
 
               <div>
-                <label htmlFor="username" className="block text-sm font-medium text-gray-300 mb-2">Nom d'utilisateur</label>
+                <label htmlFor="username" className="block text-sm font-medium text-gray-300 mb-2">Username</label>
                 <div className="relative">
                   <User className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-cyan-400" />
                   <input
@@ -142,7 +146,7 @@ const SignupPage = () => {
               </div>
 
               <div>
-                <label htmlFor="password" className="block text-sm font-medium text-gray-300 mb-2">Mot de passe</label>
+                <label htmlFor="password" className="block text-sm font-medium text-gray-300 mb-2">Password</label>
                 <div className="relative">
                   <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-cyan-400" />
                   <input
@@ -164,11 +168,11 @@ const SignupPage = () => {
                     {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                   </button>
                 </div>
-                <p className="text-xs text-gray-500 mt-1">8 caractères minimum</p>
+                <p className="text-xs text-gray-500 mt-1">Minimum 8 characters</p>
               </div>
 
               <div>
-                <label htmlFor="passwordConfirm" className="block text-sm font-medium text-gray-300 mb-2">Confirmer le mot de passe</label>
+                <label htmlFor="passwordConfirm" className="block text-sm font-medium text-gray-300 mb-2">Confirm Password</label>
                 <div className="relative">
                   <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-cyan-400" />
                   <input
@@ -195,13 +199,13 @@ const SignupPage = () => {
                 disabled={loading || success}
                 className="w-full bg-gradient-to-r from-cyan-500 to-magenta-500 hover:from-cyan-600 hover:to-magenta-600 text-white py-3 text-lg font-semibold shadow-lg shadow-cyan-500/30"
               >
-                {loading ? 'Inscription...' : "S'inscrire"}
+                {loading ? "Création en cours..." : "Créer mon compte"}
               </Button>
             </form>
 
             <div className="mt-6 text-center">
               <p className="text-gray-400">
-                Vous avez déjà un compte ?{' '}
+                Already have an account?{' '}
                 <Link to="/login" className="text-cyan-400 hover:text-cyan-300 font-semibold">
                   Login
                 </Link>

@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
 import { motion } from 'framer-motion';
-import { Mail, Lock, Eye, EyeOff, AlertCircle, Music } from 'lucide-react';
+import { Mail, Lock, Eye, EyeOff, AlertCircle } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 
@@ -56,8 +56,8 @@ const LoginPage = () => {
   return (
     <>
       <Helmet>
-        <title>Connexion - NovaSound-Titan</title>
-        <meta name="description" content="Connectez-vous à NovaSound-Titan pour accéder à votre bibliothèque et uploader vos sons" />
+        <title>Connexion — NovaSound TITAN LUX</title>
+        <meta name="description" content="Connecte-toi à NovaSound TITAN LUX pour accéder à ta bibliothèque musicale" />
       </Helmet>
 
       <div className="min-h-screen bg-gray-950 flex items-center justify-center px-4 py-12 overflow-x-hidden">
@@ -67,14 +67,18 @@ const LoginPage = () => {
           className="w-full max-w-md"
         >
           <div className="text-center mb-8">
-            <div className="flex items-center justify-center gap-2 mb-4">
-              <Music className="w-12 h-12 text-cyan-400" />
-              <span className="text-3xl font-bold bg-gradient-to-r from-cyan-400 to-magenta-500 bg-clip-text text-transparent">
-                NovaSound-Titan
+            <div className="flex items-center justify-center gap-3 mb-4">
+              <img
+                src="https://horizons-cdn.hostinger.com/83c37f40-fa54-4cc6-8247-95b1353f3eba/a4885bba5290b1958f05bcdb82731c39.jpg"
+                alt="NovaSound TITAN LUX"
+                className="w-12 h-12 rounded-full border-2 border-cyan-400 shadow-lg shadow-cyan-500/30"
+              />
+              <span className="text-2xl font-bold bg-gradient-to-r from-cyan-400 to-magenta-500 bg-clip-text text-transparent">
+                NovaSound <span className="text-lg font-semibold">TITAN LUX</span>
               </span>
             </div>
-            <h1 className="text-2xl font-bold text-white mb-2">Bon retour !</h1>
-            <p className="text-gray-400">Connectez-vous pour continuer votre aventure musicale</p>
+            <h1 className="text-2xl font-bold text-white mb-2">Bon retour 👋</h1>
+            <p className="text-gray-400">Connecte-toi pour continuer ton aventure musicale</p>
           </div>
 
           <div className="bg-gray-900/50 backdrop-blur-xl border border-cyan-500/30 rounded-2xl p-8 shadow-2xl">
@@ -122,7 +126,7 @@ const LoginPage = () => {
               </div>
 
               <div>
-                <label htmlFor="password" className="block text-sm font-medium text-gray-300 mb-2">Mot de passe</label>
+                <label htmlFor="password" className="block text-sm font-medium text-gray-300 mb-2">Password</label>
                 <div className="relative">
                   <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-cyan-400" />
                   <input
@@ -150,15 +154,15 @@ const LoginPage = () => {
                 disabled={loading}
                 className="w-full bg-gradient-to-r from-cyan-500 to-magenta-500 hover:from-cyan-600 hover:to-magenta-600 text-white py-3 text-lg font-semibold shadow-lg shadow-cyan-500/30"
               >
-                {loading ? 'Connexion...' : "Se connecter"}
+                {loading ? 'Login...' : 'Login'}
               </Button>
             </form>
 
             <div className="mt-6 text-center">
               <p className="text-gray-400">
-                Pas encore de compte ?{' '}
+                Don't have an account?{' '}
                 <Link to="/signup" className="text-cyan-400 hover:text-cyan-300 font-semibold">
-                  S'inscrire
+                  Sign up
                 </Link>
               </p>
               <div className="mt-4 pt-4 border-t border-gray-700">

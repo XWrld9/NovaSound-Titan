@@ -116,7 +116,7 @@ const MobileMenu = ({ isOpen, onClose }) => {
                       className="flex items-center gap-3 px-4 py-3 text-gray-300 hover:text-white hover:bg-white/5 rounded-lg transition-colors"
                     >
                       <Upload className="w-5 h-5 text-cyan-400" />
-                      Uploader
+                      Upload Music
                     </Link>
                   </>
                 ) : (

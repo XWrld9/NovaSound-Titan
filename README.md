@@ -1,71 +1,59 @@
 # NovaSound-TITAN LUX
 
-> *Ici chaque écoute compte. Bienvenue dans la nouvelle ère. À toi, artiste qui cherche à t'exprimer aux yeux du monde entier, ICI C'EST TA SCÈNE!*
+> *Ici chaque écoute compte. Bienvenue dans la nouvelle ère. À toi, artiste qui cherche à t'exprimer aux yeux du monde entier — ICI C'EST TA SCÈNE !*
 
-Plateforme musicale révolutionnaire conçue pour connecter les créateurs et les passionnés de musique.
+Plateforme musicale nouvelle génération conçue pour connecter les créateurs et les passionnés de musique.
+
+---
 
 ## 👨‍💻 Développeur & Fondateur
 
 **Développeur Principal** : M. Tetang Tanekou M.N (EL_AX)  
 **Fondateur & Vision** : M. Arthur Tidoh (XWrld)
 
-## 🎵 Vision & Mission
-
-NovaSound-TITAN LUX n'est pas juste une plateforme de streaming, c'est un écosystème musical où :
-- 🎨 **Les artistes s'expriment librement** — Upload de créations
-- 👥 **Les fans découvrent de nouveaux talents** — Exploration intelligente
-- 🎯 **La communauté se connecte** — Likes, follows, interactions
-- 🌟 **Chaque écoute compte** — Chaque artiste a sa scène
+---
 
 ## 🛠️ Stack Technique
 
-**Frontend** — React 18, Vite 4, TailwindCSS, Framer Motion, Lucide React, Lottie React  
-**Backend** — Supabase (PostgreSQL), Auth, Row Level Security, Storage  
-**Déploiement** — Vercel (frontend) + Supabase Cloud (backend)
+| Couche | Technologies |
+|--------|-------------|
+| Frontend | React 18, Vite, TailwindCSS, Framer Motion, Lucide React, Lottie React |
+| Backend | Supabase (PostgreSQL + Auth + RLS + Storage) |
+| Déploiement | Vercel (frontend) + Supabase Cloud (backend) |
 
-## 📦 Installation
+---
+
+## 📦 Installation locale
 
 ### Prérequis
-- **Node.js 18.x** ou supérieur
+- **Node.js 20.x**
 - **npm 9.x** ou supérieur
 - Un projet [Supabase](https://supabase.com)
-
-### Développement local
 
 ```bash
 git clone https://github.com/XWrld9/NovaSound-Titan.git
 cd NovaSound-Titan/web
 npm install
-```
-
-Créez un fichier `.env` à partir du template :
-
-```bash
 cp .env.example .env
-# Remplissez vos vraies clés dans .env
-```
-
-```bash
+# Remplir .env avec vos vraies clés
 npm run dev
 ```
 
-### Configuration Supabase
+---
 
-1. Créez un projet sur [supabase.com](https://supabase.com)
-2. Renseignez votre `.env` :
-   ```env
-   VITE_SUPABASE_URL=https://VOTRE_PROJET.supabase.co
-   VITE_SUPABASE_ANON_KEY=votre_clé_anon
-   SUPABASE_SERVICE_KEY=votre_clé_service
-   ```
-3. Exécutez le script SQL dans `setup-supabase.sql` via l'éditeur SQL de Supabase
-4. Exécutez également `news-likes.sql` pour activer les likes sur les news
-5. Créez les buckets Storage :
-   ```bash
-   npm run setup:buckets
-   ```
+## ⚙️ Configuration Supabase (ordre impératif)
 
-#### Buckets Storage requis
+Exécuter dans cet ordre depuis **Supabase Dashboard → SQL Editor** :
+
+| Étape | Fichier | Description |
+|-------|---------|-------------|
+| 1 | `setup-supabase.sql` | Tables, RLS, triggers likes/follows, fonction handle_new_user |
+| 2 | `news-likes.sql` | Table news_likes + trigger auto likes_count (SECURITY DEFINER) |
+| 3 | `increment-plays.sql` | Fonction RPC atomique pour les écoutes (SECURITY DEFINER) |
+| 4 | `fix-rls-avatars.sql` | Politiques RLS sur le bucket avatars |
+| 5 | `moderation-system.sql` | Table reports + rôles modérateur/admin |
+
+### Buckets Storage à créer manuellement
 
 | Bucket | Usage | Taille max | Accès |
 |--------|-------|-----------|-------|
@@ -73,33 +61,50 @@ npm run dev
 | `audio` | Fichiers audio | 50 MB | Public |
 | `covers` | Pochettes d'albums | 10 MB | Public |
 
-> ⚠️ Le script `setup:buckets` doit être lancé **manuellement** avant le premier upload — il n'est pas inclus dans le build Vercel.
+```bash
+# Après avoir renseigné SUPABASE_SERVICE_KEY dans .env :
+npm run setup:buckets
+```
 
-## 🚀 Déploiement (Vercel)
+---
+
+## 🚀 Déploiement Vercel
 
 | Paramètre | Valeur |
 |-----------|--------|
 | Root Directory | `web` |
 | Build Command | `npm run build` |
 | Output Directory | `dist` |
+| Node Version | `20.x` |
 
-Variables d'environnement à configurer dans Vercel :
-- `VITE_SUPABASE_URL`
-- `VITE_SUPABASE_ANON_KEY`
+**Variables d'environnement à configurer dans Vercel :**
+```
+VITE_SUPABASE_URL=https://VOTRE_PROJET.supabase.co
+VITE_SUPABASE_ANON_KEY=votre_clé_anon
+```
 
-> ⚠️ Ne jamais mettre `SUPABASE_SERVICE_KEY` dans Vercel — cette clé est uniquement pour le script local `setup:buckets`.
+> ⚠️ Ne **jamais** mettre `SUPABASE_SERVICE_KEY` dans Vercel — uniquement pour les scripts locaux.
 
-## 🧭 Routing
+---
 
-L'application utilise `HashRouter` pour éviter les erreurs 404 sur Vercel.
+## 🧭 Routes
 
-- Accueil : `/#/`
-- Profil : `/#/profile`
-- Explorer : `/#/explorer`
-- News : `/#/news`
-- Artiste : `/#/artist/:id`
+| URL | Page |
+|-----|------|
+| `/#/` | Accueil |
+| `/#/explorer` | Explorer tous les sons |
+| `/#/news` | Actualités communautaires |
+| `/#/profile` | Mon profil |
+| `/#/artist/:id` | Profil public d'un artiste |
+| `/#/upload` | Uploader un son |
+| `/#/login` | Connexion |
+| `/#/signup` | Inscription |
 
-## 📁 Architecture (v3.7)
+> L'application utilise **HashRouter** pour éviter les erreurs 404 sur Vercel.
+
+---
+
+## 📁 Architecture
 
 ```
 NovaSound-Titan/
@@ -107,339 +112,165 @@ NovaSound-Titan/
     ├── src/
     │   ├── components/
     │   │   ├── ui/
-    │   │   │   ├── Dialog.jsx
-    │   │   │   ├── Toast.jsx
+    │   │   │   ├── Dialog.jsx           # Dialogues modaux (Context)
+    │   │   │   ├── Toast.jsx            # Notifications (Context)
     │   │   │   ├── button.jsx
     │   │   │   └── slider.jsx
-    │   │   ├── AudioPlayer.jsx       # Player avec equalizer Lottie
-    │   │   ├── EditProfileModal.jsx
-    │   │   ├── FollowButton.jsx
+    │   │   ├── AudioPlayer.jsx          # Player + équalizer Lottie + RPC plays
+    │   │   ├── EditProfileModal.jsx     # Chargement bio/username depuis DB
+    │   │   ├── FollowButton.jsx         # Resync DB + callback parent
+    │   │   ├── Footer.jsx               # Entièrement en français
     │   │   ├── Header.jsx
-    │   │   ├── LikeButton.jsx        # Likes chansons avec animation cœur
-    │   │   ├── NewsLikeButton.jsx    # Likes news avec animation cœur
-    │   │   ├── SongCard.jsx          # Modifier + Supprimer pour le propriétaire
+    │   │   ├── LikeButton.jsx           # Likes chansons + animation cœur
+    │   │   ├── NewsLikeButton.jsx       # Likes news (trigger SQL, sans update manuel)
+    │   │   ├── ReportButton.jsx         # Signalement 3 étapes + tooltip
+    │   │   ├── SongCard.jsx             # Plays réels + lien profil artiste
     │   │   └── ...
     │   ├── contexts/
-    │   │   └── AuthContext.jsx       # Auth + enrichissement profil DB
+    │   │   └── AuthContext.jsx          # Auth + supabase exposé dans context
     │   ├── lib/
-    │   │   ├── supabaseClient.js     # LockManager custom + Supabase 2.49
+    │   │   ├── supabaseClient.js        # LockManager custom + Supabase 2.49
+    │   │   ├── utils.js                 # cn() + formatPlays()
     │   │   └── networkDetector.js
     │   ├── pages/
-    │   │   ├── HomePage.jsx          # Modal lecture news + likes
-    │   │   ├── ExplorerPage.jsx      # Scroll throttle
-    │   │   ├── UserProfilePage.jsx   # Callback onUpdated pour SongCard
-    │   │   ├── ArtistProfilePage.jsx
+    │   │   ├── HomePage.jsx             # Cards avec plays + lien artiste + modal news
+    │   │   ├── ExplorerPage.jsx         # Tri français, scroll infini
+    │   │   ├── UserProfilePage.jsx      # Email tronqué mobile
+    │   │   ├── ArtistProfilePage.jsx    # Profil public + follow/unfollow + stats
+    │   │   ├── NewsPage.jsx             # Modal lire la suite + likes
+    │   │   ├── ModerationPanel.jsx      # Entièrement traduit
+    │   │   ├── MusicUploadPage.jsx
     │   │   ├── LoginPage.jsx
     │   │   ├── SignupPage.jsx
-    │   │   ├── MusicUploadPage.jsx
-    │   │   ├── NewsPage.jsx          # Modifier + Supprimer pour l'auteur
-    │   │   ├── ModerationPanel.jsx
-    │   │   ├── PrivacyPolicy.jsx     # Page enrichie (RGPD, RLS, conservation)
-    │   │   ├── TermsOfService.jsx    # Page enrichie (modération, limitation)
-    │   │   └── CopyrightInfo.jsx     # Page enrichie (DMCA, artistes, Fair Use)
+    │   │   └── ...
     │   ├── animations/
-    │   │   ├── heart-animation.json  # Explosion cœurs au like
-    │   │   └── play-animation.json   # Equalizer 3 barres
-    │   └── App.jsx                   # Lazy loading pages
+    │   │   ├── heart-animation.json
+    │   │   └── play-animation.json
+    │   └── App.jsx                      # Lazy loading + Suspense
     ├── public/
     │   ├── background.png
     │   └── profil par defaut.png
+    ├── setup-supabase.sql               # ⚠️ Exécuter en 1er
+    ├── news-likes.sql                   # ⚠️ Exécuter en 2e
+    ├── increment-plays.sql              # ⚠️ Exécuter en 3e
+    ├── fix-rls-avatars.sql              # ⚠️ Exécuter en 4e
+    ├── moderation-system.sql            # ⚠️ Exécuter en 5e
     ├── setup-buckets.js
-    ├── setup-supabase.sql
-    ├── news-likes.sql                # ⚠️ À exécuter dans Supabase
-    ├── owner-edit-delete-rls.sql     # ⚠️ À exécuter dans Supabase (v3.7)
     ├── .env.example
     └── package.json
 ```
 
+---
+
 ## 🗄️ Base de données
 
-| Table | Description |
-|-------|-------------|
-| `users` | Profils avec avatar, bio, stats |
-| `songs` | Musiques avec métadonnées et compteurs |
-| `likes` | Likes utilisateurs sur les chansons |
-| `follows` | Relations follower/following |
-| `news` | Actualités communautaires |
-| `news_likes` | Likes utilisateurs sur les news ⚠️ créer via `news-likes.sql` |
+| Table | Description | Trigger |
+|-------|-------------|---------|
+| `users` | Profils (avatar, bio, followers_count, following_count) | `handle_new_user` à l'inscription |
+| `songs` | Morceaux (plays_count, likes_count) | `update_likes_count` auto |
+| `likes` | Likes utilisateurs sur les chansons | → met à jour `songs.likes_count` |
+| `follows` | Relations follower/following | → met à jour `users.followers_count` |
+| `news` | Actualités communautaires (likes_count) | `update_news_likes_count` auto |
+| `news_likes` | Likes sur les news | → met à jour `news.likes_count` |
+| `reports` | Signalements de modération | — |
 
-> Les politiques RLS de modification/suppression par l'auteur sont dans `owner-edit-delete-rls.sql` ⚠️
+---
 
 ## 🔐 Sécurité
 
-- Row Level Security (RLS) sur toutes les tables
-- Auth Supabase avec vérification email
-- Flow PKCE pour les tokens
+- **RLS** activé sur toutes les tables
+- **SECURITY DEFINER** sur les fonctions critiques (increment_plays, update_news_likes_count)
+- **GREATEST(0, ...)** sur tous les décrements — compteurs jamais négatifs
+- Auth Supabase avec vérification email + flow PKCE
 - LockManager custom anti-timeout multi-onglets
 - `.env` jamais commité (`.gitignore` inclus)
-- Clé service (`SUPABASE_SERVICE_KEY`) uniquement côté script local
+- `SUPABASE_SERVICE_KEY` uniquement côté script local
 
-## 🎵 Fonctionnalités
+---
 
-**Artistes** — Upload audio (50 MB max), pochette album, profil personnalisable (avatar, bio), statistiques (plays, likes, followers), **modification et suppression de ses propres musiques**
+## 🎵 Fonctionnalités v4.0
 
-**Fans** — Découverte, likes avec animations Lottie, follow/unfollow, téléchargement, partage, lecteur audio complet (equalizer animé, shuffle, repeat, volume)
+**Artistes**
+- Upload audio (50 MB max) + pochette album
+- Profil public consultable par tous (`/artist/:id`)
+- Stats : morceaux, abonnés, écoutes totales
+- Modifier avatar et bio
 
-**Communauté** — Système de news avec lecture complète en modal, likes sur les news, **modification et suppression de ses propres news**, modération, profils artistes publics
+**Fans**
+- Écoutes comptabilisées en temps réel (atomique, sans race condition)
+- Compteur d'écoutes visible sur chaque card (`12.4k`)
+- Likes chansons et news avec animations Lottie
+- Follow/unfollow avec resynchronisation immédiate
+- Lecteur audio complet (shuffle, repeat, volume, équalizer animé)
+- Téléchargement et partage de liens
 
-**Pages légales** — Politique de Confidentialité (RGPD), Conditions d'Utilisation, Droits d'Auteur (DMCA)
+**Communauté**
+- News avec modal "Lire la suite" (HomePage + NewsPage)
+- Signalement en 3 étapes avec avertissement anti-abus
+- Panneau de modération (admin/modérateur)
+- Profils artistes avec liste d'abonnés cliquables
+
+---
 
 ## ⚡ Performance
 
 - **Lazy loading** des pages (React.lazy + Suspense)
-- **Code splitting** Vite — React, Supabase, Framer Motion, Lottie en chunks séparés
+- **Code splitting** Vite (React, Supabase, Framer Motion, Lottie en chunks séparés)
 - **React.memo** sur SongCard
-- **Images lazy** (`loading="lazy"`) sur toutes les pochettes
+- **Images lazy** sur toutes les pochettes
 - **Scroll throttle** via `requestAnimationFrame`
-- Bundle initial réduit de ~1073KB → ~400KB
-
-## 🧪 Dépannage
-
-**Buckets introuvables**
-```bash
-# Vérifier que SUPABASE_SERVICE_KEY est dans .env
-npm run setup:buckets
-```
-
-**Erreur 404 au refresh**
-> Normal avec HashRouter — les URLs doivent commencer par `/#/`
-
-**Session perdue après refresh**
-> Vérifiez que `VITE_SUPABASE_ANON_KEY` est bien configurée dans Vercel
-
-**Upload d'avatar échoue**
-> Vérifiez que le bucket `avatars` existe et que les politiques RLS sont actives
-
-**Email de confirmation non reçu**
-> Vérifiez les spams — cherchez un email de `noreply@supabase.io`
-
-**Likes sur les news ne fonctionnent pas**
-> Exécutez `news-likes.sql` dans le SQL Editor de votre dashboard Supabase
-
-## 📝 Changelog
-
-### v3.8 (2026-02-24)
-- 🌐 Uniformisation de la langue : interface entièrement en **français** (pages, boutons, placeholders, messages d'erreur/succès, nav)
-- 🌐 Fichiers traduits : Header, Footer, MobileMenu, LoginPage, SignupPage, MusicUploadPage, ExplorerPage, HomePage, NewsForm, NewsPage, AudioPlayer, ArtistProfilePage, UserProfilePage
-
-### v3.7 (2026-02-24)
-- ✨ Modification et suppression des **news** par l'auteur — édition inline avec confirmation
-- ✨ Modification des **musiques** (titre, artiste) par l'uploader — édition inline dans SongCard
-- ✨ Confirmation "Oui / Non" avant toute suppression (news + musiques)
-- ✨ Sécurité double : vérification `author_id` / `uploader_id` côté client + politiques RLS Supabase
-- 📄 `owner-edit-delete-rls.sql` — nouvelles politiques UPDATE/DELETE pour `news` et `songs`
-- 📄 Pages légales enrichies : Politique de Confidentialité (RGPD complet), Conditions d'Utilisation (modération, limitation), Droits d'Auteur (DMCA complet, responsabilité artistes)
-
-### v3.5 (2026-02-24)
-- ✨ Modal lecture complète des news (clic sur une carte)
-- ✨ `NewsLikeButton` — likes interactifs sur les news avec animation cœur
-- ✨ Table `news_likes` (script SQL inclus)
-- ⚡ Lazy loading des pages (bundle initial ~400KB)
-- ⚡ Code splitting Vite (React, Supabase, Lottie en chunks séparés)
-- ⚡ `React.memo` sur SongCard + images lazy
-- ⚡ Scroll throttle via `requestAnimationFrame`
-- 🐛 Fix auteur UUID → username dans News (HomePage + NewsPage)
-- 🐛 Fix colonne `display_name` inexistante (400 Bad Request)
-- 🐛 Fix LockManager Supabase timeout multi-onglets
-- 🐛 Fix login (callback async incompatible Supabase)
-- 🔧 Supabase JS mis à jour → 2.49.0
-- 🔧 Animations Lottie branchées (equalizer player + explosion cœur)
-- 🔧 Bouton supprimer dans SongCard
-
-### v3.3 (2026-02-24)
-- ✨ Bouton "Get Started" masqué pour les utilisateurs connectés
-- ✨ Lien "Accueil" ajouté dans le header desktop
-- 🐛 Fix affichage UUID auteur dans les news
-- 🔧 Nettoyage imports morts, console.log de debug
-
-## 📞 Contact
-
-- **Développeur** : M. Tetang Tanekou M.N (EL-AX)
-- **Email** : eloadxfamily@gmail.com
-- **GitHub** : [@EL-AX](https://github.com/EL-AX)
-- **Issues** : [Signaler un bug](https://github.com/XWrld9/NovaSound-Titan/issues)
-
-## 📄 Licence
-
-MIT License — voir [LICENSE](LICENSE)
+- Bundle initial ~400KB
 
 ---
 
-> *"Ici chaque écoute compte. Bienvenue dans la nouvelle ère de la musique digitale."*  
-> **NovaSound-TITAN LUX — Votre scène, votre musique, votre communauté.**
-
-
-## 🛠️ Stack Technique
-
-**Frontend** — React 18, Vite 4, TailwindCSS, Framer Motion, Lucide React, Lottie React  
-**Backend** — Supabase (PostgreSQL), Auth, Row Level Security, Storage  
-**Déploiement** — Vercel (frontend) + Supabase Cloud (backend)
-
-## 📦 Installation
-
-### Prérequis
-- **Node.js 18.x** ou supérieur
-- **npm 9.x** ou supérieur
-- Un projet [Supabase](https://supabase.com)
-
-### Développement local
-
-```bash
-git clone https://github.com/XWrld9/NovaSound-Titan.git
-cd NovaSound-Titan/web
-npm install
-```
-
-Créez un fichier `.env` à partir du template :
-
-```bash
-cp .env.example .env
-# Remplissez vos vraies clés dans .env
-```
-
-```bash
-npm run dev
-```
-
-### Configuration Supabase
-
-1. Créez un projet sur [supabase.com](https://supabase.com)
-2. Renseignez votre `.env` :
-   ```env
-   VITE_SUPABASE_URL=https://VOTRE_PROJET.supabase.co
-   VITE_SUPABASE_ANON_KEY=votre_clé_anon
-   SUPABASE_SERVICE_KEY=votre_clé_service
-   ```
-3. Exécutez le script SQL dans `setup-supabase.sql` via l'éditeur SQL de Supabase
-4. Créez les buckets Storage :
-   ```bash
-   npm run setup:buckets
-   ```
-
-#### Buckets Storage requis
-
-| Bucket | Usage | Taille max | Accès |
-|--------|-------|-----------|-------|
-| `avatars` | Photos de profil | 5 MB | Public |
-| `audio` | Fichiers audio | 50 MB | Public |
-| `covers` | Pochettes d'albums | 10 MB | Public |
-
-> ⚠️ Le script `setup:buckets` doit être lancé **manuellement** avant le premier upload — il n'est pas inclus dans le build Vercel.
-
-## 🚀 Déploiement (Vercel)
-
-| Paramètre | Valeur |
-|-----------|--------|
-| Root Directory | `web` |
-| Build Command | `npm run build` |
-| Output Directory | `dist` |
-
-Variables d'environnement à configurer dans Vercel :
-- `VITE_SUPABASE_URL`
-- `VITE_SUPABASE_ANON_KEY`
-
-> ⚠️ Ne jamais mettre `SUPABASE_SERVICE_KEY` dans Vercel — cette clé est uniquement pour le script local `setup:buckets`.
-
-## 🧭 Routing
-
-L'application utilise `HashRouter` pour éviter les erreurs 404 sur Vercel.
-
-- Accueil : `/#/`
-- Profil : `/#/profile`
-- Explorer : `/#/explorer`
-- News : `/#/news`
-- Artiste : `/#/artist/:id`
-
-## 📁 Architecture (v3.3)
-
-```
-NovaSound-Titan/
-└── web/
-    ├── src/
-    │   ├── components/
-    │   │   ├── ui/
-    │   │   │   ├── Dialog.jsx       # Dialogues modaux (Context)
-    │   │   │   ├── Toast.jsx        # Notifications (Context)
-    │   │   │   ├── button.jsx
-    │   │   │   └── slider.jsx
-    │   │   ├── AudioPlayer.jsx
-    │   │   ├── EditProfileModal.jsx
-    │   │   ├── FollowButton.jsx
-    │   │   ├── Header.jsx
-    │   │   ├── LikeButton.jsx
-    │   │   ├── SongCard.jsx
-    │   │   └── ...
-    │   ├── contexts/
-    │   │   └── AuthContext.jsx      # Auth uniquement, sans UI
-    │   ├── lib/
-    │   │   ├── supabaseClient.js
-    │   │   └── networkDetector.js
-    │   ├── pages/
-    │   │   ├── HomePage.jsx
-    │   │   ├── ExplorerPage.jsx
-    │   │   ├── UserProfilePage.jsx
-    │   │   ├── ArtistProfilePage.jsx
-    │   │   ├── LoginPage.jsx
-    │   │   ├── SignupPage.jsx
-    │   │   ├── MusicUploadPage.jsx
-    │   │   ├── NewsPage.jsx
-    │   │   └── ModerationPanel.jsx
-    │   ├── animations/
-    │   └── App.jsx
-    ├── public/
-    │   ├── background.png
-    │   └── profil par defaut.png
-    ├── setup-buckets.js
-    ├── setup-supabase.sql
-    ├── .env.example
-    └── package.json
-```
-
-## 🗄️ Base de données
-
-| Table | Description |
-|-------|-------------|
-| `users` | Profils avec avatar, bio, stats |
-| `songs` | Musiques avec métadonnées et compteurs |
-| `likes` | Likes utilisateurs sur les chansons |
-| `follows` | Relations follower/following |
-| `news` | Actualités communautaires |
-
-## 🔐 Sécurité
-
-- Row Level Security (RLS) sur toutes les tables
-- Auth Supabase avec vérification email
-- Flow PKCE pour les tokens
-- `.env` jamais commité (`.gitignore` inclus)
-- Clé service (`SUPABASE_SERVICE_KEY`) uniquement côté script local
-
-## 🎵 Fonctionnalités
-
-**Artistes** — Upload audio (50 MB max), pochette album, profil personnalisable (avatar, bio), statistiques (plays, likes, followers)
-
-**Fans** — Découverte, likes avec animations, follow/unfollow, téléchargement, partage, lecteur audio complet (shuffle, repeat, volume)
-
-**Communauté** — Système de news, modération, profils artistes publics
-
 ## 🧪 Dépannage
 
-**Buckets introuvables**
-```bash
-# Vérifier que SUPABASE_SERVICE_KEY est dans .env
-npm run setup:buckets
-```
+| Problème | Solution |
+|----------|----------|
+| Erreur 404 au refresh | Normal avec HashRouter — URLs en `/#/` |
+| Session perdue après refresh | Vérifier `VITE_SUPABASE_ANON_KEY` dans Vercel |
+| Upload avatar échoue | Vérifier bucket `avatars` + `fix-rls-avatars.sql` exécuté |
+| Likes news ne s'enregistrent pas | Exécuter `news-likes.sql` dans Supabase |
+| Plays ne s'incrémentent pas | Exécuter `increment-plays.sql` dans Supabase |
+| Compteurs négatifs | Réexécuter `setup-supabase.sql` (triggers avec GREATEST) |
+| Email de confirmation non reçu | Vérifier les spams — expéditeur `noreply@supabase.io` |
+| Buckets introuvables | `SUPABASE_SERVICE_KEY` dans `.env` puis `npm run setup:buckets` |
 
-**Erreur 404 au refresh**
-> Normal avec HashRouter — les URLs doivent commencer par `/#/`
+---
 
-**Session perdue après refresh**
-> Vérifiez que `VITE_SUPABASE_ANON_KEY` est bien configurée dans Vercel
+## 📝 Changelog
 
-**Upload d'avatar échoue**
-> Vérifiez que le bucket `avatars` existe et que les politiques RLS sont actives
+### v4.0 (2026-02-24)
+- ✨ Écoutes réelles affichées sur chaque card (`12.4k`) via `formatPlays()`
+- ✨ Noms d'artistes cliquables → profil public `/artist/:id`
+- ✨ `ArtistProfilePage` : stats complètes, abonnés cliquables, entièrement en français
+- ✨ `FollowButton` : resync DB après chaque action + callback parent pour sync header
+- ✨ `ReportButton` : 3 étapes (avertissement → formulaire → succès) + tooltip
+- 🐛 Fix `NewsLikeButton` : update `news.likes_count` bloqué par RLS → trigger SQL automatique
+- 🐛 Fix compteurs négatifs : `GREATEST(0, ...)` sur tous les décrements SQL
+- 🐛 Fix email trop long sur mobile (`truncate max-w-[260px]`)
+- 🔧 `AudioPlayer` : incrémentation plays atomique via RPC `SECURITY DEFINER`
+- 🔧 Traduction complète FR : Footer, Explorer, News, ModerationPanel, MusicUploadPage
+- 🔧 `increment-plays.sql` : nouvelle fonction RPC ajoutée
 
-**Email de confirmation non reçu**
-> Vérifiez les spams — cherchez un email de `noreply@supabase.io` ou votre domaine configuré
+### v3.8 (2026-02-24)
+- ✨ `ReportButton` redesigné avec modal expressif et catégories visuelles
+- ✨ Section Featured Tracks : visibilité améliorée
+- 🐛 Fix `NewsLikeButton` : closure stale → `useRef` + resync DB
+
+### v3.6 (2026-02-24)
+- ✨ Section Latest News : contraste et visibilité améliorés
+- ✨ `NewsPage` : modal "Lire la suite" ajouté
+- 🐛 Fix `news-likes.sql` : type UUID → TEXT (compatible schéma)
+- 🔧 `NewsLikeButton` : auteur voit le compteur de ses news
+
+### v3.2 (2026-02-24)
+- 🐛 Fix RLS upload avatar
+- 🐛 Fix `EditProfileModal` : chargement username/bio depuis DB
+- 🐛 Fix responsive mobile : onglets profil avec scroll horizontal
+- 🔧 Node.js épinglé à `20.x`
+
+---
 
 ## 📞 Contact
 

@@ -98,7 +98,7 @@ const ExplorerPage = () => {
     <>
       <Helmet>
         <title>Explorer - NovaSound TITAN LUX</title>
-        <meta name="description" content="Explorez la vaste bibliothèque musicale de NovaSound TITAN LUX" />
+        <meta name="description" content="Explore the vast library of music on NovaSound TITAN LUX" />
       </Helmet>
 
       <div className="min-h-screen bg-gray-950 flex flex-col pb-32">
@@ -113,7 +113,7 @@ const ExplorerPage = () => {
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
                 <input
                   type="text"
-                  placeholder="Rechercher..."
+                  placeholder="Rechercher dans la bibliothèque..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   className="w-full pl-9 pr-4 py-2 bg-gray-900 border border-gray-800 rounded-lg text-white focus:border-cyan-500 focus:outline-none"
@@ -155,7 +155,7 @@ const ExplorerPage = () => {
 
           {!loading && songs.length === 0 && (
             <div className="text-center py-12 text-gray-500">
-              Aucun morceau trouvé pour votre recherche.
+              Aucun morceau trouvé pour cette recherche.
             </div>
           )}
         </main>
