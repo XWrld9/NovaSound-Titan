@@ -74,7 +74,7 @@ const HomePage = () => {
       <div className="min-h-screen bg-gray-950 flex flex-col pb-24 md:pb-32 relative overflow-x-hidden">
         {/* Background personnalisé */}
         <div 
-          className="absolute inset-0 bg-cover bg-center bg-fixed"
+          className="absolute inset-0 bg-cover bg-center"
           style={{
             backgroundImage: 'url(/background.png)',
             zIndex: -1
@@ -98,9 +98,9 @@ const HomePage = () => {
             
             <div className="relative container mx-auto px-4 h-full flex items-center justify-center md:justify-start text-center md:text-left">
               <motion.div
-                initial={{ opacity: 0, y: 30 }}
+                initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.8 }}
+                transition={{ duration: 0.5 }}
                 className="max-w-3xl"
               >
                 <h1 className="text-4xl sm:text-5xl md:text-7xl font-bold mb-4 md:mb-6 bg-gradient-to-r from-cyan-400 via-white to-magenta-500 bg-clip-text text-transparent leading-tight">
@@ -148,10 +148,10 @@ const HomePage = () => {
                 {featuredSongs.map((song, index) => (
                   <motion.div
                     key={song.id}
-                    initial={{ opacity: 0, y: 20 }}
+                    initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: index * 0.05 }}
-                    className="bg-gray-900/50 backdrop-blur-xl border border-cyan-500/30 rounded-xl overflow-hidden hover:border-cyan-400 transition-all group"
+                    transition={{ delay: index * 0.03, duration: 0.3 }}
+                    className="bg-gray-900/80 border border-cyan-500/30 rounded-xl overflow-hidden hover:border-cyan-400 transition-all group"
                   >
                     <div className="relative aspect-square">
                       {song.cover_url ? (
@@ -159,6 +159,8 @@ const HomePage = () => {
                           src={song.cover_url}
                           alt={song.title}
                           className="w-full h-full object-cover"
+                          loading="lazy"
+                          decoding="async"
                         />
                       ) : (
                         <div className="w-full h-full bg-gradient-to-br from-cyan-500 to-magenta-500 flex items-center justify-center">
@@ -177,11 +179,6 @@ const HomePage = () => {
                     <div className="p-4">
                       <h3 className="text-white font-semibold truncate">{song.title}</h3>
                       <p className="text-gray-400 text-sm truncate">{song.artist}</p>
-                      {song.uploader_id && (
-                        <p className="text-gray-500 text-xs mt-1 truncate">
-                          by {song.uploader_id}
-                        </p>
-                      )}
                     </div>
                   </motion.div>
                 ))}

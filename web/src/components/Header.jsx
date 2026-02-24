@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Search, Upload, User, LogOut, Menu, X, Globe, Newspaper, Music } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
@@ -45,24 +45,16 @@ const Header = () => {
     return () => clearTimeout(searchTimeout);
   }, [searchQuery]);
 
-  const handleLogout = async () => {
+  const handleLogout = useCallback(async () => {
     try {
-      const result = await logout();
-      if (result?.success) {
-        navigate('/');
-        setIsMobileMenuOpen(false);
-      } else {
-        // Forcer la redirection même en cas d'erreur
-        navigate('/');
-        setIsMobileMenuOpen(false);
-      }
-    } catch (error) {
-      console.error('Logout handler error:', error);
-      // Forcer la redirection même en cas d'erreur critique
+      await logout();
+      navigate('/');
+      setIsMobileMenuOpen(false);
+    } catch {
       navigate('/');
       setIsMobileMenuOpen(false);
     }
-  };
+  }, [logout, navigate]);
 
   return (
     <>
