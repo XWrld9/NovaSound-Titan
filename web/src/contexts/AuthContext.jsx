@@ -188,7 +188,8 @@ export const AuthProvider = ({ children }) => {
 
       if (error) return { success: false, message: error.message };
 
-      setCurrentUser(prev => ({ ...prev, ...data }));
+      // Injecter un timestamp pour forcer le rechargement de l'avatar dans le Header
+      setCurrentUser(prev => ({ ...prev, ...data, _avatarTs: Date.now() }));
       return { success: true, data };
     } catch (err) {
       return { success: false, message: err.message };

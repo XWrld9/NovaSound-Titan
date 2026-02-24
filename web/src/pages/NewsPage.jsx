@@ -9,6 +9,7 @@ import ReportButton from '@/components/ReportButton';
 import NewsLikeButton from '@/components/NewsLikeButton';
 import { useAuth } from '@/contexts/AuthContext';
 import { Newspaper, Calendar, User, X, ChevronRight } from 'lucide-react';
+import NewsShareButton from '@/components/NewsShareButton';
 
 const NewsPage = () => {
   const { isAuthenticated } = useAuth();
@@ -182,11 +183,14 @@ const NewsPage = () => {
                     )}
                     <span className="font-medium text-gray-400">{selectedNews.users?.username || 'Anonyme'}</span>
                   </div>
-                  <NewsLikeButton
-                    newsId={selectedNews.id}
-                    initialLikes={selectedNews.likes_count || 0}
-                    authorId={selectedNews.author_id}
-                  />
+                  <div className="flex items-center gap-2">
+                    <NewsShareButton news={selectedNews} />
+                    <NewsLikeButton
+                      newsId={selectedNews.id}
+                      initialLikes={selectedNews.likes_count || 0}
+                      authorId={selectedNews.author_id}
+                    />
+                  </div>
                 </div>
               </div>
             </motion.div>

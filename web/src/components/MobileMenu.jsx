@@ -97,7 +97,7 @@ const MobileMenu = ({ isOpen, onClose }) => {
                   className="flex items-center gap-3 px-4 py-3 text-gray-300 hover:text-white hover:bg-white/5 rounded-lg transition-colors"
                 >
                   <Home className="w-5 h-5 text-cyan-400" />
-                  Home
+                  Accueil
                 </Link>
 
                 {isAuthenticated ? (
@@ -108,7 +108,7 @@ const MobileMenu = ({ isOpen, onClose }) => {
                       className="flex items-center gap-3 px-4 py-3 text-gray-300 hover:text-white hover:bg-white/5 rounded-lg transition-colors"
                     >
                       <User className="w-5 h-5 text-magenta-400" />
-                      Profile
+                      Mon profil
                     </Link>
                     <Link
                       to="/upload"
@@ -116,7 +116,7 @@ const MobileMenu = ({ isOpen, onClose }) => {
                       className="flex items-center gap-3 px-4 py-3 text-gray-300 hover:text-white hover:bg-white/5 rounded-lg transition-colors"
                     >
                       <Upload className="w-5 h-5 text-cyan-400" />
-                      Upload Music
+                      Uploader un son
                     </Link>
                   </>
                 ) : (
@@ -127,7 +127,7 @@ const MobileMenu = ({ isOpen, onClose }) => {
                       className="flex items-center gap-3 px-4 py-3 text-gray-300 hover:text-white hover:bg-white/5 rounded-lg transition-colors"
                     >
                       <LogIn className="w-5 h-5 text-cyan-400" />
-                      Login
+                      Connexion
                     </Link>
                     <Link
                       to="/signup"
@@ -135,7 +135,7 @@ const MobileMenu = ({ isOpen, onClose }) => {
                       className="flex items-center gap-3 px-4 py-3 text-gray-300 hover:text-white hover:bg-white/5 rounded-lg transition-colors"
                     >
                       <UserPlus className="w-5 h-5 text-magenta-400" />
-                      Sign Up
+                      Inscription
                     </Link>
                   </>
                 )}
@@ -151,7 +151,7 @@ const MobileMenu = ({ isOpen, onClose }) => {
                   className="w-full border-red-500/30 text-red-400 hover:bg-red-500/10 hover:text-red-300 justify-start"
                 >
                   <LogOut className="w-4 h-4 mr-2" />
-                  Logout
+                  Déconnexion
                 </Button>
               )}
             </div>

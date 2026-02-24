@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Heart } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '@/contexts/AuthContext';
@@ -12,19 +12,14 @@ const NewsLikeButton = ({ newsId, initialLikes = 0, authorId }) => {
   const [isLoading, setIsLoading] = useState(false);
   const [showBurst, setShowBurst] = useState(false);
   const likesRef                  = useRef(initialLikes);
+  const channelRef                = useRef(null);
 
   const isOwnNews = currentUser && authorId && currentUser.id === authorId;
 
-  // Charger le vrai compteur + état liked depuis la DB (auteur inclus)
-  useEffect(() => {
+  // ─── Charger le vrai compteur + état liked depuis la DB ───
+  const loadLikesData = useCallback(async () => {
     if (!newsId) return;
-    loadLikesData();
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [currentUser, newsId]);
-
-  const loadLikesData = async () => {
     try {
-      // Compter les vraies lignes (source de vérité, pas likes_count)
       const { count } = await supabase
         .from('news_likes')
         .select('id', { count: 'exact', head: true })
@@ -34,7 +29,6 @@ const NewsLikeButton = ({ newsId, initialLikes = 0, authorId }) => {
       setLikes(real);
       likesRef.current = real;
 
-      // Vérifier si l'utilisateur courant a liké
       if (currentUser && !isOwnNews) {
         const { data } = await supabase
           .from('news_likes')
@@ -45,20 +39,64 @@ const NewsLikeButton = ({ newsId, initialLikes = 0, authorId }) => {
         setIsLiked(!!data);
       }
     } catch {
-      // La table n'existe pas encore — fallback silencieux
+      // table absente — fallback silencieux
     }
-  };
+  }, [newsId, currentUser, isOwnNews, supabase, initialLikes]);
 
+  // ─── Chargement initial ───
+  useEffect(() => {
+    loadLikesData();
+  }, [loadLikesData]);
+
+  // ─── Supabase Realtime — écoute INSERT/DELETE sur news_likes ───
+  useEffect(() => {
+    if (!newsId) return;
+
+    // Nettoyer un canal précédent si newsId change
+    if (channelRef.current) {
+      supabase.removeChannel(channelRef.current);
+      channelRef.current = null;
+    }
+
+    const channel = supabase
+      .channel(`news_likes:${newsId}`)
+      .on(
+        'postgres_changes',
+        {
+          event: '*',             // INSERT ou DELETE
+          schema: 'public',
+          table: 'news_likes',
+          filter: `news_id=eq.${newsId}`,
+        },
+        () => {
+          // Recompter depuis la DB à chaque changement (source de vérité)
+          loadLikesData();
+        }
+      )
+      .subscribe();
+
+    channelRef.current = channel;
+
+    // Cleanup au démontage
+    return () => {
+      supabase.removeChannel(channel);
+      channelRef.current = null;
+    };
+  }, [newsId, supabase, loadLikesData]);
+
+  // ─── Action like / unlike ───
   const handleLike = async () => {
     if (!currentUser || isLoading || isOwnNews) return;
 
-    const wasLiked  = isLiked;
-    const newLikes  = wasLiked ? likesRef.current - 1 : likesRef.current + 1;
+    const wasLiked = isLiked;
+    const newLikes = wasLiked
+      ? Math.max(0, likesRef.current - 1)
+      : likesRef.current + 1;
 
-    // Update optimiste
+    // Optimistic update
     setIsLiked(!wasLiked);
-    setLikes(Math.max(0, newLikes));
-    likesRef.current = Math.max(0, newLikes);
+    setLikes(newLikes);
+    likesRef.current = newLikes;
 
     if (!wasLiked) {
       setShowBurst(true);
@@ -80,23 +118,15 @@ const NewsLikeButton = ({ newsId, initialLikes = 0, authorId }) => {
           .insert({ user_id: currentUser.id, news_id: newsId });
         if (error) throw error;
       }
-      // NOTE : pas d'update manuel de news.likes_count
-      // Le trigger SQL s'en charge automatiquement côté Supabase
-
-      // Resync depuis la DB pour confirmer
-      const { count } = await supabase
-        .from('news_likes')
-        .select('id', { count: 'exact', head: true })
-        .eq('news_id', newsId);
-
-      if (count !== null) {
-        setLikes(count);
-        likesRef.current = count;
-      }
+      // Le Realtime déclenchera loadLikesData() automatiquement
+      // On resync quand même localement pour l'utilisateur courant
+      await loadLikesData();
     } catch {
       // Rollback
       setIsLiked(wasLiked);
-      setLikes(likesRef.current = wasLiked ? newLikes + 1 : Math.max(0, newLikes - 1));
+      const rollback = wasLiked ? newLikes + 1 : Math.max(0, newLikes - 1);
+      setLikes(rollback);
+      likesRef.current = rollback;
     } finally {
       setIsLoading(false);
     }
@@ -119,7 +149,6 @@ const NewsLikeButton = ({ newsId, initialLikes = 0, authorId }) => {
       </AnimatePresence>
 
       {isOwnNews ? (
-        // Auteur : voit le vrai compteur, ne peut pas liker
         <div
           className="flex items-center gap-2 px-3 py-1.5 rounded-full text-sm border border-gray-700/50 cursor-default"
           title="Compteur de likes de votre news"

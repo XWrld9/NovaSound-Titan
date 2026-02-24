@@ -18,7 +18,7 @@ Plateforme musicale nouvelle génération conçue pour connecter les créateurs 
 | Couche | Technologies |
 |--------|-------------|
 | Frontend | React 18, Vite, TailwindCSS, Framer Motion, Lucide React, Lottie React |
-| Backend | Supabase (PostgreSQL + Auth + RLS + Storage) |
+| Backend | Supabase (PostgreSQL + Auth + RLS + Storage + Realtime) |
 | Déploiement | Vercel (frontend) + Supabase Cloud (backend) |
 
 ---
@@ -43,15 +43,19 @@ npm run dev
 
 ## ⚙️ Configuration Supabase (ordre impératif)
 
-Exécuter dans cet ordre depuis **Supabase Dashboard → SQL Editor** :
+> Tous les scripts SQL se trouvent à la racine du dossier `web/`.  
+> Les exécuter **dans cet ordre exact** depuis **Supabase Dashboard → SQL Editor**.
 
-| Étape | Fichier | Description |
-|-------|---------|-------------|
-| 1 | `setup-supabase.sql` | Tables, RLS, triggers likes/follows, fonction handle_new_user |
-| 2 | `news-likes.sql` | Table news_likes + trigger auto likes_count (SECURITY DEFINER) |
-| 3 | `increment-plays.sql` | Fonction RPC atomique pour les écoutes (SECURITY DEFINER) |
-| 4 | `fix-rls-avatars.sql` | Politiques RLS sur le bucket avatars |
-| 5 | `moderation-system.sql` | Table reports + rôles modérateur/admin |
+| Étape | Fichier | Ce que ça fait |
+|-------|---------|----------------|
+| 1 | `setup-supabase.sql` | Tables principales, RLS, triggers likes/follows, création auto profil à l'inscription |
+| 2 | `news-likes.sql` | Table `news_likes` + trigger automatique `likes_count` (SECURITY DEFINER) |
+| 3 | `increment-plays.sql` | Fonction RPC atomique pour comptabiliser les écoutes sans race condition |
+| 4 | `fix-rls-avatars.sql` | Politiques RLS sur le bucket Storage `avatars` |
+| 5 | `moderation-system.sql` | Table `reports` + système de rôles modérateur/admin |
+| 6 | `enable-realtime.sql` | Active Supabase Realtime sur `likes` et `news_likes` — **obligatoire pour les mises à jour en temps réel** |
+
+> ⚠️ **Ne pas exécuter d'autres fichiers SQL que ceux listés ci-dessus.** Tous les anciens scripts intermédiaires ont été fusionnés ou supprimés.
 
 ### Buckets Storage à créer manuellement
 
@@ -97,6 +101,7 @@ VITE_SUPABASE_ANON_KEY=votre_clé_anon
 | `/#/profile` | Mon profil |
 | `/#/artist/:id` | Profil public d'un artiste |
 | `/#/upload` | Uploader un son |
+| `/#/song/:id` | Page dédiée d'un morceau (avec Open Graph cover) |
 | `/#/login` | Connexion |
 | `/#/signup` | Inscription |
 
@@ -116,18 +121,18 @@ NovaSound-Titan/
     │   │   │   ├── Toast.jsx            # Notifications (Context)
     │   │   │   ├── button.jsx
     │   │   │   └── slider.jsx
-    │   │   ├── AudioPlayer.jsx          # Player + équalizer Lottie + RPC plays
+    │   │   ├── AudioPlayer.jsx          # Player + équalizer Lottie + RPC plays atomique
     │   │   ├── EditProfileModal.jsx     # Chargement bio/username depuis DB
-    │   │   ├── FollowButton.jsx         # Resync DB + callback parent
+    │   │   ├── FollowButton.jsx         # Resync DB + callback parent + Math.max(0)
     │   │   ├── Footer.jsx               # Entièrement en français
     │   │   ├── Header.jsx
-    │   │   ├── LikeButton.jsx           # Likes chansons + animation cœur
-    │   │   ├── NewsLikeButton.jsx       # Likes news (trigger SQL, sans update manuel)
-    │   │   ├── ReportButton.jsx         # Signalement 3 étapes + tooltip
-    │   │   ├── SongCard.jsx             # Plays réels + lien profil artiste
+    │   │   ├── LikeButton.jsx           # Likes chansons + Realtime + animation cœur
+    │   │   ├── NewsLikeButton.jsx       # Likes news + Realtime + trigger SQL
+    │   │   ├── ReportButton.jsx         # Signalement 3 étapes + tooltip avertissement
+    │   │   ├── SongCard.jsx             # Plays réels + lien profil artiste cliquable
     │   │   └── ...
     │   ├── contexts/
-    │   │   └── AuthContext.jsx          # Auth + supabase exposé dans context
+    │   │   └── AuthContext.jsx          # Auth + supabase exposé dans le context
     │   ├── lib/
     │   │   ├── supabaseClient.js        # LockManager custom + Supabase 2.49
     │   │   ├── utils.js                 # cn() + formatPlays()
@@ -135,17 +140,18 @@ NovaSound-Titan/
     │   ├── pages/
     │   │   ├── HomePage.jsx             # Cards avec plays + lien artiste + modal news
     │   │   ├── ExplorerPage.jsx         # Tri français, scroll infini
-    │   │   ├── UserProfilePage.jsx      # Email tronqué mobile
+    │   │   ├── UserProfilePage.jsx      # Email tronqué sur mobile
     │   │   ├── ArtistProfilePage.jsx    # Profil public + follow/unfollow + stats
-    │   │   ├── NewsPage.jsx             # Modal lire la suite + likes
-    │   │   ├── ModerationPanel.jsx      # Entièrement traduit
-    │   │   ├── MusicUploadPage.jsx
-    │   │   ├── LoginPage.jsx
-    │   │   ├── SignupPage.jsx
+    │   │   ├── LoginPage.jsx            # Logo réel + 100% français
+    │   │   ├── SignupPage.jsx           # Logo réel + 100% français
+    │   │   ├── NewsPage.jsx             # Modal lire la suite + likes Realtime
+    │   │   ├── ModerationPanel.jsx      # Entièrement traduit en français
+    │   │   ├── SongPage.jsx             # Page morceau + meta OG:image (cover) pour partage riche
+│   │   ├── MusicUploadPage.jsx
     │   │   └── ...
     │   ├── animations/
-    │   │   ├── heart-animation.json
-    │   │   └── play-animation.json
+    │   │   ├── heart-animation.json     # Explosion cœurs au like
+    │   │   └── play-animation.json      # Équalizer 3 barres
     │   └── App.jsx                      # Lazy loading + Suspense
     ├── public/
     │   ├── background.png
@@ -155,6 +161,7 @@ NovaSound-Titan/
     ├── increment-plays.sql              # ⚠️ Exécuter en 3e
     ├── fix-rls-avatars.sql              # ⚠️ Exécuter en 4e
     ├── moderation-system.sql            # ⚠️ Exécuter en 5e
+    ├── enable-realtime.sql              # ⚠️ Exécuter en 6e — obligatoire pour le temps réel
     ├── setup-buckets.js
     ├── .env.example
     └── package.json
@@ -164,13 +171,13 @@ NovaSound-Titan/
 
 ## 🗄️ Base de données
 
-| Table | Description | Trigger |
-|-------|-------------|---------|
-| `users` | Profils (avatar, bio, followers_count, following_count) | `handle_new_user` à l'inscription |
-| `songs` | Morceaux (plays_count, likes_count) | `update_likes_count` auto |
+| Table | Description | Trigger associé |
+|-------|-------------|-----------------|
+| `users` | Profils (avatar, bio, `followers_count`, `following_count`) | `handle_new_user` à l'inscription |
+| `songs` | Morceaux (`plays_count`, `likes_count`) | `update_likes_count` auto |
 | `likes` | Likes utilisateurs sur les chansons | → met à jour `songs.likes_count` |
-| `follows` | Relations follower/following | → met à jour `users.followers_count` |
-| `news` | Actualités communautaires (likes_count) | `update_news_likes_count` auto |
+| `follows` | Relations follower/following | → met à jour `users.followers_count` + `following_count` |
+| `news` | Actualités communautaires (`likes_count`) | `update_news_likes_count` auto |
 | `news_likes` | Likes sur les news | → met à jour `news.likes_count` |
 | `reports` | Signalements de modération | — |
 
@@ -179,7 +186,7 @@ NovaSound-Titan/
 ## 🔐 Sécurité
 
 - **RLS** activé sur toutes les tables
-- **SECURITY DEFINER** sur les fonctions critiques (increment_plays, update_news_likes_count)
+- **SECURITY DEFINER** sur les fonctions critiques (`increment_plays`, `update_news_likes_count`)
 - **GREATEST(0, ...)** sur tous les décrements — compteurs jamais négatifs
 - Auth Supabase avec vérification email + flow PKCE
 - LockManager custom anti-timeout multi-onglets
@@ -188,7 +195,7 @@ NovaSound-Titan/
 
 ---
 
-## 🎵 Fonctionnalités v4.0
+## 🎵 Fonctionnalités v4.1
 
 **Artistes**
 - Upload audio (50 MB max) + pochette album
@@ -199,16 +206,17 @@ NovaSound-Titan/
 **Fans**
 - Écoutes comptabilisées en temps réel (atomique, sans race condition)
 - Compteur d'écoutes visible sur chaque card (`12.4k`)
-- Likes chansons et news avec animations Lottie
+- Likes chansons et news **en temps réel** — tous les utilisateurs voient le changement instantanément
 - Follow/unfollow avec resynchronisation immédiate
 - Lecteur audio complet (shuffle, repeat, volume, équalizer animé)
 - Téléchargement et partage de liens
 
 **Communauté**
 - News avec modal "Lire la suite" (HomePage + NewsPage)
-- Signalement en 3 étapes avec avertissement anti-abus
+- Signalement en 3 étapes avec avertissement anti-abus + tooltip
 - Panneau de modération (admin/modérateur)
 - Profils artistes avec liste d'abonnés cliquables
+- Noms d'artistes cliquables vers leur profil
 
 ---
 
@@ -219,6 +227,7 @@ NovaSound-Titan/
 - **React.memo** sur SongCard
 - **Images lazy** sur toutes les pochettes
 - **Scroll throttle** via `requestAnimationFrame`
+- **Realtime** via WebSocket Supabase (un canal par card, cleanup au démontage)
 - Bundle initial ~400KB
 
 ---
@@ -229,10 +238,11 @@ NovaSound-Titan/
 |----------|----------|
 | Erreur 404 au refresh | Normal avec HashRouter — URLs en `/#/` |
 | Session perdue après refresh | Vérifier `VITE_SUPABASE_ANON_KEY` dans Vercel |
-| Upload avatar échoue | Vérifier bucket `avatars` + `fix-rls-avatars.sql` exécuté |
+| Upload avatar échoue | Vérifier bucket `avatars` + exécuter `fix-rls-avatars.sql` |
 | Likes news ne s'enregistrent pas | Exécuter `news-likes.sql` dans Supabase |
 | Plays ne s'incrémentent pas | Exécuter `increment-plays.sql` dans Supabase |
 | Compteurs négatifs | Réexécuter `setup-supabase.sql` (triggers avec GREATEST) |
+| Likes pas en temps réel | Exécuter `enable-realtime.sql` dans Supabase |
 | Email de confirmation non reçu | Vérifier les spams — expéditeur `noreply@supabase.io` |
 | Buckets introuvables | `SUPABASE_SERVICE_KEY` dans `.env` puis `npm run setup:buckets` |
 
@@ -240,18 +250,30 @@ NovaSound-Titan/
 
 ## 📝 Changelog
 
+### v4.2 (2026-02-24)
+- ✨ `SongPage` : page dédiée par morceau (`/#/song/:id`) avec pochette grande format
+- ✨ Meta Open Graph complètes (og:image, og:title, twitter:card) — la pochette s'affiche dans WhatsApp, Discord, Telegram, Twitter
+- 🔧 Route `/song/:id` corrigée (redirigait vers Explorer au lieu d'une vraie page)
+- 🔧 Bouton Partager dans SongCard et SongPage copie le lien direct vers la page avec cover
+
+### v4.1 (2026-02-24)
+- ✨ **Supabase Realtime** sur `likes` (chansons) et `news_likes` — compteur instantané pour tous les utilisateurs connectés
+- ✨ `enable-realtime.sql` — script dédié pour activer la publication Realtime
+- 🔧 `LikeButton` et `NewsLikeButton` : canal Realtime par ID, cleanup au démontage, `useCallback` pour éviter les re-abonnements
+
 ### v4.0 (2026-02-24)
 - ✨ Écoutes réelles affichées sur chaque card (`12.4k`) via `formatPlays()`
 - ✨ Noms d'artistes cliquables → profil public `/artist/:id`
-- ✨ `ArtistProfilePage` : stats complètes, abonnés cliquables, entièrement en français
-- ✨ `FollowButton` : resync DB après chaque action + callback parent pour sync header
-- ✨ `ReportButton` : 3 étapes (avertissement → formulaire → succès) + tooltip
+- ✨ `ArtistProfilePage` : stats complètes, abonnés cliquables, 100% français
+- ✨ `FollowButton` : resync DB après chaque action + callback parent
+- ✨ `ReportButton` : 3 étapes (avertissement → formulaire → succès) + tooltip anti-abus
+- ✨ Logo réel sur les pages Login et Signup + traduction complète FR
 - 🐛 Fix `NewsLikeButton` : update `news.likes_count` bloqué par RLS → trigger SQL automatique
 - 🐛 Fix compteurs négatifs : `GREATEST(0, ...)` sur tous les décrements SQL
 - 🐛 Fix email trop long sur mobile (`truncate max-w-[260px]`)
 - 🔧 `AudioPlayer` : incrémentation plays atomique via RPC `SECURITY DEFINER`
-- 🔧 Traduction complète FR : Footer, Explorer, News, ModerationPanel, MusicUploadPage
-- 🔧 `increment-plays.sql` : nouvelle fonction RPC ajoutée
+- 🔧 Traduction complète FR : Footer, Explorer, News, ModerationPanel, MusicUploadPage, Login, Signup
+- 🔧 Suppression de `news-enhancements.sql` redondant (remplacé par `news-likes.sql`)
 
 ### v3.8 (2026-02-24)
 - ✨ `ReportButton` redesigné avec modal expressif et catégories visuelles
@@ -262,7 +284,6 @@ NovaSound-Titan/
 - ✨ Section Latest News : contraste et visibilité améliorés
 - ✨ `NewsPage` : modal "Lire la suite" ajouté
 - 🐛 Fix `news-likes.sql` : type UUID → TEXT (compatible schéma)
-- 🔧 `NewsLikeButton` : auteur voit le compteur de ses news
 
 ### v3.2 (2026-02-24)
 - 🐛 Fix RLS upload avatar

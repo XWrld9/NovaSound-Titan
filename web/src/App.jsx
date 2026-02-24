@@ -17,6 +17,7 @@ import SignupPage from '@/pages/SignupPage';
 const MusicUploadPage = lazy(() => import('@/pages/MusicUploadPage'));
 const UserProfilePage = lazy(() => import('@/pages/UserProfilePage'));
 const ExplorerPage = lazy(() => import('@/pages/ExplorerPage'));
+const SongPage     = lazy(() => import('@/pages/SongPage'));
 const NewsPage = lazy(() => import('@/pages/NewsPage'));
 const ArtistProfilePage = lazy(() => import('@/pages/ArtistProfilePage'));
 const PrivacyPolicy = lazy(() => import('@/pages/PrivacyPolicy'));
@@ -40,7 +41,7 @@ function App() {
                   <Route path="/explorer" element={<ExplorerPage />} />
                   <Route path="/news" element={<NewsPage />} />
                   <Route path="/artist/:id" element={<ArtistProfilePage />} />
-                  <Route path="/song/:id" element={<ExplorerPage />} />
+                  <Route path="/song/:id" element={<SongPage />} />
                   <Route path="/privacy" element={<PrivacyPolicy />} />
                   <Route path="/terms" element={<TermsOfService />} />
                   <Route path="/copyright" element={<CopyrightInfo />} />
