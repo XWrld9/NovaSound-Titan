@@ -221,12 +221,12 @@ const UserProfilePage = () => {
               </div>
 
               {/* Infos profil */}
-              <div className="flex-1 text-center md:text-left">
-                <h1 className="text-2xl md:text-3xl font-bold text-white mb-2">
+              <div className="flex-1 text-center md:text-left min-w-0 w-full overflow-hidden">
+                <h1 className="text-2xl md:text-3xl font-bold text-white mb-2 break-words">
                   {profile?.username || currentUser.username || currentUser.email}
                 </h1>
                 {profile?.bio && (
-                  <p className="text-gray-400 mb-2 text-sm max-w-md">{profile.bio}</p>
+                  <p className="text-gray-400 mb-2 text-sm max-w-md break-words line-clamp-3">{profile.bio}</p>
                 )}
                 <p className="text-gray-500 text-sm mb-4 truncate max-w-[260px] md:max-w-sm" title={currentUser.email}>{currentUser.email}</p>
                 

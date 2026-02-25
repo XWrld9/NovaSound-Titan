@@ -323,7 +323,7 @@ const AudioPlayer = ({ currentSong, playlist = [], onNext, onPrevious }) => {
         />
 
         <button 
-          className="md:hidden absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-gray-900 border border-cyan-500/30 rounded-full p-1 z-10"
+          className="md:hidden absolute top-2 left-1/2 -translate-x-1/2 bg-gray-900 border border-cyan-500/30 rounded-full p-1 z-10"
           onClick={() => setIsExpanded(!isExpanded)}
         >
           {isExpanded ? <ChevronDown className="w-4 h-4 text-cyan-400" /> : <ChevronUp className="w-4 h-4 text-cyan-400" />}
@@ -485,7 +485,7 @@ const AudioPlayer = ({ currentSong, playlist = [], onNext, onPrevious }) => {
               >
                 <Repeat className={`${isExpanded ? 'w-6 h-6' : 'w-5 h-5'}`} />
                 {repeat === 'one' && (
-                  <span className="absolute -top-1 -right-1 w-4 h-4 bg-cyan-400 rounded-full flex items-center justify-center text-xs text-gray-950 font-bold">
+                  <span className="absolute -bottom-1 left-1/2 -translate-x-1/2 text-[9px] text-cyan-400 font-bold leading-none">
                     1
                   </span>
                 )}

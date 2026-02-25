@@ -133,12 +133,12 @@ const ArtistProfilePage = () => {
               )}
 
               {/* Infos */}
-              <div className="flex-1 text-center md:text-left min-w-0">
-                <h1 className="text-2xl md:text-3xl font-bold text-white mb-1 truncate">
+              <div className="flex-1 text-center md:text-left min-w-0 w-full overflow-hidden">
+                <h1 className="text-2xl md:text-3xl font-bold text-white mb-1 break-words truncate">
                   {artist.username || 'Artiste inconnu'}
                 </h1>
                 {artist.bio && (
-                  <p className="text-gray-400 text-sm leading-relaxed mb-4 max-w-lg">{artist.bio}</p>
+                  <p className="text-gray-400 text-sm leading-relaxed mb-4 max-w-lg break-words line-clamp-3">{artist.bio}</p>
                 )}
 
                 {/* Stats */}
