@@ -45,7 +45,8 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
     detectSessionInUrl: true,
     storage: safeStorage,
     storageKey: 'novasound.auth.token',
-    flowType: 'pkce',
+    // implicit flow plus compatible avec les webviews Android et iOS Safari
+    flowType: 'implicit',
     // Désactiver le LockManager pour éviter le timeout multi-onglets + iOS
     lock: async (name, acquireTimeout, fn) => {
       if (typeof navigator === 'undefined' || !navigator.locks) {
@@ -65,7 +66,7 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
   },
   global: {
     headers: {
-      'X-Client-Info': 'novasound-titan-web/4.8.0'
+      'X-Client-Info': 'novasound-titan-web/4.9.0'
     },
     fetch: fetchWithRetry
   }

@@ -27,6 +27,16 @@ const AudioPlayer = ({ currentSong, playlist = [], onNext, onPrevious }) => {
   const [isFollowing, setIsFollowing] = useState(false);
   const [followId, setFollowId] = useState(null);
 
+  // Bloquer le scroll du body quand le player est expanded
+  useEffect(() => {
+    if (isExpanded) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
+    }
+    return () => { document.body.style.overflow = ''; };
+  }, [isExpanded]);
+
   // Synchroniser le volume avec l'élément audio
   useEffect(() => {
     if (audioRef.current) {
@@ -311,13 +321,13 @@ const AudioPlayer = ({ currentSong, playlist = [], onNext, onPrevious }) => {
         animate={{ y: 0, opacity: 1 }}
         exit={{ y: 100, opacity: 0 }}
         className={`fixed bottom-0 left-0 right-0 z-50 border-t border-cyan-500/30 shadow-2xl transition-all duration-300 ${
-          isExpanded ? 'h-full flex flex-col justify-center' : 'h-auto'
+          isExpanded ? 'inset-0 overflow-y-auto' : 'h-auto'
         }`}
         style={{
           backgroundColor: 'rgb(3 7 18 / 0.99)',
           WebkitBackdropFilter: 'blur(24px)',
           backdropFilter: 'blur(24px)',
-          paddingBottom: isExpanded ? undefined : 'env(safe-area-inset-bottom, 0px)'
+          paddingBottom: isExpanded ? 'env(safe-area-inset-bottom, 16px)' : 'env(safe-area-inset-bottom, 0px)'
         }}
       >
         <audio
@@ -328,16 +338,17 @@ const AudioPlayer = ({ currentSong, playlist = [], onNext, onPrevious }) => {
         />
 
         <button 
-          className="md:hidden absolute top-2 left-1/2 -translate-x-1/2 bg-gray-900 border border-cyan-500/30 rounded-full p-1 z-10"
+          className="md:hidden absolute left-1/2 -translate-x-1/2 bg-gray-900 border border-cyan-500/30 rounded-full p-1 z-10"
+          style={{ top: isExpanded ? 'max(12px, env(safe-area-inset-top, 12px))' : '8px' }}
           onClick={() => setIsExpanded(!isExpanded)}
         >
           {isExpanded ? <ChevronDown className="w-4 h-4 text-cyan-400" /> : <ChevronUp className="w-4 h-4 text-cyan-400" />}
         </button>
 
-        <div className={`container mx-auto px-4 py-4 ${isExpanded ? 'flex flex-col h-full justify-center gap-8' : ''}`}>
+        <div className={`container mx-auto px-4 py-4 ${isExpanded ? 'flex flex-col min-h-full justify-center gap-6 pt-12 pb-8' : ''}`}>
           
           {isExpanded && (
-            <div className="w-full aspect-square max-w-sm mx-auto rounded-2xl overflow-hidden shadow-2xl shadow-cyan-500/20 border border-cyan-500/20">
+            <div className="w-full aspect-square max-w-xs mx-auto rounded-2xl overflow-hidden shadow-2xl shadow-cyan-500/20 border border-cyan-500/20">
               {currentSong.cover_url ? (
                 <img
                   src={currentSong.cover_url}
@@ -387,7 +398,7 @@ const AudioPlayer = ({ currentSong, playlist = [], onNext, onPrevious }) => {
               )}
               <div className="min-w-0 flex-1" onClick={() => !isExpanded && setIsExpanded(true)}>
                 {/* Titre avec défilement si trop long */}
-                <div className={`text-white font-semibold ${isExpanded ? 'text-2xl mb-1 text-center' : ''} flex items-center gap-2 overflow-hidden`}>
+                <div className={`text-white font-semibold ${isExpanded ? 'text-xl mb-1 text-center' : ''} flex items-center gap-2 overflow-hidden`}>
                   {!isExpanded ? (
                     <div className="overflow-hidden flex-1 min-w-0">
                       <div
@@ -404,13 +415,12 @@ const AudioPlayer = ({ currentSong, playlist = [], onNext, onPrevious }) => {
                       </div>
                     </div>
                   ) : (
-                    <span className="break-words w-full">{currentSong.title}</span>
+                    <span className="break-words w-full text-center px-2 leading-snug">{currentSong.title}</span>
                   )}
                   {isPlaying && (
                     <LottieAnimation
                       animationData={playAnimation}
-                      width={isExpanded ? 28 : 20}
-                      height={isExpanded ? 28 : 20}
+                      style={{ width: isExpanded ? 28 : 20, height: isExpanded ? 28 : 20 }}
                       loop={true}
                       autoplay={true}
                       className="flex-shrink-0 opacity-90"

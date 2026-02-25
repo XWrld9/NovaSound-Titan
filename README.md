@@ -188,14 +188,14 @@ NovaSound-Titan/
 - **RLS** activé sur toutes les tables
 - **SECURITY DEFINER** sur les fonctions critiques (`increment_plays`, `update_news_likes_count`)
 - **GREATEST(0, ...)** sur tous les décrements — compteurs jamais négatifs
-- Auth Supabase avec vérification email + flow PKCE
+- Auth Supabase avec vérification email + flow implicit (compatible Android & iOS Safari)
 - LockManager custom anti-timeout multi-onglets
 - `.env` jamais commité (`.gitignore` inclus)
 - `SUPABASE_SERVICE_KEY` uniquement côté script local
 
 ---
 
-## 🎵 Fonctionnalités v4.1
+## 🎵 Fonctionnalités v4.9
 
 **Artistes**
 - Upload audio (50 MB max) + pochette album
@@ -250,7 +250,22 @@ NovaSound-Titan/
 
 ## 📝 Changelog
 
-### v4.4 (2026-02-24)
+### v4.9 (2026-02-25)
+- 🐛 Fix **AudioPlayer expanded (iPhone)** : le player plein écran dépasse maintenant correctement avec `overflow-y-auto` au lieu de `h-full` — fini le contenu coupé sur petit iPhone
+- 🐛 Fix **titre débordant** sur iPhone : `break-words` + `text-center px-2` sur le titre dans la vue expanded — le texte ne sort plus de l'écran
+- 🐛 Fix **LottieAnimation** : l'animation de lecture passait `width`/`height` comme props HTML (taille incorrecte → rectangles verts géants sur certains appareils), maintenant passés via `style`
+- 🐛 Fix **scroll du body** : le body est désormais verrouillé (`overflow: hidden`) quand le player est en mode expanded — plus de double scroll parasite sur iOS
+- 🐛 Fix **notch / Dynamic Island** : le bouton chevron du player prend en compte `env(safe-area-inset-top)` en mode expanded
+- 🐛 Fix **Auth Android** : `flowType` changé de `pkce` → `implicit` — résout les problèmes de connexion/inscription sur Chrome Android et webviews Android
+- 🐛 Fix **Auth iOS** : meilleure gestion des événements `SIGNED_IN`, `TOKEN_REFRESHED`, `INITIAL_SESSION` dans `onAuthStateChange` — la session est correctement restaurée après vérification email sur Safari iOS
+- ✨ **Autocomplete** sur tous les champs de formulaire (`email`, `current-password`, `new-password`, `username`) — les gestionnaires de mots de passe Android/iOS fonctionnent maintenant
+- ✨ **inputMode="email"** sur les champs email — clavier optimisé sur mobile (@ visible directement)
+- 🔧 Ajout `id="passwordConfirm"` manquant sur le champ confirmation de mot de passe
+- 🔧 Couverture albumart réduite à `max-w-xs` en vue expanded pour mieux s'adapter aux petits écrans
+- 🔧 Meilleur message d'erreur réseau Android (`NetworkError` détecté en plus)
+- 🔧 Version `package.json` → `4.9.0`
+
+### v4.8 (précédent)
 - 🐛 Fix **"email rate limit exceeded"** → message traduit en français avec conseil d'attente
 - 🐛 Fix **"Fetch is aborted"** upload mobile → retry automatique (3 tentatives avec backoff), vérification taille fichier (max 50 MB), messages d'erreur réseau traduits
 - ✨ **PWA complète** : `manifest.json`, `sw.js` (service worker), icônes 192×512px

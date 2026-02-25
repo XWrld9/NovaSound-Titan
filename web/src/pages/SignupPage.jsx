@@ -121,7 +121,7 @@ const SignupPage = () => {
           </div>
 
           <div className="bg-gray-900/50 backdrop-blur-xl border border-cyan-500/30 rounded-2xl p-8 shadow-2xl">
-            <form onSubmit={handleSubmit} className="space-y-6">
+            <form onSubmit={handleSubmit} className="space-y-6" autoComplete="on">
               {error && (
                 <div className="bg-red-500/10 border border-red-500/30 rounded-lg p-4 flex items-start gap-3">
                   <AlertCircle className="w-5 h-5 text-red-400 flex-shrink-0 mt-0.5" />
@@ -158,6 +158,7 @@ const SignupPage = () => {
                     value={formData.username}
                     onChange={handleChange}
                     required
+                    autoComplete="username"
                     className="w-full pl-10 pr-4 py-3 bg-gray-900/50 border border-cyan-500/30 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-cyan-400 focus:ring-2 focus:ring-cyan-400/20 transition-all"
                     placeholder="johndoe"
                   />
@@ -175,6 +176,8 @@ const SignupPage = () => {
                     value={formData.email}
                     onChange={handleChange}
                     required
+                    autoComplete="email"
+                    inputMode="email"
                     className="w-full pl-10 pr-4 py-3 bg-gray-900/50 border border-cyan-500/30 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-cyan-400 focus:ring-2 focus:ring-cyan-400/20 transition-all"
                     placeholder="your@email.com"
                   />
@@ -193,6 +196,7 @@ const SignupPage = () => {
                     onChange={handleChange}
                     required
                     minLength={8}
+                    autoComplete="new-password"
                     className="w-full pl-10 pr-12 py-3 bg-gray-900/50 border border-cyan-500/30 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-cyan-400 focus:ring-2 focus:ring-cyan-400/20 transition-all"
                     placeholder="••••••••"
                   />
@@ -213,10 +217,12 @@ const SignupPage = () => {
                   <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-cyan-400" />
                   <input
                     type={showPasswordConfirm ? "text" : "password"}
+                    id="passwordConfirm"
                     name="passwordConfirm"
                     value={formData.passwordConfirm}
                     onChange={handleChange}
                     required
+                    autoComplete="new-password"
                     className="w-full pl-10 pr-12 py-3 bg-gray-900/50 border border-cyan-500/30 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-cyan-400 focus:ring-2 focus:ring-cyan-400/20 transition-all"
                     placeholder="••••••••"
                   />

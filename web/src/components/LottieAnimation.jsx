@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from 'react';
+import React from 'react';
 import Lottie from 'lottie-react';
 
 const LottieAnimation = ({ 
@@ -8,16 +8,17 @@ const LottieAnimation = ({
   loop = true, 
   autoplay = true,
   className = "",
+  style,
   ...props 
 }) => {
+  const lottieStyle = style || { width, height };
   return (
     <div className={`inline-flex items-center justify-center ${className}`}>
       <Lottie
         animationData={animationData}
-        width={width}
-        height={height}
         loop={loop}
         autoplay={autoplay}
+        style={lottieStyle}
         {...props}
       />
     </div>

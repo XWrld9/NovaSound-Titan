@@ -25,7 +25,14 @@ export const AuthProvider = ({ children }) => {
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, session) => {
-        setCurrentUser(session?.user ?? null);
+        // Sur iOS/Android, SIGNED_IN après vérification email ou OAuth
+        if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED' || event === 'INITIAL_SESSION') {
+          setCurrentUser(session?.user ?? null);
+        } else if (event === 'SIGNED_OUT') {
+          setCurrentUser(null);
+        } else {
+          setCurrentUser(session?.user ?? null);
+        }
         setInitialLoading(false);
       }
     );
@@ -178,8 +185,8 @@ export const AuthProvider = ({ children }) => {
             needsVerification: true
           };
         }
-        if (error.message?.includes('fetch') || error.message?.includes('network') || error.message?.includes('abort') || error.message?.includes('Failed to fetch')) {
-          return { success: false, message: 'Connexion réseau instable. Vérifiez votre connexion et réessayez.' };
+        if (error.message?.includes('fetch') || error.message?.includes('network') || error.message?.includes('abort') || error.message?.includes('Failed to fetch') || error.message?.includes('NetworkError')) {
+          return { success: false, message: '⚠️ Connexion réseau instable. Vérifiez votre connexion Wi-Fi ou données mobiles et réessayez.' };
         }
         return { success: false, message: error.message };
       }
