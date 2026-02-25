@@ -35,12 +35,16 @@ const Header = () => {
 
   const handleInstallClick = () => {
     if (ios) { setShowIOSTooltip(v => !v); return; }
-    if (canInstall) install();
+    if (canInstall) { install(); return; }
+    // Fallback : guide si le prompt n'est pas encore dispo
+    setShowIOSTooltip(v => !v);
   };
 
   const handleMobileInstallClick = () => {
     if (ios) { setShowIOSTooltip(v => !v); closeMenu(); return; }
-    if (canInstall) { install(); closeMenu(); }
+    if (canInstall) { install(); closeMenu(); return; }
+    // Fallback Android : affiche le guide si beforeinstallprompt pas encore disponible
+    setShowIOSTooltip(v => !v);
   };
 
   // Cache-buster : _avatarTs est mis à jour par AuthContext après chaque updateProfile
@@ -181,9 +185,9 @@ const Header = () => {
                     <Download className="w-4 h-4" />
                     Installer l'app
                   </motion.button>
-                  {/* Tooltip iOS */}
+                  {/* Tooltip iOS / Android fallback */}
                   <AnimatePresence>
-                    {showIOSTooltip && ios && (
+                    {showIOSTooltip && (
                       <motion.div
                         initial={{ opacity: 0, y: 8 }}
                         animate={{ opacity: 1, y: 0 }}
@@ -191,17 +195,35 @@ const Header = () => {
                         className="absolute right-0 top-full mt-2 w-64 bg-gray-900 border border-cyan-500/30 rounded-xl shadow-2xl p-4 z-50"
                       >
                         <button onClick={() => setShowIOSTooltip(false)} className="absolute top-2 right-2 text-gray-500 hover:text-white"><X className="w-3.5 h-3.5" /></button>
-                        <p className="text-white text-sm font-semibold mb-2">Installer sur iPhone / iPad</p>
-                        <div className="space-y-2 text-xs text-gray-300">
-                          <div className="flex items-center gap-2">
-                            <span className="w-5 h-5 rounded-full bg-cyan-500/20 text-cyan-400 text-[10px] font-bold flex items-center justify-center flex-shrink-0">1</span>
-                            <span>Appuie sur <span className="inline-flex items-center gap-0.5 px-1 py-0.5 rounded bg-cyan-500/15 border border-cyan-500/30 text-cyan-400"><Share className="w-3 h-3" /> Partager</span></span>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <span className="w-5 h-5 rounded-full bg-purple-500/20 text-purple-400 text-[10px] font-bold flex items-center justify-center flex-shrink-0">2</span>
-                            <span>Puis <strong className="text-white">"Sur l'écran d'accueil"</strong></span>
-                          </div>
-                        </div>
+                        {ios ? (
+                          <>
+                            <p className="text-white text-sm font-semibold mb-2">Installer sur iPhone / iPad</p>
+                            <div className="space-y-2 text-xs text-gray-300">
+                              <div className="flex items-center gap-2">
+                                <span className="w-5 h-5 rounded-full bg-cyan-500/20 text-cyan-400 text-[10px] font-bold flex items-center justify-center flex-shrink-0">1</span>
+                                <span>Appuie sur <span className="inline-flex items-center gap-0.5 px-1 py-0.5 rounded bg-cyan-500/15 border border-cyan-500/30 text-cyan-400"><Share className="w-3 h-3" /> Partager</span></span>
+                              </div>
+                              <div className="flex items-center gap-2">
+                                <span className="w-5 h-5 rounded-full bg-purple-500/20 text-purple-400 text-[10px] font-bold flex items-center justify-center flex-shrink-0">2</span>
+                                <span>Puis <strong className="text-white">"Sur l'écran d'accueil"</strong></span>
+                              </div>
+                            </div>
+                          </>
+                        ) : (
+                          <>
+                            <p className="text-white text-sm font-semibold mb-2">Installer sur Android</p>
+                            <div className="space-y-2 text-xs text-gray-300">
+                              <div className="flex items-center gap-2">
+                                <span className="w-5 h-5 rounded-full bg-cyan-500/20 text-cyan-400 text-[10px] font-bold flex items-center justify-center flex-shrink-0">1</span>
+                                <span>Appuie sur <strong className="text-white">⋮</strong> (menu du navigateur)</span>
+                              </div>
+                              <div className="flex items-center gap-2">
+                                <span className="w-5 h-5 rounded-full bg-purple-500/20 text-purple-400 text-[10px] font-bold flex items-center justify-center flex-shrink-0">2</span>
+                                <span>Puis <strong className="text-white">"Ajouter à l'écran d'accueil"</strong></span>
+                              </div>
+                            </div>
+                          </>
+                        )}
                       </motion.div>
                     )}
                   </AnimatePresence>
@@ -381,25 +403,39 @@ const Header = () => {
                       <Download className="w-4 h-4" />
                       {ios ? 'Comment installer sur iPhone' : 'Télécharger NovaST LUX'}
                     </button>
-                    {/* Guide iOS inline dans le drawer */}
+                    {/* Guide installation inline dans le drawer */}
                     <AnimatePresence>
-                      {showIOSTooltip && ios && (
+                      {showIOSTooltip && (
                         <motion.div
                           initial={{ opacity: 0, height: 0 }}
                           animate={{ opacity: 1, height: 'auto' }}
                           exit={{ opacity: 0, height: 0 }}
                           className="overflow-hidden"
                         >
-                          <div className="mt-2 bg-gray-800/80 rounded-xl p-3 space-y-2 text-xs text-gray-300">
-                            <div className="flex items-center gap-2">
-                              <span className="w-5 h-5 rounded-full bg-cyan-500/20 text-cyan-400 text-[10px] font-bold flex items-center justify-center flex-shrink-0">1</span>
-                              <span>Appuie sur <span className="inline-flex items-center gap-0.5 px-1 py-0.5 rounded bg-cyan-500/15 border border-cyan-500/30 text-cyan-400"><Share className="w-3 h-3" /> Partager</span> en bas</span>
+                          {ios ? (
+                            <div className="mt-2 bg-gray-800/80 rounded-xl p-3 space-y-2 text-xs text-gray-300">
+                              <div className="flex items-center gap-2">
+                                <span className="w-5 h-5 rounded-full bg-cyan-500/20 text-cyan-400 text-[10px] font-bold flex items-center justify-center flex-shrink-0">1</span>
+                                <span>Appuie sur <span className="inline-flex items-center gap-0.5 px-1 py-0.5 rounded bg-cyan-500/15 border border-cyan-500/30 text-cyan-400"><Share className="w-3 h-3" /> Partager</span> en bas</span>
+                              </div>
+                              <div className="flex items-center gap-2">
+                                <span className="w-5 h-5 rounded-full bg-purple-500/20 text-purple-400 text-[10px] font-bold flex items-center justify-center flex-shrink-0">2</span>
+                                <span>Puis <strong className="text-white">"Sur l'écran d'accueil"</strong></span>
+                              </div>
                             </div>
-                            <div className="flex items-center gap-2">
-                              <span className="w-5 h-5 rounded-full bg-purple-500/20 text-purple-400 text-[10px] font-bold flex items-center justify-center flex-shrink-0">2</span>
-                              <span>Puis <strong className="text-white">"Sur l'écran d'accueil"</strong></span>
+                          ) : (
+                            <div className="mt-2 bg-gray-800/80 rounded-xl p-3 space-y-2 text-xs text-gray-300">
+                              <p className="text-cyan-400 font-semibold text-xs mb-1">Installer NovaST LUX sur Android</p>
+                              <div className="flex items-center gap-2">
+                                <span className="w-5 h-5 rounded-full bg-cyan-500/20 text-cyan-400 text-[10px] font-bold flex items-center justify-center flex-shrink-0">1</span>
+                                <span>Appuie sur <strong className="text-white">⋮</strong> (menu du navigateur)</span>
+                              </div>
+                              <div className="flex items-center gap-2">
+                                <span className="w-5 h-5 rounded-full bg-purple-500/20 text-purple-400 text-[10px] font-bold flex items-center justify-center flex-shrink-0">2</span>
+                                <span>Puis <strong className="text-white">"Ajouter à l'écran d'accueil"</strong></span>
+                              </div>
                             </div>
-                          </div>
+                          )}
                         </motion.div>
                       )}
                     </AnimatePresence>
