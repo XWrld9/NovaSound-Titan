@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Play, Pause, SkipBack, SkipForward, Volume2, VolumeX, Shuffle, Repeat, Music, ChevronUp, ChevronDown, Heart, Download, Share2, UserPlus, UserCheck } from 'lucide-react';
+import { Play, Pause, SkipBack, SkipForward, Volume2, VolumeX, Shuffle, Repeat, Music, ChevronUp, ChevronDown, Heart, Download, Share2, UserPlus, UserCheck, ExternalLink } from 'lucide-react';
 import { Slider } from '@/components/ui/slider';
 import { supabase } from '@/lib/supabaseClient';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -7,9 +7,11 @@ import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import LottieAnimation from '@/components/LottieAnimation';
 import playAnimation from '@/animations/play-animation.json';
+import { useNavigate } from 'react-router-dom';
 
 const AudioPlayer = ({ currentSong, playlist = [], onNext, onPrevious }) => {
   const { currentUser } = useAuth();
+  const navigate = useNavigate();
   const audioRef = useRef(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
@@ -37,10 +39,7 @@ const AudioPlayer = ({ currentSong, playlist = [], onNext, onPrevious }) => {
       audioRef.current.src = currentSong.audio_url;
       audioRef.current.load();
       setPlayRecorded(false);
-
-      if (isPlaying) {
-        audioRef.current.play().catch((err) => console.error('Play error:', err));
-      }
+      setIsPlaying(false); // Reset isPlaying pour éviter la confusion d'état
 
       if (currentUser) {
         checkLikeStatus();
@@ -387,8 +386,26 @@ const AudioPlayer = ({ currentSong, playlist = [], onNext, onPrevious }) => {
                 )
               )}
               <div className="min-w-0 flex-1" onClick={() => !isExpanded && setIsExpanded(true)}>
-                <div className={`text-white font-semibold truncate ${isExpanded ? 'text-2xl mb-1' : ''} flex items-center gap-2`}>
-                  {currentSong.title}
+                {/* Titre avec défilement si trop long */}
+                <div className={`text-white font-semibold ${isExpanded ? 'text-2xl mb-1 text-center' : ''} flex items-center gap-2 overflow-hidden`}>
+                  {!isExpanded ? (
+                    <div className="overflow-hidden flex-1 min-w-0">
+                      <div
+                        className="whitespace-nowrap"
+                        style={{
+                          display: 'inline-block',
+                          animation: currentSong.title?.length > 22
+                            ? 'marquee 8s linear infinite'
+                            : 'none',
+                          paddingRight: currentSong.title?.length > 22 ? '3rem' : '0'
+                        }}
+                      >
+                        {currentSong.title}
+                      </div>
+                    </div>
+                  ) : (
+                    <span className="break-words w-full">{currentSong.title}</span>
+                  )}
                   {isPlaying && (
                     <LottieAnimation
                       animationData={playAnimation}
@@ -400,10 +417,10 @@ const AudioPlayer = ({ currentSong, playlist = [], onNext, onPrevious }) => {
                     />
                   )}
                 </div>
-                <div className={`flex items-center gap-2 ${isExpanded ? 'justify-center' : ''}`}>
+                <div className={`flex items-center gap-2 ${isExpanded ? 'justify-center flex-wrap' : ''}`}>
                   <div className={`text-gray-400 text-sm truncate ${isExpanded ? 'text-lg' : ''}`}>{currentSong.artist}</div>
                   
-                  {/* Subscribe Button in Player */}
+                  {/* Bouton Abonner dans le player */}
                   {showFollowButton && (
                     <button
                       onClick={handleFollow}
@@ -430,16 +447,26 @@ const AudioPlayer = ({ currentSong, playlist = [], onNext, onPrevious }) => {
                 </div>
 
                 {isExpanded && (
-                  <div className="flex items-center justify-center gap-4 mt-4">
-                    <button onClick={handleLike} className={`${isLiked ? 'text-magenta-500' : 'text-gray-400'}`}>
+                  <div className="flex items-center justify-center gap-4 mt-4 flex-wrap">
+                    <button onClick={handleLike} className={`${isLiked ? 'text-pink-500' : 'text-gray-400 hover:text-pink-500'} transition-colors`}>
                       <Heart className={`w-6 h-6 ${isLiked ? 'fill-current' : ''}`} />
                     </button>
-                    <button onClick={handleDownload} className="text-gray-400 hover:text-cyan-400">
+                    <button onClick={handleDownload} className="text-gray-400 hover:text-cyan-400 transition-colors">
                       <Download className="w-6 h-6" />
                     </button>
-                    <button onClick={handleShare} className="text-gray-400 hover:text-white">
+                    <button onClick={handleShare} className="text-gray-400 hover:text-white transition-colors">
                       <Share2 className="w-6 h-6" />
                     </button>
+                    {/* Bouton Voir le profil de l'artiste */}
+                    {currentSong?.uploader_id && (
+                      <button
+                        onClick={(e) => { e.stopPropagation(); navigate(`/artist/${currentSong.uploader_id}`); setIsExpanded(false); }}
+                        className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-cyan-500/15 border border-cyan-500/40 text-cyan-400 hover:bg-cyan-500/25 transition-all text-xs font-medium"
+                      >
+                        <ExternalLink className="w-3.5 h-3.5" />
+                        Voir le profil
+                      </button>
+                    )}
                   </div>
                 )}
               </div>

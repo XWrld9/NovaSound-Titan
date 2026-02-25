@@ -15,9 +15,16 @@ export const AuthProvider = ({ children }) => {
 
   // ── Auth state listener ──────────────────────────────────────────────────
   useEffect(() => {
+    // iOS Safari peut perdre la session au reload — on la récupère explicitement d'abord
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setCurrentUser(session?.user ?? null);
+      setInitialLoading(false);
+    }).catch(() => {
+      setInitialLoading(false);
+    });
+
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, session) => {
-        // Callback SYNC obligatoire pour Supabase
         setCurrentUser(session?.user ?? null);
         setInitialLoading(false);
       }
@@ -171,6 +178,9 @@ export const AuthProvider = ({ children }) => {
             needsVerification: true
           };
         }
+        if (error.message?.includes('fetch') || error.message?.includes('network') || error.message?.includes('abort') || error.message?.includes('Failed to fetch')) {
+          return { success: false, message: 'Connexion réseau instable. Vérifiez votre connexion et réessayez.' };
+        }
         return { success: false, message: error.message };
       }
 
@@ -181,6 +191,9 @@ export const AuthProvider = ({ children }) => {
 
       return { success: true, message: 'Connexion réussie !' };
     } catch (err) {
+      if (err?.name === 'AbortError' || err?.message?.includes('abort') || err?.message?.includes('fetch') || err?.message?.includes('network')) {
+        return { success: false, message: '⚠️ Connexion interrompue. Vérifiez votre réseau et réessayez.' };
+      }
       return { success: false, message: err.message || 'Erreur de connexion. Réessayez.' };
     }
   };
@@ -238,11 +251,16 @@ export const AuthProvider = ({ children }) => {
   // ── Clear corrupted session ──────────────────────────────────────────────
   const clearCorruptedSession = () => {
     try {
-      Object.keys(localStorage).forEach(key => {
-        if (key.startsWith('supabase.') || key.startsWith('novasound.')) {
-          localStorage.removeItem(key);
+      const keys = [];
+      try {
+        for (let i = 0; i < localStorage.length; i++) {
+          const key = localStorage.key(i);
+          if (key && (key.startsWith('supabase.') || key.startsWith('novasound.'))) {
+            keys.push(key);
+          }
         }
-      });
+        keys.forEach(key => { try { localStorage.removeItem(key); } catch {} });
+      } catch { /* mode privé iOS */ }
     } catch { /* ignore */ }
     setCurrentUser(null);
     setInitialLoading(false);

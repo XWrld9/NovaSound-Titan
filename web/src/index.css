@@ -49,7 +49,18 @@ img, video, iframe {
   display: none;
 }
 
-/* ── iOS Safari fixes ──────────────────────────────────────────────────── */
+/* ── Animation marquee pour titres longs dans le player ──────────────────── */
+@keyframes marquee {
+  0%   { transform: translateX(0); }
+  20%  { transform: translateX(0); }
+  80%  { transform: translateX(-100%); }
+  100% { transform: translateX(-100%); }
+}
+
+/* Pause le défilement si l'utilisateur survole (desktop) */
+.marquee-container:hover .marquee-text {
+  animation-play-state: paused;
+}
 
 /* Fix backdrop-blur sur iOS Safari — doit être couplé à un bg solide */
 @supports (-webkit-touch-callout: none) {

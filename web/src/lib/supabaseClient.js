@@ -16,6 +16,28 @@ const safeStorage = {
   }
 };
 
+// Fetch avec retry automatique (1 retry sur erreur réseau/abort)
+const fetchWithRetry = async (url, options = {}, retries = 1) => {
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 30000); // 30s timeout
+  try {
+    const res = await fetch(url, {
+      ...options,
+      signal: controller.signal
+    });
+    clearTimeout(timeout);
+    return res;
+  } catch (err) {
+    clearTimeout(timeout);
+    if (retries > 0 && (err.name === 'AbortError' || err.name === 'TypeError')) {
+      // Attendre 1 seconde avant de retry
+      await new Promise(r => setTimeout(r, 1000));
+      return fetchWithRetry(url, options, retries - 1);
+    }
+    throw err;
+  }
+};
+
 export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
   auth: {
     persistSession: true,
@@ -33,7 +55,7 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
         return await Promise.race([
           navigator.locks.request(name, { mode: 'exclusive' }, fn),
           new Promise((_, reject) =>
-            setTimeout(() => reject(new Error('Lock timeout')), acquireTimeout ?? 5000)
+            setTimeout(() => reject(new Error('Lock timeout')), acquireTimeout ?? 8000)
           )
         ]);
       } catch {
@@ -43,14 +65,9 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
   },
   global: {
     headers: {
-      'X-Client-Info': 'novasound-titan-web/4.7.0'
+      'X-Client-Info': 'novasound-titan-web/4.8.0'
     },
-    fetch: (url, options = {}) => {
-      return fetch(url, {
-        ...options,
-        signal: AbortSignal.timeout(20000)
-      });
-    }
+    fetch: fetchWithRetry
   }
 });
 
