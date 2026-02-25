@@ -33,18 +33,26 @@ const Header = () => {
   const alreadyInstalled = isStandalone();
   const ios = isIOS();
 
+  const downloadAPK = () => {
+    const a = document.createElement('a');
+    a.href = '/NovaSound-TITAN-LUX.apk';
+    a.download = 'NovaSound-TITAN-LUX.apk';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+  };
+
   const handleInstallClick = () => {
     if (ios) { setShowIOSTooltip(v => !v); return; }
-    if (canInstall) { install(); return; }
-    // Fallback : guide si le prompt n'est pas encore dispo
-    setShowIOSTooltip(v => !v);
+    // Android : téléchargement direct de l'APK
+    downloadAPK();
   };
 
   const handleMobileInstallClick = () => {
     if (ios) { setShowIOSTooltip(v => !v); closeMenu(); return; }
-    if (canInstall) { install(); closeMenu(); return; }
-    // Fallback Android : affiche le guide si beforeinstallprompt pas encore disponible
-    setShowIOSTooltip(v => !v);
+    // Android : téléchargement direct de l'APK
+    downloadAPK();
+    closeMenu();
   };
 
   // Cache-buster : _avatarTs est mis à jour par AuthContext après chaque updateProfile
@@ -170,7 +178,7 @@ const Header = () => {
                 <Newspaper className="w-4 h-4" />Actualités
               </Link>
 
-              {/* Bouton installer PWA — toujours visible sauf si déjà installé */}
+              {/* Bouton téléchargement APK (Android) / guide iOS */}
               {!alreadyInstalled && (
                 <div className="relative">
                   <motion.button
@@ -180,14 +188,14 @@ const Header = () => {
                     whileHover={{ scale: 1.05 }}
                     whileTap={{ scale: 0.95 }}
                     className="flex items-center gap-2 px-4 py-2 rounded-full border border-purple-500/50 text-purple-300 hover:bg-purple-500/10 hover:border-purple-400 hover:text-purple-200 transition-all text-sm font-medium"
-                    title={ios ? "Comment installer sur iPhone" : "Installer l'application sur ton appareil"}
+                    title={ios ? "Ajouter sur l'écran d'accueil" : "Télécharger l'APK Android"}
                   >
                     <Download className="w-4 h-4" />
-                    Installer l'app
+                    {ios ? "Installer l'app" : "Télécharger l'app"}
                   </motion.button>
-                  {/* Tooltip iOS / Android fallback */}
+                  {/* Tooltip iOS uniquement — Android télécharge directement l'APK */}
                   <AnimatePresence>
-                    {showIOSTooltip && (
+                    {showIOSTooltip && ios && (
                       <motion.div
                         initial={{ opacity: 0, y: 8 }}
                         animate={{ opacity: 1, y: 0 }}
@@ -195,35 +203,17 @@ const Header = () => {
                         className="absolute right-0 top-full mt-2 w-64 bg-gray-900 border border-cyan-500/30 rounded-xl shadow-2xl p-4 z-50"
                       >
                         <button onClick={() => setShowIOSTooltip(false)} className="absolute top-2 right-2 text-gray-500 hover:text-white"><X className="w-3.5 h-3.5" /></button>
-                        {ios ? (
-                          <>
-                            <p className="text-white text-sm font-semibold mb-2">Installer sur iPhone / iPad</p>
-                            <div className="space-y-2 text-xs text-gray-300">
-                              <div className="flex items-center gap-2">
-                                <span className="w-5 h-5 rounded-full bg-cyan-500/20 text-cyan-400 text-[10px] font-bold flex items-center justify-center flex-shrink-0">1</span>
-                                <span>Appuie sur <span className="inline-flex items-center gap-0.5 px-1 py-0.5 rounded bg-cyan-500/15 border border-cyan-500/30 text-cyan-400"><Share className="w-3 h-3" /> Partager</span></span>
-                              </div>
-                              <div className="flex items-center gap-2">
-                                <span className="w-5 h-5 rounded-full bg-purple-500/20 text-purple-400 text-[10px] font-bold flex items-center justify-center flex-shrink-0">2</span>
-                                <span>Puis <strong className="text-white">"Sur l'écran d'accueil"</strong></span>
-                              </div>
-                            </div>
-                          </>
-                        ) : (
-                          <>
-                            <p className="text-white text-sm font-semibold mb-2">Installer sur Android</p>
-                            <div className="space-y-2 text-xs text-gray-300">
-                              <div className="flex items-center gap-2">
-                                <span className="w-5 h-5 rounded-full bg-cyan-500/20 text-cyan-400 text-[10px] font-bold flex items-center justify-center flex-shrink-0">1</span>
-                                <span>Appuie sur <strong className="text-white">⋮</strong> (menu du navigateur)</span>
-                              </div>
-                              <div className="flex items-center gap-2">
-                                <span className="w-5 h-5 rounded-full bg-purple-500/20 text-purple-400 text-[10px] font-bold flex items-center justify-center flex-shrink-0">2</span>
-                                <span>Puis <strong className="text-white">"Ajouter à l'écran d'accueil"</strong></span>
-                              </div>
-                            </div>
-                          </>
-                        )}
+                        <p className="text-white text-sm font-semibold mb-2">📱 Installer sur iPhone / iPad</p>
+                        <div className="space-y-2 text-xs text-gray-300">
+                          <div className="flex items-center gap-2">
+                            <span className="w-5 h-5 rounded-full bg-cyan-500/20 text-cyan-400 text-[10px] font-bold flex items-center justify-center flex-shrink-0">1</span>
+                            <span>Appuie sur <span className="inline-flex items-center gap-0.5 px-1 py-0.5 rounded bg-cyan-500/15 border border-cyan-500/30 text-cyan-400"><Share className="w-3 h-3" /> Partager</span></span>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <span className="w-5 h-5 rounded-full bg-purple-500/20 text-purple-400 text-[10px] font-bold flex items-center justify-center flex-shrink-0">2</span>
+                            <span>Puis <strong className="text-white">"Sur l'écran d'accueil"</strong></span>
+                          </div>
+                        </div>
                       </motion.div>
                     )}
                   </AnimatePresence>
@@ -393,7 +383,7 @@ const Header = () => {
 
               {/* Pied */}
               <div className="p-4 border-t border-cyan-500/20 bg-gray-900/50 space-y-3">
-                {/* Bouton installer PWA mobile — toujours visible sauf si déjà installé */}
+                {/* Bouton téléchargement APK (Android) / guide raccourci (iOS) */}
                 {!alreadyInstalled && (
                   <div>
                     <button
@@ -401,11 +391,11 @@ const Header = () => {
                       className="w-full flex items-center justify-center gap-2 py-3 rounded-xl border border-purple-500/40 text-purple-300 hover:bg-purple-500/10 transition-all text-sm font-medium"
                     >
                       <Download className="w-4 h-4" />
-                      {ios ? 'Comment installer sur iPhone' : 'Télécharger NovaST LUX'}
+                      {ios ? 'Ajouter sur l'écran d'accueil' : 'Télécharger NovaST LUX (.apk)'}
                     </button>
-                    {/* Guide installation inline dans le drawer */}
+                    {/* Guide iOS uniquement — Android télécharge directement */}
                     <AnimatePresence>
-                      {showIOSTooltip && (
+                      {showIOSTooltip && ios && (
                         <motion.div
                           initial={{ opacity: 0, height: 0 }}
                           animate={{ opacity: 1, height: 'auto' }}
@@ -414,6 +404,7 @@ const Header = () => {
                         >
                           {ios ? (
                             <div className="mt-2 bg-gray-800/80 rounded-xl p-3 space-y-2 text-xs text-gray-300">
+                              <p className="text-cyan-400 font-semibold text-xs mb-1">📱 Installer sur iPhone / iPad</p>
                               <div className="flex items-center gap-2">
                                 <span className="w-5 h-5 rounded-full bg-cyan-500/20 text-cyan-400 text-[10px] font-bold flex items-center justify-center flex-shrink-0">1</span>
                                 <span>Appuie sur <span className="inline-flex items-center gap-0.5 px-1 py-0.5 rounded bg-cyan-500/15 border border-cyan-500/30 text-cyan-400"><Share className="w-3 h-3" /> Partager</span> en bas</span>
@@ -425,14 +416,14 @@ const Header = () => {
                             </div>
                           ) : (
                             <div className="mt-2 bg-gray-800/80 rounded-xl p-3 space-y-2 text-xs text-gray-300">
-                              <p className="text-cyan-400 font-semibold text-xs mb-1">Installer NovaST LUX sur Android</p>
+                              <p className="text-cyan-400 font-semibold text-xs mb-1">placeholder</p>
                               <div className="flex items-center gap-2">
                                 <span className="w-5 h-5 rounded-full bg-cyan-500/20 text-cyan-400 text-[10px] font-bold flex items-center justify-center flex-shrink-0">1</span>
-                                <span>Appuie sur <strong className="text-white">⋮</strong> (menu du navigateur)</span>
+                                <span>placeholder</span>
                               </div>
                               <div className="flex items-center gap-2">
                                 <span className="w-5 h-5 rounded-full bg-purple-500/20 text-purple-400 text-[10px] font-bold flex items-center justify-center flex-shrink-0">2</span>
-                                <span>Puis <strong className="text-white">"Ajouter à l'écran d'accueil"</strong></span>
+                                <span>placeholder</span>
                               </div>
                             </div>
                           )}
