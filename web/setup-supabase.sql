@@ -272,7 +272,7 @@ BEGIN
   LOOP
     BEGIN
       INSERT INTO public.users (id, username, email)
-      VALUES (NEW.id, final_username, NEW.email)
+      VALUES (NEW.id::text, final_username, NEW.email)
       ON CONFLICT (id) DO NOTHING;
       EXIT; -- succès
     EXCEPTION

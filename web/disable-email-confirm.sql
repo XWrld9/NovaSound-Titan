@@ -29,7 +29,7 @@ BEGIN
   LOOP
     BEGIN
       INSERT INTO public.users (id, username, email)
-      VALUES (NEW.id, final_username, NEW.email)
+      VALUES (NEW.id::text, final_username, NEW.email)
       ON CONFLICT (id) DO NOTHING;
       EXIT;
     EXCEPTION
@@ -60,7 +60,7 @@ SELECT
   au.email
 FROM auth.users au
 WHERE NOT EXISTS (
-  SELECT 1 FROM public.users pu WHERE pu.id = au.id
+  SELECT 1 FROM public.users pu WHERE pu.id = au.id::text
 )
 ON CONFLICT (id) DO NOTHING;
 

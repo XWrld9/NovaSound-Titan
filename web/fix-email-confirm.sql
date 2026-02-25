@@ -29,7 +29,7 @@ BEGIN
   LOOP
     BEGIN
       INSERT INTO public.users (id, username, email)
-      VALUES (NEW.id, final_username, NEW.email)
+      VALUES (NEW.id::text, final_username, NEW.email)
       ON CONFLICT (id) DO NOTHING;
       EXIT;
     EXCEPTION
@@ -81,11 +81,11 @@ SELECT
   ),
   au.email
 FROM auth.users au
-WHERE NOT EXISTS (SELECT 1 FROM public.users pu WHERE pu.id = au.id)
+WHERE NOT EXISTS (SELECT 1 FROM public.users pu WHERE pu.id = au.id::text)
 ON CONFLICT (id) DO NOTHING;
 
 -- Vérification finale
 SELECT
   (SELECT COUNT(*) FROM auth.users) AS auth_users_total,
   (SELECT COUNT(*) FROM public.users) AS public_users_total,
-  (SELECT COUNT(*) FROM auth.users au WHERE NOT EXISTS (SELECT 1 FROM public.users pu WHERE pu.id = au.id)) AS users_sans_profil;
+  (SELECT COUNT(*) FROM auth.users au WHERE NOT EXISTS (SELECT 1 FROM public.users pu WHERE pu.id = au.id::text)) AS users_sans_profil;
