@@ -49,7 +49,17 @@ export const AuthProvider = ({ children }) => {
 
   // ── Helpers ──────────────────────────────────────────────────────────────
   const getEmailRedirectTo = () => {
-    try { return `${window.location.origin}/#/`; } catch { return undefined; }
+    try {
+      const origin = window.location.origin;
+      // iOS Safari a parfois un origin vide — fallback sur href
+      if (!origin || origin === 'null') {
+        const url = new URL(window.location.href);
+        return `${url.protocol}//${url.host}/`;
+      }
+      return `${origin}/`;
+    } catch {
+      return undefined;
+    }
   };
 
   const ensureProfile = async (user) => {
@@ -86,11 +96,21 @@ export const AuthProvider = ({ children }) => {
       });
 
       if (error) {
-        if (error.message?.includes('already registered')) {
-          return { success: false, message: 'Cet email est déjà utilisé. Connectez-vous.' };
+        // Rate limit Supabase (429 ou message contenant rate/limit/too many)
+        if (
+          error.status === 429 ||
+          error.message?.toLowerCase().includes('rate limit') ||
+          error.message?.toLowerCase().includes('too many') ||
+          error.message?.toLowerCase().includes('email rate') ||
+          error.message?.toLowerCase().includes('over_email_send_rate_limit')
+        ) {
+          return {
+            success: false,
+            message: '⏳ Limite de tentatives atteinte. Attendez 60 secondes puis réessayez. Si le problème persiste, essayez avec une autre adresse email.'
+          };
         }
-        if (error.message?.includes('rate limit') || error.message?.includes('email rate')) {
-          return { success: false, message: 'Trop de tentatives d\'inscription. Attendez quelques minutes avant de réessayer.' };
+        if (error.message?.includes('already registered') || error.message?.includes('User already registered')) {
+          return { success: false, message: 'Cet email est déjà utilisé. Connectez-vous.' };
         }
         if (error.message?.includes('invalid email')) {
           return { success: false, message: 'Adresse email invalide.' };
@@ -103,19 +123,29 @@ export const AuthProvider = ({ children }) => {
 
       if (!data?.user) return { success: false, message: 'Échec de la création du compte.' };
 
-      // Créer le profil
-      await supabase.from('users').insert([{
-        id: data.user.id,
-        email: cleanEmail,
-        username: cleanUsername,
-        created_at: new Date().toISOString()
-      }]);
+      // Cas où l'utilisateur existe déjà mais non confirmé — Supabase renvoie un user sans erreur
+      if (data.user && !data.user.confirmed_at && data.user.identities?.length === 0) {
+        return { success: false, message: 'Cet email est déjà utilisé. Connectez-vous ou vérifiez votre boîte mail.' };
+      }
+
+      // Créer le profil en base
+      try {
+        await supabase.from('users').insert([{
+          id: data.user.id,
+          email: cleanEmail,
+          username: cleanUsername,
+          created_at: new Date().toISOString()
+        }]);
+      } catch { /* profil peut déjà exister, non-bloquant */ }
 
       return {
         success: true,
-        message: 'Compte créé ! Vérifiez votre email pour activer votre compte.'
+        message: '✅ Compte créé ! Vérifiez votre boîte mail (et vos spams) pour activer votre compte.'
       };
     } catch (err) {
+      if (err?.message?.toLowerCase().includes('rate') || err?.message?.toLowerCase().includes('too many')) {
+        return { success: false, message: '⏳ Trop de tentatives. Attendez 60 secondes et réessayez.' };
+      }
       return { success: false, message: err.message || 'Erreur technique lors de l\'inscription.' };
     }
   };

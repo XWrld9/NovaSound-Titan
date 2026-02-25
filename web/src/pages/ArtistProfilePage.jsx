@@ -20,7 +20,6 @@ const ArtistProfilePage = () => {
   const [followers, setFollowers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [currentSong, setCurrentSong] = useState(null);
-  const [bioExpanded, setBioExpanded] = useState(false);
 
   useEffect(() => {
     if (id) {
@@ -139,19 +138,7 @@ const ArtistProfilePage = () => {
                   {artist.username || 'Artiste inconnu'}
                 </h1>
                 {artist.bio && (
-                  <div className="mb-4 max-w-lg">
-                    <p className={`text-gray-400 text-sm leading-relaxed break-words ${bioExpanded ? '' : 'line-clamp-3'}`}>
-                      {artist.bio}
-                    </p>
-                    {artist.bio.length > 120 && (
-                      <button
-                        onClick={() => setBioExpanded(!bioExpanded)}
-                        className="text-cyan-400 text-xs mt-1 hover:text-cyan-300 transition-colors font-medium"
-                      >
-                        {bioExpanded ? 'Réduire ▲' : 'Lire la suite ▼'}
-                      </button>
-                    )}
-                  </div>
+                  <p className="text-gray-400 text-sm leading-relaxed mb-4 max-w-lg break-words line-clamp-3">{artist.bio}</p>
                 )}
 
                 {/* Stats */}

@@ -14,6 +14,8 @@ body {
 html, body {
 	overflow-x: hidden;
 	max-width: 100vw;
+	/* iOS Safari scroll fix */
+	-webkit-overflow-scrolling: touch;
 }
 
 /* Empêcher le scroll horizontal sur tous les conteneurs */
@@ -37,6 +39,7 @@ img, video, iframe {
 	word-break: break-word;
 	overflow-wrap: break-word;
 }
+
 /* Masquer la scrollbar tout en gardant le scroll fonctionnel */
 .scrollbar-hide {
   -ms-overflow-style: none;
@@ -44,4 +47,52 @@ img, video, iframe {
 }
 .scrollbar-hide::-webkit-scrollbar {
   display: none;
+}
+
+/* ── iOS Safari fixes ──────────────────────────────────────────────────── */
+
+/* Fix backdrop-blur sur iOS Safari — doit être couplé à un bg solide */
+@supports (-webkit-touch-callout: none) {
+  .backdrop-blur-xl,
+  .backdrop-blur-2xl,
+  .backdrop-blur-lg {
+    -webkit-backdrop-filter: blur(24px);
+    backdrop-filter: blur(24px);
+  }
+  /* Forcer l'opacité du bg du player sur iOS */
+  .ios-player-bg {
+    background-color: rgb(3, 7, 18) !important; /* gray-950 */
+  }
+}
+
+/* Safe area insets pour iPhone avec notch/Dynamic Island */
+.safe-bottom {
+  padding-bottom: max(16px, env(safe-area-inset-bottom));
+}
+.safe-top {
+  padding-top: env(safe-area-inset-top);
+}
+
+/* Fix inputs sur iOS — empêche le zoom auto */
+input[type="text"],
+input[type="email"],
+input[type="password"],
+input[type="search"],
+textarea,
+select {
+  font-size: 16px !important;
+}
+
+/* Fix boutons iOS — supprimer le style natif */
+button {
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+/* Fix 100vh sur iOS Safari (la barre d'URL flotte) */
+.h-screen {
+  height: 100dvh;
+}
+.min-h-screen {
+  min-height: 100dvh;
 }

@@ -1,9 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
-import { Mail, Lock, User, AlertCircle, CheckCircle, Eye, EyeOff } from 'lucide-react';
+import { Mail, Lock, User, AlertCircle, CheckCircle, Eye, EyeOff, Clock } from 'lucide-react';
 import { motion } from 'framer-motion';
 
 const SignupPage = () => {
@@ -20,6 +20,9 @@ const SignupPage = () => {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [loading, setLoading] = useState(false);
+  const [cooldown, setCooldown] = useState(0);
+  const submitRef = useRef(false); // anti double-submit
+  const cooldownRef = useRef(null);
 
   const handleChange = (e) => {
     setFormData({
@@ -28,18 +31,38 @@ const SignupPage = () => {
     });
   };
 
+  const startCooldown = (seconds) => {
+    setCooldown(seconds);
+    if (cooldownRef.current) clearInterval(cooldownRef.current);
+    cooldownRef.current = setInterval(() => {
+      setCooldown(prev => {
+        if (prev <= 1) {
+          clearInterval(cooldownRef.current);
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
+    // Anti double-submit (iOS Safari peut déclencher 2x)
+    if (submitRef.current || loading || cooldown > 0) return;
+    submitRef.current = true;
+
     setError('');
     setSuccess('');
 
     if (formData.password !== formData.passwordConfirm) {
       setError('Les mots de passe ne correspondent pas');
+      submitRef.current = false;
       return;
     }
 
     if (formData.password.length < 8) {
       setError('Le mot de passe doit contenir au moins 8 caractères');
+      submitRef.current = false;
       return;
     }
 
@@ -52,16 +75,21 @@ const SignupPage = () => {
       formData.username
     );
 
+    setLoading(false);
+    submitRef.current = false;
+
     if (result.success) {
       setSuccess(result.message);
       setTimeout(() => {
         navigate('/login');
-      }, 3000);
+      }, 4000);
     } else {
       setError(result.message);
+      // Si rate limit → démarrer un cooldown de 60s
+      if (result.message?.includes('⏳') || result.message?.toLowerCase().includes('limite')) {
+        startCooldown(60);
+      }
     }
-
-    setLoading(false);
   };
 
   return (
@@ -97,7 +125,15 @@ const SignupPage = () => {
               {error && (
                 <div className="bg-red-500/10 border border-red-500/30 rounded-lg p-4 flex items-start gap-3">
                   <AlertCircle className="w-5 h-5 text-red-400 flex-shrink-0 mt-0.5" />
-                  <p className="text-red-400 text-sm">{error}</p>
+                  <div>
+                    <p className="text-red-400 text-sm">{error}</p>
+                    {cooldown > 0 && (
+                      <p className="text-orange-400 text-xs mt-1 flex items-center gap-1">
+                        <Clock className="w-3 h-3" />
+                        Réessai disponible dans {cooldown}s
+                      </p>
+                    )}
+                  </div>
                 </div>
               )}
 
@@ -196,10 +232,10 @@ const SignupPage = () => {
 
               <Button
                 type="submit"
-                disabled={loading || success}
-                className="w-full bg-gradient-to-r from-cyan-500 to-magenta-500 hover:from-cyan-600 hover:to-magenta-600 text-white py-3 text-lg font-semibold shadow-lg shadow-cyan-500/30"
+                disabled={loading || !!success || cooldown > 0}
+                className="w-full bg-gradient-to-r from-cyan-500 to-magenta-500 hover:from-cyan-600 hover:to-magenta-600 text-white py-3 text-lg font-semibold shadow-lg shadow-cyan-500/30 disabled:opacity-50"
               >
-                {loading ? "Création en cours..." : "Créer mon compte"}
+                {loading ? "Création en cours..." : cooldown > 0 ? `Patienter ${cooldown}s...` : "Créer mon compte"}
               </Button>
             </form>
 
