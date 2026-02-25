@@ -391,7 +391,7 @@ const Header = () => {
                       className="w-full flex items-center justify-center gap-2 py-3 rounded-xl border border-purple-500/40 text-purple-300 hover:bg-purple-500/10 transition-all text-sm font-medium"
                     >
                       <Download className="w-4 h-4" />
-                      {ios ? 'Ajouter sur l'écran d'accueil' : 'Télécharger NovaST LUX (.apk)'}
+                      {ios ? "Ajouter sur l'écran d'accueil" : 'Télécharger NovaST LUX (.apk)'}
                     </button>
                     {/* Guide iOS uniquement — Android télécharge directement */}
                     <AnimatePresence>
