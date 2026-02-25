@@ -195,7 +195,7 @@ NovaSound-Titan/
 
 ---
 
-## 🎵 Fonctionnalités v5.0
+## 🎵 Fonctionnalités v5.4.2
 
 **Artistes**
 - Upload audio (50 MB max) + pochette album
@@ -243,12 +243,35 @@ NovaSound-Titan/
 | Plays ne s'incrémentent pas | Exécuter `increment-plays.sql` dans Supabase |
 | Compteurs négatifs | Réexécuter `setup-supabase.sql` (triggers avec GREATEST) |
 | Likes pas en temps réel | Exécuter `enable-realtime.sql` dans Supabase |
-| Email de confirmation non reçu | Vérifier les spams — expéditeur `noreply@supabase.io` |
+| Email de confirmation non reçu | Vérifier les spams (expéditeur `noreply@supabase.io`). Si persistant, aller dans **Supabase Dashboard → Auth → Settings** et désactiver "Enable email confirmations" |
+| `database error saving new user` | Exécuter `fix-email-confirm.sql` dans Supabase SQL Editor |
+| `error sending confirmation email` | Quota SMTP Supabase dépassé (plan free ~4/h). Attendre ou désactiver la confirmation email dans Auth Settings |
+| Impossible de se connecter après inscription | Email non confirmé → utiliser le bouton "Renvoyer l'email" sur la page login |
 | Buckets introuvables | `SUPABASE_SERVICE_KEY` dans `.env` puis `npm run setup:buckets` |
 
 ---
 
 ## 📝 Changelog
+
+### v5.4 (2026-02-25) — Solution email définitive : Gmail SMTP
+- ✅ **Solution email définitive** : abandon de `onboarding@resend.dev` (limité au compte Resend) → **Gmail SMTP** (`smtp.gmail.com:587` + mot de passe d'application Google)
+- 📄 Ajout `GMAIL_SMTP_SETUP.md` : guide pas-à-pas complet (génération app password, config Supabase, Redirect URLs, troubleshooting)
+- 🔧 Version `package.json` → `5.4.0`
+
+### v5.2 (2026-02-25) — Robustesse SMTP Resend
+- 🔴 Fix **signup ultra-robuste** : le bloc d'erreurs SMTP est élargi pour capturer TOUTES les variantes du message Supabase (`error sending`, `mail`, `smtp`, `confirmation`...) — plus aucun faux négatif possible
+- ✨ **Mode autoLogin** : si la confirmation email est désactivée dans Supabase Auth Settings, le compte est créé ET l'utilisateur est connecté immédiatement sans redirection vers login
+- ✨ **Profil DB créé en fallback** sur erreur SMTP : même si le trigger ne tourne pas, le profil est inséré côté frontend
+- 🔧 Ajout `needsVerification: true` sur "email déjà utilisé non confirmé" → bouton renvoi s'affiche sur login
+- 📄 Ajout `RESEND_SUPABASE_FIX.md` : guide complet de configuration Resend+Supabase avec tableau de diagnostic des erreurs
+
+### v5.1 (2026-02-25) — Fix critique inscription
+- 🔴 Fix **"database error saving new user"** : trigger `handle_new_user` entièrement réécrit avec `EXCEPTION WHEN unique_violation` + boucle de déduplication username → ne peut plus planter même en cas de conflit ou double tentative
+- 🔴 Fix **"error sending confirmation email"** : l'erreur SMTP Supabase (plan free, quota dépassé) retourne désormais un succès partiel avec instruction de renvoi depuis la page login — le compte est créé, l'utilisateur n'est plus bloqué
+- 🔴 Fix **"email ou mot de passe incorrect" trompeur** : Supabase retourne ce message même pour un email non confirmé — désormais le bouton "Renvoyer l'email de confirmation" s'affiche systématiquement dans ce cas
+- ✨ **Nouveau fichier SQL** `fix-email-confirm.sql` : répare les users bloqués entre `auth.users` et `public.users`, corrige le trigger, et documente comment désactiver la confirmation email si nécessaire
+- 🔧 Login : rappel "vérifiez vos spams" affiché en bas de page
+- 🔧 `package.json` version → `5.1.0`
 
 ### v5.0 (2026-02-25)
 - 🐛 Fix **EmailRedirectTo iOS / HashRouter** : la redirection après confirmation email pointait vers `/` (page blanche) — corrigé vers `/#/login` pour que React soit bien monté et détecte la session sur Safari iOS

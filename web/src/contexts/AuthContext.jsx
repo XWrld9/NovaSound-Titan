@@ -112,39 +112,99 @@ export const AuthProvider = ({ children }) => {
       });
 
       if (error) {
-        // Rate limit Supabase (429 ou message contenant rate/limit/too many)
+        const msg = (error.message || '').toLowerCase();
+        const status = error.status || 0;
+
+        // ── Rate limit ──────────────────────────────────────────────────────
         if (
-          error.status === 429 ||
-          error.message?.toLowerCase().includes('rate limit') ||
-          error.message?.toLowerCase().includes('too many') ||
-          error.message?.toLowerCase().includes('email rate') ||
-          error.message?.toLowerCase().includes('over_email_send_rate_limit')
+          status === 429 ||
+          msg.includes('rate limit') ||
+          msg.includes('too many') ||
+          msg.includes('email rate') ||
+          msg.includes('over_email_send_rate_limit')
         ) {
           return {
             success: false,
-            message: '⏳ Limite de tentatives atteinte. Attendez 60 secondes puis réessayez. Si le problème persiste, essayez avec une autre adresse email.'
+            message: '⏳ Trop de tentatives. Attendez 60 secondes puis réessayez.'
           };
         }
-        if (error.message?.includes('already registered') || error.message?.includes('User already registered')) {
+
+        // ── Erreur SMTP / envoi email ───────────────────────────────────────
+        // Le compte est CRÉÉ côté auth.users mais l'email n'a pas pu être envoyé.
+        // On retourne succès partiel → l'user peut renv oyer depuis la page login.
+        if (
+          msg.includes('error sending confirmation email') ||
+          msg.includes('sending confirmation') ||
+          msg.includes('smtp') ||
+          msg.includes('email sending') ||
+          msg.includes('error sending') ||
+          msg.includes('mail') ||
+          (status === 500 && (msg.includes('email') || msg.includes('confirmation') || msg.includes('mail')))
+        ) {
+          // Forcer la création du profil ici car le trigger a peut-être échoué aussi
+          try {
+            await supabase.from('users').insert([{
+              id: data?.user?.id,
+              email: cleanEmail,
+              username: cleanUsername,
+              created_at: new Date().toISOString()
+            }]);
+          } catch { /* déjà existant, non-bloquant */ }
+
+          return {
+            success: true,
+            emailError: true,
+            message: '✅ Compte créé ! Problème d\'envoi d\'email détecté (configuration SMTP). Allez sur la page connexion et cliquez "Renvoyer l\'email de confirmation". Ou demandez à l\'admin de désactiver la confirmation email dans Supabase Auth Settings.'
+          };
+        }
+
+        // ── Erreur base de données ──────────────────────────────────────────
+        if (
+          msg.includes('database error') ||
+          msg.includes('saving new user') ||
+          msg.includes('duplicate key') ||
+          msg.includes('unique constraint') ||
+          msg.includes('violates') ||
+          (status === 500 && !msg.includes('email'))
+        ) {
+          return {
+            success: false,
+            message: '⚠️ Erreur de base de données. Ce nom d\'utilisateur est peut-être déjà pris. Essayez un autre nom d\'utilisateur.'
+          };
+        }
+
+        // ── Email déjà utilisé ──────────────────────────────────────────────
+        if (
+          msg.includes('already registered') ||
+          msg.includes('user already registered') ||
+          msg.includes('already exists')
+        ) {
           return { success: false, message: 'Cet email est déjà utilisé. Connectez-vous.' };
         }
-        if (error.message?.includes('invalid email')) {
+
+        // ── Autres erreurs connues ──────────────────────────────────────────
+        if (msg.includes('invalid email')) {
           return { success: false, message: 'Adresse email invalide.' };
         }
-        if (error.message?.includes('weak password') || error.message?.includes('Password should')) {
-          return { success: false, message: 'Mot de passe trop faible. Utilisez au moins 8 caractères.' };
+        if (msg.includes('weak password') || msg.includes('password should')) {
+          return { success: false, message: 'Mot de passe trop faible. Minimum 8 caractères.' };
         }
+
         return { success: false, message: error.message };
       }
 
       if (!data?.user) return { success: false, message: 'Échec de la création du compte.' };
 
-      // Cas où l'utilisateur existe déjà mais non confirmé — Supabase renvoie un user sans erreur
+      // Email déjà utilisé non confirmé (Supabase ne renvoie pas d'erreur dans ce cas)
       if (data.user && !data.user.confirmed_at && data.user.identities?.length === 0) {
-        return { success: false, message: 'Cet email est déjà utilisé. Connectez-vous ou vérifiez votre boîte mail.' };
+        return {
+          success: false,
+          message: 'Cet email est déjà utilisé. Connectez-vous ou vérifiez votre boîte mail pour confirmer votre compte.',
+          needsVerification: true
+        };
       }
 
-      // Créer le profil en base
+      // Créer le profil en base (fallback si le trigger n'a pas tourné)
       try {
         await supabase.from('users').insert([{
           id: data.user.id,
@@ -152,15 +212,30 @@ export const AuthProvider = ({ children }) => {
           username: cleanUsername,
           created_at: new Date().toISOString()
         }]);
-      } catch { /* profil peut déjà exister, non-bloquant */ }
+      } catch { /* le trigger l'a déjà créé → non-bloquant */ }
 
+      // Si data.session existe → confirmation email désactivée → connexion directe
+      if (data.session) {
+        return {
+          success: true,
+          autoLogin: true,
+          message: '🎉 Compte créé ! Connexion automatique en cours...'
+        };
+      }
+
+      // Confirmation email activée → demander à l'user de vérifier sa boîte
       return {
         success: true,
-        message: '✅ Compte créé avec succès ! Un email de confirmation vous a été envoyé. Vérifiez votre boîte de réception (et vos spams/indésirables). Cliquez sur le lien dans l\'email pour activer votre compte, puis connectez-vous.'
+        message: '✅ Compte créé ! Vérifiez votre boîte mail (et vos spams) puis cliquez sur le lien de confirmation pour vous connecter.'
       };
+
     } catch (err) {
-      if (err?.message?.toLowerCase().includes('rate') || err?.message?.toLowerCase().includes('too many')) {
+      const msg = (err?.message || '').toLowerCase();
+      if (msg.includes('rate') || msg.includes('too many')) {
         return { success: false, message: '⏳ Trop de tentatives. Attendez 60 secondes et réessayez.' };
+      }
+      if (msg.includes('fetch') || msg.includes('network') || msg.includes('abort')) {
+        return { success: false, message: '⚠️ Erreur réseau. Vérifiez votre connexion et réessayez.' };
       }
       return { success: false, message: err.message || 'Erreur technique lors de l\'inscription.' };
     }
@@ -177,13 +252,19 @@ export const AuthProvider = ({ children }) => {
       });
 
       if (error) {
-        if (error.message?.includes('Invalid login credentials')) {
-          return { success: false, message: 'Email ou mot de passe incorrect.' };
-        }
         if (error.message?.includes('Email not confirmed')) {
           return {
             success: false,
-            message: 'Veuillez confirmer votre email avant de vous connecter.',
+            message: 'Votre email n\'est pas encore confirmé. Vérifiez vos spams ou utilisez le bouton "Renvoyer l\'email de confirmation" ci-dessous.',
+            needsVerification: true
+          };
+        }
+        if (error.message?.includes('Invalid login credentials')) {
+          // Supabase renvoie ce message aussi quand l'email n'est pas confirmé
+          // On propose toujours le renvoi de confirmation pour éviter la confusion
+          return {
+            success: false,
+            message: 'Email ou mot de passe incorrect. Si vous venez de créer votre compte, vérifiez votre boîte mail (spams inclus) et confirmez votre email avant de vous connecter.',
             needsVerification: true
           };
         }

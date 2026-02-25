@@ -80,9 +80,16 @@ const SignupPage = () => {
 
     if (result.success) {
       setSuccess(result.message);
-      setTimeout(() => {
-        navigate('/login');
-      }, 4000);
+      if (result.autoLogin) {
+        // Confirmation email désactivée → connexion directe → profil
+        setTimeout(() => navigate('/profile'), 2000);
+      } else if (result.emailError) {
+        // Compte créé mais email KO → login avec bouton renvoi
+        setTimeout(() => navigate('/login'), 5000);
+      } else {
+        // Cas normal → login pour confirmer
+        setTimeout(() => navigate('/login'), 4000);
+      }
     } else {
       setError(result.message);
       // Si rate limit → démarrer un cooldown de 60s

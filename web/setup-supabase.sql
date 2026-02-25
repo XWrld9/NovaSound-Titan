@@ -253,13 +253,36 @@ CREATE TRIGGER trigger_update_followers_count
 -- Fonction pour créer automatiquement un profil utilisateur après inscription
 CREATE OR REPLACE FUNCTION public.handle_new_user()
 RETURNS TRIGGER AS $$
+DECLARE
+  base_username TEXT;
+  final_username TEXT;
+  counter INT := 0;
 BEGIN
-  INSERT INTO public.users (id, username, email)
-  VALUES (
-    NEW.id,
-    COALESCE(NEW.raw_user_meta_data->>'username', split_part(NEW.email, '@', 1)),
-    NEW.email
+  -- Construire le username de base depuis les métadonnées ou l'email
+  base_username := COALESCE(
+    NULLIF(TRIM(NEW.raw_user_meta_data->>'username'), ''),
+    split_part(NEW.email, '@', 1)
   );
+  -- Nettoyer (alphanumeric + underscore seulement)
+  base_username := regexp_replace(base_username, '[^a-zA-Z0-9_]', '', 'g');
+  IF base_username = '' THEN base_username := 'user'; END IF;
+  final_username := base_username;
+
+  -- Gérer les conflits de username avec suffixe numérique
+  LOOP
+    BEGIN
+      INSERT INTO public.users (id, username, email)
+      VALUES (NEW.id, final_username, NEW.email)
+      ON CONFLICT (id) DO NOTHING;
+      EXIT; -- succès
+    EXCEPTION
+      WHEN unique_violation THEN
+        counter := counter + 1;
+        final_username := base_username || counter::TEXT;
+        IF counter > 999 THEN EXIT; END IF;
+    END;
+  END LOOP;
+
   RETURN NEW;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;

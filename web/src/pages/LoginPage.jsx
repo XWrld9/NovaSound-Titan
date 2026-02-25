@@ -94,15 +94,20 @@ const LoginPage = () => {
                   <AlertCircle className="w-5 h-5 text-red-400 flex-shrink-0 mt-0.5" />
                   <div className="flex-1">
                     <p className="text-red-400 text-sm">{error}</p>
-                    {needsVerification && (
+                    {needsVerification && email && (
                       <button
                         type="button"
                         onClick={handleResendVerification}
-                        className="text-cyan-400 text-sm underline mt-2 hover:text-cyan-300"
+                        className="mt-3 w-full flex items-center justify-center gap-2 px-4 py-2 bg-cyan-500/10 border border-cyan-500/30 rounded-lg text-cyan-400 text-sm hover:bg-cyan-500/20 transition-all"
                         disabled={loading}
                       >
-                        Renvoyer l'email de vérification
+                        📧 Renvoyer l'email de confirmation
                       </button>
+                    )}
+                    {needsVerification && !email && (
+                      <p className="text-orange-400 text-xs mt-2">
+                        Entrez votre email ci-dessous puis cliquez sur "Renvoyer l'email de confirmation".
+                      </p>
                     )}
                   </div>
                 </div>
@@ -128,7 +133,7 @@ const LoginPage = () => {
               </div>
 
               <div>
-                <label htmlFor="password" className="block text-sm font-medium text-gray-300 mb-2">Password</label>
+                <label htmlFor="password" className="block text-sm font-medium text-gray-300 mb-2">Mot de passe</label>
                 <div className="relative">
                   <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-cyan-400" />
                   <input
@@ -169,6 +174,9 @@ const LoginPage = () => {
                 </Link>
               </p>
               <div className="mt-4 pt-4 border-t border-gray-700">
+                <p className="text-gray-500 text-xs">
+                  Compte créé récemment ? Pensez à vérifier vos spams pour l'email de confirmation.
+                </p>
               </div>
             </div>
           </div>
