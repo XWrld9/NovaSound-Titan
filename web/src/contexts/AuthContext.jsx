@@ -68,9 +68,11 @@ export const AuthProvider = ({ children }) => {
       // iOS Safari a parfois un origin vide — fallback sur href
       if (!origin || origin === 'null') {
         const url = new URL(window.location.href);
-        return `${url.protocol}//${url.host}/`;
+        // HashRouter : rediriger vers /#/login pour que la session soit détectée
+        return `${url.protocol}//${url.host}/#/login`;
       }
-      return `${origin}/`;
+      // HashRouter : /#/login s'assure que l'app React est montée et détecte la session
+      return `${origin}/#/login`;
     } catch {
       return undefined;
     }
@@ -154,7 +156,7 @@ export const AuthProvider = ({ children }) => {
 
       return {
         success: true,
-        message: '✅ Compte créé ! Vérifiez votre boîte mail (et vos spams) pour activer votre compte.'
+        message: '✅ Compte créé avec succès ! Un email de confirmation vous a été envoyé. Vérifiez votre boîte de réception (et vos spams/indésirables). Cliquez sur le lien dans l\'email pour activer votre compte, puis connectez-vous.'
       };
     } catch (err) {
       if (err?.message?.toLowerCase().includes('rate') || err?.message?.toLowerCase().includes('too many')) {

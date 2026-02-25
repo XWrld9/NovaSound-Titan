@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Play, Pause, SkipBack, SkipForward, Volume2, VolumeX, Shuffle, Repeat, Music, ChevronUp, ChevronDown, Heart, Download, Share2, UserPlus, UserCheck, ExternalLink } from 'lucide-react';
+import { Play, Pause, SkipBack, SkipForward, Volume2, VolumeX, Shuffle, Repeat, Music, ChevronUp, ChevronDown, Heart, Download, Share2, UserPlus, UserCheck, ExternalLink, X } from 'lucide-react';
 import { Slider } from '@/components/ui/slider';
 import { supabase } from '@/lib/supabaseClient';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -337,13 +337,26 @@ const AudioPlayer = ({ currentSong, playlist = [], onNext, onPrevious }) => {
           onEnded={handleEnded}
         />
 
-        <button 
-          className="md:hidden absolute left-1/2 -translate-x-1/2 bg-gray-900 border border-cyan-500/30 rounded-full p-1 z-10"
-          style={{ top: isExpanded ? 'max(12px, env(safe-area-inset-top, 12px))' : '8px' }}
-          onClick={() => setIsExpanded(!isExpanded)}
-        >
-          {isExpanded ? <ChevronDown className="w-4 h-4 text-cyan-400" /> : <ChevronUp className="w-4 h-4 text-cyan-400" />}
-        </button>
+        {/* Bouton fermer / réduire */}
+        {isExpanded ? (
+          <button
+            className="md:hidden absolute right-4 bg-gray-800/90 border border-gray-600 rounded-full p-2 z-10 shadow-lg"
+            style={{ top: 'max(16px, env(safe-area-inset-top, 16px))' }}
+            onClick={() => setIsExpanded(false)}
+            aria-label="Fermer le lecteur"
+          >
+            <X className="w-5 h-5 text-white" />
+          </button>
+        ) : (
+          <button
+            className="md:hidden absolute left-1/2 -translate-x-1/2 bg-gray-900 border border-cyan-500/30 rounded-full p-1 z-10"
+            style={{ top: '8px' }}
+            onClick={() => setIsExpanded(true)}
+            aria-label="Agrandir le lecteur"
+          >
+            <ChevronUp className="w-4 h-4 text-cyan-400" />
+          </button>
+        )}
 
         <div className={`container mx-auto px-4 py-4 ${isExpanded ? 'flex flex-col min-h-full justify-center gap-6 pt-12 pb-8' : ''}`}>
           

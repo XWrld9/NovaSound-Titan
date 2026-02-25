@@ -66,7 +66,7 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
   },
   global: {
     headers: {
-      'X-Client-Info': 'novasound-titan-web/4.9.0'
+      'X-Client-Info': 'novasound-titan-web/5.0.0'
     },
     fetch: fetchWithRetry
   }

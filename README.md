@@ -195,7 +195,7 @@ NovaSound-Titan/
 
 ---
 
-## 🎵 Fonctionnalités v4.9
+## 🎵 Fonctionnalités v5.0
 
 **Artistes**
 - Upload audio (50 MB max) + pochette album
@@ -249,6 +249,14 @@ NovaSound-Titan/
 ---
 
 ## 📝 Changelog
+
+### v5.0 (2026-02-25)
+- 🐛 Fix **EmailRedirectTo iOS / HashRouter** : la redirection après confirmation email pointait vers `/` (page blanche) — corrigé vers `/#/login` pour que React soit bien monté et détecte la session sur Safari iOS
+- 🐛 Fix **AudioPlayer — bouton fermeture** : remplace le chevron bas ambigu par une vraie **croix ✕ en haut à droite** du player expanded, bien visible et facilement cliquable sur mobile
+- 🐛 Fix **SignupPage labels anglais** : "Username", "Password", "Confirm Password", "Minimum 8 characters" → entièrement traduits en français
+- ✨ **Message post-inscription amélioré** : instructions email plus claires (boîte de réception ET spams, action requise explicite)
+- 🔧 Version `package.json` → `5.0.0`
+- 🔧 Header Supabase client mis à jour → `novasound-titan-web/5.0.0`
 
 ### v4.9 (2026-02-25)
 - 🐛 Fix **AudioPlayer expanded (iPhone)** : le player plein écran dépasse maintenant correctement avec `overflow-y-auto` au lieu de `h-full` — fini le contenu coupé sur petit iPhone

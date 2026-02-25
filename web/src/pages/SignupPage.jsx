@@ -148,7 +148,7 @@ const SignupPage = () => {
               )}
 
               <div>
-                <label htmlFor="username" className="block text-sm font-medium text-gray-300 mb-2">Username</label>
+                <label htmlFor="username" className="block text-sm font-medium text-gray-300 mb-2">Nom d'utilisateur</label>
                 <div className="relative">
                   <User className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-cyan-400" />
                   <input
@@ -166,7 +166,7 @@ const SignupPage = () => {
               </div>
 
               <div>
-                <label htmlFor="email" className="block text-sm font-medium text-gray-300 mb-2">Email</label>
+                <label htmlFor="email" className="block text-sm font-medium text-gray-300 mb-2">Adresse e-mail</label>
                 <div className="relative">
                   <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-cyan-400" />
                   <input
@@ -185,7 +185,7 @@ const SignupPage = () => {
               </div>
 
               <div>
-                <label htmlFor="password" className="block text-sm font-medium text-gray-300 mb-2">Password</label>
+                <label htmlFor="password" className="block text-sm font-medium text-gray-300 mb-2">Mot de passe</label>
                 <div className="relative">
                   <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-cyan-400" />
                   <input
@@ -208,11 +208,11 @@ const SignupPage = () => {
                     {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                   </button>
                 </div>
-                <p className="text-xs text-gray-500 mt-1">Minimum 8 characters</p>
+                <p className="text-xs text-gray-500 mt-1">Minimum 8 caractères</p>
               </div>
 
               <div>
-                <label htmlFor="passwordConfirm" className="block text-sm font-medium text-gray-300 mb-2">Confirm Password</label>
+                <label htmlFor="passwordConfirm" className="block text-sm font-medium text-gray-300 mb-2">Confirmer le mot de passe</label>
                 <div className="relative">
                   <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-cyan-400" />
                   <input
