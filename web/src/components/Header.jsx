@@ -1,11 +1,23 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Search, Upload, User, LogOut, Menu, X, Globe, Newspaper, Music, Download } from 'lucide-react';
+import { Search, Upload, User, LogOut, Menu, X, Globe, Newspaper, Music, Download, Share } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/lib/supabaseClient';
 import { Button } from '@/components/ui/button';
 import { motion, AnimatePresence } from 'framer-motion';
 import usePWAInstall from '@/hooks/usePWAInstall';
+
+// Détecte iOS
+const isIOS = () =>
+  typeof navigator !== 'undefined' &&
+  (/iphone|ipad|ipod/i.test(navigator.userAgent) ||
+    (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1));
+
+// Détecte si déjà installé en standalone
+const isStandalone = () =>
+  typeof window !== 'undefined' &&
+  (window.matchMedia('(display-mode: standalone)').matches ||
+    window.navigator.standalone === true);
 
 const Header = () => {
   const { currentUser, isAuthenticated, logout } = useAuth();
@@ -16,6 +28,20 @@ const Header = () => {
   const [showResults, setShowResults]           = useState(false);
   const [isSearching, setIsSearching]           = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [showIOSTooltip, setShowIOSTooltip]     = useState(false);
+
+  const alreadyInstalled = isStandalone();
+  const ios = isIOS();
+
+  const handleInstallClick = () => {
+    if (ios) { setShowIOSTooltip(v => !v); return; }
+    if (canInstall) install();
+  };
+
+  const handleMobileInstallClick = () => {
+    if (ios) { setShowIOSTooltip(v => !v); closeMenu(); return; }
+    if (canInstall) { install(); closeMenu(); }
+  };
 
   // Cache-buster : _avatarTs est mis à jour par AuthContext après chaque updateProfile
   const avatarSrc = currentUser?.avatar_url
@@ -140,20 +166,46 @@ const Header = () => {
                 <Newspaper className="w-4 h-4" />Actualités
               </Link>
 
-              {/* Bouton installer PWA — visible seulement si le navigateur le propose */}
-              {canInstall && (
-                <motion.button
-                  onClick={install}
-                  initial={{ opacity: 0, scale: 0.9 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
-                  className="flex items-center gap-2 px-4 py-2 rounded-full border border-purple-500/50 text-purple-300 hover:bg-purple-500/10 hover:border-purple-400 hover:text-purple-200 transition-all text-sm font-medium"
-                  title="Installer l'application sur ton appareil"
-                >
-                  <Download className="w-4 h-4" />
-                  Installer l'app
-                </motion.button>
+              {/* Bouton installer PWA — toujours visible sauf si déjà installé */}
+              {!alreadyInstalled && (
+                <div className="relative">
+                  <motion.button
+                    onClick={handleInstallClick}
+                    initial={{ opacity: 0, scale: 0.9 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                    className="flex items-center gap-2 px-4 py-2 rounded-full border border-purple-500/50 text-purple-300 hover:bg-purple-500/10 hover:border-purple-400 hover:text-purple-200 transition-all text-sm font-medium"
+                    title={ios ? "Comment installer sur iPhone" : "Installer l'application sur ton appareil"}
+                  >
+                    <Download className="w-4 h-4" />
+                    Installer l'app
+                  </motion.button>
+                  {/* Tooltip iOS */}
+                  <AnimatePresence>
+                    {showIOSTooltip && ios && (
+                      <motion.div
+                        initial={{ opacity: 0, y: 8 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: 8 }}
+                        className="absolute right-0 top-full mt-2 w-64 bg-gray-900 border border-cyan-500/30 rounded-xl shadow-2xl p-4 z-50"
+                      >
+                        <button onClick={() => setShowIOSTooltip(false)} className="absolute top-2 right-2 text-gray-500 hover:text-white"><X className="w-3.5 h-3.5" /></button>
+                        <p className="text-white text-sm font-semibold mb-2">Installer sur iPhone / iPad</p>
+                        <div className="space-y-2 text-xs text-gray-300">
+                          <div className="flex items-center gap-2">
+                            <span className="w-5 h-5 rounded-full bg-cyan-500/20 text-cyan-400 text-[10px] font-bold flex items-center justify-center flex-shrink-0">1</span>
+                            <span>Appuie sur <span className="inline-flex items-center gap-0.5 px-1 py-0.5 rounded bg-cyan-500/15 border border-cyan-500/30 text-cyan-400"><Share className="w-3 h-3" /> Partager</span></span>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <span className="w-5 h-5 rounded-full bg-purple-500/20 text-purple-400 text-[10px] font-bold flex items-center justify-center flex-shrink-0">2</span>
+                            <span>Puis <strong className="text-white">"Sur l'écran d'accueil"</strong></span>
+                          </div>
+                        </div>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </div>
               )}
 
               {isAuthenticated ? (
@@ -319,15 +371,39 @@ const Header = () => {
 
               {/* Pied */}
               <div className="p-4 border-t border-cyan-500/20 bg-gray-900/50 space-y-3">
-                {/* Bouton installer PWA mobile */}
-                {canInstall && (
-                  <button
-                    onClick={() => { install(); closeMenu(); }}
-                    className="w-full flex items-center justify-center gap-2 py-3 rounded-xl border border-purple-500/40 text-purple-300 hover:bg-purple-500/10 transition-all text-sm font-medium"
-                  >
-                    <Download className="w-4 h-4" />
-                    Télécharger NovaST LUX
-                  </button>
+                {/* Bouton installer PWA mobile — toujours visible sauf si déjà installé */}
+                {!alreadyInstalled && (
+                  <div>
+                    <button
+                      onClick={handleMobileInstallClick}
+                      className="w-full flex items-center justify-center gap-2 py-3 rounded-xl border border-purple-500/40 text-purple-300 hover:bg-purple-500/10 transition-all text-sm font-medium"
+                    >
+                      <Download className="w-4 h-4" />
+                      {ios ? 'Comment installer sur iPhone' : 'Télécharger NovaST LUX'}
+                    </button>
+                    {/* Guide iOS inline dans le drawer */}
+                    <AnimatePresence>
+                      {showIOSTooltip && ios && (
+                        <motion.div
+                          initial={{ opacity: 0, height: 0 }}
+                          animate={{ opacity: 1, height: 'auto' }}
+                          exit={{ opacity: 0, height: 0 }}
+                          className="overflow-hidden"
+                        >
+                          <div className="mt-2 bg-gray-800/80 rounded-xl p-3 space-y-2 text-xs text-gray-300">
+                            <div className="flex items-center gap-2">
+                              <span className="w-5 h-5 rounded-full bg-cyan-500/20 text-cyan-400 text-[10px] font-bold flex items-center justify-center flex-shrink-0">1</span>
+                              <span>Appuie sur <span className="inline-flex items-center gap-0.5 px-1 py-0.5 rounded bg-cyan-500/15 border border-cyan-500/30 text-cyan-400"><Share className="w-3 h-3" /> Partager</span> en bas</span>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <span className="w-5 h-5 rounded-full bg-purple-500/20 text-purple-400 text-[10px] font-bold flex items-center justify-center flex-shrink-0">2</span>
+                              <span>Puis <strong className="text-white">"Sur l'écran d'accueil"</strong></span>
+                            </div>
+                          </div>
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+                  </div>
                 )}
                 {isAuthenticated ? (
                   <Button onClick={handleLogout} variant="outline" className="w-full border-red-500/30 text-red-400 hover:bg-red-500/10 hover:text-red-300 justify-start">

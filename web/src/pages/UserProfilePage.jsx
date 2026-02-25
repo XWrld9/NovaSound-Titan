@@ -111,6 +111,7 @@ const UserProfilePage = () => {
 
         if (followingError) throw followingError;
 
+        setProfile(userData);
         setUserSongs(songsData || []);
         setFavoriteSongs(favoriteSongsData);
         setFollowers(followersData || []);
