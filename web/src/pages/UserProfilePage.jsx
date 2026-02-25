@@ -25,6 +25,7 @@ const UserProfilePage = () => {
   const [loading, setLoading] = useState(true);
   const [currentSong, setCurrentSong] = useState(null);
   const [showEditModal, setShowEditModal] = useState(false);
+  const [bioExpanded, setBioExpanded] = useState(false);
 
   // Charger le profil et les données en une seule fois
   useEffect(() => {
@@ -226,7 +227,17 @@ const UserProfilePage = () => {
                   {profile?.username || currentUser.username || currentUser.email}
                 </h1>
                 {profile?.bio && (
-                  <p className="text-gray-400 mb-2 text-sm max-w-md break-words line-clamp-3">{profile.bio}</p>
+                  <div className="mb-2 max-w-md">
+                    <p className={`text-gray-400 text-sm break-words leading-relaxed ${bioExpanded ? '' : 'line-clamp-3'}`}>{profile.bio}</p>
+                    {profile.bio.length > 120 && (
+                      <button
+                        onClick={() => setBioExpanded(!bioExpanded)}
+                        className="text-cyan-400 text-xs mt-1 hover:text-cyan-300 transition-colors font-medium"
+                      >
+                        {bioExpanded ? 'Réduire ▲' : 'Lire la suite ▼'}
+                      </button>
+                    )}
+                  </div>
                 )}
                 <p className="text-gray-500 text-sm mb-4 truncate max-w-[260px] md:max-w-sm" title={currentUser.email}>{currentUser.email}</p>
                 
