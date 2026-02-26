@@ -19,6 +19,7 @@ Plateforme musicale nouvelle génération conçue pour connecter les créateurs 
 |--------|-------------|
 | Frontend | React 18, Vite, TailwindCSS, Framer Motion, Lucide React, Lottie React |
 | Backend | Supabase (PostgreSQL + Auth + RLS + Storage + Realtime) |
+| Email | Gmail SMTP (smtp.gmail.com:587 + App Password) |
 | Déploiement | Vercel (frontend) + Supabase Cloud (backend) |
 
 ---
@@ -43,19 +44,19 @@ npm run dev
 
 ## ⚙️ Configuration Supabase (ordre impératif)
 
-> Tous les scripts SQL se trouvent à la racine du dossier `web/`.  
+> Tous les scripts SQL se trouvent dans le dossier `web/`.  
 > Les exécuter **dans cet ordre exact** depuis **Supabase Dashboard → SQL Editor**.
 
 | Étape | Fichier | Ce que ça fait |
 |-------|---------|----------------|
-| 1 | `setup-supabase.sql` | Tables principales, RLS, triggers likes/follows, création auto profil à l'inscription |
-| 2 | `news-likes.sql` | Table `news_likes` + trigger automatique `likes_count` (SECURITY DEFINER) |
-| 3 | `increment-plays.sql` | Fonction RPC atomique pour comptabiliser les écoutes sans race condition |
-| 4 | `fix-rls-avatars.sql` | Politiques RLS sur le bucket Storage `avatars` |
-| 5 | `moderation-system.sql` | Table `reports` + système de rôles modérateur/admin |
-| 6 | `enable-realtime.sql` | Active Supabase Realtime sur `likes` et `news_likes` — **obligatoire pour les mises à jour en temps réel** |
+| 1 | `setup-supabase.sql` | Tables, RLS, triggers, création auto profil à l'inscription |
+| 2 | `news-likes.sql` | Table `news_likes` + trigger `likes_count` |
+| 3 | `increment-plays.sql` | Fonction RPC atomique pour les écoutes |
+| 4 | `fix-rls-avatars.sql` | Politiques RLS sur le bucket `avatars` |
+| 5 | `moderation-system.sql` | Table `reports` + rôles modérateur/admin |
+| 6 | `enable-realtime.sql` | Active Supabase Realtime sur `likes` et `news_likes` |
 
-> ⚠️ **Ne pas exécuter d'autres fichiers SQL que ceux listés ci-dessus.** Tous les anciens scripts intermédiaires ont été fusionnés ou supprimés.
+> ⚠️ **Ne pas exécuter d'autres fichiers SQL.** Tous les scripts intermédiaires ont été fusionnés ou supprimés.
 
 ### Buckets Storage à créer manuellement
 
@@ -72,6 +73,31 @@ npm run setup:buckets
 
 ---
 
+## 📧 Configuration Email (Gmail SMTP)
+
+> Voir le guide complet : **`GMAIL_SMTP_SETUP.md`**
+
+**Résumé rapide :**
+
+1. Activer la validation en 2 étapes sur votre compte Google
+2. Générer un mot de passe d'application → [myaccount.google.com/apppasswords](https://myaccount.google.com/apppasswords)
+3. Dans **Supabase → Authentication → Email → SMTP Settings** :
+
+| Champ | Valeur |
+|-------|--------|
+| Host | `smtp.gmail.com` |
+| Port | `587` |
+| Username | `votre@gmail.com` |
+| Password | Mot de passe d'application (16 caractères) |
+| Sender email | `votre@gmail.com` |
+| Sender name | `NovaSound TITAN LUX` |
+
+4. Dans **Supabase → Authentication → URL Configuration** :
+   - Site URL : `https://votre-projet.vercel.app`
+   - Redirect URLs : `https://votre-projet.vercel.app/**`
+
+---
+
 ## 🚀 Déploiement Vercel
 
 | Paramètre | Valeur |
@@ -81,13 +107,13 @@ npm run setup:buckets
 | Output Directory | `dist` |
 | Node Version | `20.x` |
 
-**Variables d'environnement à configurer dans Vercel :**
+**Variables d'environnement Vercel :**
 ```
 VITE_SUPABASE_URL=https://VOTRE_PROJET.supabase.co
 VITE_SUPABASE_ANON_KEY=votre_clé_anon
 ```
 
-> ⚠️ Ne **jamais** mettre `SUPABASE_SERVICE_KEY` dans Vercel — uniquement pour les scripts locaux.
+> ⚠️ Ne **jamais** mettre `SUPABASE_SERVICE_KEY` dans Vercel.
 
 ---
 
@@ -101,7 +127,7 @@ VITE_SUPABASE_ANON_KEY=votre_clé_anon
 | `/#/profile` | Mon profil |
 | `/#/artist/:id` | Profil public d'un artiste |
 | `/#/upload` | Uploader un son |
-| `/#/song/:id` | Page dédiée d'un morceau (avec Open Graph cover) |
+| `/#/song/:id` | Page dédiée d'un morceau |
 | `/#/login` | Connexion |
 | `/#/signup` | Inscription |
 
@@ -113,58 +139,43 @@ VITE_SUPABASE_ANON_KEY=votre_clé_anon
 
 ```
 NovaSound-Titan/
+├── GMAIL_SMTP_SETUP.md          # Guide configuration email
+├── CHROME_EXTENSION_FIX.md     # Fix extensions Chrome
 └── web/
     ├── src/
     │   ├── components/
     │   │   ├── ui/
-    │   │   │   ├── Dialog.jsx           # Dialogues modaux (Context)
-    │   │   │   ├── Toast.jsx            # Notifications (Context)
-    │   │   │   ├── button.jsx
-    │   │   │   └── slider.jsx
-    │   │   ├── AudioPlayer.jsx          # Player + équalizer Lottie + RPC plays atomique
-    │   │   ├── EditProfileModal.jsx     # Chargement bio/username depuis DB
-    │   │   ├── FollowButton.jsx         # Resync DB + callback parent + Math.max(0)
-    │   │   ├── Footer.jsx               # Entièrement en français
+    │   │   │   ├── slider.jsx           # Slider tactile iOS natif
+    │   │   │   ├── Dialog.jsx
+    │   │   │   ├── Toast.jsx
+    │   │   │   └── button.jsx
+    │   │   ├── AudioPlayer.jsx          # Lecteur complet + croix fermeture
+    │   │   ├── EditProfileModal.jsx
+    │   │   ├── FollowButton.jsx
+    │   │   ├── Footer.jsx
     │   │   ├── Header.jsx
-    │   │   ├── LikeButton.jsx           # Likes chansons + Realtime + animation cœur
-    │   │   ├── NewsLikeButton.jsx       # Likes news + Realtime + trigger SQL
-    │   │   ├── ReportButton.jsx         # Signalement 3 étapes + tooltip avertissement
-    │   │   ├── SongCard.jsx             # Plays réels + lien profil artiste cliquable
-    │   │   └── ...
+    │   │   ├── LikeButton.jsx
+    │   │   ├── NewsLikeButton.jsx
+    │   │   ├── ReportButton.jsx
+    │   │   └── SongCard.jsx
     │   ├── contexts/
-    │   │   └── AuthContext.jsx          # Auth + supabase exposé dans le context
+    │   │   └── AuthContext.jsx          # Auth + signup robuste + autoLogin
     │   ├── lib/
-    │   │   ├── supabaseClient.js        # LockManager custom + Supabase 2.49
-    │   │   ├── utils.js                 # cn() + formatPlays()
-    │   │   └── networkDetector.js
-    │   ├── pages/
-    │   │   ├── HomePage.jsx             # Cards avec plays + lien artiste + modal news
-    │   │   ├── ExplorerPage.jsx         # Tri français, scroll infini
-    │   │   ├── UserProfilePage.jsx      # Email tronqué sur mobile
-    │   │   ├── ArtistProfilePage.jsx    # Profil public + follow/unfollow + stats
-    │   │   ├── LoginPage.jsx            # Logo réel + 100% français
-    │   │   ├── SignupPage.jsx           # Logo réel + 100% français
-    │   │   ├── NewsPage.jsx             # Modal lire la suite + likes Realtime
-    │   │   ├── ModerationPanel.jsx      # Entièrement traduit en français
-    │   │   ├── SongPage.jsx             # Page morceau + meta OG:image (cover) pour partage riche
-│   │   ├── MusicUploadPage.jsx
-    │   │   └── ...
-    │   ├── animations/
-    │   │   ├── heart-animation.json     # Explosion cœurs au like
-    │   │   └── play-animation.json      # Équalizer 3 barres
-    │   └── App.jsx                      # Lazy loading + Suspense
-    ├── public/
-    │   ├── background.png
-    │   └── profil par defaut.png
-    ├── setup-supabase.sql               # ⚠️ Exécuter en 1er
-    ├── news-likes.sql                   # ⚠️ Exécuter en 2e
-    ├── increment-plays.sql              # ⚠️ Exécuter en 3e
-    ├── fix-rls-avatars.sql              # ⚠️ Exécuter en 4e
-    ├── moderation-system.sql            # ⚠️ Exécuter en 5e
-    ├── enable-realtime.sql              # ⚠️ Exécuter en 6e — obligatoire pour le temps réel
-    ├── setup-buckets.js
-    ├── .env.example
-    └── package.json
+    │   │   ├── supabaseClient.js        # iOS Safari + LockManager + retry
+    │   │   └── utils.js
+    │   └── pages/
+    │       ├── HomePage.jsx
+    │       ├── ExplorerPage.jsx
+    │       ├── SignupPage.jsx           # 100% français + gestion erreurs
+    │       ├── LoginPage.jsx            # Renvoi email confirmation
+    │       ├── MusicUploadPage.jsx      # Upload iOS robuste
+    │       └── ...
+    ├── setup-supabase.sql       # ⚠️ Exécuter en 1er
+    ├── news-likes.sql           # ⚠️ Exécuter en 2e
+    ├── increment-plays.sql      # ⚠️ Exécuter en 3e
+    ├── fix-rls-avatars.sql      # ⚠️ Exécuter en 4e
+    ├── moderation-system.sql    # ⚠️ Exécuter en 5e
+    └── enable-realtime.sql      # ⚠️ Exécuter en 6e
 ```
 
 ---
@@ -173,61 +184,58 @@ NovaSound-Titan/
 
 | Table | Description | Trigger associé |
 |-------|-------------|-----------------|
-| `users` | Profils (avatar, bio, `followers_count`, `following_count`) | `handle_new_user` à l'inscription |
-| `songs` | Morceaux (`plays_count`, `likes_count`) | `update_likes_count` auto |
-| `likes` | Likes utilisateurs sur les chansons | → met à jour `songs.likes_count` |
-| `follows` | Relations follower/following | → met à jour `users.followers_count` + `following_count` |
-| `news` | Actualités communautaires (`likes_count`) | `update_news_likes_count` auto |
-| `news_likes` | Likes sur les news | → met à jour `news.likes_count` |
-| `reports` | Signalements de modération | — |
+| `users` | Profils | `handle_new_user` à l'inscription |
+| `songs` | Morceaux | `update_likes_count` auto |
+| `likes` | Likes chansons | → `songs.likes_count` |
+| `follows` | Relations | → `users.followers_count` + `following_count` |
+| `news` | Actualités | `update_news_likes_count` auto |
+| `news_likes` | Likes news | → `news.likes_count` |
+| `reports` | Signalements | — |
 
 ---
 
 ## 🔐 Sécurité
 
 - **RLS** activé sur toutes les tables
-- **SECURITY DEFINER** sur les fonctions critiques (`increment_plays`, `update_news_likes_count`)
-- **GREATEST(0, ...)** sur tous les décrements — compteurs jamais négatifs
-- Auth Supabase avec vérification email + flow implicit (compatible Android & iOS Safari)
+- **SECURITY DEFINER** sur les fonctions critiques
+- **GREATEST(0, ...)** sur tous les décrements
+- **Trigger robuste** : `ON CONFLICT + EXCEPTION unique_violation` — ne peut jamais planter
+- Auth Supabase `flowType: implicit` (iOS Safari + Android compatible)
 - LockManager custom anti-timeout multi-onglets
-- `.env` jamais commité (`.gitignore` inclus)
-- `SUPABASE_SERVICE_KEY` uniquement côté script local
+- `.env` jamais commité
 
 ---
 
-## 🎵 Fonctionnalités v5.4.2
+## 🎵 Fonctionnalités v5.4
 
 **Artistes**
-- Upload audio (50 MB max) + pochette album
-- Profil public consultable par tous (`/artist/:id`)
-- Stats : morceaux, abonnés, écoutes totales
+- Upload audio (50 MB max) + pochette album — robuste sur iOS
+- Profil public (`/artist/:id`) avec stats complètes
 - Modifier avatar et bio
 
 **Fans**
-- Écoutes comptabilisées en temps réel (atomique, sans race condition)
-- Compteur d'écoutes visible sur chaque card (`12.4k`)
-- Likes chansons et news **en temps réel** — tous les utilisateurs voient le changement instantanément
-- Follow/unfollow avec resynchronisation immédiate
-- Lecteur audio complet (shuffle, repeat, volume, équalizer animé)
-- Téléchargement et partage de liens
+- Écoutes atomiques sans race condition
+- Likes en temps réel (Supabase Realtime)
+- Lecteur audio complet avec slider tactile iOS natif
+- Croix de fermeture sur le player (mini et expanded)
+- Follow/unfollow depuis le player expanded uniquement
+- Téléchargement et partage natif mobile
 
 **Communauté**
-- News avec modal "Lire la suite" (HomePage + NewsPage)
-- Signalement en 3 étapes avec avertissement anti-abus + tooltip
-- Panneau de modération (admin/modérateur)
-- Profils artistes avec liste d'abonnés cliquables
-- Noms d'artistes cliquables vers leur profil
+- News avec modal "Lire la suite"
+- Signalement en 3 étapes
+- Panneau de modération admin
+- Profils artistes cliquables
 
 ---
 
 ## ⚡ Performance
 
 - **Lazy loading** des pages (React.lazy + Suspense)
-- **Code splitting** Vite (React, Supabase, Framer Motion, Lottie en chunks séparés)
+- **Code splitting** Vite
 - **React.memo** sur SongCard
-- **Images lazy** sur toutes les pochettes
 - **Scroll throttle** via `requestAnimationFrame`
-- **Realtime** via WebSocket Supabase (un canal par card, cleanup au démontage)
+- **Realtime** via WebSocket Supabase
 - Bundle initial ~400KB
 
 ---
@@ -235,120 +243,60 @@ NovaSound-Titan/
 ## 🧪 Dépannage
 
 | Problème | Solution |
-|----------|----------|
+|----------|---------|
 | Erreur 404 au refresh | Normal avec HashRouter — URLs en `/#/` |
 | Session perdue après refresh | Vérifier `VITE_SUPABASE_ANON_KEY` dans Vercel |
 | Upload avatar échoue | Vérifier bucket `avatars` + exécuter `fix-rls-avatars.sql` |
-| Likes news ne s'enregistrent pas | Exécuter `news-likes.sql` dans Supabase |
-| Plays ne s'incrémentent pas | Exécuter `increment-plays.sql` dans Supabase |
-| Compteurs négatifs | Réexécuter `setup-supabase.sql` (triggers avec GREATEST) |
-| Likes pas en temps réel | Exécuter `enable-realtime.sql` dans Supabase |
-| Email de confirmation non reçu | Vérifier les spams (expéditeur `noreply@supabase.io`). Si persistant, aller dans **Supabase Dashboard → Auth → Settings** et désactiver "Enable email confirmations" |
-| `database error saving new user` | Exécuter `fix-email-confirm.sql` dans Supabase SQL Editor |
-| `error sending confirmation email` | Quota SMTP Supabase dépassé (plan free ~4/h). Attendre ou désactiver la confirmation email dans Auth Settings |
-| Impossible de se connecter après inscription | Email non confirmé → utiliser le bouton "Renvoyer l'email" sur la page login |
+| Likes news ne s'enregistrent pas | Exécuter `news-likes.sql` |
+| Plays ne s'incrémentent pas | Exécuter `increment-plays.sql` |
+| Likes pas en temps réel | Exécuter `enable-realtime.sql` |
+| Email de confirmation non reçu | Vérifier spams — voir `GMAIL_SMTP_SETUP.md` |
+| `database error saving new user` | Trigger déjà corrigé dans `setup-supabase.sql` v5.4 |
+| Impossible de se connecter après inscription | Email non confirmé → bouton "Renvoyer" sur la page login |
+| Slider seek/volume ne répond pas sur iOS | Vérifier que `slider.jsx` v5.4 est bien déployé |
 | Buckets introuvables | `SUPABASE_SERVICE_KEY` dans `.env` puis `npm run setup:buckets` |
 
 ---
 
 ## 📝 Changelog
 
-### v5.4 (2026-02-25) — Solution email définitive : Gmail SMTP
-- ✅ **Solution email définitive** : abandon de `onboarding@resend.dev` (limité au compte Resend) → **Gmail SMTP** (`smtp.gmail.com:587` + mot de passe d'application Google)
-- 📄 Ajout `GMAIL_SMTP_SETUP.md` : guide pas-à-pas complet (génération app password, config Supabase, Redirect URLs, troubleshooting)
-- 🔧 Version `package.json` → `5.4.0`
+### v5.4 (2026-02-26) — Version stable finale
+- 🔴 Fix **Slider iOS** : `touch-none` de Radix UI bloquait tous les événements tactiles sur Safari → réécrit avec handler `onTouchMove` natif. Seek et volume fonctionnent sur tous les iPhones
+- 🔴 Fix **bouton follow gênant** en mode mini player : masqué hors mode expanded, n'interfère plus visuellement
+- ✅ **Croix de fermeture** sur le player en mode mini ET expanded — event `novasound:close-player` écouté par toutes les pages
+- ✅ **Bouton muet** accessible sur mobile en mode mini (était `hidden` sur petits écrans)
+- 📧 **Gmail SMTP** solution définitive : guide `GMAIL_SMTP_SETUP.md` inclus, 500 emails/jour, sans domaine requis
+- 🗑️ Nettoyage : suppression des fichiers obsolètes (`RESEND_SUPABASE_FIX.md`, `fix-email-confirm.sql`, `disable-email-confirm.sql`, dossier `LUX/`)
+- 🔧 README entièrement mis à jour
 
-### v5.2 (2026-02-25) — Robustesse SMTP Resend
-- 🔴 Fix **signup ultra-robuste** : le bloc d'erreurs SMTP est élargi pour capturer TOUTES les variantes du message Supabase (`error sending`, `mail`, `smtp`, `confirmation`...) — plus aucun faux négatif possible
-- ✨ **Mode autoLogin** : si la confirmation email est désactivée dans Supabase Auth Settings, le compte est créé ET l'utilisateur est connecté immédiatement sans redirection vers login
-- ✨ **Profil DB créé en fallback** sur erreur SMTP : même si le trigger ne tourne pas, le profil est inséré côté frontend
-- 🔧 Ajout `needsVerification: true` sur "email déjà utilisé non confirmé" → bouton renvoi s'affiche sur login
-- 📄 Ajout `RESEND_SUPABASE_FIX.md` : guide complet de configuration Resend+Supabase avec tableau de diagnostic des erreurs
+### v5.3 (2026-02-25)
+- 🔴 Fix **cast UUID→TEXT** dans tous les fichiers SQL (`au.id::text`) — erreur `operator does not exist: text = uuid`
+- ✅ Flow `autoLogin` : si confirmation email désactivée → connexion directe après inscription
 
-### v5.1 (2026-02-25) — Fix critique inscription
-- 🔴 Fix **"database error saving new user"** : trigger `handle_new_user` entièrement réécrit avec `EXCEPTION WHEN unique_violation` + boucle de déduplication username → ne peut plus planter même en cas de conflit ou double tentative
-- 🔴 Fix **"error sending confirmation email"** : l'erreur SMTP Supabase (plan free, quota dépassé) retourne désormais un succès partiel avec instruction de renvoi depuis la page login — le compte est créé, l'utilisateur n'est plus bloqué
-- 🔴 Fix **"email ou mot de passe incorrect" trompeur** : Supabase retourne ce message même pour un email non confirmé — désormais le bouton "Renvoyer l'email de confirmation" s'affiche systématiquement dans ce cas
-- ✨ **Nouveau fichier SQL** `fix-email-confirm.sql` : répare les users bloqués entre `auth.users` et `public.users`, corrige le trigger, et documente comment désactiver la confirmation email si nécessaire
-- 🔧 Login : rappel "vérifiez vos spams" affiché en bas de page
-- 🔧 `package.json` version → `5.1.0`
+### v5.2 (2026-02-25)
+- 🔴 Fix **signup ultra-robuste** : capture toutes les variantes d'erreurs SMTP
+- ✅ Profil DB créé en fallback sur erreur SMTP
+
+### v5.1 (2026-02-25)
+- 🔴 Fix **`database error saving new user`** : trigger réécrit avec `EXCEPTION WHEN unique_violation` + déduplication username
+- 🔴 Fix **`error sending confirmation email`** : retourne succès partiel si compte créé
+- 🔴 Fix **`email ou mot de passe incorrect`** trompeur → bouton renvoi confirmation systématique
 
 ### v5.0 (2026-02-25)
-- 🐛 Fix **EmailRedirectTo iOS / HashRouter** : la redirection après confirmation email pointait vers `/` (page blanche) — corrigé vers `/#/login` pour que React soit bien monté et détecte la session sur Safari iOS
-- 🐛 Fix **AudioPlayer — bouton fermeture** : remplace le chevron bas ambigu par une vraie **croix ✕ en haut à droite** du player expanded, bien visible et facilement cliquable sur mobile
-- 🐛 Fix **SignupPage labels anglais** : "Username", "Password", "Confirm Password", "Minimum 8 characters" → entièrement traduits en français
-- ✨ **Message post-inscription amélioré** : instructions email plus claires (boîte de réception ET spams, action requise explicite)
-- 🔧 Version `package.json` → `5.0.0`
-- 🔧 Header Supabase client mis à jour → `novasound-titan-web/5.0.0`
+- 🐛 Fix **EmailRedirectTo iOS** : `/#/login` au lieu de `/`
+- 🐛 Fix **AudioPlayer croix** : bouton ✕ en haut à droite mode expanded
+- 🐛 Fix **SignupPage labels anglais** → tout en français
 
 ### v4.9 (2026-02-25)
-- 🐛 Fix **AudioPlayer expanded (iPhone)** : le player plein écran dépasse maintenant correctement avec `overflow-y-auto` au lieu de `h-full` — fini le contenu coupé sur petit iPhone
-- 🐛 Fix **titre débordant** sur iPhone : `break-words` + `text-center px-2` sur le titre dans la vue expanded — le texte ne sort plus de l'écran
-- 🐛 Fix **LottieAnimation** : l'animation de lecture passait `width`/`height` comme props HTML (taille incorrecte → rectangles verts géants sur certains appareils), maintenant passés via `style`
-- 🐛 Fix **scroll du body** : le body est désormais verrouillé (`overflow: hidden`) quand le player est en mode expanded — plus de double scroll parasite sur iOS
-- 🐛 Fix **notch / Dynamic Island** : le bouton chevron du player prend en compte `env(safe-area-inset-top)` en mode expanded
-- 🐛 Fix **Auth Android** : `flowType` changé de `pkce` → `implicit` — résout les problèmes de connexion/inscription sur Chrome Android et webviews Android
-- 🐛 Fix **Auth iOS** : meilleure gestion des événements `SIGNED_IN`, `TOKEN_REFRESHED`, `INITIAL_SESSION` dans `onAuthStateChange` — la session est correctement restaurée après vérification email sur Safari iOS
-- ✨ **Autocomplete** sur tous les champs de formulaire (`email`, `current-password`, `new-password`, `username`) — les gestionnaires de mots de passe Android/iOS fonctionnent maintenant
-- ✨ **inputMode="email"** sur les champs email — clavier optimisé sur mobile (@ visible directement)
-- 🔧 Ajout `id="passwordConfirm"` manquant sur le champ confirmation de mot de passe
-- 🔧 Couverture albumart réduite à `max-w-xs` en vue expanded pour mieux s'adapter aux petits écrans
-- 🔧 Meilleur message d'erreur réseau Android (`NetworkError` détecté en plus)
-- 🔧 Version `package.json` → `4.9.0`
-
-### v4.8 (précédent)
-- 🐛 Fix **"email rate limit exceeded"** → message traduit en français avec conseil d'attente
-- 🐛 Fix **"Fetch is aborted"** upload mobile → retry automatique (3 tentatives avec backoff), vérification taille fichier (max 50 MB), messages d'erreur réseau traduits
-- ✨ **PWA complète** : `manifest.json`, `sw.js` (service worker), icônes 192×512px
-- ✨ **Bouton "Installer l'app"** dans le header desktop et **"Télécharger NovaST LUX"** dans le menu mobile — apparaît automatiquement quand le navigateur le supporte (Chrome, Edge, Samsung Internet…)
-- ✨ Support **Apple iOS** : `apple-mobile-web-app-capable`, `apple-touch-icon`, ajout via Safari → "Sur l'écran d'accueil"
-
-### v4.3 (2026-02-24)
-- 🐛 Fix **partage news** : suppression image logo externe (CORS bloquait `html-to-image`) → logo SVG inline
-- 🐛 Fix **partage news** : avatar auteur remplacé par initiale inline (CORS Supabase Storage)
-- 🐛 Fix **AudioPlayer** : `handleShare` rendu async + `clipboard.writeText` avec `await` + fallback `execCommand`
-- 🌐 Traduction **NewsForm** : "Post News Update" → "Publier une actualité", "News Headline" → "Titre de l'actualité", "What's happening?" → "Quoi de neuf ?", "Post News" → "Publier", messages succès/erreur en français
-
-### v4.2 (2026-02-24)
-- ✨ `SongPage` : page dédiée par morceau (`/#/song/:id`) avec pochette grande format
-- ✨ Meta Open Graph complètes (og:image, og:title, twitter:card) — la pochette s'affiche dans WhatsApp, Discord, Telegram, Twitter
-- 🔧 Route `/song/:id` corrigée (redirigait vers Explorer au lieu d'une vraie page)
-- 🔧 Bouton Partager dans SongCard et SongPage copie le lien direct vers la page avec cover
-
-### v4.1 (2026-02-24)
-- ✨ **Supabase Realtime** sur `likes` (chansons) et `news_likes` — compteur instantané pour tous les utilisateurs connectés
-- ✨ `enable-realtime.sql` — script dédié pour activer la publication Realtime
-- 🔧 `LikeButton` et `NewsLikeButton` : canal Realtime par ID, cleanup au démontage, `useCallback` pour éviter les re-abonnements
-
-### v4.0 (2026-02-24)
-- ✨ Écoutes réelles affichées sur chaque card (`12.4k`) via `formatPlays()`
-- ✨ Noms d'artistes cliquables → profil public `/artist/:id`
-- ✨ `ArtistProfilePage` : stats complètes, abonnés cliquables, 100% français
-- ✨ `FollowButton` : resync DB après chaque action + callback parent
-- ✨ `ReportButton` : 3 étapes (avertissement → formulaire → succès) + tooltip anti-abus
-- ✨ Logo réel sur les pages Login et Signup + traduction complète FR
-- 🐛 Fix `NewsLikeButton` : update `news.likes_count` bloqué par RLS → trigger SQL automatique
-- 🐛 Fix compteurs négatifs : `GREATEST(0, ...)` sur tous les décrements SQL
-- 🐛 Fix email trop long sur mobile (`truncate max-w-[260px]`)
-- 🔧 `AudioPlayer` : incrémentation plays atomique via RPC `SECURITY DEFINER`
-- 🔧 Traduction complète FR : Footer, Explorer, News, ModerationPanel, MusicUploadPage, Login, Signup
-- 🔧 Suppression de `news-enhancements.sql` redondant (remplacé par `news-likes.sql`)
-
-### v3.8 (2026-02-24)
-- ✨ `ReportButton` redesigné avec modal expressif et catégories visuelles
-- ✨ Section Featured Tracks : visibilité améliorée
-- 🐛 Fix `NewsLikeButton` : closure stale → `useRef` + resync DB
-
-### v3.6 (2026-02-24)
-- ✨ Section Latest News : contraste et visibilité améliorés
-- ✨ `NewsPage` : modal "Lire la suite" ajouté
-- 🐛 Fix `news-likes.sql` : type UUID → TEXT (compatible schéma)
-
-### v3.2 (2026-02-24)
-- 🐛 Fix RLS upload avatar
-- 🐛 Fix `EditProfileModal` : chargement username/bio depuis DB
-- 🐛 Fix responsive mobile : onglets profil avec scroll horizontal
-- 🔧 Node.js épinglé à `20.x`
+- 🐛 Fix AudioPlayer expanded iPhone : `overflow-y-auto`
+- 🐛 Fix titre débordant iPhone : `break-words`
+- 🐛 Fix LottieAnimation dimensions via `style`
+- 🐛 Fix scroll body en mode expanded : `overflow: hidden`
+- 🐛 Fix notch / Dynamic Island : `env(safe-area-inset-top)`
+- 🐛 Fix Auth Android : `flowType: implicit`
+- 🐛 Fix Auth iOS : gestion `SIGNED_IN`, `TOKEN_REFRESHED`, `INITIAL_SESSION`
+- ✨ Autocomplete sur tous les champs de formulaire
+- ✨ `inputMode="email"` sur les champs email
 
 ---
 

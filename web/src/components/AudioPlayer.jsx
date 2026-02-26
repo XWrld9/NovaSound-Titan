@@ -337,20 +337,21 @@ const AudioPlayer = ({ currentSong, playlist = [], onNext, onPrevious }) => {
           onEnded={handleEnded}
         />
 
-        {/* Bouton fermer / réduire */}
-        {isExpanded ? (
-          <button
-            className="md:hidden absolute right-4 bg-gray-800/90 border border-gray-600 rounded-full p-2 z-10 shadow-lg"
-            style={{ top: 'max(16px, env(safe-area-inset-top, 16px))' }}
-            onClick={() => setIsExpanded(false)}
-            aria-label="Fermer le lecteur"
-          >
-            <X className="w-5 h-5 text-white" />
-          </button>
-        ) : (
+        {/* Bouton fermer complètement le player (croix) — toujours visible */}
+        <button
+          className="absolute right-3 top-1/2 -translate-y-1/2 md:hidden bg-gray-800/80 border border-gray-700 rounded-full p-1.5 z-20 shadow"
+          style={isExpanded ? { top: 'max(16px, env(safe-area-inset-top, 16px))', transform: 'none' } : {}}
+          onClick={(e) => { e.stopPropagation(); if (isExpanded) { setIsExpanded(false); } else { /* fermer le player — remonter currentSong à null via prop */ window.dispatchEvent(new CustomEvent('novasound:close-player')); } }}
+          aria-label="Fermer"
+        >
+          <X className="w-4 h-4 text-gray-300" />
+        </button>
+
+        {/* Chevron pour agrandir — seulement en mode réduit */}
+        {!isExpanded && (
           <button
             className="md:hidden absolute left-1/2 -translate-x-1/2 bg-gray-900 border border-cyan-500/30 rounded-full p-1 z-10"
-            style={{ top: '8px' }}
+            style={{ top: '6px' }}
             onClick={() => setIsExpanded(true)}
             aria-label="Agrandir le lecteur"
           >
@@ -443,8 +444,8 @@ const AudioPlayer = ({ currentSong, playlist = [], onNext, onPrevious }) => {
                 <div className={`flex items-center gap-2 ${isExpanded ? 'justify-center flex-wrap' : ''}`}>
                   <div className={`text-gray-400 text-sm truncate ${isExpanded ? 'text-lg' : ''}`}>{currentSong.artist}</div>
                   
-                  {/* Bouton Abonner dans le player */}
-                  {showFollowButton && (
+                  {/* Bouton Abonner — seulement en mode expanded */}
+                  {showFollowButton && isExpanded && (
                     <button
                       onClick={handleFollow}
                       className={`ml-2 px-2 py-0.5 text-xs rounded-full border transition-all flex items-center gap-1 ${
@@ -457,12 +458,12 @@ const AudioPlayer = ({ currentSong, playlist = [], onNext, onPrevious }) => {
                       {isFollowing ? (
                         <>
                           <UserCheck className="w-3 h-3" />
-                          <span className="hidden sm:inline">Abonné</span>
+                          <span>Abonné</span>
                         </>
                       ) : (
                         <>
                           <UserPlus className="w-3 h-3" />
-                          <span className="hidden sm:inline">S'abonner</span>
+                          <span>S'abonner</span>
                         </>
                       )}
                     </button>
@@ -548,10 +549,11 @@ const AudioPlayer = ({ currentSong, playlist = [], onNext, onPrevious }) => {
               </button>
             </div>
 
+            {/* Desktop : volume + actions */}
             <div className={`flex items-center gap-3 flex-1 justify-end ${isExpanded ? 'w-full max-w-md mx-auto' : 'hidden md:flex'}`}>
               {!isExpanded && (
                 <div className="flex items-center gap-2 mr-4 border-r border-gray-800 pr-4">
-                  <button onClick={handleLike} className={`${isLiked ? 'text-magenta-500' : 'text-gray-400 hover:text-magenta-500'}`}>
+                  <button onClick={handleLike} className={`${isLiked ? 'text-pink-500' : 'text-gray-400 hover:text-pink-500'}`}>
                     <Heart className={`w-4 h-4 ${isLiked ? 'fill-current' : ''}`} />
                   </button>
                   <button onClick={handleDownload} className="text-gray-400 hover:text-cyan-400">
@@ -575,6 +577,20 @@ const AudioPlayer = ({ currentSong, playlist = [], onNext, onPrevious }) => {
                 />
               </div>
             </div>
+
+            {/* Mobile mini : bouton muet rapide visible */}
+            {!isExpanded && (
+              <button
+                onClick={toggleMute}
+                className="md:hidden p-2 text-gray-400 active:text-white transition-colors flex-shrink-0"
+                aria-label={isMuted ? 'Activer le son' : 'Couper le son'}
+              >
+                {isMuted || volume === 0
+                  ? <VolumeX className="w-5 h-5 text-red-400" />
+                  : <Volume2 className="w-5 h-5" />
+                }
+              </button>
+            )}
           </div>
         </div>
       </motion.div>

@@ -34,8 +34,8 @@ const MusicUploadPage = () => {
   const handleAudioChange = (e) => {
     const file = e.target.files[0];
     if (file) {
-      if (file.size > 104857600) { // 100MB
-        setError('Le fichier audio ne doit pas dépasser 100 Mo');
+      if (file.size > 52428800) { // 50MB
+        setError('Le fichier audio ne doit pas dépasser 50 Mo');
         return;
       }
       setAudioFile(file);
@@ -79,9 +79,26 @@ const MusicUploadPage = () => {
       let lastError;
       for (let attempt = 1; attempt <= maxRetries; attempt++) {
         try {
+          // iOS Safari peut renvoyer application/octet-stream
+          // On force le contentType depuis file.type ou on le déduit de l'extension
+          const guessType = (f) => {
+            if (f.type && f.type !== 'application/octet-stream') return f.type;
+            const ext = f.name.split('.').pop().toLowerCase();
+            const map = { mp3:'audio/mpeg', wav:'audio/wav', aac:'audio/aac',
+              m4a:'audio/mp4', ogg:'audio/ogg', flac:'audio/flac',
+              opus:'audio/opus', mp4:'audio/mp4', m4b:'audio/mp4',
+              jpg:'image/jpeg', jpeg:'image/jpeg', png:'image/png',
+              webp:'image/webp', gif:'image/gif' };
+            return map[ext] || f.type || 'application/octet-stream';
+          };
           const { error } = await supabase.storage
             .from(bucket)
-            .upload(path, file, { cacheControl: '3600', upsert: false, ...options });
+            .upload(path, file, {
+              cacheControl: '3600',
+              upsert: false,
+              contentType: guessType(file),
+              ...options
+            });
           if (!error) return { success: true };
           // Si le fichier existe déjà, ce n'est pas une erreur bloquante
           if (error.message?.includes('already exists')) return { success: true };
@@ -155,7 +172,7 @@ const MusicUploadPage = () => {
       // Traduire les erreurs techniques
       let message = "Échec de l'upload. Veuillez réessayer.";
       if (err?.message?.includes('aborted') || err?.message?.includes('abort')) {
-        message = 'Connexion interrompue. Vérifiez votre réseau et réessayez.';
+        message = '⚠️ Upload interrompu (courant sur iOS avec les gros fichiers). Essayez avec un fichier plus petit ou en Wi-Fi.';
       } else if (err?.message?.includes('network') || err?.message?.includes('fetch')) {
         message = 'Erreur réseau. Vérifiez votre connexion internet.';
       } else if (err?.message?.includes('exceeded') || err?.message?.includes('quota')) {
@@ -224,6 +241,11 @@ const MusicUploadPage = () => {
                         style={{ width: `${uploadProgress}%` }}
                       />
                     </div>
+                    {uploadProgress < 60 && audioFile && audioFile.size > 10 * 1024 * 1024 && (
+                      <p className="text-yellow-400 text-xs text-center">
+                        ⏳ Fichier volumineux — restez sur cette page, ne verrouillez pas votre écran
+                      </p>
+                    )}
                   </div>
                 )}
 
@@ -266,46 +288,79 @@ const MusicUploadPage = () => {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-300 mb-2">Fichier audio * (Max 100 Mo)</label>
+                  <label className="block text-sm font-medium text-gray-300 mb-2">Fichier audio * (Max 50 Mo — MP3, WAV, AAC, M4A…)</label>
                   <div className="relative">
-                    <input
-                      type="file"
-                      accept="audio/*"
-                      onChange={handleAudioChange}
-                      className="hidden"
-                      id="audio-upload"
-                    />
-                    <label
-                      htmlFor="audio-upload"
-                      className="flex items-center justify-center gap-2 w-full px-4 py-8 bg-gray-900/50 border-2 border-dashed border-cyan-500/30 rounded-lg cursor-pointer hover:border-cyan-400 transition-all"
-                    >
-                      <Music className="w-6 h-6 text-cyan-400" />
-                      <span className="text-gray-300">
-                        {audioFile ? audioFile.name : 'Cliquer pour ajouter un fichier audio'}
-                      </span>
-                    </label>
+                    {/* iOS Fix : input visible avec opacity-0 par-dessus le bouton visuel */}
+                    <div className="relative w-full">
+                      <div className="flex items-center justify-center gap-2 w-full px-4 py-8 bg-gray-900/50 border-2 border-dashed border-cyan-500/30 rounded-lg transition-all pointer-events-none">
+                        <Music className="w-6 h-6 text-cyan-400" />
+                        <div className="text-center">
+                          <span className="text-gray-300 block">
+                            {audioFile ? audioFile.name : 'Appuyer pour choisir un fichier audio'}
+                          </span>
+                          {!audioFile && (
+                            <span className="text-gray-500 text-xs mt-1 block">
+                              MP3, WAV, AAC, M4A — Max 50 Mo
+                            </span>
+                          )}
+                          {audioFile && (
+                            <span className="text-cyan-400 text-xs mt-1 block">
+                              {(audioFile.size / 1024 / 1024).toFixed(1)} Mo — prêt à uploader ✓
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                      {/* Input superposé transparent — iOS Safari déclenche directement */}
+                      <input
+                        type="file"
+                        accept="audio/*,.mp3,.wav,.aac,.m4a,.ogg,.flac,.opus,.mp4,.m4b"
+                        onChange={handleAudioChange}
+                        style={{
+                          position: 'absolute',
+                          inset: 0,
+                          width: '100%',
+                          height: '100%',
+                          opacity: 0,
+                          cursor: 'pointer',
+                          zIndex: 10
+                        }}
+                      />
+                    </div>
                   </div>
                 </div>
 
                 <div>
                   <label className="block text-sm font-medium text-gray-300 mb-2">Pochette d'album (Max 20 Mo)</label>
                   <div className="relative">
-                    <input
-                      type="file"
-                      accept="image/*"
-                      onChange={handleCoverChange}
-                      className="hidden"
-                      id="cover-upload"
-                    />
-                    <label
-                      htmlFor="cover-upload"
-                      className="flex items-center justify-center gap-2 w-full px-4 py-8 bg-gray-900/50 border-2 border-dashed border-cyan-500/30 rounded-lg cursor-pointer hover:border-cyan-400 transition-all"
-                    >
-                      <Image className="w-6 h-6 text-magenta-400" />
-                      <span className="text-gray-300">
-                        {albumCover ? albumCover.name : 'Cliquer pour ajouter une pochette (optionnel)'}
-                      </span>
-                    </label>
+                    <div className="relative w-full">
+                      <div className="flex items-center justify-center gap-2 w-full px-4 py-8 bg-gray-900/50 border-2 border-dashed border-cyan-500/30 rounded-lg transition-all pointer-events-none">
+                        <Image className="w-6 h-6 text-cyan-400" />
+                        <div className="text-center">
+                          <span className="text-gray-300 block">
+                            {albumCover ? albumCover.name : 'Appuyer pour ajouter une pochette (optionnel)'}
+                          </span>
+                          {albumCover && (
+                            <span className="text-cyan-400 text-xs mt-1 block">
+                              {(albumCover.size / 1024 / 1024).toFixed(1)} Mo — prêt ✓
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                      <input
+                        type="file"
+                        accept="image/*,.jpg,.jpeg,.png,.webp,.gif"
+                        onChange={handleCoverChange}
+                        style={{
+                          position: 'absolute',
+                          inset: 0,
+                          width: '100%',
+                          height: '100%',
+                          opacity: 0,
+                          cursor: 'pointer',
+                          zIndex: 10
+                        }}
+                      />
+                    </div>
                   </div>
                 </div>
 

@@ -12,6 +12,13 @@ const ExplorerPage = () => {
   const [songs, setSongs] = useState([]);
   const [loading, setLoading] = useState(true);
   const [currentSong, setCurrentSong] = useState(null);
+
+  // Fermer le player depuis la croix dans AudioPlayer
+  useEffect(() => {
+    const handler = () => setCurrentSong(null);
+    window.addEventListener('novasound:close-player', handler);
+    return () => window.removeEventListener('novasound:close-player', handler);
+  }, []);
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
   const [sortBy, setSortBy] = useState('-created'); // -created, -plays_count
