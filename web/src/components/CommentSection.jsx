@@ -332,10 +332,10 @@ const CommentSection = ({ songId, songUploaderEmail }) => {
   const [loading, setLoading]   = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [text, setText]         = useState('');
-  const [showAll, setShowAll]   = useState(false);
+  const [showAll, setShowAll]   = useState(true);
   const [toast, setToast]       = useState(null);
   const textareaRef             = useRef(null);
-  const PREVIEW_COUNT = 3;
+  const PREVIEW_COUNT = 50;
 
   const showToast = (msg, color = '#22d3ee') => {
     setToast({ msg, color });
@@ -397,18 +397,45 @@ const CommentSection = ({ songId, songUploaderEmail }) => {
     const trimmed = text.trim();
     if (!trimmed || !currentUser || submitting) return;
     setSubmitting(true);
-    const { error } = await supabase.from('song_comments').insert({
+
+    // Affichage optimiste immédiat — le commentaire apparaît tout de suite
+    const tempComment = {
+      id: `temp-${Date.now()}`,
       song_id: songId,
       user_id: currentUser.id,
       content: trimmed,
-    });
+      likes_count: 0,
+      is_edited: false,
+      created_at: new Date().toISOString(),
+      _liked: false,
+      user: {
+        id: currentUser.id,
+        username: currentUser.username || currentUser.email?.split('@')[0] || 'Moi',
+        avatar_url: currentUser.avatar_url || null,
+      },
+    };
+    setComments(prev => [tempComment, ...prev]);
+    setShowAll(true); // toujours tout afficher après publication
+    setText('');
+
+    const { data, error } = await supabase.from('song_comments').insert({
+      song_id: songId,
+      user_id: currentUser.id,
+      content: trimmed,
+    }).select('*, user:user_id(id, username, avatar_url)').single();
+
     setSubmitting(false);
-    if (!error) {
-      setText('');
-      await loadComments();
+
+    if (!error && data) {
+      // Remplacer le commentaire temporaire par le vrai
+      setComments(prev => prev.map(c => c.id === tempComment.id ? { ...data, _liked: false } : c));
       showToast('Commentaire publié ✓', '#22d3ee');
-    } else {
-      showToast('Erreur — réessaie.', '#ef4444');
+    } else if (error) {
+      // Rollback : retirer le commentaire temporaire
+      setComments(prev => prev.filter(c => c.id !== tempComment.id));
+      setText(trimmed); // remettre le texte
+      console.error('[CommentSection] insert error:', error);
+      showToast(`Erreur : ${error.message || 'réessaie.'}`, '#ef4444');
     }
   };
 
