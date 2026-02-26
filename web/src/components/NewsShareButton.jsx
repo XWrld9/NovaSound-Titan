@@ -19,6 +19,11 @@ const NewsShareButton = ({ news }) => {
       })
     : '';
 
+  // URL directe vers l'actu — partagée avec l'image
+  const newsUrl = news?.id
+    ? `${window.location.origin}/#/news?id=${news.id}`
+    : `${window.location.origin}/#/news`;
+
   // ─── Dessiner la card sur un Canvas 2D ───
   const generateImage = async () => {
     const W = 600, H = 400;
@@ -140,11 +145,12 @@ const NewsShareButton = ({ news }) => {
     ctx.textBaseline = 'middle';
     ctx.fillText(username, 76, footerY + 24);
 
-    // Watermark
-    ctx.fillStyle = 'rgba(255,255,255,0.2)';
+    // Watermark avec lien direct vers l'actu
+    ctx.fillStyle = 'rgba(34,211,238,0.5)';
     ctx.font = '11px system-ui, sans-serif';
     ctx.textAlign = 'right';
-    ctx.fillText('nova-sound-titan.vercel.app', W - 40, footerY + 24);
+    const shortUrl = `${window.location.hostname}/#/news?id=${news?.id?.slice(0,8) || ''}`;
+    ctx.fillText(shortUrl, W - 40, footerY + 24);
 
     return canvas.toDataURL('image/png');
   };
@@ -213,8 +219,16 @@ const NewsShareButton = ({ news }) => {
       if (navigator.share && navigator.canShare?.({ files: [file] })) {
         await navigator.share({
           title: news?.title || 'NovaSound TITAN LUX',
-          text:  `${news?.title}\n\nVia NovaSound TITAN LUX 🎵`,
+          text:  `${news?.title}\n\nVia NovaSound TITAN LUX 🎵\n👉 ${newsUrl}`,
+          url:   newsUrl,
           files: [file],
+        });
+      } else if (navigator.share) {
+        // Partage sans fichier (Instagram web, etc.) → lien + texte
+        await navigator.share({
+          title: news?.title || 'NovaSound TITAN LUX',
+          text:  `${news?.title}\n\nVia NovaSound TITAN LUX 🎵`,
+          url:   newsUrl,
         });
       } else {
         handleDownload();
@@ -307,8 +321,32 @@ const NewsShareButton = ({ news }) => {
                   </motion.button>
                 </div>
 
+                {/* Bouton copier le lien */}
+                <div className="px-5 pb-2">
+                  <button
+                    onClick={async () => {
+                      try {
+                        await navigator.clipboard.writeText(newsUrl);
+                      } catch {
+                        const ta = document.createElement('textarea');
+                        ta.value = newsUrl;
+                        ta.style.cssText = 'position:fixed;opacity:0';
+                        document.body.appendChild(ta);
+                        ta.select();
+                        document.execCommand('copy');
+                        document.body.removeChild(ta);
+                      }
+                      const btn = document.getElementById('copy-news-link');
+                      if (btn) { btn.textContent = '✓ Lien copié !'; setTimeout(() => { btn.textContent = '🔗 Copier le lien de l\'actu'; }, 2000); }
+                    }}
+                    id="copy-news-link"
+                    className="w-full py-2 rounded-xl border border-gray-700 text-gray-400 hover:text-cyan-400 hover:border-cyan-500/40 text-xs transition-all"
+                  >
+                    🔗 Copier le lien de l'actu
+                  </button>
+                </div>
                 <p className="text-xs text-gray-600 text-center pb-4 px-5">
-                  Sur mobile : Instagram, WhatsApp, Facebook… Sur desktop : télécharge l'image.
+                  Sur mobile : WhatsApp, Telegram… Sur desktop : copie le lien ou télécharge l'image.
                 </p>
               </div>
             </motion.div>

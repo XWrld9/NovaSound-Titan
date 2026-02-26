@@ -337,25 +337,35 @@ const AudioPlayer = ({ currentSong, playlist = [], onNext, onPrevious }) => {
           onEnded={handleEnded}
         />
 
-        {/* Bouton fermer complètement le player (croix) — toujours visible */}
-        <button
-          className="absolute right-3 top-1/2 -translate-y-1/2 md:hidden bg-gray-800/80 border border-gray-700 rounded-full p-1.5 z-20 shadow"
-          style={isExpanded ? { top: 'max(16px, env(safe-area-inset-top, 16px))', transform: 'none' } : {}}
-          onClick={(e) => { e.stopPropagation(); if (isExpanded) { setIsExpanded(false); } else { /* fermer le player — remonter currentSong à null via prop */ window.dispatchEvent(new CustomEvent('novasound:close-player')); } }}
-          aria-label="Fermer"
-        >
-          <X className="w-4 h-4 text-gray-300" />
-        </button>
-
-        {/* Chevron pour agrandir — seulement en mode réduit */}
+        {/* Barre top mini player : chevron gauche | espace | croix droite */}
         {!isExpanded && (
+          <div className="md:hidden flex items-center justify-between px-3 pt-2 pb-0">
+            <button
+              onClick={() => setIsExpanded(true)}
+              className="flex items-center gap-1 text-cyan-400 text-xs"
+              aria-label="Agrandir le lecteur"
+            >
+              <ChevronUp className="w-4 h-4" />
+            </button>
+            <button
+              onClick={(e) => { e.stopPropagation(); window.dispatchEvent(new CustomEvent('novasound:close-player')); }}
+              className="bg-gray-800/80 border border-gray-700 rounded-full p-1.5 shadow"
+              aria-label="Fermer le lecteur"
+            >
+              <X className="w-3.5 h-3.5 text-gray-300" />
+            </button>
+          </div>
+        )}
+
+        {/* Bouton fermer en mode expanded */}
+        {isExpanded && (
           <button
-            className="md:hidden absolute left-1/2 -translate-x-1/2 bg-gray-900 border border-cyan-500/30 rounded-full p-1 z-10"
-            style={{ top: '6px' }}
-            onClick={() => setIsExpanded(true)}
-            aria-label="Agrandir le lecteur"
+            className="md:hidden absolute right-4 bg-gray-800/90 border border-gray-600 rounded-full p-2 z-10 shadow-lg"
+            style={{ top: 'max(16px, env(safe-area-inset-top, 16px))' }}
+            onClick={() => setIsExpanded(false)}
+            aria-label="Réduire le lecteur"
           >
-            <ChevronUp className="w-4 h-4 text-cyan-400" />
+            <X className="w-5 h-5 text-white" />
           </button>
         )}
 
