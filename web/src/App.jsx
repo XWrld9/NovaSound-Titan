@@ -25,6 +25,7 @@ const PrivacyPolicy = lazy(() => import('@/pages/PrivacyPolicy'));
 const TermsOfService = lazy(() => import('@/pages/TermsOfService'));
 const CopyrightInfo = lazy(() => import('@/pages/CopyrightInfo'));
 const ModerationPanel = lazy(() => import('@/pages/ModerationPanel'));
+const AuthCallbackPage = lazy(() => import('@/pages/AuthCallbackPage'));
 
 function App() {
   return (
@@ -50,6 +51,7 @@ function App() {
                   <Route path="/upload" element={<ProtectedRoute><MusicUploadPage /></ProtectedRoute>} />
                   <Route path="/profile" element={<ProtectedRoute><UserProfilePage /></ProtectedRoute>} />
                   <Route path="/moderation" element={<ProtectedRoute><ModerationPanel /></ProtectedRoute>} />
+                  <Route path="/auth/callback" element={<AuthCallbackPage />} />
                 </Routes>
               </Suspense>
             </Router>

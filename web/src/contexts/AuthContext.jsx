@@ -68,11 +68,11 @@ export const AuthProvider = ({ children }) => {
       // iOS Safari a parfois un origin vide — fallback sur href
       if (!origin || origin === 'null') {
         const url = new URL(window.location.href);
-        // HashRouter : rediriger vers /#/login pour que la session soit détectée
-        return `${url.protocol}//${url.host}/#/login`;
+        // /#/auth/callback : composant dédié qui gère tous les cas iOS
+        return `${url.protocol}//${url.host}/#/auth/callback`;
       }
-      // HashRouter : /#/login s'assure que l'app React est montée et détecte la session
-      return `${origin}/#/login`;
+      // HashRouter : /#/auth/callback gère le token_hash, access_token et session active
+      return `${origin}/#/auth/callback`;
     } catch {
       return undefined;
     }

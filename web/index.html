@@ -16,6 +16,30 @@
 		<meta name="generator" content="NovaSound TITAN LUX" />
 		<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
 		<title>NovaSound TITAN LUX</title>
+	
+    <script>
+      // ── iOS Email Verification Fix ───────────────────────────────────────
+      // Supabase envoie le lien sous la forme :
+      //   https://site.com/?token_hash=xxx&type=signup
+      // Sur iOS, les query params sont AVANT le #, React (HashRouter) ne les voit pas.
+      // Ce script les détecte et redirige vers /#/auth/callback?token_hash=xxx
+      (function() {
+        try {
+          var search = window.location.search;
+          if (!search) return;
+          var params = new URLSearchParams(search);
+          var tokenHash = params.get('token_hash');
+          var token     = params.get('token');
+          var type      = params.get('type');
+          var accessToken = params.get('access_token');
+          // Si on a un token de vérification dans les query params → rediriger vers la route callback
+          if (tokenHash || token || accessToken) {
+            var newHash = '/#/auth/callback' + search;
+            window.location.replace(window.location.origin + newHash);
+          }
+        } catch(e) {}
+      })();
+    </script>
 	</head>
 	<body>
 		<div id="root"></div>

@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from 'react';
-import { toPng } from 'html-to-image';
 import { useParams, Link } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -12,6 +11,7 @@ import SongCard from '@/components/SongCard';
 import FollowButton from '@/components/FollowButton';
 import { Music, User, Users, Headphones, Calendar, Share2 } from 'lucide-react';
 import { formatPlays } from '@/lib/utils';
+import { toPng } from 'html-to-image';
 
 
 /* ══════════════════════════════════════════════════
