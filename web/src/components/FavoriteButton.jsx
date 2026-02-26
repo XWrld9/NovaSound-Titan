@@ -51,7 +51,24 @@ const FavoriteButton = ({ songId, size = 'md', showLabel = false }) => {
     }
   };
 
-  if (!currentUser || !checked) return null;
+  if (!checked) return null;
+
+  // Non connecté → bouton inactif avec invite de connexion
+  if (!currentUser) {
+    const iconSize = size === 'sm' ? 'w-3.5 h-3.5' : 'w-4 h-4';
+    const btnClass = size === 'sm' ? 'p-1.5 rounded-lg text-xs' : 'px-3 py-1.5 rounded-xl text-sm';
+    return (
+      <a
+        href="/#/login"
+        title="Connecte-toi pour sauvegarder"
+        className={`inline-flex items-center gap-1.5 font-medium transition-all ${btnClass} bg-gray-800/50 text-gray-600 border border-gray-700/40 hover:text-purple-300 hover:border-purple-500/40`}
+        onClick={e => e.stopPropagation()}
+      >
+        <Bookmark className={iconSize} />
+        {showLabel && <span>Sauvegarder</span>}
+      </a>
+    );
+  }
 
   const iconSize = size === 'sm' ? 'w-3.5 h-3.5' : 'w-4 h-4';
   const btnClass = size === 'sm'

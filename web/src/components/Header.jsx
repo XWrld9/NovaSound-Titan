@@ -61,6 +61,7 @@ const Header = () => {
           const { data, error } = await supabase
             .from('songs')
             .select('*')
+            .eq('is_archived', false)
             .or(`title.ilike.%${q}%,artist.ilike.%${q}%`)
             .order('created_at', { ascending: false })
             .limit(20);

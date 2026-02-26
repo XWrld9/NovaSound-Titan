@@ -177,7 +177,9 @@ NovaSound-Titan/
     ├── increment-plays.sql      # ⚠️ Exécuter en 3e
     ├── fix-rls-avatars.sql      # ⚠️ Exécuter en 4e
     ├── moderation-system.sql    # ⚠️ Exécuter en 5e
-    └── enable-realtime.sql      # ⚠️ Exécuter en 6e
+    ├── enable-realtime.sql      # ⚠️ Exécuter en 6e
+    ├── archive-songs.sql        # ⚠️ Exécuter en 7e
+    └── comments-favorites.sql   # ⚠️ Exécuter en 8e
 ```
 
 ---
@@ -208,7 +210,7 @@ NovaSound-Titan/
 
 ---
 
-## 🎵 Fonctionnalités v5.4
+## 🎵 Fonctionnalités v10.0
 
 **Artistes**
 - Upload audio (50 MB max) + pochette album — robuste sur iOS
@@ -262,7 +264,16 @@ NovaSound-Titan/
 
 ## 📝 Changelog
 
-### v9.0 (2026-02-26) — Commentaires + Favoris séparés des Likes
+### v10.0 (2026-02-26) — Version finale & stable 🏆
+
+- 🔢 **Bump versions** : `package.json → 10.0.0`, client-info header → `10.0.0`
+- 🔴 Fix **recherche Header** : les sons archivés n'apparaissent plus dans les résultats de recherche (`is_archived = false` ajouté)
+- 🔴 Fix **menu ⋯ commentaires sur mobile** : le menu était invisible sur appareils tactiles (opacity-0 sans hover). Désormais toujours visible sur mobile, discret sur desktop
+- 🔴 Fix **FavoriteButton non connecté** : le bouton disparaissait totalement si l'utilisateur n'était pas connecté. Affiche maintenant un bouton inactif qui redirige vers `/login`
+- 🔐 Fix **vie privée** : les emails des abonnés/abonnements ne sont plus affichés dans les onglets Followers/Following du profil
+- 📄 README : architecture SQL corrigée (ajout de `archive-songs.sql` et `comments-favorites.sql`)
+
+
 - ✨ **Favoris (⭐ Sauvegarder)** : nouvelle table `favorites` indépendante des likes — sauvegarde privée, onglet dédié dans le profil avec icône 🔖
 - ✨ **Likes (❤️)** : maintenant strictement un compteur public — onglet "Likés" séparé dans le profil
 - ✨ **Commentaires** : section complète sur chaque page de son avec :

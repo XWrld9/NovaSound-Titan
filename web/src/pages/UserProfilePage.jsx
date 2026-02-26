@@ -459,10 +459,10 @@ const UserProfilePage = () => {
                           )}
                           <div>
                             <div className="font-bold text-white">
-                              {follow.users?.username || follow.users?.email}
+                              {follow.users?.username || 'Utilisateur'}
                             </div>
                             <div className="text-sm text-gray-400">
-                              {follow.users?.email}
+                              Abonné(e)
                             </div>
                           </div>
                         </Link>
@@ -507,10 +507,10 @@ const UserProfilePage = () => {
                           )}
                           <div>
                             <div className="font-bold text-white">
-                              {follow.users?.username || follow.users?.email}
+                              {follow.users?.username || 'Utilisateur'}
                             </div>
                             <div className="text-sm text-gray-400">
-                              {follow.users?.email}
+                              Abonnement
                             </div>
                           </div>
                           <FollowButton

@@ -282,7 +282,7 @@ const CommentRow = ({ comment, currentUser, songUploaderEmail, onDeleted, onUpda
 
             {/* Menu ⋯ */}
             {(canEdit || canDelete || !reported) && (
-              <div ref={menuBtnRef} className="relative ml-auto opacity-0 group-hover:opacity-100 transition-opacity">
+              <div ref={menuBtnRef} className="relative ml-auto opacity-100 md:opacity-0 group-hover:opacity-100 transition-opacity">
                 <button
                   onClick={e => { e.stopPropagation(); setMenuOpen(v => !v); }}
                   className="p-1.5 rounded-full text-gray-600 hover:text-white hover:bg-white/10 transition-all"
