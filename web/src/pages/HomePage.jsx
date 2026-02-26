@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
-import { Music, Play, TrendingUp, Newspaper, X, Calendar, User, Headphones } from 'lucide-react';
+import { Music, Play, TrendingUp, Newspaper, X, Calendar, User, Headphones, ExternalLink } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { supabase } from '@/lib/supabaseClient';
 import { formatPlays } from '@/lib/utils';
@@ -190,17 +190,37 @@ const HomePage = () => {
                             <Music className="w-16 h-16 text-cyan-400/60" />
                           </div>
                         )}
-                        <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                        {/* Bouton Play — toujours visible sur mobile, hover sur desktop */}
+                        <div className="absolute inset-0 bg-black/40 md:bg-transparent md:group-hover:bg-black/60 flex items-center justify-center transition-all duration-200">
                           <button
                             onClick={() => playSong(song)}
-                            className="p-4 rounded-full bg-gradient-to-r from-cyan-500 to-magenta-500 hover:from-cyan-600 hover:to-magenta-600 transform hover:scale-110 transition-all shadow-lg shadow-cyan-500/50"
+                            className="p-4 rounded-full bg-gradient-to-r from-cyan-500 to-magenta-500 hover:from-cyan-600 hover:to-magenta-600 transform md:scale-90 md:opacity-0 md:group-hover:scale-100 md:group-hover:opacity-100 active:scale-95 transition-all duration-200 shadow-xl shadow-cyan-500/40"
+                            aria-label="Lancer la lecture"
                           >
-                            <Play className="w-6 h-6 text-white" />
+                            <Play className="w-6 h-6 text-white fill-current" />
                           </button>
+                        </div>
+                        {/* Bouton ↗ page son — toujours visible */}
+                        <Link
+                          to={`/song/${song.id}`}
+                          className="absolute top-2 right-2 p-1.5 rounded-full bg-black/70 text-white hover:bg-cyan-500 transition-all z-20"
+                          title="Voir la page du son & commenter"
+                          style={{ boxShadow: '0 2px 8px rgba(0,0,0,0.5)' }}
+                          onClick={e => e.stopPropagation()}
+                        >
+                          <ExternalLink className="w-3.5 h-3.5" />
+                        </Link>
+                        {/* Badge écoutes */}
+                        <div className="absolute bottom-2 left-2 flex items-center gap-1 bg-black/60 backdrop-blur-sm px-2 py-0.5 rounded-full">
+                          <Headphones className="w-3 h-3 text-cyan-400" />
+                          <span className="text-xs text-cyan-300 font-medium">{formatPlays(song.plays_count)}</span>
                         </div>
                       </div>
                       <div className="p-3 border-t border-gray-700/50">
-                        <h3 className="text-white font-semibold truncate text-sm">{song.title}</h3>
+                        {/* Titre cliquable → page son */}
+                        <Link to={`/song/${song.id}`} className="text-white font-semibold truncate text-sm block hover:text-cyan-400 transition-colors">
+                          {song.title}
+                        </Link>
                         {song.uploader_id ? (
                           <Link to={`/artist/${song.uploader_id}`} className="text-gray-400 text-xs truncate block hover:text-cyan-400 transition-colors mt-0.5">
                             {song.artist}
@@ -208,11 +228,7 @@ const HomePage = () => {
                         ) : (
                           <p className="text-gray-400 text-xs truncate mt-0.5">{song.artist}</p>
                         )}
-                        <div className="flex items-center justify-between mt-1.5">
-                          <div className="flex items-center gap-1">
-                            <Headphones className="w-3 h-3 text-cyan-500/70" />
-                            <span className="text-xs text-gray-500">{formatPlays(song.plays_count)} écoutes</span>
-                          </div>
+                        <div className="flex items-center justify-end mt-1.5">
                           <SongActionsMenu
                             song={song}
                             onArchived={(id) => setFeaturedSongs(prev => prev.filter(s => s.id !== id))}

@@ -13,17 +13,16 @@ import { Link } from 'react-router-dom';
 const ADMIN_EMAIL = 'eloadxfamily@gmail.com';
 const MAX_CHARS   = 800;
 
-/* ── Helpers ──────────────────────────────────────────────── */
 const timeAgo = (dateStr) => {
   const diff = (Date.now() - new Date(dateStr)) / 1000;
-  if (diff < 60)    return 'À l\'instant';
-  if (diff < 3600)  return `${Math.floor(diff / 60)} min`;
-  if (diff < 86400) return `${Math.floor(diff / 3600)} h`;
+  if (diff < 60)     return 'À l\'instant';
+  if (diff < 3600)   return `${Math.floor(diff / 60)} min`;
+  if (diff < 86400)  return `${Math.floor(diff / 3600)} h`;
   if (diff < 604800) return `${Math.floor(diff / 86400)} j`;
   return new Date(dateStr).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' });
 };
 
-/* ── Toast portal ─────────────────────────────────────────── */
+/* ── Toast ─────────────────────────────────────────────────── */
 const Toast = ({ msg, color }) =>
   ReactDOM.createPortal(
     <motion.div
@@ -31,20 +30,18 @@ const Toast = ({ msg, color }) =>
       animate={{ opacity: 1, y: 0,  x: '-50%' }}
       exit={{ opacity: 0,  y: 14, x: '-50%' }}
       style={{
-        position: 'fixed', bottom: 88, left: '50%', zIndex: 10000,
+        position: 'fixed', bottom: 96, left: '50%', zIndex: 10000,
         padding: '11px 22px', borderRadius: 50, background: color,
         boxShadow: `0 4px 28px ${color}70`,
         color: '#fff', fontSize: 13, fontWeight: 600,
         maxWidth: '88vw', textAlign: 'center', whiteSpace: 'nowrap',
         pointerEvents: 'none',
       }}
-    >
-      {msg}
-    </motion.div>,
+    >{msg}</motion.div>,
     document.body
   );
 
-/* ── Confirm delete modal portal ─────────────────────────── */
+/* ── Confirm delete modal ───────────────────────────────────── */
 const DeleteConfirm = ({ onConfirm, onCancel, loading }) =>
   ReactDOM.createPortal(
     <motion.div
@@ -78,7 +75,7 @@ const DeleteConfirm = ({ onConfirm, onCancel, loading }) =>
     document.body
   );
 
-/* ── Comment action menu (⋯) portal ──────────────────────── */
+/* ── Comment menu portal ────────────────────────────────────── */
 const CommentMenu = ({ anchorRef, open, onClose, isAuthor, isAdmin, onEdit, onDelete, onReport, onShare }) => {
   const [pos, setPos] = useState({ top: 0, left: 0 });
 
@@ -98,11 +95,8 @@ const CommentMenu = ({ anchorRef, open, onClose, isAuthor, isAdmin, onEdit, onDe
       style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 10, padding: '10px 14px', background: 'none', border: 'none', color: color || 'rgba(255,255,255,0.8)', fontSize: 13, fontWeight: 500, cursor: 'pointer', textAlign: 'left' }}
       onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,255,255,0.07)'}
       onMouseLeave={e => e.currentTarget.style.background = 'none'}
-    >
-      {icon}{label}
-    </button>
+    >{icon}{label}</button>
   );
-
   const sep = () => <div style={{ height: 1, background: 'rgba(255,255,255,0.07)', margin: '2px 10px' }} />;
 
   return ReactDOM.createPortal(
@@ -128,24 +122,22 @@ const CommentMenu = ({ anchorRef, open, onClose, isAuthor, isAdmin, onEdit, onDe
   );
 };
 
-/* ── Single comment row ───────────────────────────────────── */
+/* ── CommentRow ─────────────────────────────────────────────── */
 const CommentRow = ({ comment, currentUser, songUploaderEmail, onDeleted, onUpdated, showToast }) => {
-  const isAuthor = currentUser?.id === comment.user_id || currentUser?.id === String(comment.user_id);
+  const isAuthor = currentUser && (currentUser.id === comment.user_id || currentUser.id === String(comment.user_id));
   const isAdmin  = currentUser?.email === ADMIN_EMAIL;
-  const isSongOwner = currentUser?.email === songUploaderEmail;
 
-  const [liked, setLiked]         = useState(comment._liked || false);
-  const [likes, setLikes]         = useState(comment.likes_count || 0);
-  const [editing, setEditing]     = useState(false);
-  const [editVal, setEditVal]     = useState(comment.content);
+  const [liked, setLiked]           = useState(comment._liked || false);
+  const [likes, setLikes]           = useState(comment.likes_count || 0);
+  const [editing, setEditing]       = useState(false);
+  const [editVal, setEditVal]       = useState(comment.content);
   const [editLoading, setEditLoading] = useState(false);
-  const [menuOpen, setMenuOpen]   = useState(false);
+  const [menuOpen, setMenuOpen]     = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [deleteLoading, setDeleteLoading] = useState(false);
-  const [reported, setReported]   = useState(false);
+  const [reported, setReported]     = useState(false);
   const menuBtnRef = useRef(null);
 
-  // Fermer menu si clic extérieur
   useEffect(() => {
     if (!menuOpen) return;
     const h = (e) => { if (menuBtnRef.current && !menuBtnRef.current.contains(e.target)) setMenuOpen(false); };
@@ -159,23 +151,18 @@ const CommentRow = ({ comment, currentUser, songUploaderEmail, onDeleted, onUpda
     if (!currentUser) { showToast('Connecte-toi pour liker', '#6366f1'); return; }
     const was = liked;
     setLiked(!was); setLikes(l => Math.max(0, was ? l - 1 : l + 1));
-    if (was) {
-      await supabase.from('comment_likes').delete().eq('user_id', currentUser.id).eq('comment_id', comment.id);
-    } else {
-      await supabase.from('comment_likes').insert({ user_id: currentUser.id, comment_id: comment.id });
-    }
+    if (was) await supabase.from('comment_likes').delete().eq('user_id', currentUser.id).eq('comment_id', comment.id);
+    else     await supabase.from('comment_likes').insert({ user_id: currentUser.id, comment_id: comment.id });
   };
 
   const handleEdit = async () => {
     const trimmed = editVal.trim();
     if (!trimmed || trimmed === comment.content) { setEditing(false); return; }
     setEditLoading(true);
-    const { error } = await supabase.from('song_comments')
-      .update({ content: trimmed, is_edited: true })
-      .eq('id', comment.id);
+    const { error } = await supabase.from('song_comments').update({ content: trimmed, is_edited: true }).eq('id', comment.id);
     setEditLoading(false);
     if (!error) { onUpdated(comment.id, trimmed); setEditing(false); showToast('Commentaire modifié ✓', '#22d3ee'); }
-    else showToast('Erreur lors de la modification', '#ef4444');
+    else showToast('Erreur modification', '#ef4444');
   };
 
   const handleDelete = async () => {
@@ -184,26 +171,22 @@ const CommentRow = ({ comment, currentUser, songUploaderEmail, onDeleted, onUpda
     setDeleteLoading(false);
     setConfirmDelete(false);
     if (!error) { onDeleted(comment.id); showToast('Commentaire supprimé', '#ef4444'); }
-    else showToast('Erreur lors de la suppression', '#ef4444');
+    else showToast('Erreur suppression', '#ef4444');
   };
 
   const handleReport = async () => {
     if (reported || !currentUser) return;
-    await supabase.from('reports').insert({
-      reporter_id: currentUser.id,
-      content_type: 'comment',
-      content_id: String(comment.id),
-      reason: 'Contenu inapproprié',
-    }).then(() => { setReported(true); showToast('Commentaire signalé', '#f59e0b'); });
+    await supabase.from('reports').insert({ reporter_id: currentUser.id, content_type: 'comment', content_id: String(comment.id), reason: 'Contenu inapproprié' });
+    setReported(true); showToast('Commentaire signalé', '#f59e0b');
   };
 
   const handleShare = () => {
-    const url = window.location.href + `#comment-${comment.id}`;
+    const url = `${window.location.origin}${window.location.pathname}#comment-${comment.id}`;
     navigator.clipboard?.writeText(url).then(() => showToast('Lien copié ✓', '#22d3ee')).catch(() => showToast('Impossible de copier', '#ef4444'));
   };
 
-  const canEdit   = isAuthor;
-  const canDelete = isAuthor || isAdmin;
+  const authorName = comment.user?.username || comment._username || 'Utilisateur';
+  const authorAvatar = comment.user?.avatar_url || comment._avatar || null;
 
   return (
     <motion.div
@@ -215,44 +198,35 @@ const CommentRow = ({ comment, currentUser, songUploaderEmail, onDeleted, onUpda
       className="flex gap-3 py-3 group"
       style={{ borderBottom: '1px solid rgba(255,255,255,0.06)' }}
     >
-      {/* Avatar */}
       <Link to={`/artist/${comment.user_id}`} className="flex-shrink-0 mt-0.5" onClick={e => e.stopPropagation()}>
-        {comment.user?.avatar_url
-          ? <img src={comment.user.avatar_url} alt={comment.user?.username} className="w-8 h-8 rounded-full object-cover border border-gray-700/80" />
-          : <div className="w-8 h-8 rounded-full bg-gray-800 border border-gray-700/80 flex items-center justify-center">
-              <User className="w-4 h-4 text-gray-500" />
-            </div>
+        {authorAvatar
+          ? <img src={authorAvatar} alt={authorName} className="w-8 h-8 rounded-full object-cover border border-gray-700/80" />
+          : <div className="w-8 h-8 rounded-full bg-gray-800 border border-gray-700/80 flex items-center justify-center"><User className="w-4 h-4 text-gray-500" /></div>
         }
       </Link>
 
-      {/* Contenu */}
       <div className="flex-1 min-w-0">
-        {/* Header */}
         <div className="flex items-center gap-2 mb-1">
           <Link to={`/artist/${comment.user_id}`} className="text-sm font-semibold text-white hover:text-cyan-400 transition-colors truncate" onClick={e => e.stopPropagation()}>
-            {comment.user?.username || 'Utilisateur'}
+            {authorName}
           </Link>
           <span className="text-xs text-gray-600 flex-shrink-0">{timeAgo(comment.created_at)}</span>
           {comment.is_edited && <span className="text-xs text-gray-600 flex-shrink-0 italic">(modifié)</span>}
         </div>
 
-        {/* Contenu ou éditeur */}
         {editing ? (
           <div className="mt-1">
             <textarea
               value={editVal}
               onChange={e => setEditVal(e.target.value.slice(0, MAX_CHARS))}
-              autoFocus
-              rows={3}
+              autoFocus rows={3}
               className="w-full bg-gray-800/80 border border-cyan-500/40 rounded-xl px-3 py-2 text-sm text-white resize-none focus:outline-none focus:border-cyan-400 transition-colors"
               style={{ fontSize: 13 }}
             />
             <div className="flex items-center justify-between mt-1.5">
               <span className="text-xs text-gray-600">{editVal.length}/{MAX_CHARS}</span>
               <div className="flex gap-2">
-                <button onClick={() => { setEditing(false); setEditVal(comment.content); }} className="p-1.5 rounded-lg text-gray-500 hover:text-white hover:bg-white/10 transition-all">
-                  <X className="w-4 h-4" />
-                </button>
+                <button onClick={() => { setEditing(false); setEditVal(comment.content); }} className="p-1.5 rounded-lg text-gray-500 hover:text-white hover:bg-white/10 transition-all"><X className="w-4 h-4" /></button>
                 <button onClick={handleEdit} disabled={editLoading || !editVal.trim()} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-cyan-500 text-white text-xs font-semibold hover:bg-cyan-400 transition-colors disabled:opacity-50">
                   {editLoading ? <div className="w-3 h-3 rounded-full border-2 border-white/30 border-t-white animate-spin" /> : <Check className="w-3.5 h-3.5" />}
                   Sauvegarder
@@ -261,18 +235,13 @@ const CommentRow = ({ comment, currentUser, songUploaderEmail, onDeleted, onUpda
             </div>
           </div>
         ) : (
-          <p className="text-sm text-gray-300 leading-relaxed break-words" style={{ wordBreak: 'break-word' }}>
-            {comment.content}
-          </p>
+          <p className="text-sm text-gray-300 leading-relaxed break-words" style={{ wordBreak: 'break-word' }}>{comment.content}</p>
         )}
 
-        {/* Actions */}
         {!editing && (
           <div className="flex items-center gap-3 mt-2">
-            {/* Like */}
             <motion.button
-              onClick={handleLike}
-              whileTap={{ scale: 0.85 }}
+              onClick={handleLike} whileTap={{ scale: 0.85 }}
               className="flex items-center gap-1.5 text-xs font-medium transition-colors"
               style={{ background: 'none', border: 'none', cursor: currentUser ? 'pointer' : 'default', color: liked ? '#f43f5e' : 'rgba(156,163,175,0.8)', padding: 0 }}
             >
@@ -280,97 +249,97 @@ const CommentRow = ({ comment, currentUser, songUploaderEmail, onDeleted, onUpda
               {likes > 0 && <span>{likes}</span>}
             </motion.button>
 
-            {/* Menu ⋯ */}
-            {(canEdit || canDelete || !reported) && (
-              <div ref={menuBtnRef} className="relative ml-auto opacity-100 md:opacity-0 group-hover:opacity-100 transition-opacity">
-                <button
-                  onClick={e => { e.stopPropagation(); setMenuOpen(v => !v); }}
-                  className="p-1.5 rounded-full text-gray-600 hover:text-white hover:bg-white/10 transition-all"
-                  style={{ background: 'none', border: 'none', cursor: 'pointer' }}
-                >
-                  <MoreHorizontal className="w-4 h-4" />
-                </button>
-                <AnimatePresence>
-                  {menuOpen && (
-                    <CommentMenu
-                      anchorRef={menuBtnRef}
-                      open={menuOpen}
-                      onClose={() => setMenuOpen(false)}
-                      isAuthor={canEdit}
-                      isAdmin={isAdmin}
-                      onEdit={() => setEditing(true)}
-                      onDelete={() => setConfirmDelete(true)}
-                      onReport={handleReport}
-                      onShare={handleShare}
-                    />
-                  )}
-                </AnimatePresence>
-              </div>
-            )}
+            {/* Menu ⋯ — toujours visible sur mobile, hover sur desktop */}
+            <div ref={menuBtnRef} className="relative ml-auto opacity-100 md:opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity">
+              <button
+                onClick={e => { e.stopPropagation(); setMenuOpen(v => !v); }}
+                className="p-1.5 rounded-full text-gray-500 hover:text-white hover:bg-white/10 transition-all"
+                style={{ background: 'none', border: 'none', cursor: 'pointer' }}
+              >
+                <MoreHorizontal className="w-4 h-4" />
+              </button>
+              <AnimatePresence>
+                {menuOpen && (
+                  <CommentMenu
+                    anchorRef={menuBtnRef} open={menuOpen} onClose={() => setMenuOpen(false)}
+                    isAuthor={!!isAuthor} isAdmin={!!isAdmin}
+                    onEdit={() => setEditing(true)}
+                    onDelete={() => setConfirmDelete(true)}
+                    onReport={handleReport}
+                    onShare={handleShare}
+                  />
+                )}
+              </AnimatePresence>
+            </div>
           </div>
         )}
       </div>
 
-      {/* Modale suppression */}
       <AnimatePresence>
-        {confirmDelete && (
-          <DeleteConfirm
-            onConfirm={handleDelete}
-            onCancel={() => setConfirmDelete(false)}
-            loading={deleteLoading}
-          />
-        )}
+        {confirmDelete && <DeleteConfirm onConfirm={handleDelete} onCancel={() => setConfirmDelete(false)} loading={deleteLoading} />}
       </AnimatePresence>
     </motion.div>
   );
 };
 
-/* ── CommentSection principal ─────────────────────────────── */
+/* ── CommentSection ─────────────────────────────────────────── */
 const CommentSection = ({ songId, songUploaderEmail }) => {
   const { currentUser } = useAuth();
   const [comments, setComments] = useState([]);
   const [loading, setLoading]   = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [text, setText]         = useState('');
-  const [showAll, setShowAll]   = useState(true);
   const [toast, setToast]       = useState(null);
   const textareaRef             = useRef(null);
-  const PREVIEW_COUNT = 50;
 
   const showToast = (msg, color = '#22d3ee') => {
     setToast({ msg, color });
     setTimeout(() => setToast(null), 3000);
   };
 
-  /* Charger les commentaires + profils + état liké */
-  const loadComments = useCallback(async (silent = false) => {
+  /* ── Chargement : 2 requêtes séparées pour éviter le join manquant ── */
+  const loadComments = useCallback(async () => {
     if (!songId) return;
-    if (!silent) setLoading(true);
     try {
-      const { data: rows } = await supabase
+      // 1. Récupérer les commentaires sans join
+      const { data: rows, error } = await supabase
         .from('song_comments')
-        .select('*, user:user_id(id, username, avatar_url)')
+        .select('*')
         .eq('song_id', songId)
         .order('created_at', { ascending: false })
         .limit(200);
 
-      if (!rows) { if (!silent) setComments([]); return; }
+      if (error) { console.error('[loadComments]', error); setLoading(false); return; }
+      if (!rows || rows.length === 0) { setComments([]); setLoading(false); return; }
 
-      // Charger les likes de l'utilisateur courant
+      // 2. Récupérer les profils des auteurs séparément
+      const userIds = [...new Set(rows.map(r => r.user_id))];
+      const { data: profiles } = await supabase
+        .from('users')
+        .select('id, username, avatar_url')
+        .in('id', userIds);
+
+      const profileMap = {};
+      (profiles || []).forEach(p => { profileMap[p.id] = p; });
+
+      // 3. Récupérer les likes de l'utilisateur courant
       let likedSet = new Set();
       if (currentUser) {
         const ids = rows.map(r => r.id);
-        if (ids.length) {
-          const { data: cl } = await supabase
-            .from('comment_likes')
-            .select('comment_id')
-            .eq('user_id', currentUser.id)
-            .in('comment_id', ids);
-          (cl || []).forEach(r => likedSet.add(r.comment_id));
-        }
+        const { data: cl } = await supabase
+          .from('comment_likes')
+          .select('comment_id')
+          .eq('user_id', currentUser.id)
+          .in('comment_id', ids);
+        (cl || []).forEach(r => likedSet.add(r.comment_id));
       }
 
-      setComments(rows.map(r => ({ ...r, _liked: likedSet.has(r.id) })));
+      // 4. Assembler
+      setComments(rows.map(r => ({
+        ...r,
+        _liked: likedSet.has(r.id),
+        user: profileMap[r.user_id] || null,
+      })));
     } catch (e) {
       console.error('[CommentSection]', e);
     } finally {
@@ -380,27 +349,44 @@ const CommentSection = ({ songId, songUploaderEmail }) => {
 
   useEffect(() => { loadComments(); }, [loadComments]);
 
-  /* Realtime — nouveau commentaire */
+  /* ── Realtime — nouveaux commentaires d'autres utilisateurs ── */
   useEffect(() => {
     if (!songId) return;
     const channel = supabase
-      .channel(`comments:${songId}`)
-      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'song_comments', filter: `song_id=eq.${songId}` },
-        () => loadComments(true)
+      .channel(`comments-rt:${songId}`)
+      .on('postgres_changes',
+        { event: 'INSERT', schema: 'public', table: 'song_comments', filter: `song_id=eq.${songId}` },
+        async (payload) => {
+          const newRow = payload.new;
+          if (!newRow) return;
+          // Ne pas dupliquer si c'est notre propre commentaire (déjà affiché en optimiste)
+          setComments(prev => {
+            if (prev.some(c => c.id === newRow.id)) return prev;
+            // Récupérer le profil de l'auteur
+            supabase.from('users').select('id, username, avatar_url').eq('id', newRow.user_id).single()
+              .then(({ data: profile }) => {
+                setComments(p => p.map(c => c.id === newRow.id ? { ...c, user: profile || null } : c));
+              });
+            return [{ ...newRow, _liked: false, user: null }, ...prev];
+          });
+        }
       )
       .subscribe();
     return () => supabase.removeChannel(channel);
-  }, [songId, loadComments]);
+  }, [songId]);
 
+  /* ── Soumission ── */
   const handleSubmit = async (e) => {
     e?.preventDefault();
     const trimmed = text.trim();
     if (!trimmed || !currentUser || submitting) return;
     setSubmitting(true);
+    setText('');
 
-    // Affichage optimiste immédiat — le commentaire apparaît tout de suite
+    // Affichage optimiste immédiat
+    const tempId = `temp-${Date.now()}`;
     const tempComment = {
-      id: `temp-${Date.now()}`,
+      id: tempId,
       song_id: songId,
       user_id: currentUser.id,
       content: trimmed,
@@ -408,6 +394,8 @@ const CommentSection = ({ songId, songUploaderEmail }) => {
       is_edited: false,
       created_at: new Date().toISOString(),
       _liked: false,
+      _username: currentUser.username || currentUser.email?.split('@')[0] || 'Moi',
+      _avatar: currentUser.avatar_url || null,
       user: {
         id: currentUser.id,
         username: currentUser.username || currentUser.email?.split('@')[0] || 'Moi',
@@ -415,36 +403,29 @@ const CommentSection = ({ songId, songUploaderEmail }) => {
       },
     };
     setComments(prev => [tempComment, ...prev]);
-    setShowAll(true); // toujours tout afficher après publication
-    setText('');
 
-    const { data, error } = await supabase.from('song_comments').insert({
-      song_id: songId,
-      user_id: currentUser.id,
-      content: trimmed,
-    }).select().single();
+    const { data, error } = await supabase
+      .from('song_comments')
+      .insert({ song_id: songId, user_id: currentUser.id, content: trimmed })
+      .select()
+      .single();
 
     setSubmitting(false);
 
     if (!error && data) {
-      // Remplacer le commentaire temporaire par le vrai (avec les vraies données DB)
-      const realComment = {
-        ...data,
-        _liked: false,
-        user: {
-          id: currentUser.id,
-          username: currentUser.username || currentUser.email?.split('@')[0] || 'Moi',
-          avatar_url: currentUser.avatar_url || null,
-        },
-      };
-      setComments(prev => prev.map(c => c.id === tempComment.id ? realComment : c));
+      // Remplacer le temporaire par le vrai ID
+      setComments(prev => prev.map(c =>
+        c.id === tempId
+          ? { ...data, _liked: false, user: tempComment.user }
+          : c
+      ));
       showToast('Commentaire publié ✓', '#22d3ee');
-    } else if (error) {
-      // Rollback : retirer le commentaire temporaire
-      setComments(prev => prev.filter(c => c.id !== tempComment.id));
-      setText(trimmed); // remettre le texte
-      console.error('[CommentSection] insert error:', error);
-      showToast(`Erreur : ${error.message || 'réessaie.'}`, '#ef4444');
+    } else {
+      // Rollback
+      setComments(prev => prev.filter(c => c.id !== tempId));
+      setText(trimmed);
+      console.error('[CommentSection submit]', error);
+      showToast(error?.message ? `Erreur : ${error.message}` : 'Erreur — réessaie.', '#ef4444');
     }
   };
 
@@ -454,9 +435,6 @@ const CommentSection = ({ songId, songUploaderEmail }) => {
 
   const onDeleted = (id) => setComments(prev => prev.filter(c => c.id !== id));
   const onUpdated = (id, content) => setComments(prev => prev.map(c => c.id === id ? { ...c, content, is_edited: true } : c));
-
-  const displayed = showAll ? comments : comments.slice(0, PREVIEW_COUNT);
-  const hidden    = comments.length - PREVIEW_COUNT;
 
   return (
     <section className="mt-8">
@@ -476,9 +454,7 @@ const CommentSection = ({ songId, songUploaderEmail }) => {
             <div className="flex-shrink-0 mt-1">
               {currentUser.avatar_url
                 ? <img src={currentUser.avatar_url} alt="" className="w-8 h-8 rounded-full object-cover border border-gray-700" />
-                : <div className="w-8 h-8 rounded-full bg-gray-800 border border-gray-700 flex items-center justify-center">
-                    <User className="w-4 h-4 text-gray-500" />
-                  </div>
+                : <div className="w-8 h-8 rounded-full bg-gray-800 border border-gray-700 flex items-center justify-center"><User className="w-4 h-4 text-gray-500" /></div>
               }
             </div>
             <div className="flex-1">
@@ -487,7 +463,7 @@ const CommentSection = ({ songId, songUploaderEmail }) => {
                 value={text}
                 onChange={e => setText(e.target.value.slice(0, MAX_CHARS))}
                 onKeyDown={handleKeyDown}
-                placeholder="Laisse ton avis après écoute… (Ctrl+Entrée pour envoyer)"
+                placeholder="Laisse ton avis… (Ctrl+Entrée pour envoyer)"
                 rows={2}
                 className="w-full bg-gray-800/70 border border-gray-700/60 rounded-xl px-4 py-3 text-sm text-white placeholder-gray-600 resize-none focus:outline-none focus:border-cyan-500/60 transition-colors"
                 style={{ fontSize: 13, lineHeight: 1.5 }}
@@ -534,38 +510,21 @@ const CommentSection = ({ songId, songUploaderEmail }) => {
           <p className="text-sm">Aucun commentaire — sois le premier !</p>
         </div>
       ) : (
-        <>
-          <AnimatePresence initial={false}>
-            {displayed.map(c => (
-              <CommentRow
-                key={c.id}
-                comment={c}
-                currentUser={currentUser}
-                songUploaderEmail={songUploaderEmail}
-                onDeleted={onDeleted}
-                onUpdated={onUpdated}
-                showToast={showToast}
-              />
-            ))}
-          </AnimatePresence>
-
-          {/* Voir plus / Voir moins */}
-          {comments.length > PREVIEW_COUNT && (
-            <button
-              onClick={() => setShowAll(v => !v)}
-              className="flex items-center gap-2 mt-4 text-sm text-cyan-400 hover:text-cyan-300 transition-colors font-medium"
-              style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}
-            >
-              {showAll
-                ? <><ChevronUp className="w-4 h-4" />Réduire</>
-                : <><ChevronDown className="w-4 h-4" />Voir {hidden} commentaire{hidden > 1 ? 's' : ''} de plus</>
-              }
-            </button>
-          )}
-        </>
+        <AnimatePresence initial={false}>
+          {comments.map(c => (
+            <CommentRow
+              key={c.id}
+              comment={c}
+              currentUser={currentUser}
+              songUploaderEmail={songUploaderEmail}
+              onDeleted={onDeleted}
+              onUpdated={onUpdated}
+              showToast={showToast}
+            />
+          ))}
+        </AnimatePresence>
       )}
 
-      {/* Toast */}
       <AnimatePresence>
         {toast && <Toast msg={toast.msg} color={toast.color} />}
       </AnimatePresence>
