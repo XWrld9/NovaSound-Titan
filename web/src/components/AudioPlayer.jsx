@@ -214,10 +214,13 @@ const ShareModal = ({ song, onClose }) => {
                   style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
                 />
               ) : (
-                <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(255,255,255,0.08)' }}>
-                  <svg viewBox="0 0 24 24" fill="currentColor" style={{ width: 56, height: 56, color: 'rgba(255,255,255,0.35)' }}>
-                    <path d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z"/>
-                  </svg>
+                <div style={{ width: '100%', height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 10, background: 'rgba(255,255,255,0.06)' }}>
+                  <img
+                    src="https://horizons-cdn.hostinger.com/83c37f40-fa54-4cc6-8247-95b1353f3eba/a4885bba5290b1958f05bcdb82731c39.jpg"
+                    alt="NovaSound"
+                    crossOrigin="anonymous"
+                    style={{ width: 56, height: 56, borderRadius: '50%', opacity: 0.6 }}
+                  />
                 </div>
               )}
             </div>
@@ -225,10 +228,13 @@ const ShareModal = ({ song, onClose }) => {
             <div style={{ padding: '12px 14px 14px', background: 'rgba(0,0,0,0.45)' }}>
               <p style={{ color: '#fff', fontWeight: 700, fontSize: 14, lineHeight: 1.3, margin: '0 0 3px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{song.title}</p>
               <p style={{ color: 'rgba(255,255,255,0.6)', fontSize: 12, margin: '0 0 10px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{song.artist}</p>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                <svg viewBox="0 0 24 24" fill="currentColor" style={{ width: 14, height: 14, color: theme.logo, flexShrink: 0 }}>
-                  <path d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z"/>
-                </svg>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
+                <img
+                  src="https://horizons-cdn.hostinger.com/83c37f40-fa54-4cc6-8247-95b1353f3eba/a4885bba5290b1958f05bcdb82731c39.jpg"
+                  alt="NovaSound"
+                  crossOrigin="anonymous"
+                  style={{ width: 18, height: 18, borderRadius: '50%', border: `1.5px solid ${theme.logo}`, flexShrink: 0, display: 'block' }}
+                />
                 <span style={{ color: theme.logo, fontSize: 11, fontWeight: 700, letterSpacing: '0.04em' }}>NovaSound TITAN LUX</span>
               </div>
             </div>
