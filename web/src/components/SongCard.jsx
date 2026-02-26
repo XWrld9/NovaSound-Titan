@@ -1,5 +1,5 @@
 import React, { useState, memo } from 'react';
-import { Play, Download, Share2, Music, Headphones } from 'lucide-react';
+import { Play, Download, Share2, Music, Headphones, ExternalLink } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { AnimatePresence } from 'framer-motion';
 import { useAuth } from '@/contexts/AuthContext';
@@ -16,10 +16,12 @@ const SongCard = memo(({ song: initialSong, onPlay, isPlaying, setCurrentSong, c
   const [isHovered, setIsHovered] = useState(false);
   const [showShare, setShowShare] = useState(false);
 
-  // Sync si la prop change (ex: refresh parent)
   React.useEffect(() => { setSong(initialSong); }, [initialSong]);
 
-  const handlePlay = () => {
+  const handlePlay = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (song.is_archived) return;
     if (onPlay) onPlay(song);
     else if (setCurrentSong) setCurrentSong(song);
   };
@@ -56,7 +58,7 @@ const SongCard = memo(({ song: initialSong, onPlay, isPlaying, setCurrentSong, c
           </div>
         )}
 
-        {/* Pochette — overflow-hidden ici uniquement */}
+        {/* Pochette */}
         <div className="relative aspect-square rounded-t-xl overflow-hidden">
           {song.cover_url ? (
             <img
@@ -72,19 +74,20 @@ const SongCard = memo(({ song: initialSong, onPlay, isPlaying, setCurrentSong, c
             </div>
           )}
 
-          {/* Overlay hover */}
-          {isHovered && !song.is_archived && (
-            <div className="absolute inset-0 bg-black/60 flex items-center justify-center">
+          {/* Bouton Play — toujours visible sur mobile, hover sur desktop */}
+          {!song.is_archived && (
+            <div className="absolute inset-0 bg-black/40 md:bg-transparent md:group-hover:bg-black/50 flex items-center justify-center transition-all duration-200">
               <button
                 onClick={handlePlay}
-                className="p-4 rounded-full bg-gradient-to-r from-cyan-500 to-magenta-500 hover:from-cyan-600 hover:to-magenta-600 transform hover:scale-110 transition-all shadow-lg shadow-cyan-500/50"
+                className="p-4 rounded-full bg-gradient-to-r from-cyan-500 to-magenta-500 hover:from-cyan-600 hover:to-magenta-600 transform md:scale-90 md:opacity-0 md:group-hover:scale-100 md:group-hover:opacity-100 active:scale-95 transition-all duration-200 shadow-xl shadow-cyan-500/40"
+                aria-label="Lancer la lecture"
               >
                 <Play className="w-8 h-8 text-white fill-current" />
               </button>
             </div>
           )}
-          {isHovered && song.is_archived && (
-            <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
+          {song.is_archived && (
+            <div className="absolute inset-0 bg-black/30 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
               <span className="text-amber-400 text-xs font-semibold">Son archivé</span>
             </div>
           )}
@@ -99,11 +102,29 @@ const SongCard = memo(({ song: initialSong, onPlay, isPlaying, setCurrentSong, c
             <Headphones className="w-3 h-3 text-cyan-400" />
             <span className="text-xs text-cyan-300 font-medium">{formatPlays(song.plays_count)}</span>
           </div>
+
+          {/* Lien page dédiée — coin haut droite, toujours visible */}
+          <Link
+            to={`/song/${song.id}`}
+            onClick={e => e.stopPropagation()}
+            className="absolute top-2 right-2 p-1.5 rounded-full bg-black/60 backdrop-blur-sm text-gray-300 hover:text-white hover:bg-black/80 transition-all z-10"
+            title="Voir la page du son & commenter"
+            aria-label="Voir la page du son"
+          >
+            <ExternalLink className="w-3.5 h-3.5" />
+          </Link>
         </div>
 
         {/* Infos */}
         <div className="p-4">
-          <h3 className="text-white font-semibold truncate text-base">{song.title}</h3>
+          {/* Titre → page du son */}
+          <Link
+            to={`/song/${song.id}`}
+            onClick={e => e.stopPropagation()}
+            className="text-white font-semibold truncate text-base block hover:text-cyan-400 transition-colors"
+          >
+            {song.title}
+          </Link>
 
           {song.uploader_id ? (
             <Link

@@ -266,12 +266,16 @@ NovaSound-Titan/
 
 ### v10.0 (2026-02-26) — Version finale & stable 🏆
 
+- 🔴 Fix **titre SongCard** : cliquer sur le titre navigue vers `/#/song/ID` au lieu d'ouvrir le player
+- 🔴 Fix **bouton ▶ Play** : toujours visible sur mobile/tactile (plus seulement au hover desktop)
+- ✨ **Bouton ↗** sur chaque SongCard (coin pochette) → accès direct à la page du son & commentaires
+- ✨ **Lien ↗** dans le mini player (mobile & desktop) à côté du titre → page du son en un clic
 - 🔢 **Bump versions** : `package.json → 10.0.0`, client-info header → `10.0.0`
-- 🔴 Fix **recherche Header** : les sons archivés n'apparaissent plus dans les résultats de recherche (`is_archived = false` ajouté)
-- 🔴 Fix **menu ⋯ commentaires sur mobile** : le menu était invisible sur appareils tactiles (opacity-0 sans hover). Désormais toujours visible sur mobile, discret sur desktop
-- 🔴 Fix **FavoriteButton non connecté** : le bouton disparaissait totalement si l'utilisateur n'était pas connecté. Affiche maintenant un bouton inactif qui redirige vers `/login`
-- 🔐 Fix **vie privée** : les emails des abonnés/abonnements ne sont plus affichés dans les onglets Followers/Following du profil
-- 📄 README : architecture SQL corrigée (ajout de `archive-songs.sql` et `comments-favorites.sql`)
+- 🔴 Fix **recherche Header** : les sons archivés n'apparaissent plus dans les résultats
+- 🔴 Fix **menu ⋯ commentaires mobile** : toujours visible sur tactile (était invisible sans hover)
+- 🔴 Fix **FavoriteButton non connecté** : affiche un bouton lien vers login au lieu de disparaître
+- 🔐 Fix **vie privée** : emails des abonnés masqués dans les onglets Followers/Following
+- 📄 README : architecture SQL complète (8 scripts dans l'ordre)
 
 
 - ✨ **Favoris (⭐ Sauvegarder)** : nouvelle table `favorites` indépendante des likes — sauvegarde privée, onglet dédié dans le profil avec icône 🔖

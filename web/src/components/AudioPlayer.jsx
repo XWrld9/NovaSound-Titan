@@ -420,12 +420,22 @@ const AudioPlayer = ({ currentSong, playlist = [], onNext, onPrevious }) => {
                 }
               </div>
 
-              <div className="flex-1 min-w-0 cursor-pointer" onClick={() => setIsExpanded(true)}>
+              <div className="flex-1 min-w-0">
                 <div className="text-white text-sm font-semibold flex items-center gap-1 overflow-hidden">
-                  <span className="truncate">{currentSong.title}</span>
+                  <span className="truncate cursor-pointer" onClick={() => setIsExpanded(true)}>{currentSong.title}</span>
                   {isPlaying && <LottieAnimation animationData={playAnimation} style={{ width: 16, height: 16 }} loop autoplay className="flex-shrink-0" />}
+                  {currentSong?.id && (
+                    <a
+                      href={`/#/song/${currentSong.id}`}
+                      onClick={e => e.stopPropagation()}
+                      className="flex-shrink-0 text-gray-600 hover:text-cyan-400 transition-colors ml-1"
+                      title="Voir la page du son"
+                    >
+                      <ExternalLink className="w-3 h-3" />
+                    </a>
+                  )}
                 </div>
-                <div className="text-gray-500 text-xs truncate">{currentSong.artist}</div>
+                <div className="text-gray-500 text-xs truncate cursor-pointer" onClick={() => setIsExpanded(true)}>{currentSong.artist}</div>
               </div>
 
               <div className="flex items-center gap-1 flex-shrink-0">
@@ -485,6 +495,16 @@ const AudioPlayer = ({ currentSong, playlist = [], onNext, onPrevious }) => {
                     {currentSong.title}
                   </span>
                   {isPlaying && <LottieAnimation animationData={playAnimation} style={{ width: 18, height: 18 }} loop autoplay className="flex-shrink-0 opacity-80" />}
+                  {currentSong?.id && (
+                    <a
+                      href={`/#/song/${currentSong.id}`}
+                      onClick={e => e.stopPropagation()}
+                      className="flex-shrink-0 text-gray-600 hover:text-cyan-400 transition-colors"
+                      title="Voir la page du son & commentaires"
+                    >
+                      <ExternalLink className="w-3.5 h-3.5" />
+                    </a>
+                  )}
                 </div>
                 <div className="flex items-center gap-1.5 mt-0.5">
                   <span
