@@ -260,6 +260,13 @@ NovaSound-Titan/
 
 ## 📝 Changelog
 
+### v6.0 (2026-02-26) — Fix logo partage cross-device
+- 🔴 Fix **logo NovaSound absent dans la carte de partage** sur iOS, Android et PC : l'URL CDN Hostinger était bloquée par CORS lors de la génération canvas (html-to-image). Le logo est maintenant chargé depuis `/icon-192.png` (fichier local) et converti en data URL au montage → zéro CORS, fonctionne sur tous les devices
+- 🔴 Fix **pochette album CORS** dans la carte : conversion préalable en data URL via canvas avant génération
+- ✅ `waitForImages()` : attend que toutes les `<img>` de la carte soient chargées avant `toPng()`
+- ✅ **Partage multi-fallback** : (1) fichier image natif iOS/Android → (2) URL-only si fichiers non supportés → (3) téléchargement sur desktop
+- ✅ Logo de remplacement (disque coloré thème) si data URL non encore disponible
+
 ### v5.4 (2026-02-26) — Version stable finale
 - 🔴 Fix **Slider iOS** : `touch-none` de Radix UI bloquait tous les événements tactiles sur Safari → réécrit avec handler `onTouchMove` natif. Seek et volume fonctionnent sur tous les iPhones
 - 🔴 Fix **bouton follow gênant** en mode mini player : masqué hors mode expanded, n'interfère plus visuellement
