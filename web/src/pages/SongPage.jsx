@@ -19,13 +19,6 @@ const SongPage = () => {
   const [artist, setArtist]     = useState(null);
   const [loading, setLoading]   = useState(true);
   const [playing, setPlaying]   = useState(false);
-
-  // Fermer le player depuis la croix dans AudioPlayer
-  useEffect(() => {
-    const handler = () => setPlaying(false);
-    window.addEventListener('novasound:close-player', handler);
-    return () => window.removeEventListener('novasound:close-player', handler);
-  }, []);
   const [copied, setCopied]     = useState(false);
 
   useEffect(() => {

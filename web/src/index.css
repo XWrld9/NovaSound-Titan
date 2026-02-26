@@ -107,3 +107,8 @@ button {
 .min-h-screen {
   min-height: 100dvh;
 }
+
+/* Spinner utilisé dans ShareModal */
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}

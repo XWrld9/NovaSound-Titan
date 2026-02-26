@@ -24,13 +24,6 @@ const UserProfilePage = () => {
   const [activeTab, setActiveTab] = useState('songs'); // songs, favorites, followers, following
   const [loading, setLoading] = useState(true);
   const [currentSong, setCurrentSong] = useState(null);
-
-  // Fermer le player depuis la croix dans AudioPlayer
-  useEffect(() => {
-    const handler = () => setCurrentSong(null);
-    window.addEventListener('novasound:close-player', handler);
-    return () => window.removeEventListener('novasound:close-player', handler);
-  }, []);
   const [showEditModal, setShowEditModal] = useState(false);
   const [bioExpanded, setBioExpanded] = useState(false);
 
