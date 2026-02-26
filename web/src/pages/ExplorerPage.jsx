@@ -1,56 +1,23 @@
 import React, { useState, useEffect } from 'react';
+import { usePlayer } from '@/contexts/PlayerContext';
 import { Helmet } from 'react-helmet-async';
 import { motion } from 'framer-motion';
 import { supabase } from '@/lib/supabaseClient';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
-import AudioPlayer from '@/components/AudioPlayer';
 import SongCard from '@/components/SongCard';
 import { Search, Filter } from 'lucide-react';
 
 const ExplorerPage = () => {
   const [songs, setSongs] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [currentSong, setCurrentSong] = useState(null);
-  const [playlist, setPlaylist] = useState([]);
+  const { playSong: globalPlaySong, currentSong } = usePlayer();
 
-  // Fermer le player depuis la croix dans AudioPlayer
-  useEffect(() => {
-    const handler = () => setCurrentSong(null);
-    window.addEventListener('novasound:close-player', handler);
-    return () => window.removeEventListener('novasound:close-player', handler);
-  }, []);
-
-  const playlistRef = React.useRef([]);
-  const currentSongRef = React.useRef(null);
-
+  // Lance la lecture depuis l'Explorer — passe toute la liste au player global
   const playSong = (song) => {
-    const list = songs.filter(s => !s.is_archived);
-    playlistRef.current = list;
-    setPlaylist(list);
-    currentSongRef.current = song;
-    setCurrentSong(song);
+    globalPlaySong(song, songs.filter(s => !s.is_archived));
   };
 
-  const handleNext = (songOverride) => {
-    if (songOverride) { currentSongRef.current = songOverride; setCurrentSong(songOverride); return; }
-    const pl = playlistRef.current;
-    const cs = currentSongRef.current;
-    if (!pl.length || !cs) return;
-    const idx = pl.findIndex(s => s.id === cs.id);
-    const next = pl[(idx + 1) % pl.length];
-    if (next) { currentSongRef.current = next; setCurrentSong(next); }
-  };
-
-  const handlePrevious = (songOverride) => {
-    if (songOverride) { currentSongRef.current = songOverride; setCurrentSong(songOverride); return; }
-    const pl = playlistRef.current;
-    const cs = currentSongRef.current;
-    if (!pl.length || !cs) return;
-    const idx = pl.findIndex(s => s.id === cs.id);
-    const prev = pl[(idx - 1 + pl.length) % pl.length];
-    if (prev) { currentSongRef.current = prev; setCurrentSong(prev); }
-  };
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
   const [sortBy, setSortBy] = useState('-created'); // -created, -plays_count
@@ -203,7 +170,6 @@ const ExplorerPage = () => {
         </main>
 
         <Footer />
-        {currentSong && <AudioPlayer currentSong={currentSong} playlist={playlist} onNext={handleNext} onPrevious={handlePrevious} />}
       </div>
     </>
   );

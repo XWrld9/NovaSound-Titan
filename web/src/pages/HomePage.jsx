@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { usePlayer } from '@/contexts/PlayerContext';
 import { Link } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
 import { Music, Play, TrendingUp, Newspaper, X, Calendar, User, Headphones, ExternalLink } from 'lucide-react';
@@ -7,7 +8,6 @@ import { supabase } from '@/lib/supabaseClient';
 import { formatPlays } from '@/lib/utils';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
-import AudioPlayer from '@/components/AudioPlayer';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/contexts/AuthContext';
 import NewsLikeButton from '@/components/NewsLikeButton';
@@ -19,15 +19,6 @@ const HomePage = () => {
   const [featuredSongs, setFeaturedSongs] = useState([]);
   const [newsItems, setNewsItems] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [currentSong, setCurrentSong] = useState(null);
-  const [playlist, setPlaylist] = useState([]);
-
-  // Fermer le player depuis la croix dans AudioPlayer
-  useEffect(() => {
-    const handler = () => setCurrentSong(null);
-    window.addEventListener('novasound:close-player', handler);
-    return () => window.removeEventListener('novasound:close-player', handler);
-  }, []);
   const [selectedNews, setSelectedNews] = useState(null);
 
   useEffect(() => {
@@ -74,37 +65,10 @@ const HomePage = () => {
     }
   };
 
-  // Refs pour éviter stale closure dans handleNext/handlePrevious
-  const playlistRef = React.useRef([]);
-  const currentSongRef = React.useRef(null);
+  const { playSong: globalPlaySong, currentSong } = usePlayer();
 
-  const playSong = (song) => {
-    const list = featuredSongs.filter(s => !s.is_archived);
-    playlistRef.current = list;
-    setPlaylist(list);
-    currentSongRef.current = song;
-    setCurrentSong(song);
-  };
-
-  const handleNext = (songOverride) => {
-    if (songOverride) { currentSongRef.current = songOverride; setCurrentSong(songOverride); return; }
-    const pl = playlistRef.current;
-    const cs = currentSongRef.current;
-    if (!pl.length || !cs) return;
-    const idx = pl.findIndex(s => s.id === cs.id);
-    const next = pl[(idx + 1) % pl.length];
-    if (next) { currentSongRef.current = next; setCurrentSong(next); }
-  };
-
-  const handlePrevious = (songOverride) => {
-    if (songOverride) { currentSongRef.current = songOverride; setCurrentSong(songOverride); return; }
-    const pl = playlistRef.current;
-    const cs = currentSongRef.current;
-    if (!pl.length || !cs) return;
-    const idx = pl.findIndex(s => s.id === cs.id);
-    const prev = pl[(idx - 1 + pl.length) % pl.length];
-    if (prev) { currentSongRef.current = prev; setCurrentSong(prev); }
-  };
+  // Lance la lecture avec toute la liste de la homepage comme playlist
+  const playSong = (song) => globalPlaySong(song, featuredSongs.filter(s => !s.is_archived));
 
   return (
     <>
@@ -364,7 +328,6 @@ const HomePage = () => {
         </main>
 
         <Footer />
-        {currentSong && <AudioPlayer currentSong={currentSong} playlist={playlist} onNext={handleNext} onPrevious={handlePrevious} />}
 
         {/* Modal lecture complète d'une news — accessible à tous y compris l'auteur */}
         <AnimatePresence>

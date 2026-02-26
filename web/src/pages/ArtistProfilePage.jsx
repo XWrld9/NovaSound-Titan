@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { usePlayer } from '@/contexts/PlayerContext';
 import { useParams, Link } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -6,7 +7,6 @@ import { supabase } from '@/lib/supabaseClient';
 import { useAuth } from '@/contexts/AuthContext';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
-import AudioPlayer from '@/components/AudioPlayer';
 import SongCard from '@/components/SongCard';
 import FollowButton from '@/components/FollowButton';
 import { Music, User, Users, Headphones, Calendar, Share2 } from 'lucide-react';
@@ -265,46 +265,13 @@ const ArtistProfilePage = () => {
   const [songs, setSongs] = useState([]);
   const [followers, setFollowers] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [currentSong, setCurrentSong] = useState(null);
-  const [playlist, setPlaylist] = useState([]);
   const [showShare, setShowShare] = useState(false);
 
-  // Fermer le player depuis la croix dans AudioPlayer
-  useEffect(() => {
-    const handler = () => setCurrentSong(null);
-    window.addEventListener('novasound:close-player', handler);
-    return () => window.removeEventListener('novasound:close-player', handler);
-  }, []);
+  const { playSong: globalPlaySong, currentSong } = usePlayer();
 
-  const playlistRef = useRef([]);
-  const currentSongRef = useRef(null);
-
+  // Lance la lecture depuis le profil artiste — passe toute la discographie au player global
   const playSong = (song) => {
-    const list = songs.filter(s => !s.is_archived);
-    playlistRef.current = list;
-    setPlaylist(list);
-    currentSongRef.current = song;
-    setCurrentSong(song);
-  };
-
-  const handleNext = (songOverride) => {
-    if (songOverride) { currentSongRef.current = songOverride; setCurrentSong(songOverride); return; }
-    const pl = playlistRef.current;
-    const cs = currentSongRef.current;
-    if (!pl.length || !cs) return;
-    const idx = pl.findIndex(s => s.id === cs.id);
-    const next = pl[(idx + 1) % pl.length];
-    if (next) { currentSongRef.current = next; setCurrentSong(next); }
-  };
-
-  const handlePrevious = (songOverride) => {
-    if (songOverride) { currentSongRef.current = songOverride; setCurrentSong(songOverride); return; }
-    const pl = playlistRef.current;
-    const cs = currentSongRef.current;
-    if (!pl.length || !cs) return;
-    const idx = pl.findIndex(s => s.id === cs.id);
-    const prev = pl[(idx - 1 + pl.length) % pl.length];
-    if (prev) { currentSongRef.current = prev; setCurrentSong(prev); }
+    globalPlaySong(song, songs.filter(s => !s.is_archived));
   };
 
   const [bioExpanded, setBioExpanded] = useState(false);
@@ -588,7 +555,6 @@ const ArtistProfilePage = () => {
         </main>
 
         <Footer />
-        {currentSong && <AudioPlayer currentSong={currentSong} playlist={playlist} onNext={handleNext} onPrevious={handlePrevious} />}
       </div>
 
       {/* Share Modal Artiste */}

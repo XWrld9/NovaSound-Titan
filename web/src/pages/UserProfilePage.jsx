@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Helmet } from 'react-helmet-async';
+import { usePlayer } from '@/contexts/PlayerContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Music, Upload, Heart, Edit3, LogOut, Users, UserPlus, Archive, Bookmark } from 'lucide-react';
@@ -7,7 +8,6 @@ import { motion } from 'framer-motion';
 import { supabase } from '@/lib/supabaseClient';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
-import AudioPlayer from '@/components/AudioPlayer';
 import SongCard from '@/components/SongCard';
 import FollowButton from '@/components/FollowButton';
 import EditProfileModal from '@/components/EditProfileModal';
@@ -24,7 +24,7 @@ const UserProfilePage = () => {
   const [following, setFollowing] = useState([]);
   const [activeTab, setActiveTab] = useState('songs'); // songs, archived, favorites, followers, following
   const [loading, setLoading] = useState(true);
-  const [currentSong, setCurrentSong] = useState(null);
+  const { playSong: globalPlaySong, currentSong } = usePlayer();
   const [showEditModal, setShowEditModal] = useState(false);
   const [bioExpanded, setBioExpanded] = useState(false);
 
@@ -330,7 +330,7 @@ const UserProfilePage = () => {
                         <SongCard
                           song={song}
                           currentSong={currentSong}
-                          setCurrentSong={setCurrentSong}
+                          onPlay={(song) => globalPlaySong(song)}
                           onArchived={handleSongArchived}
                           onDeleted={handleSongDeleted}
                         />
@@ -369,7 +369,7 @@ const UserProfilePage = () => {
                           <SongCard
                             song={song}
                             currentSong={currentSong}
-                            setCurrentSong={setCurrentSong}
+                            onPlay={(song) => globalPlaySong(song)}
                             onArchived={handleSongArchived}
                             onDeleted={handleSongDeleted}
                           />
@@ -394,7 +394,7 @@ const UserProfilePage = () => {
                         <SongCard
                           song={song}
                           currentSong={currentSong}
-                          setCurrentSong={setCurrentSong}
+                          onPlay={(song) => globalPlaySong(song)}
                           onDeleted={(id) => setFavoriteSongs(prev => prev.filter(s => s.id !== id))}
                         />
                       </motion.div>
@@ -417,7 +417,7 @@ const UserProfilePage = () => {
                         <SongCard
                           song={song}
                           currentSong={currentSong}
-                          setCurrentSong={setCurrentSong}
+                          onPlay={(song) => globalPlaySong(song)}
                           onDeleted={(id) => setLikedSongs(prev => prev.filter(s => s.id !== id))}
                         />
                       </motion.div>
@@ -536,7 +536,6 @@ const UserProfilePage = () => {
         </main>
 
         <Footer />
-        {currentSong && <AudioPlayer currentSong={currentSong} />}
       </div>
 
       {showEditModal && (

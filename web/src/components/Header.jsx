@@ -1,11 +1,12 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Search, Upload, User, LogOut, Menu, X, Globe, Newspaper, Music, Download, Share } from 'lucide-react';
+import { Search, Upload, User, LogOut, Menu, X, Globe, Newspaper, Music, Download, Share, Bell } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/lib/supabaseClient';
 import { Button } from '@/components/ui/button';
 import { motion, AnimatePresence } from 'framer-motion';
 import usePWAInstall from '@/hooks/usePWAInstall';
+import NotificationBell from '@/components/NotificationBell';
 
 // Détecte iOS
 const isIOS = () =>
@@ -233,6 +234,9 @@ const Header = () => {
 
               {isAuthenticated ? (
                 <>
+                  {/* Cloche notifications desktop */}
+                  <NotificationBell />
+
                   <Link to="/upload">
                     <Button className="bg-gradient-to-r from-cyan-500 to-magenta-500 hover:from-cyan-600 hover:to-magenta-600 text-white rounded-full px-6 font-medium shadow-lg shadow-cyan-500/20">
                       <Upload className="w-4 h-4 mr-2" />Uploader
@@ -382,6 +386,8 @@ const Header = () => {
                   {isAuthenticated && (
                     <>
                       <div className="my-2 border-t border-gray-800" />
+                      {/* Notifications mobile */}
+                      <NotificationBell mobile closeMenu={closeMenu} />
                       <Link to="/upload" onClick={closeMenu} className="flex items-center gap-3 px-4 py-3 text-gray-300 hover:bg-cyan-500/10 hover:text-cyan-400 rounded-lg transition-colors">
                         <Upload className="w-5 h-5 text-cyan-400" />Uploader un son
                       </Link>

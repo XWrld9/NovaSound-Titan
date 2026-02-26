@@ -16,7 +16,7 @@ import SongShareModal from '@/components/SongShareModal';
 
 
 // ShareModal → composant réutilisable importé depuis SongShareModal
-const AudioPlayer = ({ currentSong, playlist = [], onNext, onPrevious }) => {
+const AudioPlayer = ({ currentSong, playlist = [], onNext, onPrevious, onClose }) => {
   const { currentUser } = useAuth();
   const navigate = useNavigate();
   const audioRef = useRef(null);
@@ -342,7 +342,11 @@ const AudioPlayer = ({ currentSong, playlist = [], onNext, onPrevious }) => {
   const VolumeIcon = isMuted || volume === 0 ? VolumeX : volume < 40 ? Volume1 : Volume2;
   const showFollowButton = currentUser && currentSong?.uploader_id && currentSong.uploader_id !== currentUser.id;
   const progress = duration ? (currentTime / duration) * 100 : 0;
-  const closePlayer = (e) => { e?.stopPropagation(); window.dispatchEvent(new CustomEvent('novasound:close-player')); };
+  const closePlayer = (e) => {
+    e?.stopPropagation();
+    if (onClose) onClose();
+    else window.dispatchEvent(new CustomEvent('novasound:close-player'));
+  };
 
   if (!currentSong) return null;
 

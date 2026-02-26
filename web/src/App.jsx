@@ -1,6 +1,9 @@
 import React, { lazy, Suspense } from 'react';
 import { Route, Routes, HashRouter as Router } from 'react-router-dom';
 import { AuthProvider } from '@/contexts/AuthContext';
+import { NotificationProvider } from '@/contexts/NotificationContext';
+import { NotificationToast } from '@/components/NotificationBell';
+import { PlayerProvider, usePlayer } from '@/contexts/PlayerContext';
 import { HelmetProvider } from 'react-helmet-async';
 import { DialogProvider } from '@/components/ui/Dialog';
 import { ToastProvider } from '@/components/ui/Toast';
@@ -8,6 +11,7 @@ import ScrollToTop from '@/components/ScrollToTop';
 import ProtectedRoute from '@/components/ProtectedRoute';
 import LoadingSpinner from '@/components/LoadingSpinner';
 import InstallBanner from '@/components/InstallBanner';
+import AudioPlayer from '@/components/AudioPlayer';
 
 // Pages chargées immédiatement (critiques)
 import HomePage from '@/pages/HomePage';
@@ -15,17 +19,32 @@ import LoginPage from '@/pages/LoginPage';
 import SignupPage from '@/pages/SignupPage';
 
 // Pages chargées à la demande (lazy)
-const MusicUploadPage = lazy(() => import('@/pages/MusicUploadPage'));
-const UserProfilePage = lazy(() => import('@/pages/UserProfilePage'));
-const ExplorerPage = lazy(() => import('@/pages/ExplorerPage'));
-const SongPage     = lazy(() => import('@/pages/SongPage'));
-const NewsPage = lazy(() => import('@/pages/NewsPage'));
+const MusicUploadPage   = lazy(() => import('@/pages/MusicUploadPage'));
+const UserProfilePage   = lazy(() => import('@/pages/UserProfilePage'));
+const ExplorerPage      = lazy(() => import('@/pages/ExplorerPage'));
+const SongPage          = lazy(() => import('@/pages/SongPage'));
+const NewsPage          = lazy(() => import('@/pages/NewsPage'));
 const ArtistProfilePage = lazy(() => import('@/pages/ArtistProfilePage'));
-const PrivacyPolicy = lazy(() => import('@/pages/PrivacyPolicy'));
-const TermsOfService = lazy(() => import('@/pages/TermsOfService'));
-const CopyrightInfo = lazy(() => import('@/pages/CopyrightInfo'));
-const ModerationPanel = lazy(() => import('@/pages/ModerationPanel'));
-const AuthCallbackPage = lazy(() => import('@/pages/AuthCallbackPage'));
+const PrivacyPolicy     = lazy(() => import('@/pages/PrivacyPolicy'));
+const TermsOfService    = lazy(() => import('@/pages/TermsOfService'));
+const CopyrightInfo     = lazy(() => import('@/pages/CopyrightInfo'));
+const ModerationPanel   = lazy(() => import('@/pages/ModerationPanel'));
+const AuthCallbackPage  = lazy(() => import('@/pages/AuthCallbackPage'));
+
+/* ── Player global — monté UNE SEULE FOIS, survit à toute navigation ── */
+const GlobalPlayer = () => {
+  const { currentSong, playlist, isVisible, handleNext, handlePrevious, closePlayer } = usePlayer();
+  if (!isVisible || !currentSong) return null;
+  return (
+    <AudioPlayer
+      currentSong={currentSong}
+      playlist={playlist}
+      onNext={handleNext}
+      onPrevious={handlePrevious}
+      onClose={closePlayer}
+    />
+  );
+};
 
 function App() {
   return (
@@ -33,28 +52,35 @@ function App() {
       <DialogProvider>
         <ToastProvider>
           <AuthProvider>
-            <Router>
-              <ScrollToTop />
-              <InstallBanner />
-              <Suspense fallback={<div className="min-h-screen bg-gray-950 flex items-center justify-center"><LoadingSpinner /></div>}>
-                <Routes>
-                  <Route path="/" element={<HomePage />} />
-                  <Route path="/login" element={<LoginPage />} />
-                  <Route path="/signup" element={<SignupPage />} />
-                  <Route path="/explorer" element={<ExplorerPage />} />
-                  <Route path="/news" element={<NewsPage />} />
-                  <Route path="/artist/:id" element={<ArtistProfilePage />} />
-                  <Route path="/song/:id" element={<SongPage />} />
-                  <Route path="/privacy" element={<PrivacyPolicy />} />
-                  <Route path="/terms" element={<TermsOfService />} />
-                  <Route path="/copyright" element={<CopyrightInfo />} />
-                  <Route path="/upload" element={<ProtectedRoute><MusicUploadPage /></ProtectedRoute>} />
-                  <Route path="/profile" element={<ProtectedRoute><UserProfilePage /></ProtectedRoute>} />
-                  <Route path="/moderation" element={<ProtectedRoute><ModerationPanel /></ProtectedRoute>} />
-                  <Route path="/auth/callback" element={<AuthCallbackPage />} />
-                </Routes>
-              </Suspense>
-            </Router>
+            <PlayerProvider>
+              <NotificationProvider>
+                <NotificationToast />
+                <Router>
+                  <ScrollToTop />
+                  <InstallBanner />
+                  <Suspense fallback={<div className="min-h-screen bg-gray-950 flex items-center justify-center"><LoadingSpinner /></div>}>
+                    <Routes>
+                      <Route path="/"             element={<HomePage />} />
+                      <Route path="/login"         element={<LoginPage />} />
+                      <Route path="/signup"        element={<SignupPage />} />
+                      <Route path="/explorer"      element={<ExplorerPage />} />
+                      <Route path="/news"          element={<NewsPage />} />
+                      <Route path="/artist/:id"    element={<ArtistProfilePage />} />
+                      <Route path="/song/:id"      element={<SongPage />} />
+                      <Route path="/privacy"       element={<PrivacyPolicy />} />
+                      <Route path="/terms"         element={<TermsOfService />} />
+                      <Route path="/copyright"     element={<CopyrightInfo />} />
+                      <Route path="/upload"        element={<ProtectedRoute><MusicUploadPage /></ProtectedRoute>} />
+                      <Route path="/profile"       element={<ProtectedRoute><UserProfilePage /></ProtectedRoute>} />
+                      <Route path="/moderation"    element={<ProtectedRoute><ModerationPanel /></ProtectedRoute>} />
+                      <Route path="/auth/callback" element={<AuthCallbackPage />} />
+                    </Routes>
+                  </Suspense>
+                  {/* Player global — persiste pendant toute la navigation */}
+                  <GlobalPlayer />
+                </Router>
+              </NotificationProvider>
+            </PlayerProvider>
           </AuthProvider>
         </ToastProvider>
       </DialogProvider>
