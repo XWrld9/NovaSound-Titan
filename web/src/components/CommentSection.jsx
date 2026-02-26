@@ -343,9 +343,9 @@ const CommentSection = ({ songId, songUploaderEmail }) => {
   };
 
   /* Charger les commentaires + profils + état liké */
-  const loadComments = useCallback(async () => {
+  const loadComments = useCallback(async (silent = false) => {
     if (!songId) return;
-    setLoading(true);
+    if (!silent) setLoading(true);
     try {
       const { data: rows } = await supabase
         .from('song_comments')
@@ -354,7 +354,7 @@ const CommentSection = ({ songId, songUploaderEmail }) => {
         .order('created_at', { ascending: false })
         .limit(200);
 
-      if (!rows) { setComments([]); return; }
+      if (!rows) { if (!silent) setComments([]); return; }
 
       // Charger les likes de l'utilisateur courant
       let likedSet = new Set();
@@ -386,7 +386,7 @@ const CommentSection = ({ songId, songUploaderEmail }) => {
     const channel = supabase
       .channel(`comments:${songId}`)
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'song_comments', filter: `song_id=eq.${songId}` },
-        () => loadComments()
+        () => loadComments(true)
       )
       .subscribe();
     return () => supabase.removeChannel(channel);

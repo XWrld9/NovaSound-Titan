@@ -94,7 +94,7 @@ const SongCard = memo(({ song: initialSong, onPlay, isPlaying, setCurrentSong, c
 
           {/* Lecture en cours */}
           {isPlaying && (
-            <div className="absolute top-2 right-2 w-3 h-3 rounded-full bg-cyan-400 animate-pulse shadow-lg shadow-cyan-400/50" />
+            <div className="absolute top-2 left-2 w-3 h-3 rounded-full bg-cyan-400 animate-pulse shadow-lg shadow-cyan-400/50" />
           )}
 
           {/* Badge plays */}
@@ -103,13 +103,14 @@ const SongCard = memo(({ song: initialSong, onPlay, isPlaying, setCurrentSong, c
             <span className="text-xs text-cyan-300 font-medium">{formatPlays(song.plays_count)}</span>
           </div>
 
-          {/* Lien page dédiée — coin haut droite, toujours visible */}
+          {/* Lien page dédiée — coin haut droite, TOUJOURS visible sur tous les appareils */}
           <Link
             to={`/song/${song.id}`}
             onClick={e => e.stopPropagation()}
-            className="absolute top-2 right-2 p-1.5 rounded-full bg-black/60 backdrop-blur-sm text-gray-300 hover:text-white hover:bg-black/80 transition-all z-10"
+            className="absolute top-2 right-2 p-1.5 rounded-full bg-black/70 text-white hover:bg-cyan-500 hover:text-white transition-all z-20"
             title="Voir la page du son & commenter"
             aria-label="Voir la page du son"
+            style={{ boxShadow: '0 2px 8px rgba(0,0,0,0.5)' }}
           >
             <ExternalLink className="w-3.5 h-3.5" />
           </Link>

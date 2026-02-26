@@ -23,36 +23,34 @@ const AuthCallbackPage = () => {
 
   const handleCallback = async () => {
     try {
-      // ── 1. Supabase a parfois déjà traité le token et mis access_token dans
-      //       window.location.hash sous la forme :
-      //       #access_token=xxx&refresh_token=yyy&type=signup
-      //       (quand emailRedirectTo pointe vers /#/auth/callback)
-      const rawHash = window.location.hash;
+      const rawHash  = window.location.hash;   // ex: "#/auth/callback#access_token=..."
+      const rawSearch = window.location.search; // ex: "?token_hash=xxx"
 
-      // Extraire les params du hash après le premier # (enlever la route /#/auth/callback)
-      // window.location.hash = "#/auth/callback#access_token=..."  ← double hash possible
-      // ou "#access_token=..." directement
+      // ── 1. access_token dans le hash (Android Chrome + certains clients mail)
+      //       Deux sous-cas :
+      //       a) #access_token=xxx (hash brut, redirigé par index.html)
+      //       b) #/auth/callback#access_token=xxx (double hash)
       let hashParams = '';
       if (rawHash.includes('access_token=')) {
-        // Tout ce qui est après le dernier # contenant access_token
         const idx = rawHash.lastIndexOf('#');
         hashParams = rawHash.slice(idx + 1);
       }
+      // Aussi vérifier access_token dans les query params (cas C)
+      const searchParams = new URLSearchParams(rawSearch);
+      const accessTokenFromSearch = searchParams.get('access_token');
+      const refreshTokenFromSearch = searchParams.get('refresh_token');
 
-      if (hashParams) {
-        const params = new URLSearchParams(hashParams);
-        const accessToken  = params.get('access_token');
-        const refreshToken = params.get('refresh_token');
-        const type         = params.get('type'); // signup | recovery | ...
+      if (hashParams || accessTokenFromSearch) {
+        const params       = hashParams ? new URLSearchParams(hashParams) : searchParams;
+        const accessToken  = params.get('access_token') || accessTokenFromSearch;
+        const refreshToken = params.get('refresh_token') || refreshTokenFromSearch || '';
 
         if (accessToken) {
           const { data, error } = await supabase.auth.setSession({
             access_token: accessToken,
-            refresh_token: refreshToken || '',
+            refresh_token: refreshToken,
           });
-
           if (error) throw error;
-
           if (data?.user) {
             await ensureProfile(data.user);
             setStatus('success');
@@ -63,12 +61,8 @@ const AuthCallbackPage = () => {
         }
       }
 
-      // ── 2. token_hash dans les query params (PKCE flow ou lien direct iOS)
-      //       URL : https://site.com/?token_hash=xxx&type=signup
-      //       ou   https://site.com/#/auth/callback?token_hash=xxx&type=signup
-      const searchParams = new URLSearchParams(window.location.search);
-      // Aussi vérifier les params dans la partie hash route (HashRouter)
-      const hashRoute = rawHash.includes('?') ? rawHash.split('?')[1] : '';
+      // ── 2. token_hash dans les query params ou le hash route (iOS + PKCE)
+      const hashRoute      = rawHash.includes('?') ? rawHash.split('?')[1] : '';
       const hashRouteParams = new URLSearchParams(hashRoute);
 
       const tokenHash = searchParams.get('token_hash') || hashRouteParams.get('token_hash');
@@ -80,9 +74,7 @@ const AuthCallbackPage = () => {
           token_hash: tokenHash || token,
           type: type === 'recovery' ? 'recovery' : 'signup',
         });
-
         if (error) throw error;
-
         if (data?.user) {
           await ensureProfile(data.user);
           setStatus('success');
@@ -92,7 +84,7 @@ const AuthCallbackPage = () => {
         }
       }
 
-      // ── 3. Vérifier si la session est déjà active (Supabase a tout géré)
+      // ── 3. Session déjà active (Supabase a tout géré côté serveur)
       const { data: { session } } = await supabase.auth.getSession();
       if (session?.user) {
         await ensureProfile(session.user);
@@ -102,7 +94,7 @@ const AuthCallbackPage = () => {
         return;
       }
 
-      // ── 4. Rien trouvé → rediriger vers login avec message
+      // ── 4. Rien trouvé → login
       setStatus('error');
       setMsg('Lien expiré ou déjà utilisé. Reconnecte-toi.');
       setTimeout(() => navigate('/login', { replace: true }), 2500);
@@ -111,7 +103,7 @@ const AuthCallbackPage = () => {
       console.error('[AuthCallback]', err);
       setStatus('error');
       setMsg(err.message?.includes('expired') || err.message?.includes('invalid')
-        ? 'Lien expiré. Renvoie-toi un email de confirmation depuis la page connexion.'
+        ? 'Lien expiré. Renvoie un email de confirmation depuis la page connexion.'
         : 'Erreur de vérification. Essaie de te connecter directement.');
       setTimeout(() => navigate('/login', { replace: true }), 3000);
     }
