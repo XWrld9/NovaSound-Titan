@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -23,6 +23,10 @@ const SongPage = () => {
   const [loading, setLoading]     = useState(true);
   const [playing, setPlaying]     = useState(false);
   const [showShare, setShowShare] = useState(false);
+  const [playlist, setPlaylist]   = useState([]);
+  const [currentSong, setCurrentSong] = useState(null);
+  const playlistRef    = useRef([]);
+  const currentSongRef = useRef(null);
 
   // Fix bouton retour : fonctionne même depuis un lien partagé (pas d'historique)
   const handleBack = () => {
@@ -48,14 +52,50 @@ const SongPage = () => {
       const { data, error } = await supabase.from('songs').select('*').eq('id', id).single();
       if (error || !data) { navigate('/', { replace: true }); return; }
       setSong(data);
+      setCurrentSong(data);
+      currentSongRef.current = data;
       if (data.uploader_id) {
         const { data: userData } = await supabase
           .from('users').select('id, username, avatar_url, email').eq('id', data.uploader_id).single();
         setArtist(userData || null);
         setArtistEmail(userData?.email || null);
       }
+      // Charger les sons voisins pour next/previous (50 sons récents non archivés)
+      const { data: siblings } = await supabase
+        .from('songs')
+        .select('*')
+        .eq('is_archived', false)
+        .order('created_at', { ascending: false })
+        .limit(50);
+      if (siblings && siblings.length) {
+        // S'assurer que le son courant est dans la liste
+        let list = siblings;
+        if (!list.find(s => s.id === data.id)) list = [data, ...list];
+        playlistRef.current = list;
+        setPlaylist(list);
+      }
     } catch { navigate('/', { replace: true }); }
     finally { setLoading(false); }
+  };
+
+  const handleNext = (songOverride) => {
+    if (songOverride) { currentSongRef.current = songOverride; setCurrentSong(songOverride); setSong(songOverride); return; }
+    const pl = playlistRef.current;
+    const cs = currentSongRef.current;
+    if (!pl.length || !cs) return;
+    const idx = pl.findIndex(s => s.id === cs.id);
+    const next = pl[(idx + 1) % pl.length];
+    if (next) { currentSongRef.current = next; setCurrentSong(next); setSong(next); }
+  };
+
+  const handlePrevious = (songOverride) => {
+    if (songOverride) { currentSongRef.current = songOverride; setCurrentSong(songOverride); setSong(songOverride); return; }
+    const pl = playlistRef.current;
+    const cs = currentSongRef.current;
+    if (!pl.length || !cs) return;
+    const idx = pl.findIndex(s => s.id === cs.id);
+    const prev = pl[(idx - 1 + pl.length) % pl.length];
+    if (prev) { currentSongRef.current = prev; setCurrentSong(prev); setSong(prev); }
   };
 
   if (loading) {
@@ -121,7 +161,7 @@ const SongPage = () => {
                 </div>
               )}
               <div className="absolute inset-0 bg-gradient-to-t from-gray-900 via-transparent to-transparent" />
-              <button onClick={() => setPlaying(true)} className="absolute inset-0 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity">
+              <button onClick={() => setPlaying(true)} className="absolute inset-0 flex items-center justify-center bg-black/30 md:bg-transparent md:opacity-0 md:hover:opacity-100 md:hover:bg-black/40 transition-all">
                 <div className="p-5 rounded-full bg-gradient-to-r from-cyan-500 to-magenta-500 shadow-xl shadow-cyan-500/40 transform hover:scale-110 transition-transform">
                   <Play className="w-10 h-10 text-white fill-current" />
                 </div>
@@ -191,7 +231,7 @@ const SongPage = () => {
         </main>
 
         <Footer />
-        {playing && <AudioPlayer currentSong={song} />}
+        {playing && <AudioPlayer currentSong={currentSong || song} playlist={playlist} onNext={handleNext} onPrevious={handlePrevious} />}
       </div>
 
       {/* Share Modal Spotify */}

@@ -45,16 +45,130 @@ const AudioPlayer = ({ currentSong, playlist = [], onNext, onPrevious }) => {
     if (audioRef.current) audioRef.current.volume = isMuted ? 0 : volume / 100;
   }, [volume, isMuted]);
 
+  // Refs pour Media Session (évite stale closure — goNext/goPrevious définis plus bas)
+  const goNextRef     = useRef(null);
+  const goPreviousRef = useRef(null);
+
+  // ── MEDIA SESSION API — notification Android/iOS ─────────────
+  // Met à jour les métadonnées (titre, artiste, pochette) dans la barre de notification
+  useEffect(() => {
+    if (!('mediaSession' in navigator) || !currentSong) return;
+
+    const artwork = [];
+    if (currentSong.cover_url) {
+      artwork.push(
+        { src: currentSong.cover_url, sizes: '96x96',   type: 'image/jpeg' },
+        { src: currentSong.cover_url, sizes: '128x128', type: 'image/jpeg' },
+        { src: currentSong.cover_url, sizes: '192x192', type: 'image/jpeg' },
+        { src: currentSong.cover_url, sizes: '256x256', type: 'image/jpeg' },
+        { src: currentSong.cover_url, sizes: '512x512', type: 'image/jpeg' },
+      );
+    } else {
+      artwork.push({ src: '/icon-512.png', sizes: '512x512', type: 'image/png' });
+    }
+
+    try {
+      navigator.mediaSession.metadata = new MediaMetadata({
+        title:  currentSong.title  || 'Titre inconnu',
+        artist: currentSong.artist || 'Artiste inconnu',
+        album:  'NovaSound TITAN LUX',
+        artwork,
+      });
+    } catch (e) { /* navigateurs anciens */ }
+  }, [currentSong?.id, currentSong?.title, currentSong?.artist, currentSong?.cover_url]);
+
+  // ── MEDIA SESSION — boutons lecture/pause/next/previous ───────
+  useEffect(() => {
+    if (!('mediaSession' in navigator)) return;
+
+    const handlers = {
+      play:           () => { audioRef.current?.play(); setIsPlaying(true); autoPlayRef.current = true; },
+      pause:          () => { audioRef.current?.pause(); setIsPlaying(false); },
+      stop:           () => { audioRef.current?.pause(); setIsPlaying(false); },
+      nexttrack:      () => { autoPlayRef.current = true; goNextRef.current?.(); },
+      previoustrack:  () => { autoPlayRef.current = true; goPreviousRef.current?.(); },
+      seekbackward:   (d) => {
+        if (audioRef.current) {
+          audioRef.current.currentTime = Math.max(0, audioRef.current.currentTime - (d.seekOffset || 10));
+        }
+      },
+      seekforward:    (d) => {
+        if (audioRef.current && audioRef.current.duration) {
+          audioRef.current.currentTime = Math.min(audioRef.current.duration, audioRef.current.currentTime + (d.seekOffset || 10));
+        }
+      },
+      seekto: (d) => {
+        if (audioRef.current && d.seekTime != null) {
+          audioRef.current.currentTime = d.seekTime;
+        }
+      },
+    };
+
+    for (const [action, handler] of Object.entries(handlers)) {
+      try { navigator.mediaSession.setActionHandler(action, handler); } catch {}
+    }
+
+    return () => {
+      for (const action of Object.keys(handlers)) {
+        try { navigator.mediaSession.setActionHandler(action, null); } catch {}
+      }
+    };
+  }, [playlist, shuffle, repeat]); // recalculer quand playlist/shuffle change
+
+  // ── MEDIA SESSION — sync état playback ────────────────────────
+  useEffect(() => {
+    if (!('mediaSession' in navigator)) return;
+    try {
+      navigator.mediaSession.playbackState = isPlaying ? 'playing' : 'paused';
+    } catch {}
+  }, [isPlaying]);
+
+  // ── MEDIA SESSION — position (seekbar dans notification) ──────
+  useEffect(() => {
+    if (!('mediaSession' in navigator) || !('setPositionState' in navigator.mediaSession)) return;
+    if (!duration || isNaN(duration)) return;
+    try {
+      navigator.mediaSession.setPositionState({
+        duration:     duration,
+        playbackRate: audioRef.current?.playbackRate || 1,
+        position:     Math.min(currentTime, duration),
+      });
+    } catch {}
+  }, [currentTime, duration]);
+
+  const prevSongIdRef = useRef(null);
+  const autoPlayRef   = useRef(false);
+
   useEffect(() => {
     if (audioRef.current && currentSong?.audio_url) {
+      const isNewSong = prevSongIdRef.current !== null && prevSongIdRef.current !== currentSong.id;
+      prevSongIdRef.current = currentSong.id;
       audioRef.current.src = currentSong.audio_url;
       audioRef.current.load();
       setPlayRecorded(false);
-      setIsPlaying(false);
+      setCurrentTime(0);
+      setDuration(0);
       if (currentUser) { checkLikeStatus(); checkFollowStatus(); }
       else { setIsLiked(false); setLikeId(null); setIsFollowing(false); setFollowId(null); }
+
+      if (isNewSong && autoPlayRef.current) {
+        // Attendre que le navigateur soit prêt (canplay) avant de play
+        const tryPlay = () => {
+          audioRef.current?.play()
+            .then(() => setIsPlaying(true))
+            .catch(() => setIsPlaying(false));
+        };
+        if (audioRef.current.readyState >= 2) {
+          tryPlay();
+        } else {
+          audioRef.current.addEventListener('canplay', tryPlay, { once: true });
+        }
+      } else if (!isNewSong) {
+        // Premier chargement, ne pas auto-jouer
+        setIsPlaying(false);
+      }
     }
-  }, [currentSong]);
+  }, [currentSong?.id]);
 
   const checkLikeStatus = async () => {
     try {
@@ -131,8 +245,14 @@ const AudioPlayer = ({ currentSong, playlist = [], onNext, onPrevious }) => {
   const togglePlay = (e) => {
     e?.stopPropagation();
     if (!audioRef.current || !currentSong) return;
-    if (isPlaying) { audioRef.current.pause(); }
-    else { audioRef.current.play().catch(() => {}); recordPlay(); }
+    if (isPlaying) {
+      audioRef.current.pause();
+      autoPlayRef.current = false;
+    } else {
+      audioRef.current.play().catch(() => {});
+      recordPlay();
+      autoPlayRef.current = true;
+    }
     setIsPlaying(!isPlaying);
   };
 
@@ -162,11 +282,51 @@ const AudioPlayer = ({ currentSong, playlist = [], onNext, onPrevious }) => {
     else { setIsMuted(false); if (volume === 0) setVolume(prevVolume || 70); }
   };
 
-  const handleEnded = () => {
-    if (repeat === 'one') { audioRef.current.currentTime = 0; audioRef.current.play(); }
-    else if (repeat === 'all' || playlist.length > 0) onNext?.();
-    else setIsPlaying(false);
+  // Next/Previous avec shuffle — gèrent à la fois les pages avec playlist et sans
+  const goNext = () => {
+    autoPlayRef.current = true;
+    if (playlist.length > 1) {
+      const idx = playlist.findIndex(s => s.id === currentSong?.id);
+      let nextIdx;
+      if (shuffle) {
+        do { nextIdx = Math.floor(Math.random() * playlist.length); } while (nextIdx === idx && playlist.length > 1);
+      } else {
+        nextIdx = (idx + 1) % playlist.length;
+      }
+      if (onNext) onNext(playlist[nextIdx]);
+    } else if (onNext) {
+      onNext();
+    }
   };
+
+  const goPrevious = () => {
+    // Si > 3s écoulées → retour début du morceau
+    if (currentTime > 3 && audioRef.current) {
+      audioRef.current.currentTime = 0;
+      setCurrentTime(0);
+      return;
+    }
+    autoPlayRef.current = true;
+    if (playlist.length > 1) {
+      const idx = playlist.findIndex(s => s.id === currentSong?.id);
+      const prevIdx = (idx - 1 + playlist.length) % playlist.length;
+      if (onPrevious) onPrevious(playlist[prevIdx]);
+    } else if (onPrevious) {
+      onPrevious();
+    }
+  };
+
+  const handleEnded = () => {
+    if (repeat === 'one') {
+      if (audioRef.current) { audioRef.current.currentTime = 0; audioRef.current.play().catch(() => {}); }
+    } else {
+      goNext();
+    }
+  };
+
+  // Synchroniser les refs Media Session avec les fonctions à jour
+  goNextRef.current     = goNext;
+  goPreviousRef.current = goPrevious;
 
   const cycleRepeat = (e) => {
     e?.stopPropagation();
@@ -331,8 +491,8 @@ const AudioPlayer = ({ currentSong, playlist = [], onNext, onPrevious }) => {
                 >
                   <Shuffle className="w-5 h-5" />
                 </button>
-                <button onClick={(e) => { e.stopPropagation(); onPrevious?.(); }}
-                  className="p-2 text-gray-300 hover:text-white hover:scale-110 transition-all" disabled={!onPrevious}
+                <button onClick={(e) => { e.stopPropagation(); goPrevious(); }}
+                  className="p-2 text-gray-300 hover:text-white hover:scale-110 transition-all"
                 >
                   <SkipBack className="w-7 h-7" />
                 </button>
@@ -341,8 +501,8 @@ const AudioPlayer = ({ currentSong, playlist = [], onNext, onPrevious }) => {
                 >
                   {isPlaying ? <Pause className="w-7 h-7" /> : <Play className="w-7 h-7 ml-0.5" />}
                 </button>
-                <button onClick={(e) => { e.stopPropagation(); onNext?.(); }}
-                  className="p-2 text-gray-300 hover:text-white hover:scale-110 transition-all" disabled={!onNext}
+                <button onClick={(e) => { e.stopPropagation(); goNext(); }}
+                  className="p-2 text-gray-300 hover:text-white hover:scale-110 transition-all"
                 >
                   <SkipForward className="w-7 h-7" />
                 </button>
@@ -442,7 +602,7 @@ const AudioPlayer = ({ currentSong, playlist = [], onNext, onPrevious }) => {
                 <button onClick={handleLike} className={`p-1.5 ${isLiked ? 'text-pink-500' : 'text-gray-600'}`}>
                   <Heart className={`w-4 h-4 ${isLiked ? 'fill-current' : ''}`} />
                 </button>
-                <button onClick={(e) => { e.stopPropagation(); onPrevious?.(); }} className="p-1.5 text-gray-500 disabled:opacity-30" disabled={!onPrevious}>
+                <button onClick={(e) => { e.stopPropagation(); goPrevious(); }} className="p-1.5 text-gray-500">
                   <SkipBack className="w-5 h-5" />
                 </button>
                 <button onClick={togglePlay}
@@ -450,7 +610,7 @@ const AudioPlayer = ({ currentSong, playlist = [], onNext, onPrevious }) => {
                 >
                   {isPlaying ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4 ml-0.5" />}
                 </button>
-                <button onClick={(e) => { e.stopPropagation(); onNext?.(); }} className="p-1.5 text-gray-500 disabled:opacity-30" disabled={!onNext}>
+                <button onClick={(e) => { e.stopPropagation(); goNext(); }} className="p-1.5 text-gray-500">
                   <SkipForward className="w-5 h-5" />
                 </button>
                 <button onClick={toggleMute} className="p-1.5 text-gray-600">
@@ -559,9 +719,8 @@ const AudioPlayer = ({ currentSong, playlist = [], onNext, onPrevious }) => {
                   <Shuffle className="w-4 h-4" />
                 </button>
 
-                <button onClick={(e) => { e.stopPropagation(); onPrevious?.(); }}
-                  className="text-gray-400 hover:text-white hover:scale-110 transition-all disabled:opacity-25"
-                  disabled={!onPrevious}
+                <button onClick={(e) => { e.stopPropagation(); goPrevious(); }}
+                  className="text-gray-400 hover:text-white hover:scale-110 transition-all"
                 >
                   <SkipBack className="w-5 h-5" />
                 </button>
@@ -572,9 +731,8 @@ const AudioPlayer = ({ currentSong, playlist = [], onNext, onPrevious }) => {
                   {isPlaying ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4 ml-0.5" />}
                 </button>
 
-                <button onClick={(e) => { e.stopPropagation(); onNext?.(); }}
-                  className="text-gray-400 hover:text-white hover:scale-110 transition-all disabled:opacity-25"
-                  disabled={!onNext}
+                <button onClick={(e) => { e.stopPropagation(); goNext(); }}
+                  className="text-gray-400 hover:text-white hover:scale-110 transition-all"
                 >
                   <SkipForward className="w-5 h-5" />
                 </button>

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -266,6 +266,7 @@ const ArtistProfilePage = () => {
   const [followers, setFollowers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [currentSong, setCurrentSong] = useState(null);
+  const [playlist, setPlaylist] = useState([]);
   const [showShare, setShowShare] = useState(false);
 
   // Fermer le player depuis la croix dans AudioPlayer
@@ -274,6 +275,38 @@ const ArtistProfilePage = () => {
     window.addEventListener('novasound:close-player', handler);
     return () => window.removeEventListener('novasound:close-player', handler);
   }, []);
+
+  const playlistRef = useRef([]);
+  const currentSongRef = useRef(null);
+
+  const playSong = (song) => {
+    const list = songs.filter(s => !s.is_archived);
+    playlistRef.current = list;
+    setPlaylist(list);
+    currentSongRef.current = song;
+    setCurrentSong(song);
+  };
+
+  const handleNext = (songOverride) => {
+    if (songOverride) { currentSongRef.current = songOverride; setCurrentSong(songOverride); return; }
+    const pl = playlistRef.current;
+    const cs = currentSongRef.current;
+    if (!pl.length || !cs) return;
+    const idx = pl.findIndex(s => s.id === cs.id);
+    const next = pl[(idx + 1) % pl.length];
+    if (next) { currentSongRef.current = next; setCurrentSong(next); }
+  };
+
+  const handlePrevious = (songOverride) => {
+    if (songOverride) { currentSongRef.current = songOverride; setCurrentSong(songOverride); return; }
+    const pl = playlistRef.current;
+    const cs = currentSongRef.current;
+    if (!pl.length || !cs) return;
+    const idx = pl.findIndex(s => s.id === cs.id);
+    const prev = pl[(idx - 1 + pl.length) % pl.length];
+    if (prev) { currentSongRef.current = prev; setCurrentSong(prev); }
+  };
+
   const [bioExpanded, setBioExpanded] = useState(false);
 
   useEffect(() => {
@@ -490,7 +523,7 @@ const ArtistProfilePage = () => {
                     >
                       <SongCard
                         song={song}
-                        onPlay={setCurrentSong}
+                        onPlay={playSong}
                         isPlaying={currentSong?.id === song.id}
                         onArchived={(id) => setSongs(prev => prev.filter(s => s.id !== id))}
                         onDeleted={(id) => setSongs(prev => prev.filter(s => s.id !== id))}
@@ -555,7 +588,7 @@ const ArtistProfilePage = () => {
         </main>
 
         <Footer />
-        {currentSong && <AudioPlayer currentSong={currentSong} />}
+        {currentSong && <AudioPlayer currentSong={currentSong} playlist={playlist} onNext={handleNext} onPrevious={handlePrevious} />}
       </div>
 
       {/* Share Modal Artiste */}
