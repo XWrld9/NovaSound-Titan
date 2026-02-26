@@ -4,6 +4,7 @@ import { Link } from 'react-router-dom';
 import { AnimatePresence } from 'framer-motion';
 import { useAuth } from '@/contexts/AuthContext';
 import LikeButton from '@/components/LikeButton';
+import FavoriteButton from '@/components/FavoriteButton';
 import ReportButton from './ReportButton';
 import SongShareModal from '@/components/SongShareModal';
 import SongActionsMenu from '@/components/SongActionsMenu';
@@ -121,6 +122,7 @@ const SongCard = memo(({ song: initialSong, onPlay, isPlaying, setCurrentSong, c
             <div className="flex items-center gap-2">
               {!song.is_archived && (
                 <>
+                  <FavoriteButton songId={song.id} size="sm" />
                   <button onClick={handleDownload} className="text-gray-400 hover:text-cyan-400 transition-colors" title="Télécharger">
                     <Download className="w-4 h-4" />
                   </button>

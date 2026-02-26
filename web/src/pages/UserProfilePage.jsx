@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Helmet } from 'react-helmet-async';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
-import { Music, Upload, Heart, Edit3, LogOut, Users, UserPlus, Archive } from 'lucide-react';
+import { Music, Upload, Heart, Edit3, LogOut, Users, UserPlus, Archive, Bookmark } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { supabase } from '@/lib/supabaseClient';
 import Header from '@/components/Header';
@@ -19,6 +19,7 @@ const UserProfilePage = () => {
   const [profile, setProfile] = useState(null);
   const [userSongs, setUserSongs] = useState([]);
   const [favoriteSongs, setFavoriteSongs] = useState([]);
+  const [likedSongs, setLikedSongs] = useState([]);
   const [followers, setFollowers] = useState([]);
   const [following, setFollowing] = useState([]);
   const [activeTab, setActiveTab] = useState('songs'); // songs, archived, favorites, followers, following
@@ -73,28 +74,30 @@ const UserProfilePage = () => {
 
         if (songsError) throw songsError;
 
-        // Récupérer les chansons favorites (likes) - requête optimisée
+        // Récupérer les favoris (table favorites)
+        const { data: favData } = await supabase
+          .from('favorites')
+          .select(`song_id, songs(id, title, artist, cover_url, audio_url, created_at, plays_count, likes_count, uploader_id, is_archived)`)
+          .eq('user_id', currentUser.id)
+          .order('created_at', { ascending: false });
+
+        const favoriteSongsData = (favData || []).map(f => f.songs).filter(Boolean).filter(s => !s?.is_archived);
+
+        // Récupérer les sons likés (table likes)
         const { data: likesData, error: likesError } = await supabase
           .from('likes')
           .select(`
             song_id,
             songs (
-              id,
-              title,
-              artist,
-              cover_url,
-              audio_url,
-              created_at,
-              plays_count,
-              likes_count
+              id, title, artist, cover_url, audio_url,
+              created_at, plays_count, likes_count, uploader_id, is_archived
             )
           `)
           .eq('user_id', currentUser.id)
           .order('created_at', { ascending: false });
 
         if (likesError) throw likesError;
-
-        const favoriteSongsData = likesData?.map(like => like.songs).filter(Boolean) || [];
+        const likedSongsData = (likesData || []).map(l => l.songs).filter(Boolean).filter(s => !s?.is_archived);
 
         // Récupérer les followers
         const { data: followersData, error: followersError } = await supabase
@@ -115,6 +118,7 @@ const UserProfilePage = () => {
         setProfile(userData);
         setUserSongs(songsData || []);
         setFavoriteSongs(favoriteSongsData);
+        setLikedSongs(likedSongsData);
         setFollowers(followersData || []);
         setFollowing(followingData || []);
       })();
@@ -226,7 +230,11 @@ const UserProfilePage = () => {
                     <div className="text-sm text-gray-400">Morceaux</div>
                   </div>
                   <div className="text-center">
-                    <div className="text-xl font-bold text-pink-400">{favoriteSongs.length}</div>
+                    <div className="text-xl font-bold text-pink-400">{likedSongs.length}</div>
+                    <div className="text-sm text-gray-400">Likés</div>
+                  </div>
+                  <div className="text-center">
+                    <div className="text-xl font-bold text-purple-400">{favoriteSongs.length}</div>
                     <div className="text-sm text-gray-400">Favoris</div>
                   </div>
                   <div className="text-center">
@@ -271,11 +279,12 @@ const UserProfilePage = () => {
           {/* Onglets — scroll horizontal sur mobile */}
           <div className="flex gap-1 mb-6 border-b border-gray-800 overflow-x-auto scrollbar-hide">
             {[
-              { id: 'songs',     icon: Music,    label: 'Morceaux',    mobileLabel: 'Sons',     color: 'cyan',   count: userSongs.filter(s => !s.is_archived).length },
-              { id: 'archived',  icon: Archive,  label: 'Archivés',    mobileLabel: 'Archivés', color: 'amber',  count: userSongs.filter(s => s.is_archived).length },
-              { id: 'favorites', icon: Heart,    label: 'Favoris',     mobileLabel: 'Favoris',  color: 'pink',   count: favoriteSongs.length },
-              { id: 'followers', icon: Users,    label: 'Abonnés',     mobileLabel: 'Abonnés',  color: 'green',  count: followers.length },
-              { id: 'following', icon: UserPlus, label: 'Abonnements', mobileLabel: 'Suivis',   color: 'blue',   count: following.length },
+              { id: 'songs',     icon: Music,     label: 'Morceaux',    mobileLabel: 'Sons',     color: 'cyan',   count: userSongs.filter(s => !s.is_archived).length },
+              { id: 'archived',  icon: Archive,   label: 'Archivés',    mobileLabel: 'Archivés', color: 'amber',  count: userSongs.filter(s => s.is_archived).length },
+              { id: 'favorites', icon: Bookmark,  label: 'Favoris',     mobileLabel: 'Favoris',  color: 'purple', count: favoriteSongs.length },
+              { id: 'liked',     icon: Heart,     label: 'Likés',       mobileLabel: 'Likés',    color: 'pink',   count: likedSongs.length },
+              { id: 'followers', icon: Users,     label: 'Abonnés',     mobileLabel: 'Abonnés',  color: 'green',  count: followers.length },
+              { id: 'following', icon: UserPlus,  label: 'Abonnements', mobileLabel: 'Suivis',   color: 'blue',   count: following.length },
             ].map(({ id, icon: Icon, label, mobileLabel, color, count }) => (
               <button
                 key={id}
@@ -381,26 +390,43 @@ const UserProfilePage = () => {
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 md:gap-6">
                   {favoriteSongs.length > 0 ? (
                     favoriteSongs.map((song, index) => (
-                      <motion.div
-                        key={song.id}
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: index * 0.05 }}
-                      >
+                      <motion.div key={song.id} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: index * 0.05 }}>
                         <SongCard
                           song={song}
                           currentSong={currentSong}
                           setCurrentSong={setCurrentSong}
+                          onDeleted={(id) => setFavoriteSongs(prev => prev.filter(s => s.id !== id))}
                         />
                       </motion.div>
                     ))
                   ) : (
-                    <div className="col-span-full text-center py-12 bg-gray-900/50 backdrop-blur-xl border border-pink-500/30 rounded-xl">
-                      <Heart className="w-16 h-16 text-gray-600 mx-auto mb-4" />
+                    <div className="col-span-full text-center py-12 bg-gray-900/50 backdrop-blur-xl border border-purple-500/20 rounded-xl">
+                      <Bookmark className="w-16 h-16 text-gray-600 mx-auto mb-4" />
                       <p className="text-gray-400 text-lg">Aucun favori</p>
-                      <p className="text-gray-500 text-sm mt-2">
-                        Ajoute des morceaux en favoris pour les retrouver ici
-                      </p>
+                      <p className="text-gray-500 text-sm mt-2">Sauvegarde des sons avec 🔖 pour les retrouver ici</p>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {activeTab === 'liked' && (
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 md:gap-6">
+                  {likedSongs.length > 0 ? (
+                    likedSongs.map((song, index) => (
+                      <motion.div key={song.id} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: index * 0.05 }}>
+                        <SongCard
+                          song={song}
+                          currentSong={currentSong}
+                          setCurrentSong={setCurrentSong}
+                          onDeleted={(id) => setLikedSongs(prev => prev.filter(s => s.id !== id))}
+                        />
+                      </motion.div>
+                    ))
+                  ) : (
+                    <div className="col-span-full text-center py-12 bg-gray-900/50 backdrop-blur-xl border border-pink-500/20 rounded-xl">
+                      <Heart className="w-16 h-16 text-gray-600 mx-auto mb-4" />
+                      <p className="text-gray-400 text-lg">Aucun son liké</p>
+                      <p className="text-gray-500 text-sm mt-2">Les sons que tu ❤️ apparaîtront ici</p>
                     </div>
                   )}
                 </div>

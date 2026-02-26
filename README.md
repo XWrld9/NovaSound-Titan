@@ -56,6 +56,7 @@ npm run dev
 | 5 | `moderation-system.sql` | Table `reports` + rôles modérateur/admin |
 | 6 | `enable-realtime.sql` | Active Supabase Realtime sur `likes` et `news_likes` |
 | 7 | `archive-songs.sql` | Colonnes `is_archived` + `is_deleted` + politiques RLS mises à jour |
+| 8 | `comments-favorites.sql` | Tables `favorites`, `song_comments`, `comment_likes` + triggers + RLS |
 
 > ⚠️ **Ne pas exécuter d'autres fichiers SQL.** Tous les scripts intermédiaires ont été fusionnés ou supprimés.
 
@@ -260,6 +261,21 @@ NovaSound-Titan/
 ---
 
 ## 📝 Changelog
+
+### v9.0 (2026-02-26) — Commentaires + Favoris séparés des Likes
+- ✨ **Favoris (⭐ Sauvegarder)** : nouvelle table `favorites` indépendante des likes — sauvegarde privée, onglet dédié dans le profil avec icône 🔖
+- ✨ **Likes (❤️)** : maintenant strictement un compteur public — onglet "Likés" séparé dans le profil
+- ✨ **Commentaires** : section complète sur chaque page de son avec :
+  - Publication après écoute (Ctrl+Entrée ou bouton)
+  - Like de commentaire (❤️ temps réel)
+  - Édition illimitée par l'auteur (crayon ✏️)
+  - Suppression par l'auteur OU l'admin — modale de confirmation
+  - Signalement (🚩) → enregistré dans la table `reports`
+  - Partage (🔗) → copie le lien ancré vers le commentaire
+  - Menu ⋯ contextuel via React portal (jamais rogné)
+  - Pagination "Voir X commentaires de plus" → Réduire
+  - Realtime via Supabase (nouveau commentaire visible instantanément)
+- 📄 Nouveau fichier SQL `comments-favorites.sql` (étape 8)
 
 ### v8.0 (2026-02-26) — Archivage & suppression des sons
 - ✨ **Archiver un son** : masque le son du public sans le supprimer — restauration possible à tout moment

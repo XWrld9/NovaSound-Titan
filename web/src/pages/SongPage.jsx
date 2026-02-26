@@ -7,17 +7,21 @@ import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import AudioPlayer from '@/components/AudioPlayer';
 import LikeButton from '@/components/LikeButton';
+import FavoriteButton from '@/components/FavoriteButton';
 import SongShareModal from '@/components/SongShareModal';
+import CommentSection from '@/components/CommentSection';
+import SongActionsMenu from '@/components/SongActionsMenu';
 import { formatPlays } from '@/lib/utils';
 import { Music, Play, Headphones, Calendar, ArrowLeft, Share2, User } from 'lucide-react';
 
 const SongPage = () => {
   const { id }     = useParams();
   const navigate   = useNavigate();
-  const [song, setSong]       = useState(null);
-  const [artist, setArtist]   = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [playing, setPlaying] = useState(false);
+  const [song, setSong]           = useState(null);
+  const [artist, setArtist]       = useState(null);
+  const [artistEmail, setArtistEmail] = useState(null);
+  const [loading, setLoading]     = useState(true);
+  const [playing, setPlaying]     = useState(false);
   const [showShare, setShowShare] = useState(false);
 
   // Fix bouton retour : fonctionne même depuis un lien partagé (pas d'historique)
@@ -46,8 +50,9 @@ const SongPage = () => {
       setSong(data);
       if (data.uploader_id) {
         const { data: userData } = await supabase
-          .from('users').select('id, username, avatar_url').eq('id', data.uploader_id).single();
+          .from('users').select('id, username, avatar_url, email').eq('id', data.uploader_id).single();
         setArtist(userData || null);
+        setArtistEmail(userData?.email || null);
       }
     } catch { navigate('/', { replace: true }); }
     finally { setLoading(false); }
@@ -155,7 +160,9 @@ const SongPage = () => {
               <div className="flex items-center gap-3 flex-wrap">
                 <LikeButton songId={song.id} initialLikes={song.likes_count || 0} />
 
-                {/* Bouton Partager → ShareModal Spotify */}
+                <FavoriteButton songId={song.id} showLabel={true} />
+
+                {/* Bouton Partager */}
                 <button
                   onClick={() => setShowShare(true)}
                   className="flex items-center gap-2 px-4 py-2 rounded-full border border-gray-700 text-gray-400 hover:border-cyan-500/50 hover:text-cyan-400 transition-all text-sm font-medium"
@@ -168,9 +175,19 @@ const SongPage = () => {
                   <Play className="w-4 h-4 fill-current" />
                   <span>Écouter</span>
                 </button>
+
+                {/* Actions admin/owner */}
+                <SongActionsMenu
+                  song={song}
+                  onArchived={() => navigate('/')}
+                  onDeleted={() => navigate('/')}
+                />
               </div>
             </div>
           </motion.div>
+
+          {/* Section commentaires */}
+          <CommentSection songId={song.id} songUploaderEmail={artistEmail} />
         </main>
 
         <Footer />
