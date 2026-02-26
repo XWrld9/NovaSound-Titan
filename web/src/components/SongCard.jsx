@@ -1,17 +1,22 @@
 import React, { useState, memo } from 'react';
-import { Play, Download, Share2, Music, Trash2, Headphones } from 'lucide-react';
+import { Play, Download, Share2, Music, Headphones } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { AnimatePresence } from 'framer-motion';
 import { useAuth } from '@/contexts/AuthContext';
 import LikeButton from '@/components/LikeButton';
 import ReportButton from './ReportButton';
 import SongShareModal from '@/components/SongShareModal';
+import SongActionsMenu from '@/components/SongActionsMenu';
 import { formatPlays } from '@/lib/utils';
 
-const SongCard = memo(({ song, onPlay, isPlaying, setCurrentSong, currentSong, showDelete, onDelete }) => {
+const SongCard = memo(({ song: initialSong, onPlay, isPlaying, setCurrentSong, currentSong, onArchived, onDeleted }) => {
   const { currentUser } = useAuth();
+  const [song, setSong] = useState(initialSong);
   const [isHovered, setIsHovered] = useState(false);
   const [showShare, setShowShare] = useState(false);
+
+  // Sync si la prop change (ex: refresh parent)
+  React.useEffect(() => { setSong(initialSong); }, [initialSong]);
 
   const handlePlay = () => {
     if (onPlay) onPlay(song);
@@ -38,10 +43,17 @@ const SongCard = memo(({ song, onPlay, isPlaying, setCurrentSong, currentSong, s
   return (
     <>
       <div
-        className="bg-gray-900/80 border border-cyan-500/30 rounded-xl overflow-hidden hover:border-cyan-400 transition-all group relative"
+        className={`bg-gray-900/80 border rounded-xl overflow-hidden hover:border-cyan-400 transition-all group relative ${song.is_archived ? 'border-amber-500/40 opacity-70' : 'border-cyan-500/30'}`}
         onMouseEnter={() => setIsHovered(true)}
         onMouseLeave={() => setIsHovered(false)}
       >
+        {/* Badge archivé */}
+        {song.is_archived && (
+          <div className="absolute top-2 left-2 z-10 flex items-center gap-1 bg-amber-500/90 backdrop-blur-sm px-2 py-0.5 rounded-full">
+            <span className="text-[10px] text-white font-bold tracking-wide">ARCHIVÉ</span>
+          </div>
+        )}
+
         {/* Pochette */}
         <div className="relative aspect-square">
           {song.cover_url ? (
@@ -59,7 +71,7 @@ const SongCard = memo(({ song, onPlay, isPlaying, setCurrentSong, currentSong, s
           )}
 
           {/* Overlay hover */}
-          {isHovered && (
+          {isHovered && !song.is_archived && (
             <div className="absolute inset-0 bg-black/60 flex items-center justify-center">
               <button
                 onClick={handlePlay}
@@ -67,6 +79,11 @@ const SongCard = memo(({ song, onPlay, isPlaying, setCurrentSong, currentSong, s
               >
                 <Play className="w-8 h-8 text-white fill-current" />
               </button>
+            </div>
+          )}
+          {isHovered && song.is_archived && (
+            <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
+              <span className="text-amber-400 text-xs font-semibold">Son archivé</span>
             </div>
           )}
 
@@ -101,28 +118,33 @@ const SongCard = memo(({ song, onPlay, isPlaying, setCurrentSong, currentSong, s
           <div className="flex items-center justify-between mt-3">
             <LikeButton songId={song.id} initialLikes={song.likes_count || 0} />
             <div className="flex items-center gap-2">
-              <button onClick={handleDownload} className="text-gray-400 hover:text-cyan-400 transition-colors" title="Télécharger">
-                <Download className="w-4 h-4" />
-              </button>
-              <button onClick={handleShare} className="text-gray-400 hover:text-white transition-colors" title="Partager">
-                <Share2 className="w-4 h-4" />
-              </button>
-              <ReportButton contentType="song" contentId={song.id} />
-              {showDelete && onDelete && (
-                <button
-                  onClick={(e) => { e.stopPropagation(); onDelete(song.id); }}
-                  className="text-gray-400 hover:text-red-400 transition-colors"
-                  title="Supprimer"
-                >
-                  <Trash2 className="w-4 h-4" />
-                </button>
+              {!song.is_archived && (
+                <>
+                  <button onClick={handleDownload} className="text-gray-400 hover:text-cyan-400 transition-colors" title="Télécharger">
+                    <Download className="w-4 h-4" />
+                  </button>
+                  <button onClick={handleShare} className="text-gray-400 hover:text-white transition-colors" title="Partager">
+                    <Share2 className="w-4 h-4" />
+                  </button>
+                  <ReportButton contentType="song" contentId={song.id} />
+                </>
               )}
+              <SongActionsMenu
+                song={song}
+                onArchived={(id, isArch) => {
+                  setSong((s) => ({ ...s, is_archived: isArch }));
+                  onArchived?.(id, isArch);
+                }}
+                onDeleted={(id) => {
+                  onDeleted?.(id);
+                }}
+              />
             </div>
           </div>
         </div>
       </div>
 
-      {/* Share Modal Spotify — monté hors de la card pour le z-index */}
+      {/* Share Modal */}
       <AnimatePresence>
         {showShare && (
           <SongShareModal song={song} onClose={() => setShowShare(false)} />

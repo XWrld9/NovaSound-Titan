@@ -289,7 +289,7 @@ const ArtistProfilePage = () => {
       setLoading(true);
       const [{ data: artistData, error: artistError }, { data: songsData, error: songsError }] = await Promise.all([
         supabase.from('users').select('*').eq('id', id).single(),
-        supabase.from('songs').select('*').eq('uploader_id', id).order('plays_count', { ascending: false }).limit(50)
+        supabase.from('songs').select('*').eq('uploader_id', id).eq('is_archived', false).order('plays_count', { ascending: false }).limit(50)
       ]);
       if (artistError) throw artistError;
       if (songsError) throw songsError;

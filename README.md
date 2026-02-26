@@ -55,6 +55,7 @@ npm run dev
 | 4 | `fix-rls-avatars.sql` | Politiques RLS sur le bucket `avatars` |
 | 5 | `moderation-system.sql` | Table `reports` + rôles modérateur/admin |
 | 6 | `enable-realtime.sql` | Active Supabase Realtime sur `likes` et `news_likes` |
+| 7 | `archive-songs.sql` | Colonnes `is_archived` + `is_deleted` + politiques RLS mises à jour |
 
 > ⚠️ **Ne pas exécuter d'autres fichiers SQL.** Tous les scripts intermédiaires ont été fusionnés ou supprimés.
 
@@ -259,6 +260,16 @@ NovaSound-Titan/
 ---
 
 ## 📝 Changelog
+
+### v8.0 (2026-02-26) — Archivage & suppression des sons
+- ✨ **Archiver un son** : masque le son du public sans le supprimer — restauration possible à tout moment
+- ✨ **Supprimer définitivement** : supprime le son + fichiers audio/cover du storage Supabase
+- 🔐 **Droits stricts** : seul l'uploader du son OU l'admin (`eloadxfamily@gmail.com`) peut archiver/supprimer
+- ✨ **Menu ⋯ contextuel** sur chaque SongCard (visible uniquement si autorisé) — modale de confirmation pour chaque action
+- ✨ **Badge "ARCHIVÉ"** sur la carte + onglet dédié "Archivés" dans le profil utilisateur avec compteur
+- ✨ **Badge "⚡ ACTION ADMIN"** visible dans le menu quand l'admin agit sur un son qui n'est pas le sien
+- ✅ Sons archivés filtrés de toutes les vues publiques (Accueil, Explorer, Profil artiste public)
+- 📄 Nouveau fichier SQL `archive-songs.sql` à exécuter dans Supabase (étape 7)
 
 ### v7.0 (2026-02-26) — Fix logo & partage profil artiste + iOS PWA
 - 🔴 Fix **logo NovaSound absent dans la carte de partage du profil artiste** : même cause CORS que v6 — remplacé par `/icon-192.png` local en data URL

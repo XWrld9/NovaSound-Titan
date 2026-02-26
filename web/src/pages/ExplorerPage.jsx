@@ -52,6 +52,7 @@ const ExplorerPage = () => {
       let query = supabase
         .from('songs')
         .select('*')
+        .eq('is_archived', false)
         .order(field, { ascending: !desc })
         .range(start, end);
 

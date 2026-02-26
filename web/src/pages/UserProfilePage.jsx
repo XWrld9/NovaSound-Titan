@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Helmet } from 'react-helmet-async';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
-import { Music, Upload, Heart, Edit3, LogOut, Users, UserPlus } from 'lucide-react';
+import { Music, Upload, Heart, Edit3, LogOut, Users, UserPlus, Archive } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { supabase } from '@/lib/supabaseClient';
 import Header from '@/components/Header';
@@ -21,7 +21,7 @@ const UserProfilePage = () => {
   const [favoriteSongs, setFavoriteSongs] = useState([]);
   const [followers, setFollowers] = useState([]);
   const [following, setFollowing] = useState([]);
-  const [activeTab, setActiveTab] = useState('songs'); // songs, favorites, followers, following
+  const [activeTab, setActiveTab] = useState('songs'); // songs, archived, favorites, followers, following
   const [loading, setLoading] = useState(true);
   const [currentSong, setCurrentSong] = useState(null);
   const [showEditModal, setShowEditModal] = useState(false);
@@ -63,13 +63,13 @@ const UserProfilePage = () => {
           return;
         }
 
-        // Récupérer les chansons de l'utilisateur
+        // Récupérer les chansons de l'utilisateur (actives + archivées)
         const { data: songsData, error: songsError } = await supabase
           .from('songs')
           .select('*')
           .eq('uploader_id', currentUser.id)
           .order('created_at', { ascending: false })
-          .limit(50);
+          .limit(100);
 
         if (songsError) throw songsError;
 
@@ -136,33 +136,12 @@ const UserProfilePage = () => {
     navigate('/login');
   };
 
-  const handleDeleteSong = async (songId) => {
-    try {
-      // Supprimer le fichier audio du storage
-      const { data: song } = await supabase
-        .from('songs')
-        .select('audio_url')
-        .eq('id', songId)
-        .single();
+  const handleSongArchived = (songId, isArchived) => {
+    setUserSongs(prev => prev.map(s => s.id === songId ? { ...s, is_archived: isArchived } : s));
+  };
 
-      if (song?.audio_url) {
-        const filePath = song.audio_url.split('/').pop();
-        await supabase.storage.from('audio').remove([filePath]);
-      }
-
-      // Supprimer la chanson de la base de données
-      const { error } = await supabase
-        .from('songs')
-        .delete()
-        .eq('id', songId);
-
-      if (error) throw error;
-
-      // Mettre à jour la liste
-      setUserSongs(prev => prev.filter(song => song.id !== songId));
-    } catch (error) {
-      console.error('Error deleting song:', error);
-    }
+  const handleSongDeleted = (songId) => {
+    setUserSongs(prev => prev.filter(s => s.id !== songId));
   };
 
   if (!currentUser) {
@@ -292,11 +271,12 @@ const UserProfilePage = () => {
           {/* Onglets — scroll horizontal sur mobile */}
           <div className="flex gap-1 mb-6 border-b border-gray-800 overflow-x-auto scrollbar-hide">
             {[
-              { id: 'songs',     icon: Music,    label: 'Morceaux',    mobileLabel: 'Sons',    color: 'cyan'  },
-              { id: 'favorites', icon: Heart,    label: 'Favoris',     mobileLabel: 'Favoris', color: 'pink'  },
-              { id: 'followers', icon: Users,    label: 'Abonnés',     mobileLabel: 'Abonnés', color: 'green' },
-              { id: 'following', icon: UserPlus, label: 'Abonnements', mobileLabel: 'Suivis',  color: 'blue'  },
-            ].map(({ id, icon: Icon, label, mobileLabel, color }) => (
+              { id: 'songs',     icon: Music,    label: 'Morceaux',    mobileLabel: 'Sons',     color: 'cyan',   count: userSongs.filter(s => !s.is_archived).length },
+              { id: 'archived',  icon: Archive,  label: 'Archivés',    mobileLabel: 'Archivés', color: 'amber',  count: userSongs.filter(s => s.is_archived).length },
+              { id: 'favorites', icon: Heart,    label: 'Favoris',     mobileLabel: 'Favoris',  color: 'pink',   count: favoriteSongs.length },
+              { id: 'followers', icon: Users,    label: 'Abonnés',     mobileLabel: 'Abonnés',  color: 'green',  count: followers.length },
+              { id: 'following', icon: UserPlus, label: 'Abonnements', mobileLabel: 'Suivis',   color: 'blue',   count: following.length },
+            ].map(({ id, icon: Icon, label, mobileLabel, color, count }) => (
               <button
                 key={id}
                 onClick={() => setActiveTab(id)}
@@ -309,6 +289,11 @@ const UserProfilePage = () => {
                 <Icon className="w-4 h-4" />
                 <span className="hidden sm:inline">{label}</span>
                 <span className="sm:hidden">{mobileLabel}</span>
+                {count > 0 && (
+                  <span className={`text-xs px-1.5 py-0.5 rounded-full font-bold ${activeTab === id ? `bg-${color}-500/20 text-${color}-400` : 'bg-gray-800 text-gray-500'}`}>
+                    {count}
+                  </span>
+                )}
               </button>
             ))}
           </div>
@@ -325,8 +310,8 @@ const UserProfilePage = () => {
             <>
               {activeTab === 'songs' && (
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 md:gap-6">
-                  {userSongs.length > 0 ? (
-                    userSongs.map((song, index) => (
+                  {userSongs.filter(s => !s.is_archived).length > 0 ? (
+                    userSongs.filter(s => !s.is_archived).map((song, index) => (
                       <motion.div
                         key={song.id}
                         initial={{ opacity: 0, y: 20 }}
@@ -337,8 +322,8 @@ const UserProfilePage = () => {
                           song={song}
                           currentSong={currentSong}
                           setCurrentSong={setCurrentSong}
-                          showDelete={true}
-                          onDelete={handleDeleteSong}
+                          onArchived={handleSongArchived}
+                          onDeleted={handleSongDeleted}
                         />
                       </motion.div>
                     ))
@@ -352,6 +337,41 @@ const UserProfilePage = () => {
                           Upload ton premier morceau
                         </Button>
                       </Link>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {activeTab === 'archived' && (
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 md:gap-6">
+                  {userSongs.filter(s => s.is_archived).length > 0 ? (
+                    <>
+                      <div className="col-span-full flex items-center gap-2 bg-amber-500/10 border border-amber-500/30 rounded-xl px-4 py-3 mb-2">
+                        <Archive className="w-4 h-4 text-amber-400 flex-shrink-0" />
+                        <p className="text-amber-300 text-sm">Ces sons sont masqués du public. Clique sur ⋯ → Restaurer pour les remettre en ligne.</p>
+                      </div>
+                      {userSongs.filter(s => s.is_archived).map((song, index) => (
+                        <motion.div
+                          key={song.id}
+                          initial={{ opacity: 0, y: 20 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          transition={{ delay: index * 0.05 }}
+                        >
+                          <SongCard
+                            song={song}
+                            currentSong={currentSong}
+                            setCurrentSong={setCurrentSong}
+                            onArchived={handleSongArchived}
+                            onDeleted={handleSongDeleted}
+                          />
+                        </motion.div>
+                      ))}
+                    </>
+                  ) : (
+                    <div className="col-span-full text-center py-12 bg-gray-900/50 backdrop-blur-xl border border-amber-500/20 rounded-xl">
+                      <Archive className="w-16 h-16 text-gray-600 mx-auto mb-4" />
+                      <p className="text-gray-400 text-lg">Aucun son archivé</p>
+                      <p className="text-gray-500 text-sm mt-2">Les sons que tu archives apparaîtront ici</p>
                     </div>
                   )}
                 </div>

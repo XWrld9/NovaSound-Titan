@@ -43,6 +43,7 @@ const HomePage = () => {
         supabase
           .from('songs')
           .select('*')
+          .eq('is_archived', false)
           .order('created_at', { ascending: false })
           .limit(12),
         supabase
