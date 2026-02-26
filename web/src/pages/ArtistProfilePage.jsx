@@ -24,12 +24,56 @@ const ARTIST_SHARE_THEMES = [
   { id: 'gold',   bg: 'linear-gradient(160deg,#1c1400 0%,#3d2e00 50%,#78570a 100%)', logo: '#fbbf24' },
 ];
 
+/* ── Helpers partagés (logo local, data URL image, wait) ── */
+const loadLocalLogo = () =>
+  fetch('/icon-192.png')
+    .then((r) => r.blob())
+    .then((blob) => new Promise((res) => {
+      const reader = new FileReader();
+      reader.onloadend = () => res(reader.result);
+      reader.readAsDataURL(blob);
+    }))
+    .catch(() => null);
+
+const toDataUrl = (src) =>
+  new Promise((resolve) => {
+    const img = new Image();
+    img.crossOrigin = 'anonymous';
+    img.onload = () => {
+      const c = document.createElement('canvas');
+      c.width = img.naturalWidth; c.height = img.naturalHeight;
+      c.getContext('2d').drawImage(img, 0, 0);
+      try { resolve(c.toDataURL('image/jpeg', 0.92)); } catch { resolve(src); }
+    };
+    img.onerror = () => resolve(null);
+    img.src = src + (src.includes('?') ? '&' : '?') + '_cb=' + Date.now();
+  });
+
+const waitForImages = (node) => {
+  const imgs = Array.from(node.querySelectorAll('img'));
+  return Promise.all(imgs.map((img) =>
+    img.complete ? Promise.resolve()
+      : new Promise((res) => { img.onload = res; img.onerror = res; })
+  ));
+};
+
+const dataUrlToBlob = (dataUrl) => {
+  const arr = dataUrl.split(',');
+  const mime = arr[0].match(/:(.*?);/)[1];
+  const bstr = atob(arr[1]); let n = bstr.length;
+  const u8 = new Uint8Array(n);
+  while (n--) u8[n] = bstr.charCodeAt(n);
+  return new Blob([u8], { type: mime });
+};
+
 const ArtistShareModal = ({ artist, onClose }) => {
   const cardRef = React.useRef(null);
   const [theme, setTheme] = useState(ARTIST_SHARE_THEMES[0]);
   const [cardImg, setCardImg] = useState(null);
   const [generating, setGenerating] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [logoDataUrl, setLogoDataUrl] = useState(null);
+  const [avatarDataUrl, setAvatarDataUrl] = useState(null);
   const shareUrl = `${window.location.origin}${window.location.pathname}#/artist/${artist.id}`;
 
   useEffect(() => {
@@ -37,15 +81,28 @@ const ArtistShareModal = ({ artist, onClose }) => {
     return () => { document.body.style.overflow = ''; };
   }, []);
 
+  /* Charger logo local (zéro CORS) */
+  useEffect(() => { loadLocalLogo().then(setLogoDataUrl); }, []);
+
+  /* Convertir avatar en data URL pour éviter CORS dans canvas */
   useEffect(() => {
+    if (artist.avatar_url) toDataUrl(artist.avatar_url).then(setAvatarDataUrl);
+    else setAvatarDataUrl(null);
+  }, [artist.avatar_url]);
+
+  /* Regénérer quand logo ou thème change */
+  useEffect(() => {
+    if (!logoDataUrl) return;
     const t = setTimeout(generateCard, 200);
     return () => clearTimeout(t);
-  }, [theme, artist]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [theme, logoDataUrl, avatarDataUrl]);
 
   const generateCard = async () => {
     if (!cardRef.current) return;
     setGenerating(true);
     try {
+      await waitForImages(cardRef.current);
       await toPng(cardRef.current, { cacheBust: true, pixelRatio: 2 });
       const dataUrl = await toPng(cardRef.current, { cacheBust: true, pixelRatio: 2 });
       setCardImg(dataUrl);
@@ -53,26 +110,22 @@ const ArtistShareModal = ({ artist, onClose }) => {
     finally { setGenerating(false); }
   };
 
-  const dataUrlToBlob = (dataUrl) => {
-    const arr = dataUrl.split(',');
-    const mime = arr[0].match(/:(.*?);/)[1];
-    const bstr = atob(arr[1]);
-    let n = bstr.length;
-    const u8 = new Uint8Array(n);
-    while (n--) u8[n] = bstr.charCodeAt(n);
-    return new Blob([u8], { type: mime });
-  };
-
   const shareCardImage = async () => {
     if (!cardImg) { shareLink(); return; }
     const blob = dataUrlToBlob(cardImg);
     const file = new File([blob], `${artist.username}-novasound.png`, { type: 'image/png' });
-    try {
-      if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
-        await navigator.share({ files: [file], title: artist.username, text: `🎵 Découvre ${artist.username} sur NovaSound TITAN LUX\n${shareUrl}` });
-        return;
+    if (navigator.share) {
+      if (navigator.canShare && navigator.canShare({ files: [file] })) {
+        try {
+          await navigator.share({ files: [file], title: artist.username, text: `🎵 Découvre ${artist.username} sur NovaSound TITAN LUX\n${shareUrl}` });
+          return;
+        } catch (err) { if (err.name === 'AbortError') return; }
       }
-    } catch (err) { if (err.name === 'AbortError') return; }
+      try {
+        await navigator.share({ title: artist.username, text: `🎵 Découvre ${artist.username} sur NovaSound TITAN LUX`, url: shareUrl });
+        return;
+      } catch (e) { if (e.name === 'AbortError') return; }
+    }
     const a = document.createElement('a');
     a.href = cardImg; a.download = `${artist.username}-novasound.png`;
     document.body.appendChild(a); a.click(); document.body.removeChild(a);
@@ -82,7 +135,7 @@ const ArtistShareModal = ({ artist, onClose }) => {
     try { await navigator.clipboard.writeText(shareUrl); }
     catch {
       const ta = document.createElement('textarea');
-      ta.value = shareUrl; ta.style.cssText = 'position:fixed;opacity:0';
+      ta.value = shareUrl; ta.style.cssText = 'position:fixed;opacity:0;top:0;left:0';
       document.body.appendChild(ta); ta.focus(); ta.select();
       document.execCommand('copy'); document.body.removeChild(ta);
     }
@@ -140,19 +193,27 @@ const ArtistShareModal = ({ artist, onClose }) => {
         {/* Carte artiste */}
         <div className="flex flex-col items-center px-5 pt-4 pb-3 flex-shrink-0">
           <div ref={cardRef} style={{ width: 280, borderRadius: 16, overflow: 'hidden', background: theme.bg, fontFamily: 'system-ui,-apple-system,sans-serif', boxShadow: '0 8px 40px rgba(0,0,0,0.6)' }}>
-            {/* Avatar centré (carré) */}
+            {/* Avatar — data URL = zéro CORS dans canvas */}
             <div style={{ width: '100%', aspectRatio: '1/1', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(255,255,255,0.04)' }}>
-              {artist.avatar_url ? (
+              {avatarDataUrl ? (
+                <img src={avatarDataUrl} alt={artist.username} style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
+              ) : artist.avatar_url ? (
                 <img src={artist.avatar_url} alt={artist.username} crossOrigin="anonymous" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
+              ) : logoDataUrl ? (
+                <img src={logoDataUrl} alt="NovaSound" style={{ width: 80, height: 80, borderRadius: '50%', opacity: 0.5 }} />
               ) : (
-                <img src="https://horizons-cdn.hostinger.com/83c37f40-fa54-4cc6-8247-95b1353f3eba/a4885bba5290b1958f05bcdb82731c39.jpg" alt="NovaSound" crossOrigin="anonymous" style={{ width: 80, height: 80, borderRadius: '50%', opacity: 0.5 }} />
+                <div style={{ width: 80, height: 80, borderRadius: '50%', background: theme.logo, opacity: 0.4 }} />
               )}
             </div>
             <div style={{ padding: '12px 14px 14px', background: 'rgba(0,0,0,0.45)' }}>
               <p style={{ color: '#fff', fontWeight: 700, fontSize: 15, lineHeight: 1.3, margin: '0 0 2px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{artist.username}</p>
               <p style={{ color: 'rgba(255,255,255,0.5)', fontSize: 11, margin: '0 0 10px' }}>Artiste · NovaSound TITAN LUX</p>
+              {/* Logo local = zéro CORS, visible partout */}
               <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
-                <img src="https://horizons-cdn.hostinger.com/83c37f40-fa54-4cc6-8247-95b1353f3eba/a4885bba5290b1958f05bcdb82731c39.jpg" alt="NovaSound" crossOrigin="anonymous" style={{ width: 18, height: 18, borderRadius: '50%', border: `1.5px solid ${theme.logo}`, flexShrink: 0 }} />
+                {logoDataUrl
+                  ? <img src={logoDataUrl} alt="NovaSound" style={{ width: 20, height: 20, borderRadius: '50%', border: `1.5px solid ${theme.logo}`, flexShrink: 0, objectFit: 'cover' }} />
+                  : <div style={{ width: 20, height: 20, borderRadius: '50%', background: theme.logo, flexShrink: 0 }} />
+                }
                 <span style={{ color: theme.logo, fontSize: 11, fontWeight: 700, letterSpacing: '0.04em' }}>NovaSound TITAN LUX</span>
               </div>
             </div>
@@ -372,35 +433,37 @@ const ArtistProfilePage = () => {
                   )}
                 </div>
 
-                {/* Bouton follow — seulement si ce n'est pas son propre profil */}
-                {!isOwnProfile && currentUser && (
-                  <FollowButton
-                    userId={artist.id}
-                    initialFollowers={followers.length}
-                    onFollowChange={(nowFollowing, newCount) => {
-                      // Resynchroniser la liste des abonnés affichée dans le header
-                      fetchFollowers();
-                    }}
-                  />
-                )}
-                {isOwnProfile && (
-                  <Link to="/profile" className="inline-flex items-center gap-2 px-4 py-2 bg-gray-800 border border-gray-700 rounded-xl text-gray-400 hover:text-white text-sm transition-all">
-                    ✏️ Modifier mon profil
-                  </Link>
-                )}
-                {/* Bouton Partager le profil — visible par tous */}
-                <button
-                  onClick={() => setShowShare(true)}
-                  className="inline-flex items-center gap-2 px-4 py-2 rounded-xl border border-gray-700 text-gray-400 hover:border-cyan-500/50 hover:text-cyan-400 transition-all text-sm"
-                >
-                  <Share2 className="w-4 h-4" />
-                  Partager
-                </button>
-                {!currentUser && (
-                  <Link to="/login" className="inline-flex items-center gap-2 px-4 py-2 bg-cyan-500/10 border border-cyan-500/30 rounded-xl text-cyan-400 hover:bg-cyan-500/20 text-sm transition-all">
-                    Se connecter pour s'abonner
-                  </Link>
-                )}
+                {/* Boutons d'action — flex-wrap pour mobile */}
+                <div className="flex flex-wrap items-center gap-2 justify-center md:justify-start mt-1">
+                  {/* Follow — seulement si ce n'est pas son propre profil */}
+                  {!isOwnProfile && currentUser && (
+                    <FollowButton
+                      userId={artist.id}
+                      initialFollowers={followers.length}
+                      onFollowChange={(nowFollowing, newCount) => {
+                        fetchFollowers();
+                      }}
+                    />
+                  )}
+                  {isOwnProfile && (
+                    <Link to="/profile" className="inline-flex items-center gap-2 px-4 py-2 bg-gray-800 border border-gray-700 rounded-xl text-gray-400 hover:text-white text-sm transition-all">
+                      ✏️ Modifier mon profil
+                    </Link>
+                  )}
+                  {!currentUser && (
+                    <Link to="/login" className="inline-flex items-center gap-2 px-4 py-2 bg-cyan-500/10 border border-cyan-500/30 rounded-xl text-cyan-400 hover:bg-cyan-500/20 text-sm transition-all">
+                      Se connecter pour s'abonner
+                    </Link>
+                  )}
+                  {/* Bouton Partager — toujours visible, pour tous */}
+                  <button
+                    onClick={() => setShowShare(true)}
+                    className="inline-flex items-center gap-2 px-4 py-2 rounded-xl border border-gray-700 text-gray-400 hover:border-cyan-500/50 hover:text-cyan-400 transition-all text-sm"
+                  >
+                    <Share2 className="w-4 h-4" />
+                    Partager
+                  </button>
+                </div>
               </div>
             </div>
           </motion.div>

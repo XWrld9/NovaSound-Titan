@@ -260,6 +260,15 @@ NovaSound-Titan/
 
 ## 📝 Changelog
 
+### v7.0 (2026-02-26) — Fix logo & partage profil artiste + iOS PWA
+- 🔴 Fix **logo NovaSound absent dans la carte de partage du profil artiste** : même cause CORS que v6 — remplacé par `/icon-192.png` local en data URL
+- 🔴 Fix **avatar artiste CORS** dans la carte profil : converti en data URL via canvas avant génération `html-to-image`
+- 🔴 Fix **icône iOS PWA transparente** : `apple-touch-icon.png` était en mode RGBA → iOS mettait un fond noir aléatoire. Converti en RGB avec fond `#030712` (couleur app) — icône propre à l'ajout sur l'écran d'accueil
+- 🔴 Fix **boutons Follow/Modifier/Partager** : enveloppés dans `flex flex-wrap gap-2` → plus jamais collés, bouton Partager toujours visible sur tous les écrans (mobile centré, desktop aligné à gauche)
+- ✅ `apple-touch-icon-precomposed` ajouté dans `index.html` → iOS ne rajoute plus son effet de brillance par dessus
+- ✅ `waitForImages()` + partage multi-fallback dans `ArtistShareModal`
+- 🧹 Suppression dossier `NovaSound-Titan-v5_5` obsolète
+
 ### v6.0 (2026-02-26) — Fix logo partage cross-device
 - 🔴 Fix **logo NovaSound absent dans la carte de partage** sur iOS, Android et PC : l'URL CDN Hostinger était bloquée par CORS lors de la génération canvas (html-to-image). Le logo est maintenant chargé depuis `/icon-192.png` (fichier local) et converti en data URL au montage → zéro CORS, fonctionne sur tous les devices
 - 🔴 Fix **pochette album CORS** dans la carte : conversion préalable en data URL via canvas avant génération
