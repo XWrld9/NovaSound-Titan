@@ -422,13 +422,22 @@ const CommentSection = ({ songId, songUploaderEmail }) => {
       song_id: songId,
       user_id: currentUser.id,
       content: trimmed,
-    }).select('*, user:user_id(id, username, avatar_url)').single();
+    }).select().single();
 
     setSubmitting(false);
 
     if (!error && data) {
-      // Remplacer le commentaire temporaire par le vrai
-      setComments(prev => prev.map(c => c.id === tempComment.id ? { ...data, _liked: false } : c));
+      // Remplacer le commentaire temporaire par le vrai (avec les vraies données DB)
+      const realComment = {
+        ...data,
+        _liked: false,
+        user: {
+          id: currentUser.id,
+          username: currentUser.username || currentUser.email?.split('@')[0] || 'Moi',
+          avatar_url: currentUser.avatar_url || null,
+        },
+      };
+      setComments(prev => prev.map(c => c.id === tempComment.id ? realComment : c));
       showToast('Commentaire publié ✓', '#22d3ee');
     } else if (error) {
       // Rollback : retirer le commentaire temporaire
