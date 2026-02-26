@@ -12,6 +12,7 @@ import { Button } from '@/components/ui/button';
 import { useAuth } from '@/contexts/AuthContext';
 import NewsLikeButton from '@/components/NewsLikeButton';
 import NewsShareButton from '@/components/NewsShareButton';
+import SongActionsMenu from '@/components/SongActionsMenu';
 
 const HomePage = () => {
   const { isAuthenticated } = useAuth();
@@ -172,9 +173,10 @@ const HomePage = () => {
                       initial={{ opacity: 0, y: 10 }}
                       animate={{ opacity: 1, y: 0 }}
                       transition={{ delay: index * 0.03, duration: 0.3 }}
-                      className="bg-gray-800/90 border border-cyan-500/40 rounded-2xl overflow-hidden hover:border-cyan-400 hover:bg-gray-800 transition-all group hover:shadow-lg hover:shadow-cyan-500/15"
+                      className="bg-gray-800/90 border border-cyan-500/40 rounded-2xl hover:border-cyan-400 hover:bg-gray-800 transition-all group hover:shadow-lg hover:shadow-cyan-500/15"
+                      style={{ overflow: 'visible' }}
                     >
-                      <div className="relative aspect-square">
+                      <div className="relative aspect-square rounded-t-2xl overflow-hidden">
                         {song.cover_url ? (
                           <img
                             src={song.cover_url}
@@ -206,9 +208,16 @@ const HomePage = () => {
                         ) : (
                           <p className="text-gray-400 text-xs truncate mt-0.5">{song.artist}</p>
                         )}
-                        <div className="flex items-center gap-1 mt-1.5">
-                          <Headphones className="w-3 h-3 text-cyan-500/70" />
-                          <span className="text-xs text-gray-500">{formatPlays(song.plays_count)} écoutes</span>
+                        <div className="flex items-center justify-between mt-1.5">
+                          <div className="flex items-center gap-1">
+                            <Headphones className="w-3 h-3 text-cyan-500/70" />
+                            <span className="text-xs text-gray-500">{formatPlays(song.plays_count)} écoutes</span>
+                          </div>
+                          <SongActionsMenu
+                            song={song}
+                            onArchived={(id) => setFeaturedSongs(prev => prev.filter(s => s.id !== id))}
+                            onDeleted={(id) => setFeaturedSongs(prev => prev.filter(s => s.id !== id))}
+                          />
                         </div>
                       </div>
                     </motion.div>

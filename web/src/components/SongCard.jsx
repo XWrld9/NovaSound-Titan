@@ -43,7 +43,8 @@ const SongCard = memo(({ song: initialSong, onPlay, isPlaying, setCurrentSong, c
   return (
     <>
       <div
-        className={`bg-gray-900/80 border rounded-xl overflow-hidden hover:border-cyan-400 transition-all group relative ${song.is_archived ? 'border-amber-500/40 opacity-70' : 'border-cyan-500/30'}`}
+        className={`bg-gray-900/80 border rounded-xl transition-all group relative ${song.is_archived ? 'border-amber-500/40 opacity-70' : 'border-cyan-500/30 hover:border-cyan-400'}`}
+        style={{ overflow: 'visible' }}
         onMouseEnter={() => setIsHovered(true)}
         onMouseLeave={() => setIsHovered(false)}
       >
@@ -54,8 +55,8 @@ const SongCard = memo(({ song: initialSong, onPlay, isPlaying, setCurrentSong, c
           </div>
         )}
 
-        {/* Pochette */}
-        <div className="relative aspect-square">
+        {/* Pochette — overflow-hidden ici uniquement */}
+        <div className="relative aspect-square rounded-t-xl overflow-hidden">
           {song.cover_url ? (
             <img
               src={song.cover_url}

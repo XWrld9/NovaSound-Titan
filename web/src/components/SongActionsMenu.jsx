@@ -1,4 +1,5 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
+import ReactDOM from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { MoreVertical, Archive, ArchiveRestore, Trash2, AlertTriangle } from 'lucide-react';
 import { supabase } from '@/lib/supabaseClient';
@@ -6,115 +7,253 @@ import { useAuth } from '@/contexts/AuthContext';
 
 const ADMIN_EMAIL = 'eloadxfamily@gmail.com';
 
-/* ──────────────────────────────────────────────────────────────
-   Modale de confirmation — Archiver / Désarchiver / Supprimer
-   ────────────────────────────────────────────────────────────── */
+/* ─────────────────────────────────────────────────────────────
+   Modale de confirmation — portail sur document.body
+   ───────────────────────────────────────────────────────────── */
 const ConfirmModal = ({ action, songTitle, onConfirm, onCancel, loading }) => {
-  const isDelete = action === 'delete';
-  const isArchive = action === 'archive';
-
   const config = {
-    archive:   { color: '#f59e0b', icon: <Archive className="w-7 h-7" />,        label: 'Archiver',      title: 'Archiver ce son ?',          desc: 'Le son sera masqué du public mais conservé. Tu pourras le restaurer à tout moment.' },
-    unarchive: { color: '#22d3ee', icon: <ArchiveRestore className="w-7 h-7" />, label: 'Restaurer',     title: 'Restaurer ce son ?',          desc: 'Le son sera de nouveau visible par tout le monde.' },
-    delete:    { color: '#ef4444', icon: <Trash2 className="w-7 h-7" />,         label: 'Supprimer',     title: 'Supprimer définitivement ?',  desc: 'Cette action est irréversible. Le son et ses données seront supprimés pour toujours.' },
+    archive:   {
+      color: '#f59e0b',
+      icon: <Archive className="w-7 h-7" />,
+      label: 'Archiver',
+      title: 'Archiver ce son ?',
+      desc: 'Le son sera masqué du public mais conservé. Tu pourras le restaurer à tout moment depuis ton profil.',
+    },
+    unarchive: {
+      color: '#22d3ee',
+      icon: <ArchiveRestore className="w-7 h-7" />,
+      label: 'Restaurer',
+      title: 'Restaurer ce son ?',
+      desc: 'Le son sera de nouveau visible par tout le monde.',
+    },
+    delete: {
+      color: '#ef4444',
+      icon: <Trash2 className="w-7 h-7" />,
+      label: 'Supprimer',
+      title: 'Supprimer définitivement ?',
+      desc: 'Cette action est irréversible. Le son et ses fichiers seront supprimés pour toujours.',
+    },
   }[action];
 
-  return (
+  if (!config) return null;
+
+  return ReactDOM.createPortal(
     <motion.div
       initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-      className="fixed inset-0 z-[300] flex items-center justify-center px-4"
-      style={{ background: 'rgba(0,0,0,0.75)', backdropFilter: 'blur(6px)', WebkitBackdropFilter: 'blur(6px)' }}
+      style={{
+        position: 'fixed', inset: 0, zIndex: 9999,
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        padding: '16px',
+        background: 'rgba(0,0,0,0.80)',
+        backdropFilter: 'blur(8px)', WebkitBackdropFilter: 'blur(8px)',
+      }}
       onClick={(e) => { if (e.target === e.currentTarget && !loading) onCancel(); }}
     >
       <motion.div
-        initial={{ scale: 0.92, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.92, opacity: 0 }}
-        transition={{ type: 'spring', stiffness: 380, damping: 32 }}
-        className="w-full max-w-sm rounded-2xl p-6 shadow-2xl"
-        style={{ background: '#1a1a2e', border: `1.5px solid ${config.color}40` }}
+        initial={{ scale: 0.88, opacity: 0, y: 16 }}
+        animate={{ scale: 1, opacity: 1, y: 0 }}
+        exit={{ scale: 0.88, opacity: 0, y: 16 }}
+        transition={{ type: 'spring', stiffness: 420, damping: 34 }}
+        style={{
+          width: '100%', maxWidth: 360,
+          borderRadius: 20, padding: '28px 24px 24px',
+          background: '#13131f',
+          border: `1.5px solid ${config.color}35`,
+          boxShadow: `0 24px 60px rgba(0,0,0,0.6), 0 0 0 1px ${config.color}18`,
+        }}
         onClick={(e) => e.stopPropagation()}
       >
-        {/* Icône */}
-        <div className="flex justify-center mb-4">
-          <div className="p-3 rounded-full" style={{ background: config.color + '18', color: config.color }}>
+        {/* Icône colorée */}
+        <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 16 }}>
+          <div style={{
+            padding: 14, borderRadius: '50%',
+            background: config.color + '18',
+            color: config.color,
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+          }}>
             {config.icon}
           </div>
         </div>
 
-        <h3 className="text-white font-bold text-lg text-center mb-2">{config.title}</h3>
-        <p className="text-gray-400 text-sm text-center mb-1 leading-relaxed">{config.desc}</p>
-        <p className="text-gray-500 text-xs text-center mb-6 truncate">« {songTitle} »</p>
+        <p style={{ color: '#fff', fontWeight: 700, fontSize: 17, textAlign: 'center', marginBottom: 8 }}>
+          {config.title}
+        </p>
+        <p style={{ color: 'rgba(255,255,255,0.5)', fontSize: 13, textAlign: 'center', lineHeight: 1.5, marginBottom: 6 }}>
+          {config.desc}
+        </p>
+        <p style={{ color: 'rgba(255,255,255,0.28)', fontSize: 12, textAlign: 'center', marginBottom: 20, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+          « {songTitle} »
+        </p>
 
-        {isDelete && (
-          <div className="flex items-center gap-2 bg-red-500/10 border border-red-500/30 rounded-xl px-3 py-2 mb-5">
-            <AlertTriangle className="w-4 h-4 text-red-400 flex-shrink-0" />
-            <span className="text-red-300 text-xs">Cette action ne peut pas être annulée.</span>
+        {action === 'delete' && (
+          <div style={{
+            display: 'flex', alignItems: 'center', gap: 8,
+            background: 'rgba(239,68,68,0.10)',
+            border: '1px solid rgba(239,68,68,0.30)',
+            borderRadius: 12, padding: '10px 14px', marginBottom: 20,
+          }}>
+            <AlertTriangle style={{ width: 16, height: 16, color: '#f87171', flexShrink: 0 }} />
+            <span style={{ color: '#fca5a5', fontSize: 12 }}>Cette action ne peut pas être annulée.</span>
           </div>
         )}
 
-        <div className="flex gap-3">
+        <div style={{ display: 'flex', gap: 10 }}>
           <button
-            onClick={onCancel}
-            disabled={loading}
-            className="flex-1 py-2.5 rounded-xl text-gray-400 text-sm font-medium transition-colors"
-            style={{ background: 'rgba(255,255,255,0.06)', border: 'none', cursor: loading ? 'default' : 'pointer', opacity: loading ? 0.5 : 1 }}
+            onClick={onCancel} disabled={loading}
+            style={{
+              flex: 1, padding: '11px 0', borderRadius: 12,
+              background: 'rgba(255,255,255,0.07)', border: 'none',
+              color: 'rgba(255,255,255,0.5)', fontSize: 14, fontWeight: 500,
+              cursor: loading ? 'default' : 'pointer', opacity: loading ? 0.5 : 1,
+            }}
           >
             Annuler
           </button>
           <button
-            onClick={onConfirm}
-            disabled={loading}
-            className="flex-1 py-2.5 rounded-xl text-white text-sm font-semibold transition-all flex items-center justify-center gap-2"
-            style={{ background: config.color, border: 'none', cursor: loading ? 'default' : 'pointer', opacity: loading ? 0.7 : 1 }}
+            onClick={onConfirm} disabled={loading}
+            style={{
+              flex: 1, padding: '11px 0', borderRadius: 12,
+              background: config.color, border: 'none',
+              color: '#fff', fontSize: 14, fontWeight: 700,
+              cursor: loading ? 'default' : 'pointer', opacity: loading ? 0.7 : 1,
+              display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+              transition: 'opacity 0.15s',
+            }}
           >
             {loading
-              ? <div className="w-4 h-4 rounded-full border-2 border-white/30 border-t-white animate-spin" />
+              ? <div style={{ width: 16, height: 16, borderRadius: '50%', border: '2px solid rgba(255,255,255,0.3)', borderTopColor: '#fff', animation: 'spin 0.7s linear infinite' }} />
               : config.label
             }
           </button>
         </div>
       </motion.div>
-    </motion.div>
+    </motion.div>,
+    document.body
   );
 };
 
-/* ──────────────────────────────────────────────────────────────
-   SongActionsMenu
-   Affiché uniquement si currentUser = uploader OR admin
-   Props:
-     song         — objet song complet
-     onArchived   (songId, isArchived) => void
-     onDeleted    (songId) => void
-   ────────────────────────────────────────────────────────────── */
+/* ─────────────────────────────────────────────────────────────
+   Dropdown menu — portail sur document.body, positionné
+   dynamiquement au-dessus ou en-dessous selon l'espace disponible
+   ───────────────────────────────────────────────────────────── */
+const DropdownMenu = ({ anchorRef, open, onClose, isArchived, isAdmin, isOwner, onAction }) => {
+  const [pos, setPos] = useState({ top: 0, left: 0, openUp: false });
+
+  useEffect(() => {
+    if (!open || !anchorRef.current) return;
+    const rect = anchorRef.current.getBoundingClientRect();
+    const spaceBelow = window.innerHeight - rect.bottom;
+    const menuH = 110; // hauteur estimée du menu
+    const openUp = spaceBelow < menuH + 12;
+    setPos({
+      top: openUp ? rect.top - menuH - 4 : rect.bottom + 4,
+      left: rect.right - 176, // aligner à droite du bouton
+      openUp,
+    });
+  }, [open, anchorRef]);
+
+  if (!open) return null;
+
+  return ReactDOM.createPortal(
+    <motion.div
+      initial={{ opacity: 0, scale: 0.92, y: pos.openUp ? 6 : -6 }}
+      animate={{ opacity: 1, scale: 1, y: 0 }}
+      exit={{ opacity: 0, scale: 0.92, y: pos.openUp ? 6 : -6 }}
+      transition={{ duration: 0.13, ease: 'easeOut' }}
+      style={{
+        position: 'fixed',
+        top: pos.top,
+        left: Math.max(8, pos.left),
+        zIndex: 9998,
+        minWidth: 176,
+        borderRadius: 14,
+        background: '#1a1a2e',
+        border: '1px solid rgba(255,255,255,0.14)',
+        boxShadow: '0 8px 32px rgba(0,0,0,0.55), 0 2px 8px rgba(0,0,0,0.4)',
+        overflow: 'hidden',
+      }}
+      onClick={(e) => e.stopPropagation()}
+    >
+      {/* Archiver / Restaurer */}
+      <button
+        onClick={() => { onAction(isArchived ? 'unarchive' : 'archive'); onClose(); }}
+        style={{
+          width: '100%', display: 'flex', alignItems: 'center', gap: 10,
+          padding: '11px 16px', background: 'none', border: 'none',
+          color: isArchived ? '#22d3ee' : '#f59e0b',
+          fontSize: 13, fontWeight: 600, cursor: 'pointer', textAlign: 'left',
+        }}
+        onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.07)'}
+        onMouseLeave={(e) => e.currentTarget.style.background = 'none'}
+      >
+        {isArchived
+          ? <><ArchiveRestore style={{ width: 15, height: 15, flexShrink: 0 }} />Restaurer</>
+          : <><Archive style={{ width: 15, height: 15, flexShrink: 0 }} />Archiver</>
+        }
+      </button>
+
+      <div style={{ height: 1, background: 'rgba(255,255,255,0.08)', margin: '0 10px' }} />
+
+      {/* Supprimer */}
+      <button
+        onClick={() => { onAction('delete'); onClose(); }}
+        style={{
+          width: '100%', display: 'flex', alignItems: 'center', gap: 10,
+          padding: '11px 16px', background: 'none', border: 'none',
+          color: '#f87171', fontSize: 13, fontWeight: 600,
+          cursor: 'pointer', textAlign: 'left',
+        }}
+        onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(239,68,68,0.10)'}
+        onMouseLeave={(e) => e.currentTarget.style.background = 'none'}
+      >
+        <Trash2 style={{ width: 15, height: 15, flexShrink: 0 }} />
+        Supprimer
+      </button>
+
+      {/* Badge admin */}
+      {isAdmin && !isOwner && (
+        <div style={{ borderTop: '1px solid rgba(255,255,255,0.08)', padding: '6px 16px' }}>
+          <span style={{ fontSize: 10, color: '#fb923c', fontWeight: 700, letterSpacing: '0.06em' }}>⚡ ACTION ADMIN</span>
+        </div>
+      )}
+    </motion.div>,
+    document.body
+  );
+};
+
+/* ─────────────────────────────────────────────────────────────
+   SongActionsMenu — composant principal
+   ───────────────────────────────────────────────────────────── */
 const SongActionsMenu = ({ song, onArchived, onDeleted }) => {
   const { currentUser } = useAuth();
   const [open, setOpen] = useState(false);
-  const [confirm, setConfirm] = useState(null); // 'archive' | 'unarchive' | 'delete'
+  const [confirm, setConfirm] = useState(null);
   const [loading, setLoading] = useState(false);
   const [toast, setToast] = useState(null);
-  const menuRef = useRef(null);
+  const btnRef = useRef(null);
 
-  // Vérifier droits
-  const isOwner = currentUser && song.uploader_id && currentUser.id === song.uploader_id;
+  const isOwner = currentUser && song.uploader_id && (currentUser.id === song.uploader_id || currentUser.id === String(song.uploader_id));
   const isAdmin = currentUser && currentUser.email === ADMIN_EMAIL;
+
   if (!isOwner && !isAdmin) return null;
 
-  // Fermer le menu si clic extérieur
+  // Fermer dropdown si clic dehors
   useEffect(() => {
     if (!open) return;
     const handler = (e) => {
-      if (menuRef.current && !menuRef.current.contains(e.target)) setOpen(false);
+      if (btnRef.current && !btnRef.current.contains(e.target)) setOpen(false);
     };
-    document.addEventListener('mousedown', handler);
-    document.addEventListener('touchstart', handler);
+    document.addEventListener('mousedown', handler, true);
+    document.addEventListener('touchstart', handler, true);
     return () => {
-      document.removeEventListener('mousedown', handler);
-      document.removeEventListener('touchstart', handler);
+      document.removeEventListener('mousedown', handler, true);
+      document.removeEventListener('touchstart', handler, true);
     };
   }, [open]);
 
-  const showToast = (msg, color = '#22d3ee') => {
+  const showToast = (msg, color) => {
     setToast({ msg, color });
-    setTimeout(() => setToast(null), 3000);
+    setTimeout(() => setToast(null), 3200);
   };
 
   const handleConfirm = async () => {
@@ -130,22 +269,18 @@ const SongActionsMenu = ({ song, onArchived, onDeleted }) => {
         const { error } = await supabase.from('songs').update({ is_archived: false }).eq('id', song.id);
         if (error) throw error;
         onArchived?.(song.id, false);
-        showToast('Son restauré — visible par tous.', '#22d3ee');
+        showToast('Son restauré — visible par tous ✓', '#22d3ee');
 
       } else if (confirm === 'delete') {
-        // Supprimer fichier audio du storage
+        // Supprimer fichiers du storage
         if (song.audio_url) {
-          const parts = song.audio_url.split('/');
-          const filePath = parts[parts.length - 1];
+          const filePath = decodeURIComponent(song.audio_url.split('/').pop().split('?')[0]);
           await supabase.storage.from('audio').remove([filePath]);
         }
-        // Supprimer pochette du storage
         if (song.cover_url && song.cover_url.includes('supabase')) {
-          const parts = song.cover_url.split('/');
-          const filePath = parts[parts.length - 1];
+          const filePath = decodeURIComponent(song.cover_url.split('/').pop().split('?')[0]);
           await supabase.storage.from('covers').remove([filePath]);
         }
-        // Supprimer en DB
         const { error } = await supabase.from('songs').delete().eq('id', song.id);
         if (error) throw error;
         onDeleted?.(song.id);
@@ -153,86 +288,69 @@ const SongActionsMenu = ({ song, onArchived, onDeleted }) => {
       }
     } catch (err) {
       console.error('[SongActionsMenu]', err);
-      showToast('Erreur — réessaie.', '#ef4444');
+      showToast('Erreur — réessaie dans un instant.', '#ef4444');
     } finally {
       setLoading(false);
       setConfirm(null);
-      setOpen(false);
     }
   };
-
-  const isArchived = song.is_archived;
 
   return (
     <>
       {/* Bouton ⋯ */}
-      <div ref={menuRef} className="relative" onClick={(e) => e.stopPropagation()}>
+      <div ref={btnRef} style={{ position: 'relative' }}>
         <button
           onClick={(e) => { e.stopPropagation(); setOpen((v) => !v); }}
-          className="p-1.5 rounded-full text-gray-500 hover:text-white hover:bg-white/10 transition-all"
+          style={{
+            padding: 6, borderRadius: '50%', background: 'none', border: 'none',
+            color: open ? '#fff' : 'rgba(156,163,175,1)',
+            cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
+            transition: 'color 0.15s, background 0.15s',
+          }}
+          onMouseEnter={(e) => { e.currentTarget.style.color = '#fff'; e.currentTarget.style.background = 'rgba(255,255,255,0.1)'; }}
+          onMouseLeave={(e) => { e.currentTarget.style.color = open ? '#fff' : 'rgba(156,163,175,1)'; e.currentTarget.style.background = 'none'; }}
           title="Actions"
+          aria-label="Actions sur ce son"
         >
-          <MoreVertical className="w-4 h-4" />
+          <MoreVertical style={{ width: 16, height: 16 }} />
         </button>
 
-        {/* Menu déroulant */}
         <AnimatePresence>
           {open && (
-            <motion.div
-              initial={{ opacity: 0, scale: 0.9, y: -4 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.9, y: -4 }}
-              transition={{ duration: 0.12 }}
-              className="absolute right-0 top-8 z-50 min-w-[170px] rounded-xl shadow-2xl overflow-hidden"
-              style={{ background: '#1e1e2e', border: '1px solid rgba(255,255,255,0.12)' }}
-            >
-              {/* Archiver / Restaurer */}
-              <button
-                onClick={(e) => { e.stopPropagation(); setConfirm(isArchived ? 'unarchive' : 'archive'); setOpen(false); }}
-                className="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm hover:bg-white/8 transition-colors text-left"
-                style={{ color: isArchived ? '#22d3ee' : '#f59e0b', background: 'none', border: 'none', cursor: 'pointer' }}
-              >
-                {isArchived
-                  ? <><ArchiveRestore className="w-4 h-4 flex-shrink-0" />Restaurer</>
-                  : <><Archive className="w-4 h-4 flex-shrink-0" />Archiver</>
-                }
-              </button>
-
-              <div style={{ height: 1, background: 'rgba(255,255,255,0.08)', margin: '0 8px' }} />
-
-              {/* Supprimer */}
-              <button
-                onClick={(e) => { e.stopPropagation(); setConfirm('delete'); setOpen(false); }}
-                className="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm text-red-400 hover:bg-red-500/10 transition-colors text-left"
-                style={{ background: 'none', border: 'none', cursor: 'pointer' }}
-              >
-                <Trash2 className="w-4 h-4 flex-shrink-0" />
-                Supprimer
-              </button>
-
-              {/* Badge admin */}
-              {isAdmin && !isOwner && (
-                <div className="px-4 py-1.5 border-t border-white/8">
-                  <span className="text-[10px] text-orange-400 font-semibold tracking-wide">⚡ ACTION ADMIN</span>
-                </div>
-              )}
-            </motion.div>
+            <DropdownMenu
+              anchorRef={btnRef}
+              open={open}
+              onClose={() => setOpen(false)}
+              isArchived={!!song.is_archived}
+              isAdmin={isAdmin}
+              isOwner={isOwner}
+              onAction={setConfirm}
+            />
           )}
         </AnimatePresence>
       </div>
 
-      {/* Toast notification */}
+      {/* Toast */}
       <AnimatePresence>
-        {toast && (
+        {toast && ReactDOM.createPortal(
           <motion.div
-            initial={{ opacity: 0, y: 40, x: '-50%' }}
+            initial={{ opacity: 0, y: 32, x: '-50%' }}
             animate={{ opacity: 1, y: 0, x: '-50%' }}
-            exit={{ opacity: 0, y: 20, x: '-50%' }}
-            className="fixed bottom-24 left-1/2 z-[400] px-5 py-3 rounded-2xl shadow-xl text-sm font-medium text-white"
-            style={{ background: toast.color, boxShadow: `0 4px 24px ${toast.color}60`, maxWidth: '90vw', textAlign: 'center' }}
+            exit={{ opacity: 0, y: 16, x: '-50%' }}
+            style={{
+              position: 'fixed', bottom: 88, left: '50%',
+              zIndex: 10000, pointerEvents: 'none',
+              padding: '12px 22px', borderRadius: 50,
+              background: toast.color,
+              boxShadow: `0 4px 28px ${toast.color}70`,
+              color: '#fff', fontSize: 13, fontWeight: 600,
+              maxWidth: '88vw', textAlign: 'center',
+              whiteSpace: 'nowrap',
+            }}
           >
             {toast.msg}
-          </motion.div>
+          </motion.div>,
+          document.body
         )}
       </AnimatePresence>
 

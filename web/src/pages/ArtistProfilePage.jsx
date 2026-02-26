@@ -492,6 +492,8 @@ const ArtistProfilePage = () => {
                         song={song}
                         onPlay={setCurrentSong}
                         isPlaying={currentSong?.id === song.id}
+                        onArchived={(id) => setSongs(prev => prev.filter(s => s.id !== id))}
+                        onDeleted={(id) => setSongs(prev => prev.filter(s => s.id !== id))}
                       />
                     </motion.div>
                   ))}
