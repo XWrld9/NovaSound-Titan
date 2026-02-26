@@ -206,7 +206,7 @@ NovaSound-Titan/
 
 ---
 
-## 🎵 Fonctionnalités v5.4
+## 🎵 Fonctionnalités v5.5
 
 **Artistes**
 - Upload audio (50 MB max) + pochette album — robuste sur iOS
@@ -217,9 +217,10 @@ NovaSound-Titan/
 - Écoutes atomiques sans race condition
 - Likes en temps réel (Supabase Realtime)
 - Lecteur audio complet avec slider tactile iOS natif
+- **Lecture continue** lors du passage mini ↔ expanded (clic sur le titre/pochette)
 - Croix de fermeture sur le player (mini et expanded)
 - Follow/unfollow depuis le player expanded uniquement
-- Téléchargement et partage natif mobile
+- Téléchargement et **partage style Spotify** : modal avec pochette, copier le lien, Web Share API (AirDrop, Messages, etc.) — PC, Android, iOS
 
 **Communauté**
 - News avec modal "Lire la suite"
@@ -254,11 +255,21 @@ NovaSound-Titan/
 | `database error saving new user` | Trigger déjà corrigé dans `setup-supabase.sql` v5.4 |
 | Impossible de se connecter après inscription | Email non confirmé → bouton "Renvoyer" sur la page login |
 | Slider seek/volume ne répond pas sur iOS | Vérifier que `slider.jsx` v5.4 est bien déployé |
+| Le son s'arrête quand on clique sur le titre | Fixed en v5.5 — `<audio>` est maintenant monté en permanence |
+| Partage sans pochette sur iOS | Nécessite iOS 15+ et Safari (Web Share API Level 2) |
 | Buckets introuvables | `SUPABASE_SERVICE_KEY` dans `.env` puis `npm run setup:buckets` |
 
 ---
 
 ## 📝 Changelog
+
+### v5.5 (2026-02-26) — Fix player + partage Spotify-style
+- 🔴 Fix **lecture ininterrompue** : l'élément `<audio>` est désormais monté en permanence, en dehors des blocs conditionnels `expanded` / `mini`. Le son ne s'arrête plus lors du passage mini ↔ expanded (clic sur le titre, la pochette, ou le bouton Maximize)
+- 🔴 Fix **état `isPlaying`** : synchronisé via les événements natifs `onPlay` / `onPause` de l'`<audio>` — plus de désynchronisation entre l'icône et la lecture réelle
+- ✨ **Partage style Spotify** : nouveau composant `ShareModal` avec carte preview (pochette + titre + artiste), bouton "Copier le lien" (feedback ✓ visuel), bouton "Plus d'options…" (Web Share API) — iOS, Android, desktop
+- ✨ **Partage avec pochette sur iOS 15+** : si `navigator.canShare({ files })` est supporté, la pochette est partagée en fichier image (AirDrop, Messages, etc.)
+- ✨ Modal de partage responsive : bottom-sheet sur mobile, modale centrée sur desktop — animation spring Framer Motion
+- 🧹 Nettoyage : suppression du `handleShare` inline (toast basique) remplacé par le nouveau système modal
 
 ### v5.4 (2026-02-26) — Version stable finale
 - 🔴 Fix **Slider iOS** : `touch-none` de Radix UI bloquait tous les événements tactiles sur Safari → réécrit avec handler `onTouchMove` natif. Seek et volume fonctionnent sur tous les iPhones

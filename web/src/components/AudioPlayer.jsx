@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import {
   Play, Pause, SkipBack, SkipForward, Volume2, VolumeX, Volume1,
   Shuffle, Repeat, Music, ChevronDown, Heart, Download, Share2,
-  UserPlus, UserCheck, ExternalLink, X, Maximize2
+  UserPlus, UserCheck, ExternalLink, X, Maximize2, Link, Check
 } from 'lucide-react';
 import { Slider } from '@/components/ui/slider';
 import { supabase } from '@/lib/supabaseClient';
@@ -12,6 +12,156 @@ import LottieAnimation from '@/components/LottieAnimation';
 import playAnimation from '@/animations/play-animation.json';
 import { useNavigate } from 'react-router-dom';
 
+/* ─────────────────────────────────────────
+   SHARE MODAL  — style Spotify
+   ───────────────────────────────────────── */
+const ShareModal = ({ song, onClose }) => {
+  const [copied, setCopied] = useState(false);
+  const shareUrl = `${window.location.origin}${window.location.pathname}#/song/${song.id}`;
+
+  const copyLink = async (e) => {
+    e?.stopPropagation();
+    try {
+      await navigator.clipboard.writeText(shareUrl);
+    } catch {
+      const ta = document.createElement('textarea');
+      ta.value = shareUrl;
+      ta.style.cssText = 'position:fixed;opacity:0;top:0;left:0';
+      document.body.appendChild(ta);
+      ta.focus(); ta.select();
+      document.execCommand('copy');
+      document.body.removeChild(ta);
+    }
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+
+  const nativeShare = async (e) => {
+    e?.stopPropagation();
+    if (!navigator.share) { copyLink(); return; }
+    try {
+      // iOS 15+ supporte le partage de fichiers — essai avec la pochette
+      if (song.cover_url && navigator.canShare) {
+        try {
+          const resp = await fetch(song.cover_url);
+          const blob = await resp.blob();
+          const ext = blob.type.includes('png') ? 'png' : 'jpg';
+          const file = new File([blob], `${song.title}.${ext}`, { type: blob.type });
+          const shareData = {
+            title: song.title,
+            text: `🎵 Écoute "${song.title}" par ${song.artist} sur NovaSound TITAN LUX`,
+            url: shareUrl,
+            files: [file],
+          };
+          if (navigator.canShare(shareData)) {
+            await navigator.share(shareData);
+            return;
+          }
+        } catch { /* fallback sans image */ }
+      }
+      await navigator.share({
+        title: song.title,
+        text: `🎵 Écoute "${song.title}" par ${song.artist} sur NovaSound TITAN LUX`,
+        url: shareUrl,
+      });
+    } catch (err) {
+      if (err.name !== 'AbortError') copyLink();
+    }
+  };
+
+  return (
+    <motion.div
+      key="share-backdrop"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      className="fixed inset-0 z-[200] flex items-end sm:items-center justify-center p-0 sm:p-4"
+      style={{ background: 'rgba(0,0,0,0.72)', backdropFilter: 'blur(4px)', WebkitBackdropFilter: 'blur(4px)' }}
+      onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
+    >
+      <motion.div
+        initial={{ y: 80, opacity: 0, scale: 0.96 }}
+        animate={{ y: 0, opacity: 1, scale: 1 }}
+        exit={{ y: 80, opacity: 0, scale: 0.96 }}
+        transition={{ type: 'spring', damping: 30, stiffness: 320 }}
+        className="w-full sm:max-w-sm rounded-t-3xl sm:rounded-2xl overflow-hidden shadow-2xl"
+        style={{ background: 'linear-gradient(180deg, #1a1f35 0%, #0f1220 100%)', border: '1px solid rgba(255,255,255,0.08)' }}
+        onClick={(e) => e.stopPropagation()}
+      >
+        {/* Handle bar mobile */}
+        <div className="flex justify-center pt-3 pb-1 sm:hidden">
+          <div className="w-10 h-1 rounded-full bg-white/20" />
+        </div>
+
+        {/* Carte preview — comme Spotify OG */}
+        <div className="mx-4 mt-3 mb-4 rounded-xl overflow-hidden flex items-center gap-3 p-3"
+          style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)' }}>
+          <div className="w-14 h-14 flex-shrink-0 rounded-lg overflow-hidden shadow-lg">
+            {song.cover_url
+              ? <img src={song.cover_url} alt={song.title} className="w-full h-full object-cover" />
+              : <div className="w-full h-full bg-gradient-to-br from-cyan-500 to-purple-600 flex items-center justify-center">
+                  <Music className="w-7 h-7 text-white/60" />
+                </div>
+            }
+          </div>
+          <div className="min-w-0 flex-1">
+            <p className="text-white text-sm font-bold truncate">{song.title}</p>
+            <p className="text-gray-400 text-xs truncate">{song.artist}</p>
+            <p className="text-gray-600 text-[10px] mt-0.5 truncate">NovaSound TITAN LUX</p>
+          </div>
+        </div>
+
+        <p className="text-center text-gray-400 text-xs uppercase tracking-widest mb-3 px-4">Partager</p>
+
+        <div className="flex flex-col gap-2 px-4 pb-5">
+          {/* Copier le lien */}
+          <button
+            onClick={copyLink}
+            className="flex items-center gap-3 w-full px-4 py-3 rounded-xl transition-all active:scale-[0.98]"
+            style={{ background: copied ? 'rgba(6,182,212,0.15)' : 'rgba(255,255,255,0.06)', border: `1px solid ${copied ? 'rgba(6,182,212,0.4)' : 'rgba(255,255,255,0.08)'}` }}
+          >
+            {copied
+              ? <Check className="w-5 h-5 text-cyan-400 flex-shrink-0" />
+              : <Link className="w-5 h-5 text-gray-400 flex-shrink-0" />
+            }
+            <span className={`text-sm font-medium ${copied ? 'text-cyan-400' : 'text-white'}`}>
+              {copied ? 'Lien copié !' : 'Copier le lien'}
+            </span>
+            <span className="ml-auto text-[10px] text-gray-600 truncate max-w-[120px]">
+              {shareUrl.replace('https://', '').slice(0, 28)}…
+            </span>
+          </button>
+
+          {/* Partage natif (Web Share API) */}
+          {typeof navigator !== 'undefined' && navigator.share && (
+            <button
+              onClick={nativeShare}
+              className="flex items-center gap-3 w-full px-4 py-3 rounded-xl transition-all active:scale-[0.98]"
+              style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.08)' }}
+            >
+              <Share2 className="w-5 h-5 text-gray-400 flex-shrink-0" />
+              <span className="text-white text-sm font-medium">Plus d'options…</span>
+              <span className="ml-auto text-[10px] text-gray-500">AirDrop · Messages · …</span>
+            </button>
+          )}
+
+          {/* Annuler */}
+          <button
+            onClick={onClose}
+            className="mt-1 w-full py-3 rounded-xl text-gray-500 text-sm font-medium transition-all hover:text-white active:scale-[0.98]"
+            style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.05)' }}
+          >
+            Annuler
+          </button>
+        </div>
+      </motion.div>
+    </motion.div>
+  );
+};
+
+/* ─────────────────────────────────────────
+   AUDIO PLAYER PRINCIPAL
+   ───────────────────────────────────────── */
 const AudioPlayer = ({ currentSong, playlist = [], onNext, onPrevious }) => {
   const { currentUser } = useAuth();
   const navigate = useNavigate();
@@ -30,11 +180,12 @@ const AudioPlayer = ({ currentSong, playlist = [], onNext, onPrevious }) => {
   const [likeId, setLikeId] = useState(null);
   const [isFollowing, setIsFollowing] = useState(false);
   const [followId, setFollowId] = useState(null);
+  const [showShareModal, setShowShareModal] = useState(false);
 
   useEffect(() => {
-    document.body.style.overflow = isExpanded ? 'hidden' : '';
+    document.body.style.overflow = (isExpanded || showShareModal) ? 'hidden' : '';
     return () => { document.body.style.overflow = ''; };
-  }, [isExpanded]);
+  }, [isExpanded, showShareModal]);
 
   useEffect(() => {
     if (audioRef.current) audioRef.current.volume = isMuted ? 0 : volume / 100;
@@ -46,10 +197,11 @@ const AudioPlayer = ({ currentSong, playlist = [], onNext, onPrevious }) => {
       audioRef.current.load();
       setPlayRecorded(false);
       setIsPlaying(false);
+      setCurrentTime(0);
       if (currentUser) { checkLikeStatus(); checkFollowStatus(); }
       else { setIsLiked(false); setLikeId(null); setIsFollowing(false); setFollowId(null); }
     }
-  }, [currentSong]);
+  }, [currentSong?.id]);
 
   const checkLikeStatus = async () => {
     try {
@@ -103,32 +255,15 @@ const AudioPlayer = ({ currentSong, playlist = [], onNext, onPrevious }) => {
 
   const handleDownload = (e) => {
     e?.stopPropagation();
-    if (!currentSong.audio_url) return;
+    if (!currentSong?.audio_url) return;
     const a = document.createElement('a');
     a.href = currentSong.audio_url; a.download = currentSong.title;
     document.body.appendChild(a); a.click(); document.body.removeChild(a);
   };
 
-  const handleShare = async (e) => {
+  const handleShare = (e) => {
     e?.stopPropagation();
-    const url = `${window.location.origin}/#/song/${currentSong.id}`;
-    try {
-      if (navigator.share && navigator.canShare?.({ url })) {
-        await navigator.share({ title: currentSong.title, text: `🎵 Écoute "${currentSong.title}" par ${currentSong.artist} sur NovaSound TITAN LUX`, url });
-        return;
-      }
-    } catch (err) { if (err.name === 'AbortError') return; }
-    try { await navigator.clipboard.writeText(url); } catch {
-      const ta = document.createElement('textarea');
-      ta.value = url; ta.style.cssText = 'position:fixed;opacity:0';
-      document.body.appendChild(ta); ta.focus(); ta.select();
-      document.execCommand('copy'); document.body.removeChild(ta);
-    }
-    const toast = document.createElement('div');
-    toast.className = 'fixed top-4 right-4 bg-cyan-500 text-white px-4 py-2 rounded-lg shadow-lg z-[999] font-medium text-sm';
-    toast.textContent = '🔗 Lien copié !';
-    document.body.appendChild(toast);
-    setTimeout(() => toast.remove(), 2500);
+    setShowShareModal(true);
   };
 
   const recordPlay = async () => {
@@ -143,9 +278,13 @@ const AudioPlayer = ({ currentSong, playlist = [], onNext, onPrevious }) => {
   const togglePlay = (e) => {
     e?.stopPropagation();
     if (!audioRef.current || !currentSong) return;
-    if (isPlaying) { audioRef.current.pause(); }
-    else { audioRef.current.play().catch(() => {}); recordPlay(); }
-    setIsPlaying(!isPlaying);
+    if (isPlaying) {
+      audioRef.current.pause();
+    } else {
+      audioRef.current.play().catch(() => {});
+      recordPlay();
+    }
+    // isPlaying est mis à jour via les events onPlay/onPause
   };
 
   const handleTimeUpdate = () => {
@@ -199,392 +338,410 @@ const AudioPlayer = ({ currentSong, playlist = [], onNext, onPrevious }) => {
   if (!currentSong) return null;
 
   return (
-    <AnimatePresence>
+    <>
+      {/* ══════════════════════════════════════
+          AUDIO ELEMENT — TOUJOURS MONTÉ
+          Placé hors des blocs conditionnels
+          pour que la lecture ne s'interrompe
+          pas lors du passage mini ↔ expanded
+          ══════════════════════════════════════ */}
+      <audio
+        ref={audioRef}
+        onTimeUpdate={handleTimeUpdate}
+        onLoadedMetadata={handleLoadedMetadata}
+        onEnded={handleEnded}
+        onPlay={() => setIsPlaying(true)}
+        onPause={() => setIsPlaying(false)}
+        playsInline
+        webkit-playsinline="true"
+      />
 
-      {/* ════════════════════════════════════
-          EXPANDED — plein écran (mobile + desktop)
-          ════════════════════════════════════ */}
-      {isExpanded && (
-        <motion.div
-          key="expanded"
-          initial={{ opacity: 0, y: 30 }}
-          animate={{ opacity: 1, y: 0 }}
-          exit={{ opacity: 0, y: 30 }}
-          transition={{ type: 'spring', damping: 28, stiffness: 280 }}
-          className="fixed inset-0 z-[60] flex flex-col overflow-y-auto"
-          style={{
-            background: 'linear-gradient(180deg, #0a0f23 0%, #030712 55%)',
-            paddingBottom: 'env(safe-area-inset-bottom, 0px)',
-          }}
-        >
-          <div className="absolute inset-0 opacity-25 pointer-events-none"
-            style={{ background: 'radial-gradient(ellipse at 50% -10%, rgba(6,182,212,0.5) 0%, transparent 65%)' }}
-          />
+      {/* Share Modal */}
+      <AnimatePresence>
+        {showShareModal && (
+          <ShareModal song={currentSong} onClose={() => setShowShareModal(false)} />
+        )}
+      </AnimatePresence>
 
-          {/* Header */}
-          <div className="relative flex items-center justify-between px-5 pt-5 pb-2 z-10"
-            style={{ paddingTop: 'max(20px, env(safe-area-inset-top, 20px))' }}
+      <AnimatePresence>
+
+        {/* ════════════════════════════════════
+            EXPANDED — plein écran
+            ════════════════════════════════════ */}
+        {isExpanded && (
+          <motion.div
+            key="expanded"
+            initial={{ opacity: 0, y: 30 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 30 }}
+            transition={{ type: 'spring', damping: 28, stiffness: 280 }}
+            className="fixed inset-0 z-[60] flex flex-col overflow-y-auto"
+            style={{
+              background: 'linear-gradient(180deg, #0a0f23 0%, #030712 55%)',
+              paddingBottom: 'env(safe-area-inset-bottom, 0px)',
+            }}
           >
-            <button onClick={() => setIsExpanded(false)}
-              className="flex items-center gap-1.5 text-gray-400 hover:text-white transition-colors"
-            >
-              <ChevronDown className="w-5 h-5" />
-              <span className="text-sm hidden sm:inline">Réduire</span>
-            </button>
-            <p className="text-xs text-gray-500 uppercase tracking-widest font-medium">En écoute</p>
-            <button onClick={(e) => { closePlayer(e); setIsExpanded(false); }}
-              className="p-2 rounded-full bg-gray-800/50 border border-gray-700/40 text-gray-400 hover:text-white transition-all"
-            >
-              <X className="w-4 h-4" />
-            </button>
-          </div>
+            <div className="absolute inset-0 opacity-25 pointer-events-none"
+              style={{ background: 'radial-gradient(ellipse at 50% -10%, rgba(6,182,212,0.5) 0%, transparent 65%)' }}
+            />
 
-          {/* Layout 2 colonnes sur desktop, 1 colonne sur mobile */}
-          <div className="flex-1 flex flex-col md:flex-row items-center justify-center gap-8 px-6 pb-8 z-10">
-
-            {/* Pochette */}
-            <motion.div
-              initial={{ scale: 0.88, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              transition={{ delay: 0.08, type: 'spring', damping: 22 }}
-              className="w-60 h-60 sm:w-72 sm:h-72 md:w-80 md:h-80 flex-shrink-0 rounded-2xl overflow-hidden shadow-2xl shadow-black/60 border border-white/10"
+            {/* Header */}
+            <div className="relative flex items-center justify-between px-5 pt-5 pb-2 z-10"
+              style={{ paddingTop: 'max(20px, env(safe-area-inset-top, 20px))' }}
             >
-              {currentSong.cover_url
-                ? <img src={currentSong.cover_url} alt={currentSong.title} className="w-full h-full object-cover" />
-                : <div className="w-full h-full bg-gradient-to-br from-cyan-500 to-purple-600 flex items-center justify-center">
-                    <Music className="w-24 h-24 text-white/50" />
+              <button onClick={() => setIsExpanded(false)}
+                className="flex items-center gap-1.5 text-gray-400 hover:text-white transition-colors"
+              >
+                <ChevronDown className="w-5 h-5" />
+                <span className="text-sm hidden sm:inline">Réduire</span>
+              </button>
+              <p className="text-xs text-gray-500 uppercase tracking-widest font-medium">En écoute</p>
+              <button onClick={(e) => { closePlayer(e); setIsExpanded(false); }}
+                className="p-2 rounded-full bg-gray-800/50 border border-gray-700/40 text-gray-400 hover:text-white transition-all"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            {/* Layout 2 col desktop / 1 col mobile */}
+            <div className="flex-1 flex flex-col md:flex-row items-center justify-center gap-8 px-6 pb-8 z-10">
+
+              {/* Pochette */}
+              <motion.div
+                initial={{ scale: 0.88, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                transition={{ delay: 0.08, type: 'spring', damping: 22 }}
+                className="w-60 h-60 sm:w-72 sm:h-72 md:w-80 md:h-80 flex-shrink-0 rounded-2xl overflow-hidden shadow-2xl shadow-black/60 border border-white/10"
+              >
+                {currentSong.cover_url
+                  ? <img src={currentSong.cover_url} alt={currentSong.title} className="w-full h-full object-cover" />
+                  : <div className="w-full h-full bg-gradient-to-br from-cyan-500 to-purple-600 flex items-center justify-center">
+                      <Music className="w-24 h-24 text-white/50" />
+                    </div>
+                }
+              </motion.div>
+
+              {/* Contrôles */}
+              <div className="flex flex-col gap-5 w-full max-w-sm">
+
+                {/* Titre + artiste + actions */}
+                <div className="flex items-start justify-between gap-3">
+                  <div className="min-w-0 flex-1">
+                    <h2 className="text-white text-xl sm:text-2xl font-bold leading-tight break-words">{currentSong.title}</h2>
+                    <div className="flex items-center gap-2 mt-1 flex-wrap">
+                      <span
+                        className="text-gray-400 text-sm hover:text-white cursor-pointer transition-colors"
+                        onClick={() => currentSong?.uploader_id && navigate(`/artist/${currentSong.uploader_id}`)}
+                      >
+                        {currentSong.artist}
+                      </span>
+                      {showFollowButton && (
+                        <button onClick={handleFollow}
+                          className={`px-2 py-0.5 text-xs rounded-full border transition-all flex items-center gap-1 ${
+                            isFollowing
+                              ? 'border-cyan-500/60 text-cyan-400 bg-cyan-500/10'
+                              : 'border-gray-700 text-gray-500 hover:border-gray-500 hover:text-gray-300'
+                          }`}
+                        >
+                          {isFollowing ? <><UserCheck className="w-3 h-3" />Abonné</> : <><UserPlus className="w-3 h-3" />S'abonner</>}
+                        </button>
+                      )}
+                    </div>
                   </div>
-              }
-            </motion.div>
+                  <div className="flex items-center gap-2 flex-shrink-0">
+                    <button onClick={handleLike}
+                      className={`transition-all active:scale-75 ${isLiked ? 'text-pink-500' : 'text-gray-500 hover:text-pink-400'}`}
+                    >
+                      <Heart className={`w-5 h-5 ${isLiked ? 'fill-current' : ''}`} />
+                    </button>
+                    <button onClick={handleShare} className="text-gray-500 hover:text-white transition-colors">
+                      <Share2 className="w-5 h-5" />
+                    </button>
+                    <button onClick={handleDownload} className="text-gray-500 hover:text-cyan-400 transition-colors">
+                      <Download className="w-5 h-5" />
+                    </button>
+                    {currentSong?.uploader_id && (
+                      <button onClick={(e) => { e.stopPropagation(); navigate(`/artist/${currentSong.uploader_id}`); setIsExpanded(false); }}
+                        className="text-gray-500 hover:text-cyan-400 transition-colors"
+                      >
+                        <ExternalLink className="w-4 h-4" />
+                      </button>
+                    )}
+                  </div>
+                </div>
 
-            {/* Contrôles */}
-            <div className="flex flex-col gap-5 w-full max-w-sm">
+                {/* Seek bar */}
+                <div>
+                  <Slider value={[currentTime]} max={duration || 100} step={0.1} onValueChange={handleSeek} className="cursor-pointer" />
+                  <div className="flex justify-between text-xs text-gray-600 mt-1.5 tabular-nums">
+                    <span>{formatTime(currentTime)}</span>
+                    <span>{formatTime(duration)}</span>
+                  </div>
+                </div>
 
-              {/* Titre + artiste + actions */}
-              <div className="flex items-start justify-between gap-3">
+                {/* Boutons lecture */}
+                <div className="flex items-center justify-between">
+                  <button onClick={(e) => { e.stopPropagation(); setShuffle(!shuffle); }}
+                    className={`p-2 transition-all ${shuffle ? 'text-cyan-400' : 'text-gray-600 hover:text-white'}`}
+                  >
+                    <Shuffle className="w-5 h-5" />
+                  </button>
+                  <button onClick={(e) => { e.stopPropagation(); onPrevious?.(); }}
+                    className="p-2 text-gray-300 hover:text-white hover:scale-110 transition-all" disabled={!onPrevious}
+                  >
+                    <SkipBack className="w-7 h-7" />
+                  </button>
+                  <button onClick={togglePlay}
+                    className="w-14 h-14 rounded-full bg-white text-gray-900 hover:scale-105 active:scale-95 transition-all shadow-xl flex items-center justify-center"
+                  >
+                    {isPlaying ? <Pause className="w-7 h-7" /> : <Play className="w-7 h-7 ml-0.5" />}
+                  </button>
+                  <button onClick={(e) => { e.stopPropagation(); onNext?.(); }}
+                    className="p-2 text-gray-300 hover:text-white hover:scale-110 transition-all" disabled={!onNext}
+                  >
+                    <SkipForward className="w-7 h-7" />
+                  </button>
+                  <button onClick={cycleRepeat}
+                    className={`p-2 relative transition-all ${repeat !== 'off' ? 'text-cyan-400' : 'text-gray-600 hover:text-white'}`}
+                  >
+                    <Repeat className="w-5 h-5" />
+                    {repeat === 'one' && <span className="absolute -bottom-1 left-1/2 -translate-x-1/2 text-[8px] font-bold text-cyan-400 leading-none">1</span>}
+                  </button>
+                </div>
+
+                {/* Volume */}
+                <div className="flex items-center gap-3">
+                  <button onClick={toggleMute} className="text-gray-500 hover:text-white transition-colors flex-shrink-0">
+                    <VolumeIcon className="w-5 h-5" />
+                  </button>
+                  <Slider value={[isMuted ? 0 : volume]} max={100} step={1} onValueChange={handleVolumeChange} className="cursor-pointer flex-1" />
+                  <span className="text-xs text-gray-700 w-6 text-right tabular-nums">{isMuted ? 0 : volume}</span>
+                </div>
+              </div>
+            </div>
+          </motion.div>
+        )}
+
+        {/* ════════════════════════════════════
+            MINI PLAYER — barre du bas
+            ════════════════════════════════════ */}
+        {!isExpanded && (
+          <motion.div
+            key="mini"
+            initial={{ y: 100, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            exit={{ y: 100, opacity: 0 }}
+            className="fixed bottom-0 left-0 right-0 z-50 border-t border-white/[0.06] shadow-2xl"
+            style={{
+              backgroundColor: 'rgb(18 18 18 / 0.97)',
+              backdropFilter: 'blur(24px)',
+              WebkitBackdropFilter: 'blur(24px)',
+              paddingBottom: 'env(safe-area-inset-bottom, 0px)',
+            }}
+          >
+            {/* Barre de progression */}
+            <div className="w-full h-1 bg-gray-800/80 cursor-pointer group relative"
+              onClick={(e) => {
+                if (!duration) return;
+                const r = e.currentTarget.getBoundingClientRect();
+                handleSeek([(e.clientX - r.left) / r.width * duration]);
+              }}
+            >
+              <div className="h-full bg-gradient-to-r from-cyan-500 to-purple-500 transition-all duration-75 group-hover:h-1.5 relative"
+                style={{ width: `${progress}%` }}
+              />
+            </div>
+
+            {/* ── MOBILE ── */}
+            <div className="md:hidden">
+              <div className="flex items-center justify-between px-3 pt-1 pb-0">
+                <button onClick={() => setIsExpanded(true)} className="text-gray-600 hover:text-gray-400 transition-colors p-1">
+                  <Maximize2 className="w-3.5 h-3.5" />
+                </button>
+                <button onClick={closePlayer} className="text-gray-600 hover:text-gray-400 transition-colors p-1">
+                  <X className="w-3.5 h-3.5" />
+                </button>
+              </div>
+
+              <div className="flex items-center gap-3 px-3 pb-2 pt-0.5">
+                <div className="flex-shrink-0 w-11 h-11 rounded-lg overflow-hidden cursor-pointer active:opacity-70 transition-opacity"
+                  onClick={() => setIsExpanded(true)}
+                >
+                  {currentSong.cover_url
+                    ? <img src={currentSong.cover_url} alt={currentSong.title} className="w-full h-full object-cover" />
+                    : <div className="w-full h-full bg-gradient-to-br from-cyan-500 to-purple-600 flex items-center justify-center">
+                        <Music className="w-5 h-5 text-white" />
+                      </div>
+                  }
+                </div>
+
+                {/* Titre cliquable — ouvre expanded SANS stopper la lecture */}
+                <div className="flex-1 min-w-0 cursor-pointer" onClick={() => setIsExpanded(true)}>
+                  <div className="text-white text-sm font-semibold flex items-center gap-1 overflow-hidden">
+                    <span className="truncate">{currentSong.title}</span>
+                    {isPlaying && <LottieAnimation animationData={playAnimation} style={{ width: 16, height: 16 }} loop autoplay className="flex-shrink-0" />}
+                  </div>
+                  <div className="text-gray-500 text-xs truncate">{currentSong.artist}</div>
+                </div>
+
+                <div className="flex items-center gap-1 flex-shrink-0">
+                  <button onClick={handleLike} className={`p-1.5 ${isLiked ? 'text-pink-500' : 'text-gray-600'}`}>
+                    <Heart className={`w-4 h-4 ${isLiked ? 'fill-current' : ''}`} />
+                  </button>
+                  <button onClick={(e) => { e.stopPropagation(); onPrevious?.(); }} className="p-1.5 text-gray-500 disabled:opacity-30" disabled={!onPrevious}>
+                    <SkipBack className="w-5 h-5" />
+                  </button>
+                  <button onClick={togglePlay}
+                    className="w-9 h-9 rounded-full bg-white text-gray-900 flex items-center justify-center shadow-md active:scale-90 transition-transform"
+                  >
+                    {isPlaying ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4 ml-0.5" />}
+                  </button>
+                  <button onClick={(e) => { e.stopPropagation(); onNext?.(); }} className="p-1.5 text-gray-500 disabled:opacity-30" disabled={!onNext}>
+                    <SkipForward className="w-5 h-5" />
+                  </button>
+                  <button onClick={toggleMute} className="p-1.5 text-gray-600">
+                    <VolumeIcon className="w-4 h-4" />
+                  </button>
+                </div>
+              </div>
+
+              <div className="flex justify-between text-[10px] text-gray-700 px-4 pb-1.5 tabular-nums">
+                <span>{formatTime(currentTime)}</span>
+                <span>{formatTime(duration)}</span>
+              </div>
+            </div>
+
+            {/* ── DESKTOP 3 COLONNES ── */}
+            <div className="hidden md:grid md:grid-cols-3 items-center px-4 py-3 gap-4">
+
+              {/* Gauche */}
+              <div className="flex items-center gap-3 min-w-0">
+                <div className="relative w-14 h-14 flex-shrink-0 rounded-lg overflow-hidden shadow-lg cursor-pointer group"
+                  onClick={() => setIsExpanded(true)}
+                >
+                  {currentSong.cover_url
+                    ? <img src={currentSong.cover_url} alt={currentSong.title} className="w-full h-full object-cover" />
+                    : <div className="w-full h-full bg-gradient-to-br from-cyan-500 to-purple-600 flex items-center justify-center">
+                        <Music className="w-7 h-7 text-white" />
+                      </div>
+                  }
+                  <div className="absolute inset-0 bg-black/50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                    <Maximize2 className="w-4 h-4 text-white" />
+                  </div>
+                </div>
+
                 <div className="min-w-0 flex-1">
-                  <h2 className="text-white text-xl sm:text-2xl font-bold leading-tight break-words">{currentSong.title}</h2>
-                  <div className="flex items-center gap-2 mt-1 flex-wrap">
+                  <div className="flex items-center gap-1.5 overflow-hidden">
+                    {/* Titre → ouvre expanded SANS stopper la lecture */}
                     <span
-                      className="text-gray-400 text-sm hover:text-white cursor-pointer transition-colors"
+                      className="text-white text-sm font-semibold truncate cursor-pointer hover:underline"
+                      onClick={() => setIsExpanded(true)}
+                      title={currentSong.title}
+                    >
+                      {currentSong.title}
+                    </span>
+                    {isPlaying && <LottieAnimation animationData={playAnimation} style={{ width: 18, height: 18 }} loop autoplay className="flex-shrink-0 opacity-80" />}
+                  </div>
+                  <div className="flex items-center gap-1.5 mt-0.5">
+                    <span
+                      className="text-gray-500 text-xs truncate hover:text-white cursor-pointer transition-colors"
                       onClick={() => currentSong?.uploader_id && navigate(`/artist/${currentSong.uploader_id}`)}
                     >
                       {currentSong.artist}
                     </span>
                     {showFollowButton && (
                       <button onClick={handleFollow}
-                        className={`px-2 py-0.5 text-xs rounded-full border transition-all flex items-center gap-1 ${
+                        className={`text-[10px] px-1.5 py-0.5 rounded-full border transition-all flex items-center gap-0.5 flex-shrink-0 ${
                           isFollowing
-                            ? 'border-cyan-500/60 text-cyan-400 bg-cyan-500/10'
-                            : 'border-gray-700 text-gray-500 hover:border-gray-500 hover:text-gray-300'
+                            ? 'border-cyan-500/50 text-cyan-400'
+                            : 'border-gray-700 text-gray-600 hover:border-gray-500 hover:text-gray-300'
                         }`}
                       >
-                        {isFollowing ? <><UserCheck className="w-3 h-3" />Abonné</> : <><UserPlus className="w-3 h-3" />S'abonner</>}
+                        {isFollowing ? <><UserCheck className="w-2.5 h-2.5" />Abonné</> : <><UserPlus className="w-2.5 h-2.5" />+Suivre</>}
                       </button>
                     )}
                   </div>
                 </div>
-                <div className="flex items-center gap-2 flex-shrink-0">
+
+                <div className="flex items-center gap-0.5 flex-shrink-0">
                   <button onClick={handleLike}
-                    className={`transition-all active:scale-75 ${isLiked ? 'text-pink-500' : 'text-gray-500 hover:text-pink-400'}`}
+                    className={`p-1.5 rounded-full transition-all ${isLiked ? 'text-pink-500' : 'text-gray-700 hover:text-pink-400'}`}
                   >
-                    <Heart className={`w-5 h-5 ${isLiked ? 'fill-current' : ''}`} />
+                    <Heart className={`w-4 h-4 ${isLiked ? 'fill-current' : ''}`} />
                   </button>
-                  <button onClick={handleShare} className="text-gray-500 hover:text-white transition-colors">
-                    <Share2 className="w-5 h-5" />
+                  <button onClick={handleShare} className="p-1.5 rounded-full text-gray-700 hover:text-white transition-colors">
+                    <Share2 className="w-4 h-4" />
                   </button>
-                  <button onClick={handleDownload} className="text-gray-500 hover:text-cyan-400 transition-colors">
-                    <Download className="w-5 h-5" />
+                  <button onClick={handleDownload} className="p-1.5 rounded-full text-gray-700 hover:text-cyan-400 transition-colors">
+                    <Download className="w-4 h-4" />
                   </button>
-                  {currentSong?.uploader_id && (
-                    <button onClick={(e) => { e.stopPropagation(); navigate(`/artist/${currentSong.uploader_id}`); setIsExpanded(false); }}
-                      className="text-gray-500 hover:text-cyan-400 transition-colors"
-                    >
-                      <ExternalLink className="w-4 h-4" />
-                    </button>
-                  )}
+                  <button onClick={closePlayer}
+                    className="p-1.5 rounded-full text-gray-700 hover:text-gray-400 hover:bg-gray-800 transition-all"
+                    title="Fermer le lecteur"
+                  >
+                    <X className="w-3.5 h-3.5" />
+                  </button>
                 </div>
               </div>
 
-              {/* Seek bar */}
-              <div>
-                <Slider value={[currentTime]} max={duration || 100} step={0.1} onValueChange={handleSeek} className="cursor-pointer" />
-                <div className="flex justify-between text-xs text-gray-600 mt-1.5 tabular-nums">
-                  <span>{formatTime(currentTime)}</span>
-                  <span>{formatTime(duration)}</span>
+              {/* Centre */}
+              <div className="flex flex-col items-center gap-1.5">
+                <div className="flex items-center gap-4">
+                  <button onClick={(e) => { e.stopPropagation(); setShuffle(!shuffle); }}
+                    className={`transition-all ${shuffle ? 'text-cyan-400' : 'text-gray-600 hover:text-white'}`}
+                  >
+                    <Shuffle className="w-4 h-4" />
+                  </button>
+                  <button onClick={(e) => { e.stopPropagation(); onPrevious?.(); }}
+                    className="text-gray-400 hover:text-white hover:scale-110 transition-all disabled:opacity-25"
+                    disabled={!onPrevious}
+                  >
+                    <SkipBack className="w-5 h-5" />
+                  </button>
+                  <button onClick={togglePlay}
+                    className="w-9 h-9 rounded-full bg-white text-gray-900 hover:scale-105 active:scale-95 transition-all shadow-lg flex items-center justify-center"
+                  >
+                    {isPlaying ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4 ml-0.5" />}
+                  </button>
+                  <button onClick={(e) => { e.stopPropagation(); onNext?.(); }}
+                    className="text-gray-400 hover:text-white hover:scale-110 transition-all disabled:opacity-25"
+                    disabled={!onNext}
+                  >
+                    <SkipForward className="w-5 h-5" />
+                  </button>
+                  <button onClick={cycleRepeat}
+                    className={`relative transition-all ${repeat !== 'off' ? 'text-cyan-400' : 'text-gray-600 hover:text-white'}`}
+                  >
+                    <Repeat className="w-4 h-4" />
+                    {repeat === 'one' && <span className="absolute -bottom-1.5 left-1/2 -translate-x-1/2 text-[8px] font-bold text-cyan-400 leading-none">1</span>}
+                  </button>
+                </div>
+
+                <div className="flex items-center gap-2 w-full max-w-xs lg:max-w-sm">
+                  <span className="text-xs text-gray-700 w-8 text-right tabular-nums">{formatTime(currentTime)}</span>
+                  <div className="flex-1">
+                    <Slider value={[currentTime]} max={duration || 100} step={0.1} onValueChange={handleSeek} className="cursor-pointer" />
+                  </div>
+                  <span className="text-xs text-gray-700 w-8 tabular-nums">{formatTime(duration)}</span>
                 </div>
               </div>
 
-              {/* Boutons */}
-              <div className="flex items-center justify-between">
-                <button onClick={(e) => { e.stopPropagation(); setShuffle(!shuffle); }}
-                  className={`p-2 transition-all ${shuffle ? 'text-cyan-400' : 'text-gray-600 hover:text-white'}`}
-                >
-                  <Shuffle className="w-5 h-5" />
-                </button>
-                <button onClick={(e) => { e.stopPropagation(); onPrevious?.(); }}
-                  className="p-2 text-gray-300 hover:text-white hover:scale-110 transition-all" disabled={!onPrevious}
-                >
-                  <SkipBack className="w-7 h-7" />
-                </button>
-                <button onClick={togglePlay}
-                  className="w-14 h-14 rounded-full bg-white text-gray-900 hover:scale-105 active:scale-95 transition-all shadow-xl flex items-center justify-center"
-                >
-                  {isPlaying ? <Pause className="w-7 h-7" /> : <Play className="w-7 h-7 ml-0.5" />}
-                </button>
-                <button onClick={(e) => { e.stopPropagation(); onNext?.(); }}
-                  className="p-2 text-gray-300 hover:text-white hover:scale-110 transition-all" disabled={!onNext}
-                >
-                  <SkipForward className="w-7 h-7" />
-                </button>
-                <button onClick={cycleRepeat}
-                  className={`p-2 relative transition-all ${repeat !== 'off' ? 'text-cyan-400' : 'text-gray-600 hover:text-white'}`}
-                >
-                  <Repeat className="w-5 h-5" />
-                  {repeat === 'one' && <span className="absolute -bottom-1 left-1/2 -translate-x-1/2 text-[8px] font-bold text-cyan-400 leading-none">1</span>}
-                </button>
-              </div>
-
-              {/* Volume */}
-              <div className="flex items-center gap-3">
-                <button onClick={toggleMute} className="text-gray-500 hover:text-white transition-colors flex-shrink-0">
-                  <VolumeIcon className="w-5 h-5" />
-                </button>
-                <Slider value={[isMuted ? 0 : volume]} max={100} step={1} onValueChange={handleVolumeChange} className="cursor-pointer flex-1" />
-                <span className="text-xs text-gray-700 w-6 text-right tabular-nums">{isMuted ? 0 : volume}</span>
-              </div>
-            </div>
-          </div>
-        </motion.div>
-      )}
-
-      {/* ════════════════════════════════════
-          MINI PLAYER — barre du bas
-          ════════════════════════════════════ */}
-      {!isExpanded && (
-        <motion.div
-          key="mini"
-          initial={{ y: 100, opacity: 0 }}
-          animate={{ y: 0, opacity: 1 }}
-          exit={{ y: 100, opacity: 0 }}
-          className="fixed bottom-0 left-0 right-0 z-50 border-t border-white/[0.06] shadow-2xl"
-          style={{
-            backgroundColor: 'rgb(18 18 18 / 0.97)',
-            backdropFilter: 'blur(24px)',
-            WebkitBackdropFilter: 'blur(24px)',
-            paddingBottom: 'env(safe-area-inset-bottom, 0px)',
-          }}
-        >
-          <audio ref={audioRef} onTimeUpdate={handleTimeUpdate} onLoadedMetadata={handleLoadedMetadata} onEnded={handleEnded} />
-
-          {/* Barre de progression cliquable tout en haut */}
-          <div className="w-full h-1 bg-gray-800/80 cursor-pointer group relative"
-            onClick={(e) => {
-              if (!duration) return;
-              const r = e.currentTarget.getBoundingClientRect();
-              handleSeek([(e.clientX - r.left) / r.width * duration]);
-            }}
-          >
-            <div className="h-full bg-gradient-to-r from-cyan-500 to-purple-500 transition-all duration-75 group-hover:h-1.5 relative"
-              style={{ width: `${progress}%` }}
-            />
-          </div>
-
-          {/* ── MOBILE ── */}
-          <div className="md:hidden">
-            <div className="flex items-center justify-between px-3 pt-1 pb-0">
-              <button onClick={() => setIsExpanded(true)} className="text-gray-600 hover:text-gray-400 transition-colors p-1">
-                <Maximize2 className="w-3.5 h-3.5" />
-              </button>
-              <button onClick={closePlayer} className="text-gray-600 hover:text-gray-400 transition-colors p-1">
-                <X className="w-3.5 h-3.5" />
-              </button>
-            </div>
-
-            <div className="flex items-center gap-3 px-3 pb-2 pt-0.5">
-              <div className="flex-shrink-0 w-11 h-11 rounded-lg overflow-hidden cursor-pointer active:opacity-70 transition-opacity"
-                onClick={() => setIsExpanded(true)}
-              >
-                {currentSong.cover_url
-                  ? <img src={currentSong.cover_url} alt={currentSong.title} className="w-full h-full object-cover" />
-                  : <div className="w-full h-full bg-gradient-to-br from-cyan-500 to-purple-600 flex items-center justify-center">
-                      <Music className="w-5 h-5 text-white" />
-                    </div>
-                }
-              </div>
-
-              <div className="flex-1 min-w-0 cursor-pointer" onClick={() => setIsExpanded(true)}>
-                <div className="text-white text-sm font-semibold flex items-center gap-1 overflow-hidden">
-                  <span className="truncate">{currentSong.title}</span>
-                  {isPlaying && <LottieAnimation animationData={playAnimation} style={{ width: 16, height: 16 }} loop autoplay className="flex-shrink-0" />}
-                </div>
-                <div className="text-gray-500 text-xs truncate">{currentSong.artist}</div>
-              </div>
-
-              <div className="flex items-center gap-1 flex-shrink-0">
-                <button onClick={handleLike} className={`p-1.5 ${isLiked ? 'text-pink-500' : 'text-gray-600'}`}>
-                  <Heart className={`w-4 h-4 ${isLiked ? 'fill-current' : ''}`} />
-                </button>
-                <button onClick={(e) => { e.stopPropagation(); onPrevious?.(); }} className="p-1.5 text-gray-500 disabled:opacity-30" disabled={!onPrevious}>
-                  <SkipBack className="w-5 h-5" />
-                </button>
-                <button onClick={togglePlay}
-                  className="w-9 h-9 rounded-full bg-white text-gray-900 flex items-center justify-center shadow-md active:scale-90 transition-transform"
-                >
-                  {isPlaying ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4 ml-0.5" />}
-                </button>
-                <button onClick={(e) => { e.stopPropagation(); onNext?.(); }} className="p-1.5 text-gray-500 disabled:opacity-30" disabled={!onNext}>
-                  <SkipForward className="w-5 h-5" />
-                </button>
-                <button onClick={toggleMute} className="p-1.5 text-gray-600">
+              {/* Droite : volume */}
+              <div className="flex items-center justify-end gap-2">
+                <button onClick={toggleMute} className="text-gray-600 hover:text-white transition-colors flex-shrink-0">
                   <VolumeIcon className="w-4 h-4" />
                 </button>
-              </div>
-            </div>
-
-            {/* Durée mobile */}
-            <div className="flex justify-between text-[10px] text-gray-700 px-4 pb-1.5 tabular-nums">
-              <span>{formatTime(currentTime)}</span>
-              <span>{formatTime(duration)}</span>
-            </div>
-          </div>
-
-          {/* ── DESKTOP SPOTIFY 3 COLONNES ── */}
-          <div className="hidden md:grid md:grid-cols-3 items-center px-4 py-3 gap-4">
-
-            {/* Gauche : pochette + infos + actions */}
-            <div className="flex items-center gap-3 min-w-0">
-              <div className="relative w-14 h-14 flex-shrink-0 rounded-lg overflow-hidden shadow-lg cursor-pointer group"
-                onClick={() => setIsExpanded(true)}
-              >
-                {currentSong.cover_url
-                  ? <img src={currentSong.cover_url} alt={currentSong.title} className="w-full h-full object-cover" />
-                  : <div className="w-full h-full bg-gradient-to-br from-cyan-500 to-purple-600 flex items-center justify-center">
-                      <Music className="w-7 h-7 text-white" />
-                    </div>
-                }
-                <div className="absolute inset-0 bg-black/50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                  <Maximize2 className="w-4 h-4 text-white" />
+                <div className="w-20 lg:w-28">
+                  <Slider value={[isMuted ? 0 : volume]} max={100} step={1} onValueChange={handleVolumeChange} className="cursor-pointer" />
                 </div>
+                <span className="text-xs text-gray-700 w-6 tabular-nums">{isMuted ? 0 : volume}</span>
               </div>
 
-              <div className="min-w-0 flex-1">
-                <div className="flex items-center gap-1.5 overflow-hidden">
-                  <span
-                    className="text-white text-sm font-semibold truncate cursor-pointer hover:underline"
-                    onClick={() => setIsExpanded(true)}
-                    title={currentSong.title}
-                  >
-                    {currentSong.title}
-                  </span>
-                  {isPlaying && <LottieAnimation animationData={playAnimation} style={{ width: 18, height: 18 }} loop autoplay className="flex-shrink-0 opacity-80" />}
-                </div>
-                <div className="flex items-center gap-1.5 mt-0.5">
-                  <span
-                    className="text-gray-500 text-xs truncate hover:text-white cursor-pointer transition-colors"
-                    onClick={() => currentSong?.uploader_id && navigate(`/artist/${currentSong.uploader_id}`)}
-                  >
-                    {currentSong.artist}
-                  </span>
-                  {showFollowButton && (
-                    <button onClick={handleFollow}
-                      className={`text-[10px] px-1.5 py-0.5 rounded-full border transition-all flex items-center gap-0.5 flex-shrink-0 ${
-                        isFollowing
-                          ? 'border-cyan-500/50 text-cyan-400'
-                          : 'border-gray-700 text-gray-600 hover:border-gray-500 hover:text-gray-300'
-                      }`}
-                    >
-                      {isFollowing ? <><UserCheck className="w-2.5 h-2.5" />Abonné</> : <><UserPlus className="w-2.5 h-2.5" />+Suivre</>}
-                    </button>
-                  )}
-                </div>
-              </div>
-
-              {/* Actions + croix */}
-              <div className="flex items-center gap-0.5 flex-shrink-0">
-                <button onClick={handleLike}
-                  className={`p-1.5 rounded-full transition-all ${isLiked ? 'text-pink-500' : 'text-gray-700 hover:text-pink-400'}`}
-                >
-                  <Heart className={`w-4 h-4 ${isLiked ? 'fill-current' : ''}`} />
-                </button>
-                <button onClick={handleShare} className="p-1.5 rounded-full text-gray-700 hover:text-white transition-colors">
-                  <Share2 className="w-4 h-4" />
-                </button>
-                <button onClick={handleDownload} className="p-1.5 rounded-full text-gray-700 hover:text-cyan-400 transition-colors">
-                  <Download className="w-4 h-4" />
-                </button>
-                <button onClick={closePlayer}
-                  className="p-1.5 rounded-full text-gray-700 hover:text-gray-400 hover:bg-gray-800 transition-all"
-                  title="Fermer le lecteur"
-                >
-                  <X className="w-3.5 h-3.5" />
-                </button>
-              </div>
             </div>
-
-            {/* Centre : contrôles + seek */}
-            <div className="flex flex-col items-center gap-1.5">
-              <div className="flex items-center gap-4">
-                <button onClick={(e) => { e.stopPropagation(); setShuffle(!shuffle); }}
-                  className={`transition-all ${shuffle ? 'text-cyan-400' : 'text-gray-600 hover:text-white'}`}
-                  title="Aléatoire"
-                >
-                  <Shuffle className="w-4 h-4" />
-                </button>
-
-                <button onClick={(e) => { e.stopPropagation(); onPrevious?.(); }}
-                  className="text-gray-400 hover:text-white hover:scale-110 transition-all disabled:opacity-25"
-                  disabled={!onPrevious}
-                >
-                  <SkipBack className="w-5 h-5" />
-                </button>
-
-                <button onClick={togglePlay}
-                  className="w-9 h-9 rounded-full bg-white text-gray-900 hover:scale-105 active:scale-95 transition-all shadow-lg flex items-center justify-center"
-                >
-                  {isPlaying ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4 ml-0.5" />}
-                </button>
-
-                <button onClick={(e) => { e.stopPropagation(); onNext?.(); }}
-                  className="text-gray-400 hover:text-white hover:scale-110 transition-all disabled:opacity-25"
-                  disabled={!onNext}
-                >
-                  <SkipForward className="w-5 h-5" />
-                </button>
-
-                <button onClick={cycleRepeat}
-                  className={`relative transition-all ${repeat !== 'off' ? 'text-cyan-400' : 'text-gray-600 hover:text-white'}`}
-                >
-                  <Repeat className="w-4 h-4" />
-                  {repeat === 'one' && <span className="absolute -bottom-1.5 left-1/2 -translate-x-1/2 text-[8px] font-bold text-cyan-400 leading-none">1</span>}
-                </button>
-              </div>
-
-              {/* Seek desktop */}
-              <div className="flex items-center gap-2 w-full max-w-xs lg:max-w-sm">
-                <span className="text-xs text-gray-700 w-8 text-right tabular-nums">{formatTime(currentTime)}</span>
-                <div className="flex-1">
-                  <Slider value={[currentTime]} max={duration || 100} step={0.1} onValueChange={handleSeek} className="cursor-pointer" />
-                </div>
-                <span className="text-xs text-gray-700 w-8 tabular-nums">{formatTime(duration)}</span>
-              </div>
-            </div>
-
-            {/* Droite : volume */}
-            <div className="flex items-center justify-end gap-2">
-              <button onClick={toggleMute} className="text-gray-600 hover:text-white transition-colors flex-shrink-0">
-                <VolumeIcon className="w-4 h-4" />
-              </button>
-              <div className="w-20 lg:w-28">
-                <Slider value={[isMuted ? 0 : volume]} max={100} step={1} onValueChange={handleVolumeChange} className="cursor-pointer" />
-              </div>
-              <span className="text-xs text-gray-700 w-6 tabular-nums">{isMuted ? 0 : volume}</span>
-            </div>
-
-          </div>
-        </motion.div>
-      )}
-    </AnimatePresence>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </>
   );
 };
 
