@@ -38,7 +38,6 @@ const AuthCallbackPage  = lazy(() => import('@/pages/AuthCallbackPage'));
 const TrendingPage      = lazy(() => import('@/pages/TrendingPage'));
 const PlaylistPage      = lazy(() => import('@/pages/PlaylistPage'));
 const MyPlaylistsPage   = lazy(() => import('@/pages/MyPlaylistsPage'));
-const MessagesPage      = lazy(() => import('@/pages/MessagesPage'));
 const ChatPage          = lazy(() => import('@/pages/ChatPage'));
 const ArtistStatsPage   = lazy(() => import('@/pages/ArtistStatsPage'));
 const SearchPage        = lazy(() => import('@/pages/SearchPage'));
@@ -92,8 +91,6 @@ function App() {
                           <Route path="/profile"         element={<ProtectedRoute><UserProfilePage /></ProtectedRoute>} />
                           <Route path="/playlists"       element={<ProtectedRoute><MyPlaylistsPage /></ProtectedRoute>} />
                           <Route path="/chat" element={<ChatPage />} />
-                          <Route path="/messages"         element={<ProtectedRoute><MessagesPage /></ProtectedRoute>} />
-                          <Route path="/messages/:userId" element={<ProtectedRoute><MessagesPage /></ProtectedRoute>} />
                           <Route path="/stats"           element={<ProtectedRoute><ArtistStatsPage /></ProtectedRoute>} />
                           <Route path="/moderation"      element={<ProtectedRoute><ModerationPanel /></ProtectedRoute>} />
                           <Route path="/auth/callback"   element={<AuthCallbackPage />} />

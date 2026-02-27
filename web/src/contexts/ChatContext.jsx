@@ -180,14 +180,33 @@ export const ChatProvider = ({ children }) => {
     }
   }, [currentUser]);
 
-  // ── Supprimer (soft delete) ──────────────────────────────────────
+  // ── Supprimer (soft delete) — ADMIN UNIQUEMENT ───────────────────
   const deleteChatMessage = useCallback(async (messageId) => {
+    if (!currentUser?.email || currentUser.email !== 'eloadxfamily@gmail.com') return;
     await supabase
       .from('chat_messages')
       .update({ is_deleted: true })
       .eq('id', messageId);
     setMessages(prev => prev.filter(m => m.id !== messageId));
-  }, []);
+  }, [currentUser?.email]);
+
+  // ── Modifier son propre message (dans les 20min) ──────────────────
+  const editChatMessage = useCallback(async (messageId, newContent) => {
+    if (!currentUser?.id || !newContent.trim()) return false;
+    const msg = messages.find(m => m.id === messageId);
+    if (!msg) return false;
+    if (msg.user_id !== currentUser.id) return false;
+    const ageMs = Date.now() - new Date(msg.created_at).getTime();
+    if (ageMs > 20 * 60 * 1000) return false; // 20 minutes max
+    const { error } = await supabase
+      .from('chat_messages')
+      .update({ content: newContent.trim() })
+      .eq('id', messageId)
+      .eq('user_id', currentUser.id);
+    if (error) return false;
+    setMessages(prev => prev.map(m => m.id === messageId ? { ...m, content: newContent.trim(), _edited: true } : m));
+    return true;
+  }, [currentUser?.id, messages]);
 
   // ── Toggle réaction emoji ────────────────────────────────────────
   const toggleReaction = useCallback(async (messageId, emoji) => {
@@ -306,7 +325,7 @@ export const ChatProvider = ({ children }) => {
     <ChatContext.Provider value={{
       messages, reactions, loading, hasMore, period, onlineCount,
       fetchMessages, changePeriod, loadMore,
-      sendChatMessage, deleteChatMessage, toggleReaction,
+      sendChatMessage, deleteChatMessage, editChatMessage, toggleReaction,
     }}>
       {children}
     </ChatContext.Provider>

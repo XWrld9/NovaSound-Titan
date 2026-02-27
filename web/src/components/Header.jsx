@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Search, Upload, User, LogOut, Menu, X, Globe, Newspaper, Music, Download, Share, Bell, TrendingUp, ListMusic, MessageCircle, BarChart2 } from 'lucide-react';
+import { Search, Upload, User, LogOut, Menu, X, Globe, Newspaper, Music, Download, Share, Bell, TrendingUp, ListMusic, BarChart2 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
-import { useMessages } from '@/contexts/MessageContext';
+
 import { supabase } from '@/lib/supabaseClient';
 import { Button } from '@/components/ui/button';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -23,7 +23,7 @@ const isStandalone = () =>
 
 const Header = () => {
   const { currentUser, isAuthenticated, logout } = useAuth();
-  const { totalUnread: msgUnread } = useMessages();
+
   const navigate = useNavigate();
   const { canInstall, install } = usePWAInstall();
   const [searchQuery, setSearchQuery]           = useState('');
@@ -169,9 +169,6 @@ const Header = () => {
               </Link>
               <Link to="/explorer" className="text-gray-300 hover:text-cyan-400 transition-colors flex items-center gap-2 font-medium">
                 <Globe className="w-4 h-4" />Explorer
-              </Link>
-              <Link to="/search" className="text-gray-300 hover:text-cyan-400 transition-colors flex items-center gap-2 font-medium">
-                <Search className="w-4 h-4" />Recherche
               </Link>
               <Link to="/trending" className="text-gray-300 hover:text-cyan-400 transition-colors flex items-center gap-2 font-medium">
                 <TrendingUp className="w-4 h-4" />Trending

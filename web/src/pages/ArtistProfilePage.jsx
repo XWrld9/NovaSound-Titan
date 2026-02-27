@@ -11,7 +11,7 @@ import SongCard from '@/components/SongCard';
 import FollowButton from '@/components/FollowButton';
 import ArtistStatsCard from '@/components/ArtistStatsCard';
 import {
-  Music, User, Users, Headphones, Share2, MessageCircle,
+  Music, User, Users, Headphones, Share2,
   Instagram, Youtube, ExternalLink,
   Twitter, Music2, Globe, Play, Grid3X3, List
 } from 'lucide-react';
@@ -367,9 +367,9 @@ const ArtistProfilePage = () => {
                     <>
                       <FollowButton userId={artist.id} initialFollowers={followers.length}
                         onFollowChange={() => fetchFollowers()} />
-                      <Link to={`/messages/${artist.id}`}
+                      <Link to={`/chat?tagger=${artist.username || ''}`}
                         className="flex items-center gap-2 px-4 py-2 rounded-full border border-white/10 text-gray-400 hover:text-cyan-400 hover:border-cyan-500/40 text-sm transition-all">
-                        <MessageCircle className="w-4 h-4" /> Message
+                        <Globe className="w-4 h-4" /> Message
                       </Link>
                     </>
                   )}
@@ -385,13 +385,7 @@ const ArtistProfilePage = () => {
                       S'abonner
                     </Link>
                   )}
-                  {/* Bouton Message privé (si connecté et pas son propre profil) */}
-                  {currentUser && currentUser.id !== artist.id && (
-                    <Link to={`/messages`} state={{ openUserId: artist.id, openUser: artist }}
-                      className="flex items-center gap-2 px-4 py-2 rounded-full border border-white/10 bg-white/[0.04] text-gray-300 hover:border-cyan-500/40 hover:text-cyan-400 text-sm transition-all">
-                      <MessageCircle className="w-4 h-4" /> Message
-                    </Link>
-                  )}
+
                   <button onClick={() => setShowShare(true)}
                     className="flex items-center gap-2 px-4 py-2 rounded-full border border-white/10 text-gray-400 hover:border-cyan-500/40 hover:text-cyan-400 text-sm transition-all">
                     <Share2 className="w-4 h-4" /> Partager

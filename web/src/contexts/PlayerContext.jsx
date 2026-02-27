@@ -73,39 +73,42 @@ export const PlayerProvider = ({ children }) => {
         ...queueRef.current.map(s => s.id),
       ].filter(Boolean);
 
+      // Applique le filtre d'exclusion seulement si la liste est non vide
+      // (un .not('id','in','()') vide cause une erreur Supabase)
+      const applyExclude = (q) =>
+        excludeIds.length > 0 ? q.not('id', 'in', `(${excludeIds.join(',')})`) : q;
+
       if (currentSongData.genre) {
-        const { data } = await supabase
-          .from('songs')
-          .select('*')
-          .eq('is_archived', false)
-          .eq('genre', currentSongData.genre)
-          .not('id', 'in', `(${excludeIds.join(',')})`)
-          .order('plays_count', { ascending: false })
-          .limit(10);
+        const { data } = await applyExclude(
+          supabase.from('songs').select('*')
+            .eq('is_archived', false)
+            .eq('genre', currentSongData.genre)
+            .order('plays_count', { ascending: false })
+            .limit(10)
+        );
         if (data?.length) {
           const pool = data.slice(0, Math.min(5, data.length));
+          setRadioLoading(false);
           return pool[Math.floor(Math.random() * pool.length)];
         }
       }
 
-      const { data: byArtist } = await supabase
-        .from('songs')
-        .select('*')
-        .eq('is_archived', false)
-        .ilike('artist', `%${currentSongData.artist}%`)
-        .not('id', 'in', `(${excludeIds.join(',')})`)
-        .limit(5);
-      if (byArtist?.length) return byArtist[Math.floor(Math.random() * byArtist.length)];
+      const { data: byArtist } = await applyExclude(
+        supabase.from('songs').select('*')
+          .eq('is_archived', false)
+          .ilike('artist', `%${currentSongData.artist}%`)
+          .limit(5)
+      );
+      if (byArtist?.length) { setRadioLoading(false); return byArtist[Math.floor(Math.random() * byArtist.length)]; }
 
-      const { data: popular } = await supabase
-        .from('songs')
-        .select('*')
-        .eq('is_archived', false)
-        .not('id', 'in', `(${excludeIds.join(',')})`)
-        .order('plays_count', { ascending: false })
-        .limit(20);
-      if (popular?.length) return popular[Math.floor(Math.random() * popular.length)];
-    } catch {}
+      const { data: popular } = await applyExclude(
+        supabase.from('songs').select('*')
+          .eq('is_archived', false)
+          .order('plays_count', { ascending: false })
+          .limit(20)
+      );
+      if (popular?.length) { setRadioLoading(false); return popular[Math.floor(Math.random() * popular.length)]; }
+    } catch (e) { console.error('[Radio]', e); }
     finally { setRadioLoading(false); }
     return null;
   }, []);
