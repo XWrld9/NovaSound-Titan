@@ -324,7 +324,7 @@ const ArtistProfilePage = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-950 flex flex-col">
+      <div className="min-h-screen bg-gray-950 flex flex-col pb-24 md:pb-32">
         <Header />
         <div className="flex-1 flex items-center justify-center">
           <div className="w-10 h-10 rounded-full border-2 border-cyan-500/30 border-t-cyan-500 animate-spin" />
@@ -335,7 +335,7 @@ const ArtistProfilePage = () => {
 
   if (!artist) {
     return (
-      <div className="min-h-screen bg-gray-950 flex flex-col">
+      <div className="min-h-screen bg-gray-950 flex flex-col pb-24 md:pb-32">
         <Header />
         <div className="flex-1 flex items-center justify-center">
           <div className="text-center">

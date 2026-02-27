@@ -94,9 +94,23 @@ export const NotificationProvider = ({ children }) => {
     return () => navigator.serviceWorker?.removeEventListener('message', handler);
   }, []);
 
-  // ── Initialiser permission au montage ──────────────────────────
+  // ── Initialiser permission ET pushEnabled au montage ──────────
   useEffect(() => {
-    if ('Notification' in window) setPermission(Notification.permission);
+    const initPush = async () => {
+      if (!('Notification' in window)) return;
+      const perm = Notification.permission;
+      setPermission(perm);
+
+      // Vérifier si une subscription push active existe déjà dans le SW
+      if (perm === 'granted' && 'serviceWorker' in navigator && 'PushManager' in window) {
+        try {
+          const reg = await navigator.serviceWorker.ready;
+          const sub = await reg.pushManager.getSubscription();
+          if (sub) setPushEnabled(true);
+        } catch { /* SW pas encore prêt */ }
+      }
+    };
+    initPush();
   }, []);
 
   // ── Demander permission + s'abonner au push ────────────────────

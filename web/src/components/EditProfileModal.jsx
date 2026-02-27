@@ -1,7 +1,46 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { X, Upload, User, Mail, FileText } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '@/contexts/AuthContext';
+
+// Compresser/redimensionner une image avant upload (max 800px, qualité 0.85)
+const compressImage = (file, maxPx = 800, quality = 0.85) =>
+  new Promise((resolve) => {
+    const img = new Image();
+    const url = URL.createObjectURL(file);
+    img.onload = () => {
+      URL.revokeObjectURL(url);
+      const scale = Math.min(1, maxPx / Math.max(img.width, img.height));
+      const w = Math.round(img.width * scale);
+      const h = Math.round(img.height * scale);
+      const canvas = document.createElement('canvas');
+      canvas.width = w; canvas.height = h;
+      canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+      canvas.toBlob(
+        (blob) => resolve(blob ? new File([blob], file.name, { type: 'image/jpeg' }) : file),
+        'image/jpeg', quality
+      );
+    };
+    img.onerror = () => { URL.revokeObjectURL(url); resolve(file); };
+    img.src = url;
+  });
+
+// Retry wrapper — réessaie jusqu'à `attempts` fois en cas d'erreur réseau
+const withRetry = async (fn, attempts = 3, delayMs = 800) => {
+  let lastErr;
+  for (let i = 0; i < attempts; i++) {
+    try { return await fn(); }
+    catch (e) {
+      lastErr = e;
+      const isNetwork = e.message?.toLowerCase().includes('fetch') ||
+                        e.message?.toLowerCase().includes('network') ||
+                        e.message?.toLowerCase().includes('failed');
+      if (!isNetwork || i === attempts - 1) throw e;
+      await new Promise(r => setTimeout(r, delayMs * (i + 1)));
+    }
+  }
+  throw lastErr;
+};
 
 const EditProfileModal = ({ isOpen, onClose }) => {
   const { currentUser, updateProfile, supabase } = useAuth();
@@ -36,7 +75,6 @@ const EditProfileModal = ({ isOpen, onClose }) => {
           });
           setAvatarPreview(data.avatar_url || '');
         } else {
-          // Fallback sur les métadonnées auth
           setFormData({
             username: currentUser.user_metadata?.username || '',
             bio: ''
@@ -89,20 +127,31 @@ const EditProfileModal = ({ isOpen, onClose }) => {
 
       // Upload avatar
       if (avatarFile) {
-        const fileExt = avatarFile.name.split('.').pop().toLowerCase();
-        // Nom unique par utilisateur — upsert écrase l'ancien
+        // Compresser avant upload pour limiter les erreurs réseau sur mobile
+        const fileToUpload = await compressImage(avatarFile);
+        const fileExt = 'jpg'; // toujours jpeg après compression
         const fileName = `avatar-${currentUser.id}.${fileExt}`;
 
-        const { error: uploadError } = await supabase.storage
-          .from('avatars')
-          .upload(fileName, avatarFile, {
-            cacheControl: '3600',
-            upsert: true,        // Écrase si existe déjà
-            contentType: avatarFile.type
-          });
+        const { error: uploadError } = await withRetry(() =>
+          supabase.storage
+            .from('avatars')
+            .upload(fileName, fileToUpload, {
+              cacheControl: '3600',
+              upsert: true,
+              contentType: 'image/jpeg',
+            })
+        );
 
         if (uploadError) {
-          setError('Erreur upload avatar : ' + uploadError.message);
+          // Essayer avec le fichier original si la compression a échoué
+          if (uploadError.message?.includes('row-level security') ||
+              uploadError.message?.includes('RLS')) {
+            setError(
+              'Erreur de permission storage. Veuillez exécuter fix-rls-avatars.sql dans Supabase puis réessayer.'
+            );
+          } else {
+            setError('Erreur upload avatar : ' + uploadError.message);
+          }
           setIsLoading(false);
           return;
         }
@@ -111,7 +160,6 @@ const EditProfileModal = ({ isOpen, onClose }) => {
           .from('avatars')
           .getPublicUrl(fileName);
 
-        // Forcer le refresh du cache navigateur
         avatarUrl = `${publicUrl}?t=${Date.now()}`;
       }
 
@@ -130,7 +178,12 @@ const EditProfileModal = ({ isOpen, onClose }) => {
         setError(message || 'Erreur lors de la mise à jour');
       }
     } catch (err) {
-      setError('Erreur : ' + err.message);
+      if (err.message?.toLowerCase().includes('fetch') ||
+          err.message?.toLowerCase().includes('network')) {
+        setError('Erreur réseau — vérifiez votre connexion et réessayez.');
+      } else {
+        setError('Erreur : ' + err.message);
+      }
     } finally {
       setIsLoading(false);
     }

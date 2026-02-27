@@ -5,7 +5,6 @@ import {
   Bell, BellOff, Check, CheckCheck, Trash2, X,
   Heart, MessageCircle, UserPlus, Music, Newspaper
 } from 'lucide-react';
-import { Link } from 'react-router-dom';
 import { useNotifications } from '@/contexts/NotificationContext';
 import { useAuth } from '@/contexts/AuthContext';
 
@@ -211,7 +210,14 @@ const NotifPanel = ({ panelRef, panelPos, onClose, mobile }) => {
               <motion.div key={notif.id}
                 initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0, height: 0 }}
                 transition={{ duration: 0.12 }}
-                className={`relative group flex items-start gap-3 px-4 py-3 hover:bg-white/[0.04] transition-colors border-b border-white/[0.04] ${!notif.is_read ? 'bg-cyan-500/[0.04]' : ''}`}
+                className={`relative group flex items-start gap-3 px-4 py-3 hover:bg-white/[0.04] transition-colors border-b border-white/[0.04] cursor-pointer ${!notif.is_read ? 'bg-cyan-500/[0.04]' : ''}`}
+                onClick={() => {
+                  handleClick(notif);
+                  if (notif.url) {
+                    const path = notif.url.replace(/^#\//, '/').replace(/^#/, '/');
+                    window.location.hash = '#' + path.replace(/^\//, '');
+                  }
+                }}
               >
                 {!notif.is_read && (
                   <div className="absolute left-1.5 top-1/2 -translate-y-1/2 w-1.5 h-1.5 rounded-full bg-cyan-400 flex-shrink-0" />
@@ -230,27 +236,18 @@ const NotifPanel = ({ panelRef, panelPos, onClose, mobile }) => {
                 </div>
                 {/* Texte */}
                 <div className="flex-1 min-w-0 pr-8">
-                  {notif.url ? (
-                    <Link to={notif.url.replace(/^#\//, '/').replace(/^#/, '/')} onClick={() => handleClick(notif)}>
-                      <p className="text-sm text-white font-semibold leading-tight">{notif.title}</p>
-                      <p className="text-xs text-gray-400 mt-0.5 leading-relaxed line-clamp-2">{notif.body}</p>
-                    </Link>
-                  ) : (
-                    <>
-                      <p className="text-sm text-white font-semibold leading-tight">{notif.title}</p>
-                      <p className="text-xs text-gray-400 mt-0.5 leading-relaxed line-clamp-2">{notif.body}</p>
-                    </>
-                  )}
+                  <p className="text-sm text-white font-semibold leading-tight">{notif.title}</p>
+                  <p className="text-xs text-gray-400 mt-0.5 leading-relaxed line-clamp-3">{notif.body}</p>
                   <p className="text-[10px] text-gray-600 mt-1">{timeAgo(notif.created_at)}</p>
                 </div>
                 {/* Boutons hover */}
                 <div className="absolute right-2 top-2 flex gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
                   {!notif.is_read && (
-                    <button onClick={() => markAsRead(notif.id)} className="p-1 rounded text-gray-600 hover:text-cyan-400 transition-colors" title="Marquer comme lu">
+                    <button onClick={(e) => { e.stopPropagation(); markAsRead(notif.id); }} className="p-1 rounded text-gray-600 hover:text-cyan-400 transition-colors" title="Marquer comme lu">
                       <Check className="w-3.5 h-3.5" />
                     </button>
                   )}
-                  <button onClick={() => deleteNotification(notif.id)} className="p-1 rounded text-gray-600 hover:text-red-400 transition-colors">
+                  <button onClick={(e) => { e.stopPropagation(); deleteNotification(notif.id); }} className="p-1 rounded text-gray-600 hover:text-red-400 transition-colors">
                     <X className="w-3.5 h-3.5" />
                   </button>
                 </div>

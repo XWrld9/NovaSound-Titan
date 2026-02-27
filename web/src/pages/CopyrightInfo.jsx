@@ -12,7 +12,7 @@ const CopyrightInfo = () => {
         <meta name="description" content="Informations sur les droits d'auteur et DMCA pour NovaSound TITAN LUX" />
       </Helmet>
 
-      <div className="min-h-screen bg-gray-950 flex flex-col">
+      <div className="min-h-screen bg-gray-950 flex flex-col pb-24 md:pb-32">
         <Header />
 
         <main className="flex-1 container mx-auto px-4 py-12 max-w-4xl">

@@ -210,12 +210,12 @@ NovaSound-Titan/
 
 ---
 
-## 🎵 Fonctionnalités v10.0
+## 🎵 Fonctionnalités v12.0
 
 **Artistes**
 - Upload audio (50 MB max) + pochette album — robuste sur iOS
 - Profil public (`/artist/:id`) avec stats complètes
-- Modifier avatar et bio
+- Modifier avatar et bio (compression auto + retry réseau ×3)
 
 **Fans**
 - Écoutes atomiques sans race condition
@@ -224,6 +224,13 @@ NovaSound-Titan/
 - Croix de fermeture sur le player (mini et expanded)
 - Follow/unfollow depuis le player expanded uniquement
 - Téléchargement et partage natif mobile
+- **Boucle (Repeat)** : mode `off / one / all` — `loop` HTML5 natif sur iOS/Android
+- **Mode immersif** : plein écran natif (Android/Desktop) + mode couverture CSS (iOS) avec fond pochette flou
+
+**Notifications**
+- Push notifications web (Service Worker + VAPID)
+- Le bouton "Activer" se masque correctement une fois les notifs activées
+- Chaque notification est entièrement cliquable → navigue vers la page cible
 
 **Communauté**
 - News avec modal "Lire la suite"
@@ -250,7 +257,8 @@ NovaSound-Titan/
 |----------|---------|
 | Erreur 404 au refresh | Normal avec HashRouter — URLs en `/#/` |
 | Session perdue après refresh | Vérifier `VITE_SUPABASE_ANON_KEY` dans Vercel |
-| Upload avatar échoue | Vérifier bucket `avatars` + exécuter `fix-rls-avatars.sql` |
+| Upload avatar : "row-level security" | Ré-exécuter `fix-rls-avatars.sql` (v2 avec DROP IF EXISTS) |
+| Upload avatar : "Failed to fetch" | Réseau mobile instable — la v11 ajoute un retry ×3 et compression auto |
 | Likes news ne s'enregistrent pas | Exécuter `news-likes.sql` |
 | Plays ne s'incrémentent pas | Exécuter `increment-plays.sql` |
 | Likes pas en temps réel | Exécuter `enable-realtime.sql` |
@@ -259,10 +267,55 @@ NovaSound-Titan/
 | Impossible de se connecter après inscription | Email non confirmé → bouton "Renvoyer" sur la page login |
 | Slider seek/volume ne répond pas sur iOS | Vérifier que `slider.jsx` v5.4 est bien déployé |
 | Buckets introuvables | `SUPABASE_SERVICE_KEY` dans `.env` puis `npm run setup:buckets` |
+| Bouton "Activer push" s'affiche toujours | Corrigé en v11 — pushEnabled initialisé depuis le SW au montage |
+| Plein écran ne fonctionne pas sur iOS | Normal — iOS Safari bloque l'API Fullscreen. La v12 utilise un mode immersif CSS équivalent |
+| Contenu masqué par le mini-player mobile | Corrigé en v12 — `pb-24 md:pb-32` sur toutes les pages |
 
 ---
 
 ## 📝 Changelog
+
+### v12.0 (2026-02-27) — Loop/Repeat parfait iOS+Android + Plein écran immersif
+
+- 🔴 Fix **Repeat/Loop iOS & Android** — implémentation à deux niveaux :
+  - **Niveau 1 (natif)** : `loop` HTML5 synchronisé avec `repeat === 'one'` sur l'élément `<audio>`. Sur iOS et Android, le navigateur gère la boucle nativement sans dépendance JS — fiabilité maximale.
+  - **Niveau 2 (secours)** : `handleEnded` en fallback pour les navigateurs qui ignoreraient `loop`.
+  - Synchronisation immédiate de `loop` lors du chargement d'un nouveau son (`audioRef.current.loop = (repeat === 'one')` dans le `useEffect` de changement de son).
+  - Indicateur visuel amélioré : `repeat='one'` → badge **1** sous l'icône ; `repeat='all'` → point cyan en haut.
+
+- ✨ **Mode plein écran immersif** avec photo de couverture en fond — iOS + Android + Desktop :
+  - **Android / Desktop Chrome** : plein écran natif via `Fullscreen API` (`requestFullscreen` + fallback `webkitRequestFullscreen`) + fond image pochette.
+  - **iOS Safari / PWA** : iOS bloque l'API Fullscreen → mode immersif CSS pur : fond `url(pochette) center/cover` + overlay sombre. Effet visuellement identique au plein écran.
+  - Fond généré depuis une miniature 80×80px de la pochette pour éviter tout lag.
+  - Pochette plus grande en mode immersif (22rem vs 20rem).
+  - Transition douce (`transition: background 0.5s ease`) en entrant/sortant du mode.
+  - Bouton ⛶/⛶ dans l'en-tête du player agrandi — titre adaptatif (iOS : "Vue couverture", autres : "Plein écran").
+
+- 🔴 Fix **padding manquant** sur toutes les pages : NewsPage, MusicUploadPage, CopyrightInfo, PrivacyPolicy, TermsOfService, SongPage (état loading), ArtistProfilePage (états error/loading), ModerationPanel → le mini-player mobile ne cache plus le contenu du bas.
+- 🔧 **Cache SW** bumped → `novasound-titan-v5`.
+- 🔢 **Bump versions** : `package.json → 12.0.0`, client-info header → `12.0.0`.
+
+### v11.0 (2026-02-27) — Corrections RLS, upload mobile, notifications
+
+- 🔴 Fix **RLS Storage avatars** : politiques recréées proprement (DROP IF EXISTS + CREATE) — plus d'erreur "new row violates row-level security policy". La politique UPDATE utilisait `foldername()` inadapté aux fichiers plats `avatar-{uuid}.ext`, remplacé par `name LIKE '%uid%' OR owner = auth.uid()`.
+- 🔴 Fix **upload avatar "Failed to fetch"** sur mobile : l'image est compressée/redimensionnée (800px, JPEG) avant upload pour réduire la taille et les timeout réseau. Retry automatique ×3 en cas d'erreur réseau transitoire.
+- 🔴 Fix **bouton "Activer les notifications push" toujours visible** même après activation : `pushEnabled` est maintenant initialisé au montage en vérifiant la souscription existante dans le Service Worker (`reg.pushManager.getSubscription()`).
+- ✨ Fix **notifications cliquables** : cliquer n'importe où sur une notification navigue vers son URL cible et ferme le panel. Les boutons "marquer lu" / "supprimer" stoppent la propagation.
+- 🔢 **Bump versions** : `package.json → 11.0.0`, client-info header → `11.0.0`.
+
+
+
+
+### v11.0 (2026-02-27) — Corrections & améliorations
+
+- 🔴 Fix **RLS Storage avatars** : politiques recréées proprement (DROP IF EXISTS + CREATE) — plus d'erreur "new row violates row-level security policy". La politique UPDATE utilisait `foldername()` inadapté aux fichiers plats `avatar-{uuid}.ext`, remplacé par `name LIKE '%uid%' OR owner = auth.uid()`.
+- 🔴 Fix **upload avatar "Failed to fetch"** sur mobile : l'image est désormais compressée/redimensionnée (800px, JPEG) avant upload pour réduire la taille et les timeout réseau. Retry automatique ×3 en cas d'erreur réseau transitoire.
+- 🔴 Fix **bouton "Activer les notifications push" toujours visible** même après activation : `pushEnabled` est maintenant initialisé au montage en vérifiant la souscription existante dans le Service Worker (`reg.pushManager.getSubscription()`).
+- ✨ Fix **notifications cliquables** : cliquer n'importe où sur une notification navigue vers son URL cible et ferme le panel. Les boutons "marquer lu" / "supprimer" stoppent la propagation.
+- ✨ **Plein écran natif** dans le player expanded : bouton ⛶/⛶ utilisant la Fullscreen API (avec fallback `webkit`). Fonctionne sur Android, Chrome, Firefox — affiché dans l'en-tête du player agrandi.
+- 🔴 Fix **attribut `loop` HTML5** sur l'élément `<audio>` synchronisé avec `repeat === 'one'` pour un comportement natif iOS sans dépendance JS.
+- 🔧 **Cache SW** bumped → `novasound-titan-v4` (force mise à jour du worker).
+- 🔢 **Bump versions** : `package.json → 11.0.0`, client-info header → `11.0.0`.
 
 ### v10.0 (2026-02-26) — Version finale & stable 🏆
 
