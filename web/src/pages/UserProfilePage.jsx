@@ -42,95 +42,71 @@ const UserProfilePage = () => {
   }, [showEditModal]);
 
   const fetchUserData = async () => {
+    setLoading(true);
     try {
-      setLoading(true);
+      // ── Étape 1 : profil utilisateur — affiché immédiatement ────────
+      const { data: userData, error: userError } = await supabase
+        .from('users')
+        .select('*')
+        .eq('id', currentUser.id)
+        .single();
 
-      // Timeout pour éviter les chargements infinis
-      const timeoutPromise = new Promise((_, reject) => 
-        setTimeout(() => reject(new Error('Timeout')), 10000) // 10 secondes
-      );
+      if (userError || !userData) {
+        console.error('[UserProfile] profil introuvable:', userError);
+        // Auth OK mais pas de ligne DB — on affiche quand même avec les données auth
+        setProfile(null);
+        setLoading(false);
+        return;
+      }
+      // Afficher le header du profil dès que possible (iOS ne reste plus blanc)
+      setProfile(userData);
+      setLoading(false); // ← déverrouille le rendu AVANT les requêtes secondaires
 
-      const fetchDataPromise = (async () => {
-        // Vérifier si l'utilisateur existe dans la base de données
-        const { data: userData, error: userError } = await supabase
-          .from('users')
-          .select('*')
-          .eq('id', currentUser.id)
-          .single();
-
-        if (userError || !userData) {
-          console.error('Utilisateur non trouvé dans la base de données:', userError);
-          // Profil DB absent mais auth OK — ne pas rediriger, afficher vide
-          return;
-        }
-
-        // Récupérer les chansons de l'utilisateur (actives + archivées)
-        const { data: songsData, error: songsError } = await supabase
+      // ── Étape 2 : données secondaires en parallèle (non bloquantes) ──
+      const [songsRes, favRes, likesRes, followersRes, followingRes] = await Promise.allSettled([
+        supabase
           .from('songs')
           .select('*')
           .eq('uploader_id', currentUser.id)
           .order('created_at', { ascending: false })
-          .limit(100);
-
-        if (songsError) throw songsError;
-
-        // Récupérer les favoris (table favorites)
-        const { data: favData } = await supabase
+          .limit(100),
+        supabase
           .from('favorites')
-          .select(`song_id, songs(id, title, artist, cover_url, audio_url, created_at, plays_count, likes_count, uploader_id, is_archived)`)
+          .select('song_id, songs(id, title, artist, cover_url, audio_url, created_at, plays_count, likes_count, uploader_id, is_archived)')
           .eq('user_id', currentUser.id)
-          .order('created_at', { ascending: false });
-
-        const favoriteSongsData = (favData || []).map(f => f.songs).filter(Boolean).filter(s => !s?.is_archived);
-
-        // Récupérer les sons likés (table likes)
-        const { data: likesData, error: likesError } = await supabase
+          .order('created_at', { ascending: false }),
+        supabase
           .from('likes')
-          .select(`
-            song_id,
-            songs (
-              id, title, artist, cover_url, audio_url,
-              created_at, plays_count, likes_count, uploader_id, is_archived
-            )
-          `)
+          .select('song_id, songs(id, title, artist, cover_url, audio_url, created_at, plays_count, likes_count, uploader_id, is_archived)')
           .eq('user_id', currentUser.id)
-          .order('created_at', { ascending: false });
-
-        if (likesError) throw likesError;
-        const likedSongsData = (likesData || []).map(l => l.songs).filter(Boolean).filter(s => !s?.is_archived);
-
-        // Récupérer les followers
-        const { data: followersData, error: followersError } = await supabase
+          .order('created_at', { ascending: false }),
+        supabase
           .from('follows')
           .select('follower_id, users!follows_follower_id_fkey(*)')
-          .eq('following_id', currentUser.id);
-
-        if (followersError) throw followersError;
-
-        // Récupérer les following
-        const { data: followingData, error: followingError } = await supabase
+          .eq('following_id', currentUser.id),
+        supabase
           .from('follows')
           .select('following_id, users!follows_following_id_fkey(*)')
-          .eq('follower_id', currentUser.id);
+          .eq('follower_id', currentUser.id),
+      ]);
 
-        if (followingError) throw followingError;
+      if (songsRes.status === 'fulfilled' && !songsRes.value.error)
+        setUserSongs(songsRes.value.data || []);
 
-        setProfile(userData);
-        setUserSongs(songsData || []);
-        setFavoriteSongs(favoriteSongsData);
-        setLikedSongs(likedSongsData);
-        setFollowers(followersData || []);
-        setFollowing(followingData || []);
-      })();
+      if (favRes.status === 'fulfilled' && !favRes.value.error)
+        setFavoriteSongs((favRes.value.data || []).map(f => f.songs).filter(Boolean).filter(s => !s?.is_archived));
 
-      // Race entre le fetch et le timeout
-      await Promise.race([fetchDataPromise, timeoutPromise]);
+      if (likesRes.status === 'fulfilled' && !likesRes.value.error)
+        setLikedSongs((likesRes.value.data || []).map(l => l.songs).filter(Boolean).filter(s => !s?.is_archived));
+
+      if (followersRes.status === 'fulfilled' && !followersRes.value.error)
+        setFollowers(followersRes.value.data || []);
+
+      if (followingRes.status === 'fulfilled' && !followingRes.value.error)
+        setFollowing(followingRes.value.data || []);
 
     } catch (error) {
-      console.error('Error fetching user data:', error);
-      // Ne pas rediriger brutalement - laisser l'utilisateur sur la page
-      // Les listes seront vides mais l'en-tête du profil restera visible
-    } finally {
+      console.error('[UserProfile] fetchUserData error:', error);
       setLoading(false);
     }
   };

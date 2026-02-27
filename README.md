@@ -1,3 +1,28 @@
+## 📦 Changelog v95.0
+
+### 🔴 Fix CRITIQUE — Messagerie : clavier iOS qui disparaît + messages non envoyés
+
+**Cause racine** : `ConvList` et `ChatView` étaient définis comme des **fonctions-composants à l'intérieur du composant parent** `MessagesPage`. À chaque frappe dans un input, le parent se re-rend → React détruisait et recréait ces composants → démontage complet de l'input → perte du focus → clavier fermé. Même mécanisme empêchait l'envoi (closure stale sur `newMsg`).
+
+**Fix** : `ConvList` et `ChatView` extraits **complètement hors du composant parent**, wrappés en `React.memo`. Toutes les callbacks passées en props via `useCallback` pour éviter les re-renders inutiles.
+
+**Détails supplémentaires** :
+- Focus auto sur desktop uniquement (`window.innerWidth >= 768`) — sur iOS le focus auto déclenche un scroll non désiré
+- `handleSend`, `handleKeyDown` etc. tous wrappés en `useCallback`
+- Barre de recherche : même fix, `onSearchChange` reçoit directement `setSearchQuery` stable
+
+### 🔴 Fix iOS — Profil blanc / chargement très lent (`UserProfilePage`)
+
+**Cause** : `fetchUserData` enchaînait **6 requêtes Supabase séquentiellement** avant d'appeler le moindre `setState`. Sur iOS réseau mobile lent, tout restait blanc jusqu'à la fin (ou jusqu'au timeout 10s).
+
+**Fix** : Chargement en 2 étapes :
+1. Requête profil seule → `setProfile(userData)` + `setLoading(false)` immédiatement → le header du profil s'affiche en ~300ms
+2. Les 5 requêtes secondaires (sons, favoris, likes, followers, following) lancées en **`Promise.allSettled` parallèle** — chaque donnée s'affiche dès qu'elle arrive, sans bloquer les autres
+
+**Version bump** : 90.0.0 → 95.0.0 | SW cache : novasound-titan-v14 → novasound-titan-v15
+
+---
+
 ## 📦 Changelog v90.0
 
 ### 🔍 Audit complet synchronisation — 3 bugs supplémentaires corrigés
