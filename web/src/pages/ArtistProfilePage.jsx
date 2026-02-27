@@ -12,7 +12,7 @@ import FollowButton from '@/components/FollowButton';
 import ArtistStatsCard from '@/components/ArtistStatsCard';
 import {
   Music, User, Users, Headphones, Share2, MessageCircle,
-  MessageCircle, Instagram, Youtube, ExternalLink,
+  Instagram, Youtube, ExternalLink,
   Twitter, Music2, Globe, Play, Grid3X3, List
 } from 'lucide-react';
 import { formatPlays } from '@/lib/utils';
