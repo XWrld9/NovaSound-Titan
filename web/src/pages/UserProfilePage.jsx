@@ -206,9 +206,15 @@ const UserProfilePage = () => {
 
               {/* Infos profil */}
               <div className="flex-1 text-center md:text-left min-w-0 w-full overflow-hidden">
-                <h1 className="text-2xl md:text-3xl font-bold text-white mb-2 break-words">
-                  {profile?.username || currentUser.username || currentUser.email}
-                </h1>
+                <div className="flex items-center gap-2 justify-center md:justify-start mb-1">
+                  <h1 className="text-2xl md:text-3xl font-bold text-white break-words">
+                    {profile?.username || currentUser.username || currentUser.email}
+                  </h1>
+                  {/* Badge artiste vérifié si ≥ 1000 écoutes totales */}
+                  {userSongs.reduce((sum, s) => sum + (s.plays_count || 0), 0) >= 1000 && (
+                    <span title="Artiste populaire — 1 000+ écoutes" className="flex-shrink-0 text-cyan-400" style={{ fontSize: 20 }}>✦</span>
+                  )}
+                </div>
                 {profile?.bio && (
                   <div className="mb-2 max-w-md">
                     <p className={`text-gray-400 text-sm break-words leading-relaxed ${bioExpanded ? '' : 'line-clamp-3'}`}>{profile.bio}</p>
@@ -226,8 +232,19 @@ const UserProfilePage = () => {
                 
                 <div className="flex flex-wrap gap-4 justify-center md:justify-start mb-4">
                   <div className="text-center">
-                    <div className="text-xl font-bold text-cyan-400">{userSongs.length}</div>
+                    <div className="text-xl font-bold text-cyan-400">{userSongs.filter(s => !s.is_archived).length}</div>
                     <div className="text-sm text-gray-400">Morceaux</div>
+                  </div>
+                  <div className="text-center">
+                    <div className="text-xl font-bold text-amber-400">
+                      {(() => {
+                        const total = userSongs.reduce((sum, s) => sum + (s.plays_count || 0), 0);
+                        if (total >= 1000000) return `${(total/1000000).toFixed(1)}M`;
+                        if (total >= 1000) return `${(total/1000).toFixed(1)}k`;
+                        return String(total);
+                      })()}
+                    </div>
+                    <div className="text-sm text-gray-400">Écoutes</div>
                   </div>
                   <div className="text-center">
                     <div className="text-xl font-bold text-pink-400">{likedSongs.length}</div>

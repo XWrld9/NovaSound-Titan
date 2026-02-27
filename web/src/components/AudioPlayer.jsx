@@ -3,7 +3,7 @@ import {
   Play, Pause, SkipBack, SkipForward, Volume2, VolumeX, Volume1,
   Shuffle, Repeat, Music, ChevronDown, Heart, Download, Share2,
   UserPlus, UserCheck, ExternalLink, X, Maximize2, Minimize2,
-  ListMusic, Moon, Trash2,
+  ListMusic, Moon, Trash2, Gauge,
 } from 'lucide-react';
 import { Slider } from '@/components/ui/slider';
 import { supabase } from '@/lib/supabaseClient';
@@ -45,6 +45,14 @@ const fmtSleep = (s) => {
   return `${s}s`;
 };
 
+// ── Persistance volume ────────────────────────────────────────────────────────
+const VOLUME_KEY = 'novasound_volume';
+const MUTED_KEY  = 'novasound_muted';
+const savedVolume = () => { try { const v = localStorage.getItem(VOLUME_KEY); return v !== null ? Number(v) : 70; } catch { return 70; } };
+const savedMuted  = () => { try { return localStorage.getItem(MUTED_KEY) === '1'; } catch { return false; } };
+
+const SPEED_OPTIONS = [0.75, 1, 1.25, 1.5, 2];
+
 // ── Composant principal ───────────────────────────────────────────────────────
 const AudioPlayer = ({ currentSong, playlist = [], onNext, onPrevious, onClose }) => {
   const { currentUser } = useAuth();
@@ -61,11 +69,13 @@ const AudioPlayer = ({ currentSong, playlist = [], onNext, onPrevious, onClose }
   const [isPlaying,      setIsPlaying]      = useState(false);
   const [currentTime,    setCurrentTime]    = useState(0);
   const [duration,       setDuration]       = useState(0);
-  const [volume,         setVolume]         = useState(70);
-  const [isMuted,        setIsMuted]        = useState(false);
-  const [prevVolume,     setPrevVolume]     = useState(70);
+  const [volume,         setVolume]         = useState(savedVolume);
+  const [isMuted,        setIsMuted]        = useState(savedMuted);
+  const [prevVolume,     setPrevVolume]     = useState(savedVolume);
   const [shuffle,        setShuffle]        = useState(false);
   const [repeat,         setRepeat]         = useState('off'); // off | one | all
+  const [playbackSpeed,  setPlaybackSpeed]  = useState(1);
+  const [showSpeedMenu,  setShowSpeedMenu]  = useState(false);
   const [isExpanded,     setIsExpanded]     = useState(false);
   const [isCoverMode,    setIsCoverMode]    = useState(false);
   const [isNativeFS,     setIsNativeFS]     = useState(false);
@@ -88,6 +98,8 @@ const AudioPlayer = ({ currentSong, playlist = [], onNext, onPrevious, onClose }
   const goPreviousRef = useRef(null);
   const autoPlayRef   = useRef(false);
   const prevSongIdRef = useRef(null);
+  // Ref vers toggleImmersive pour éviter les stale closures dans les useEffect clavier
+  const toggleImmersiveRef = useRef(null);
 
   // ── Sleep timer end → pause ─────────────────────────────────────
   useEffect(() => {
@@ -95,6 +107,36 @@ const AudioPlayer = ({ currentSong, playlist = [], onNext, onPrevious, onClose }
     window.addEventListener('novasound:sleep-end', handler);
     return () => window.removeEventListener('novasound:sleep-end', handler);
   }, []);
+
+  // ── Raccourcis clavier — actifs en mode expanded/plein écran ────
+  useEffect(() => {
+    const onKey = (e) => {
+      // Ne pas intercepter si focus sur un input/textarea
+      if (['INPUT', 'TEXTAREA'].includes(e.target.tagName)) return;
+      if (!isExpanded) return;
+      switch (e.code) {
+        case 'ArrowRight': case 'MediaTrackNext':
+          e.preventDefault(); autoPlayRef.current = true; goNextRef.current?.(); break;
+        case 'ArrowLeft': case 'MediaTrackPrevious':
+          e.preventDefault(); autoPlayRef.current = true; goPreviousRef.current?.(); break;
+        case 'Space': case 'KeyK':
+          e.preventDefault();
+          if (audioRef.current) {
+            if (isPlaying) { audioRef.current.pause(); } else { audioRef.current.play().catch(() => {}); }
+          }
+          break;
+        case 'Escape':
+          if (isCoverMode || isNativeFS) toggleImmersiveRef.current?.();
+          else { setIsExpanded(false); setIsCoverMode(false); setShowQueue(false); setShowSpeedMenu(false); }
+          break;
+        case 'KeyM':
+          e.preventDefault(); toggleMute();  break;
+        default: break;
+      }
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [isExpanded, isPlaying, isCoverMode, isNativeFS]);
 
   // ── Scroll lock ─────────────────────────────────────────────────
   useEffect(() => {
@@ -146,11 +188,22 @@ const AudioPlayer = ({ currentSong, playlist = [], onNext, onPrevious, onClose }
       if (!isIOS()) { const el = expandedRef.current || document.documentElement; await tryNativeFullscreen(el); }
     }
   }, [isExpanded, isCoverMode, isNativeFS]);
+  toggleImmersiveRef.current = toggleImmersive;
 
-  // ── Volume ──────────────────────────────────────────────────────
+  // ── Volume + persistence localStorage ─────────────────────────
   useEffect(() => {
     if (audioRef.current) audioRef.current.volume = isMuted ? 0 : volume / 100;
+    try { localStorage.setItem(VOLUME_KEY, String(volume)); } catch {}
   }, [volume, isMuted]);
+
+  useEffect(() => {
+    try { localStorage.setItem(MUTED_KEY, isMuted ? '1' : '0'); } catch {}
+  }, [isMuted]);
+
+  // ── Vitesse de lecture ─────────────────────────────────────────
+  useEffect(() => {
+    if (audioRef.current) audioRef.current.playbackRate = playbackSpeed;
+  }, [playbackSpeed]);
 
   // ── Loop HTML5 (iOS/Android natif) ─────────────────────────────
   useEffect(() => {
@@ -202,6 +255,7 @@ const AudioPlayer = ({ currentSong, playlist = [], onNext, onPrevious, onClose }
     prevSongIdRef.current = currentSong.id;
     audioRef.current.src  = currentSong.audio_url;
     audioRef.current.loop = (repeat === 'one');
+    audioRef.current.playbackRate = playbackSpeed;
     audioRef.current.load();
     setPlayRecorded(false); setCurrentTime(0); setDuration(0);
     if (currentUser) { checkLikeStatus(); checkFollowStatus(); }
@@ -380,7 +434,7 @@ const AudioPlayer = ({ currentSong, playlist = [], onNext, onPrevious, onClose }
             transition={{ type: 'spring', damping: 28, stiffness: 280 }}
             className="fixed inset-0 z-[60] flex flex-col"
             style={{ ...expandedBg, paddingBottom: 'env(safe-area-inset-bottom, 0px)', transition: 'background 0.5s ease' }}
-            onClick={() => { setShowSleepMenu(false); }}
+            onClick={() => { setShowSleepMenu(false); setShowSpeedMenu(false); }}
           >
             {!isCoverMode && (
               <div className="absolute inset-0 opacity-30 pointer-events-none"
@@ -541,7 +595,7 @@ const AudioPlayer = ({ currentSong, playlist = [], onNext, onPrevious, onClose }
                   <Slider value={[currentTime]} max={duration || 100} step={0.1} onValueChange={handleSeek} className="cursor-pointer" />
                   <div className="flex justify-between text-xs text-gray-400 mt-1.5 tabular-nums">
                     <span>{fmtTime(currentTime)}</span>
-                    <span>{fmtTime(duration)}</span>
+                    <span className="text-gray-600">{duration > 0 ? `-${fmtTime(duration - currentTime)}` : fmtTime(duration)}</span>
                   </div>
                 </div>
 
@@ -551,7 +605,11 @@ const AudioPlayer = ({ currentSong, playlist = [], onNext, onPrevious, onClose }
                     className={`p-2 transition-all ${shuffle ? 'text-cyan-400' : 'text-gray-500 hover:text-white'}`} title="Aléatoire">
                     <Shuffle className="w-5 h-5" />
                   </button>
-                  <button onClick={(e) => { e.stopPropagation(); goPrevious(); }} className="p-2 text-gray-300 hover:text-white hover:scale-110 transition-all">
+                  <button
+                    type="button"
+                    onClick={(e) => { e.stopPropagation(); autoPlayRef.current = true; goPreviousRef.current?.(); }}
+                    className="p-2 text-gray-300 hover:text-white hover:scale-110 active:scale-90 transition-all"
+                    title="Précédent (←)">
                     <SkipBack className="w-7 h-7" />
                   </button>
                   <button onClick={togglePlay}
@@ -562,7 +620,11 @@ const AudioPlayer = ({ currentSong, playlist = [], onNext, onPrevious, onClose }
                     }}>
                     {isPlaying ? <Pause className="w-7 h-7" /> : <Play className="w-7 h-7 ml-0.5" />}
                   </button>
-                  <button onClick={(e) => { e.stopPropagation(); goNext(); }} className="p-2 text-gray-300 hover:text-white hover:scale-110 transition-all">
+                  <button
+                    type="button"
+                    onClick={(e) => { e.stopPropagation(); autoPlayRef.current = true; goNextRef.current?.(); }}
+                    className="p-2 text-gray-300 hover:text-white hover:scale-110 active:scale-90 transition-all"
+                    title="Suivant (→)">
                     <SkipForward className="w-7 h-7" />
                   </button>
                   <button onClick={cycleRepeat}
@@ -581,6 +643,53 @@ const AudioPlayer = ({ currentSong, playlist = [], onNext, onPrevious, onClose }
                   </button>
                   <Slider value={[isMuted ? 0 : volume]} max={100} step={1} onValueChange={handleVolumeChange} className="cursor-pointer flex-1" />
                   <span className="text-xs text-gray-500 w-6 text-right tabular-nums">{isMuted ? 0 : volume}</span>
+                </div>
+
+                {/* Vitesse de lecture */}
+                <div className="flex items-center justify-between">
+                  <div className="relative">
+                    <button
+                      onClick={(e) => { e.stopPropagation(); setShowSpeedMenu(v => !v); setShowSleepMenu(false); setShowQueue(false); }}
+                      className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-xs font-bold transition-all ${playbackSpeed !== 1 ? 'bg-cyan-500/20 border-cyan-400/50 text-cyan-300' : 'bg-black/20 border-white/10 text-gray-400 hover:text-white'}`}
+                      title="Vitesse de lecture"
+                    >
+                      <Gauge className="w-3.5 h-3.5" />
+                      {playbackSpeed}×
+                    </button>
+                    <AnimatePresence>
+                      {showSpeedMenu && (
+                        <motion.div
+                          initial={{ opacity: 0, scale: 0.9, y: 4 }}
+                          animate={{ opacity: 1, scale: 1, y: 0 }}
+                          exit={{ opacity: 0, scale: 0.9, y: 4 }}
+                          transition={{ duration: 0.15 }}
+                          className="absolute left-0 bottom-10 z-50 bg-gray-900 border border-white/10 rounded-2xl shadow-2xl shadow-black/60 p-2 w-36"
+                          onClick={e => e.stopPropagation()}
+                        >
+                          <p className="text-[10px] text-gray-500 font-semibold uppercase tracking-wider px-2 mb-1.5">Vitesse</p>
+                          {SPEED_OPTIONS.map(s => (
+                            <button key={s}
+                              onClick={() => { setPlaybackSpeed(s); setShowSpeedMenu(false); }}
+                              className={`w-full text-left px-3 py-2 text-sm rounded-xl transition-colors flex items-center justify-between ${playbackSpeed === s ? 'bg-cyan-500/20 text-cyan-300 font-bold' : 'text-gray-300 hover:bg-white/8 hover:text-white'}`}
+                            >
+                              <span>{s}×</span>
+                              {s === 1 && <span className="text-[10px] text-gray-600">Normal</span>}
+                            </button>
+                          ))}
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+                  </div>
+                  {currentSong?.id && (
+                    <a href={`/#/song/${currentSong.id}`}
+                      className="flex items-center gap-1 text-xs text-gray-500 hover:text-cyan-400 transition-colors px-2 py-1 rounded-full hover:bg-white/5"
+                      onClick={e => e.stopPropagation()}
+                      title="Page du son"
+                    >
+                      <ExternalLink className="w-3.5 h-3.5" />
+                      <span>Page du son</span>
+                    </a>
+                  )}
                 </div>
               </div>
             </div>

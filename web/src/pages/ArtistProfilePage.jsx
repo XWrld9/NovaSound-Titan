@@ -390,9 +390,14 @@ const ArtistProfilePage = () => {
 
               {/* Infos */}
               <div className="flex-1 text-center md:text-left min-w-0 w-full overflow-hidden">
-                <h1 className="text-2xl md:text-3xl font-bold text-white mb-1 break-words truncate">
-                  {artist.username || 'Artiste inconnu'}
-                </h1>
+                <div className="flex items-center gap-2 justify-center md:justify-start mb-1">
+                  <h1 className="text-2xl md:text-3xl font-bold text-white break-words truncate">
+                    {artist.username || 'Artiste inconnu'}
+                  </h1>
+                  {totalPlays >= 1000 && (
+                    <span title="Artiste populaire — 1 000+ écoutes" className="flex-shrink-0 text-cyan-400" style={{ fontSize: 20 }}>✦</span>
+                  )}
+                </div>
                 {artist.bio && (
                   <div className="mb-4 max-w-lg">
                     <p className={`text-gray-400 text-sm leading-relaxed break-words ${bioExpanded ? '' : 'line-clamp-3'}`}>

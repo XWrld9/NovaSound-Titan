@@ -24,8 +24,27 @@ const HomePage = () => {
   const [loading, setLoading] = useState(true);
   const [selectedNews, setSelectedNews] = useState(null);
 
+  const [newSongIds, setNewSongIds] = useState(new Set());
+
   useEffect(() => {
     fetchData();
+  }, []);
+
+  // Realtime : écouter les nouveaux sons publiés pendant la session
+  useEffect(() => {
+    const channel = supabase
+      .channel('homepage_songs_realtime')
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'songs' }, (payload) => {
+        if (!payload.new?.is_archived) {
+          setFeaturedSongs(prev => {
+            if (prev.find(s => s.id === payload.new.id)) return prev;
+            setNewSongIds(ids => new Set([...ids, payload.new.id]));
+            return [payload.new, ...prev].slice(0, 12);
+          });
+        }
+      })
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
   }, []);
 
   const fetchData = async () => {
@@ -254,9 +273,14 @@ const HomePage = () => {
                       initial={{ opacity: 0, y: 10 }}
                       animate={{ opacity: 1, y: 0 }}
                       transition={{ delay: index * 0.03, duration: 0.3 }}
-                      className="bg-gray-800/90 border border-cyan-500/40 rounded-2xl hover:border-cyan-400 hover:bg-gray-800 transition-all group hover:shadow-lg hover:shadow-cyan-500/15"
+                      className="bg-gray-800/90 border border-cyan-500/40 rounded-2xl hover:border-cyan-400 hover:bg-gray-800 transition-all group hover:shadow-lg hover:shadow-cyan-500/15 relative"
                       style={{ overflow: 'visible' }}
                     >
+                      {newSongIds.has(song.id) && (
+                        <div className="absolute -top-2 -right-2 z-30 bg-gradient-to-r from-cyan-500 to-magenta-500 text-white text-[9px] font-black px-2 py-0.5 rounded-full shadow-lg animate-pulse pointer-events-none">
+                          NEW
+                        </div>
+                      )}
                       <div className="relative aspect-square rounded-t-2xl overflow-hidden">
                         {song.cover_url ? (
                           <img

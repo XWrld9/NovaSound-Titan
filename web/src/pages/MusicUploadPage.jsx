@@ -5,7 +5,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Upload, Music, Image, AlertCircle, CheckCircle } from 'lucide-react';
 import { motion } from 'framer-motion';
-import { supabase } from '@/lib/supabaseClient';
+import { supabase, supabaseUrl as _supabaseUrl, supabaseAnonKey as _supabaseAnonKey } from '@/lib/supabaseClient';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 
@@ -91,52 +91,68 @@ const MusicUploadPage = () => {
     setLoading(true);
     setUploadProgress(10);
 
-    // Fonction upload avec retry automatique (3 tentatives)
-    const uploadWithRetry = async (bucket, path, file, options = {}, maxRetries = 3) => {
-      let lastError;
-      for (let attempt = 1; attempt <= maxRetries; attempt++) {
+    // Fonction upload robuste : SDK Supabase d'abord, fallback XHR PUT
+    const uploadRobust = async (bucket, path, file, contentType) => {
+      const guessType = (f) => {
+        if (f.type && f.type !== 'application/octet-stream') return f.type;
+        const ext = f.name.split('.').pop().toLowerCase();
+        const map = {
+          mp3:'audio/mpeg', wav:'audio/wav', aac:'audio/aac',
+          m4a:'audio/mp4', ogg:'audio/ogg', flac:'audio/flac',
+          opus:'audio/opus', mp4:'audio/mp4', m4b:'audio/mp4',
+          jpg:'image/jpeg', jpeg:'image/jpeg', png:'image/png',
+          webp:'image/webp', gif:'image/gif'
+        };
+        return map[ext] || f.type || 'application/octet-stream';
+      };
+      const ct = contentType || guessType(file);
+
+      // Tentative 1 : SDK Supabase avec retry
+      let lastErr;
+      for (let attempt = 1; attempt <= 3; attempt++) {
         try {
-          // iOS Safari peut renvoyer application/octet-stream
-          // On force le contentType depuis file.type ou on le déduit de l'extension
-          const guessType = (f) => {
-            if (f.type && f.type !== 'application/octet-stream') return f.type;
-            const ext = f.name.split('.').pop().toLowerCase();
-            const map = { mp3:'audio/mpeg', wav:'audio/wav', aac:'audio/aac',
-              m4a:'audio/mp4', ogg:'audio/ogg', flac:'audio/flac',
-              opus:'audio/opus', mp4:'audio/mp4', m4b:'audio/mp4',
-              jpg:'image/jpeg', jpeg:'image/jpeg', png:'image/png',
-              webp:'image/webp', gif:'image/gif' };
-            return map[ext] || f.type || 'application/octet-stream';
-          };
-          const { error } = await supabase.storage
-            .from(bucket)
-            .upload(path, file, {
-              cacheControl: '3600',
-              upsert: false,
-              contentType: guessType(file),
-              ...options
-            });
-          if (!error) return { success: true };
-          // Si le fichier existe déjà, ce n'est pas une erreur bloquante
-          if (error.message?.includes('already exists')) return { success: true };
-          lastError = error;
-        } catch (err) {
-          lastError = err;
-          // Attendre avant retry (backoff)
-          if (attempt < maxRetries) await new Promise(r => setTimeout(r, attempt * 1500));
+          const { error } = await supabase.storage.from(bucket).upload(path, file, {
+            cacheControl: '3600', upsert: false, contentType: ct,
+          });
+          if (!error) return;
+          if (error.message?.includes('already exists')) return;
+          lastErr = new Error(error.message);
+        } catch (e) {
+          lastErr = e;
         }
+        if (attempt < 3) await new Promise(r => setTimeout(r, attempt * 1500));
       }
-      throw lastError;
+
+      // Tentative 2 : XHR PUT direct (contourne les limitations fetch() sur WebView Android)
+      const { data: sessionData } = await supabase.auth.getSession();
+      const token   = sessionData?.session?.access_token;
+      const baseUrl = _supabaseUrl || '';
+      const anonKey = _supabaseAnonKey || '';
+      if (!token || !baseUrl) throw lastErr || new Error('Session invalide');
+
+      await new Promise((resolve, reject) => {
+        const xhr = new XMLHttpRequest();
+        xhr.open('POST', `${baseUrl}/storage/v1/object/${bucket}/${path}`, true);
+        xhr.timeout = 60000; // 60s pour les gros fichiers audio
+        xhr.setRequestHeader('Authorization', `Bearer ${token}`);
+        xhr.setRequestHeader('apikey', anonKey);
+        xhr.setRequestHeader('Content-Type', ct);
+        xhr.setRequestHeader('Cache-Control', '3600');
+        xhr.onload  = () => (xhr.status < 300 || xhr.status === 409) ? resolve() : reject(new Error(`HTTP ${xhr.status}`));
+        xhr.onerror = () => reject(new Error('Erreur réseau XHR audio'));
+        xhr.ontimeout = () => reject(new Error('Timeout XHR 60s — essayez en Wi-Fi'));
+        xhr.send(file);
+      });
     };
 
     try {
       setUploadProgress(20);
 
-      // 1) Upload audio → bucket "audio" avec retry
+      // 1) Upload audio → bucket "audio"
       const audioExt = audioFile.name.split('.').pop();
       const audioPath = `${currentUser.id}-${Date.now()}.${audioExt}`;
 
-      await uploadWithRetry('audio', audioPath, audioFile);
+      await uploadRobust('audio', audioPath, audioFile);
       setUploadProgress(60);
 
       const { data: audioPublic } = supabase.storage
@@ -145,12 +161,12 @@ const MusicUploadPage = () => {
 
       let albumCoverUrl = null;
 
-      // 2) Upload cover (optionnel) → bucket "covers" avec retry
+      // 2) Upload cover (optionnel) → bucket "covers"
       if (albumCover) {
         const coverExt = albumCover.name.split('.').pop();
         const coverPath = `${currentUser.id}-${Date.now()}.${coverExt}`;
 
-        await uploadWithRetry('covers', coverPath, albumCover);
+        await uploadRobust('covers', coverPath, albumCover);
         setUploadProgress(80);
 
         const { data: coverPublic } = supabase.storage

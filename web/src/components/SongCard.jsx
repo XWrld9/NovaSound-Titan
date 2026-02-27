@@ -1,9 +1,10 @@
-import React, { useState, memo } from 'react';
-import { Play, Download, Share2, Music, Headphones, ExternalLink, Plus, Check } from 'lucide-react';
+import React, { useState, memo, useEffect } from 'react';
+import { Play, Download, Share2, Music, Headphones, ExternalLink, Plus, Check, MessageCircle } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { AnimatePresence, motion } from 'framer-motion';
 import { useAuth } from '@/contexts/AuthContext';
 import { usePlayer } from '@/contexts/PlayerContext';
+import { supabase } from '@/lib/supabaseClient';
 import LikeButton from '@/components/LikeButton';
 import FavoriteButton from '@/components/FavoriteButton';
 import ReportButton from './ReportButton';
@@ -23,8 +24,24 @@ const SongCard = memo(({ song: initialSong, onPlay, isPlaying, setCurrentSong, c
   const [isHovered, setIsHovered] = useState(false);
   const [showShare, setShowShare] = useState(false);
   const [queueFlash, setQueueFlash] = useState(false);
+  const [commentCount, setCommentCount] = useState(null);
 
   React.useEffect(() => { setSong(initialSong); }, [initialSong]);
+
+  // Charger le nb de commentaires une seule fois (lazy, pas bloquant)
+  useEffect(() => {
+    if (!song?.id) return;
+    let cancelled = false;
+    supabase
+      .from('song_comments')
+      .select('id', { count: 'exact', head: true })
+      .eq('song_id', song.id)
+      .then(({ count }) => {
+        if (!cancelled) setCommentCount(count ?? 0);
+      })
+      .catch(() => {});
+    return () => { cancelled = true; };
+  }, [song?.id]);
 
   const handlePlay = (e) => {
     e.preventDefault();
@@ -96,13 +113,18 @@ const SongCard = memo(({ song: initialSong, onPlay, isPlaying, setCurrentSong, c
           )}
 
           {isPlaying && (
-            <div className="absolute top-2 left-2 flex items-center gap-1 bg-black/60 backdrop-blur-sm px-2 py-0.5 rounded-full">
-              <div className="flex gap-px items-end h-3">
-                {[1,2,3].map(i => (
-                  <div key={i} className="w-1 bg-cyan-400 rounded-full animate-pulse"
-                    style={{ height: `${4 + i * 3}px`, animationDelay: `${i * 0.15}s` }} />
+            <div className="absolute top-2 left-2 flex items-center gap-1 bg-black/70 backdrop-blur-sm px-2 py-1 rounded-full border border-cyan-400/30">
+              <div className="flex gap-px items-end h-3.5">
+                {[1,2,3,4].map(i => (
+                  <div key={i} className="w-0.5 bg-cyan-400 rounded-full"
+                    style={{
+                      height: `${6 + i * 2}px`,
+                      animation: `equalizer ${0.5 + i * 0.1}s ease-in-out infinite alternate`,
+                      animationDelay: `${i * 0.08}s`
+                    }} />
                 ))}
               </div>
+              <span className="text-[9px] text-cyan-300 font-bold ml-0.5">LIVE</span>
             </div>
           )}
 
@@ -154,7 +176,20 @@ const SongCard = memo(({ song: initialSong, onPlay, isPlaying, setCurrentSong, c
           )}
 
           <div className="flex items-center justify-between mt-2.5">
-            <LikeButton songId={song.id} initialLikes={song.likes_count || 0} />
+            <div className="flex items-center gap-2">
+              <LikeButton songId={song.id} initialLikes={song.likes_count || 0} />
+              {commentCount !== null && commentCount > 0 && (
+                <Link
+                  to={`/song/${song.id}`}
+                  className="flex items-center gap-1 text-gray-500 hover:text-cyan-400 transition-colors"
+                  title={`${commentCount} commentaire${commentCount > 1 ? 's' : ''}`}
+                  onClick={e => e.stopPropagation()}
+                >
+                  <MessageCircle className="w-3.5 h-3.5" />
+                  <span className="text-xs">{commentCount}</span>
+                </Link>
+              )}
+            </div>
             <div className="flex items-center gap-1.5">
               {!song.is_archived && (
                 <>

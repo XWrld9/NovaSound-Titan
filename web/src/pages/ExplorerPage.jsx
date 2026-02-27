@@ -34,6 +34,7 @@ const ExplorerPage = () => {
   const [songs, setSongs] = useState([]);
   const [loading, setLoading] = useState(true);
   const [initialLoad, setInitialLoad] = useState(true);
+  const [totalCount, setTotalCount] = useState(null);
   const { playSong: globalPlaySong, currentSong } = usePlayer();
 
   const playSong = (song) => globalPlaySong(song, songs.filter(s => !s.is_archived));
@@ -81,6 +82,18 @@ const ExplorerPage = () => {
       if (isNewSearch) setSongs(items);
       else setSongs(prev => [...prev, ...items]);
       setHasMore(items.length === perPage);
+
+      // Récupérer le total exact seulement à la première page
+      if (isNewSearch) {
+        let countQuery = supabase.from('songs').select('id', { count: 'exact', head: true }).eq('is_archived', false);
+        if (debouncedSearch?.trim()) {
+          const q = debouncedSearch.trim().replaceAll('%', '');
+          countQuery = countQuery.or(`title.ilike.%${q}%,artist.ilike.%${q}%`);
+        }
+        if (selectedGenre) countQuery = countQuery.eq('genre', selectedGenre);
+        const { count } = await countQuery;
+        setTotalCount(count ?? null);
+      }
     } catch (error) {
       console.error('Error fetching songs:', error);
     } finally {
@@ -129,7 +142,7 @@ const ExplorerPage = () => {
                 <h1 className="text-3xl font-bold text-white">Explorer</h1>
                 {songs.length > 0 && !loading && (
                   <p className="text-sm text-gray-500 mt-0.5">
-                    {songs.length}{hasMore ? '+' : ''} morceaux
+                    {totalCount !== null ? `${totalCount} morceau${totalCount > 1 ? 'x' : ''}` : `${songs.length}${hasMore ? '+' : ''} morceaux`}
                     {selectedGenre && ` · ${selectedGenre}`}
                   </p>
                 )}
@@ -161,6 +174,8 @@ const ExplorerPage = () => {
                     <option value="created">Plus anciens</option>
                     <option value="-plays_count">Plus écoutés</option>
                     <option value="-likes_count">Plus aimés</option>
+                    <option value="-duration_s">Plus longs</option>
+                    <option value="duration_s">Plus courts</option>
                   </select>
                 </div>
               </div>

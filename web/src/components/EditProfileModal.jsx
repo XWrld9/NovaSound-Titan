@@ -2,9 +2,10 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { X, Upload, User, Mail, FileText } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '@/contexts/AuthContext';
+import { supabaseUrl as _supabaseUrl, supabaseAnonKey as _supabaseAnonKey } from '@/lib/supabaseClient';
 
-// Compresser/redimensionner une image avant upload (max 800px, qualité 0.85)
-const compressImage = (file, maxPx = 800, quality = 0.85) =>
+// Compresser/redimensionner une image avant upload
+const compressImage = (file, maxPx = 600, quality = 0.80) =>
   new Promise((resolve) => {
     const img = new Image();
     const url = URL.createObjectURL(file);
@@ -17,7 +18,7 @@ const compressImage = (file, maxPx = 800, quality = 0.85) =>
       canvas.width = w; canvas.height = h;
       canvas.getContext('2d').drawImage(img, 0, 0, w, h);
       canvas.toBlob(
-        (blob) => resolve(blob ? new File([blob], file.name, { type: 'image/jpeg' }) : file),
+        (blob) => resolve(blob ? new File([blob], 'avatar.jpg', { type: 'image/jpeg' }) : file),
         'image/jpeg', quality
       );
     };
@@ -25,21 +26,70 @@ const compressImage = (file, maxPx = 800, quality = 0.85) =>
     img.src = url;
   });
 
-// Retry wrapper — réessaie jusqu'à `attempts` fois en cas d'erreur réseau
-const withRetry = async (fn, attempts = 3, delayMs = 800) => {
+// Retry wrapper
+const withRetry = async (fn, attempts = 3, delayMs = 1000) => {
   let lastErr;
   for (let i = 0; i < attempts; i++) {
     try { return await fn(); }
     catch (e) {
       lastErr = e;
-      const isNetwork = e.message?.toLowerCase().includes('fetch') ||
-                        e.message?.toLowerCase().includes('network') ||
-                        e.message?.toLowerCase().includes('failed');
+      const isNetwork = /fetch|network|failed|timeout|xhr/i.test(e.message || '');
       if (!isNetwork || i === attempts - 1) throw e;
       await new Promise(r => setTimeout(r, delayMs * (i + 1)));
     }
   }
   throw lastErr;
+};
+
+// Upload via XHR PUT direct — contourne les limitations fetch() sur WebView Android
+const uploadViaXHR = (uploadUrl, file, token, anonKey) =>
+  new Promise((resolve, reject) => {
+    const xhr = new XMLHttpRequest();
+    xhr.open('PUT', uploadUrl, true);
+    xhr.timeout = 30000;
+    xhr.setRequestHeader('Authorization', `Bearer ${token}`);
+    xhr.setRequestHeader('apikey', anonKey);
+    xhr.setRequestHeader('Content-Type', 'image/jpeg');
+    xhr.setRequestHeader('x-upsert', 'true');
+    xhr.setRequestHeader('Cache-Control', '3600');
+    xhr.onload  = () => (xhr.status < 300 ? resolve() : reject(new Error(`HTTP ${xhr.status}`)));
+    xhr.onerror = () => reject(new Error('Erreur réseau XHR'));
+    xhr.ontimeout = () => reject(new Error('Timeout XHR 30s'));
+    xhr.send(file);
+  });
+
+// Upload avatar robuste : SDK Supabase d'abord, puis fallback XHR
+const uploadAvatarRobust = async (supabase, fileName, fileToUpload) => {
+  // Tentative 1 : SDK Supabase (fetch)
+  try {
+    const { error } = await withRetry(() =>
+      supabase.storage.from('avatars').upload(fileName, fileToUpload, {
+        cacheControl: '3600',
+        upsert: true,
+        contentType: 'image/jpeg',
+      })
+    );
+    if (!error) return { ok: true };
+    if (/row-level security|RLS|permission/i.test(error.message || '')) {
+      return { ok: false, rlsError: true, message: error.message };
+    }
+    throw new Error(error.message);
+  } catch (fetchErr) {
+    // Tentative 2 : XHR PUT direct
+    try {
+      const { data: sessionData } = await supabase.auth.getSession();
+      const token    = sessionData?.session?.access_token;
+      const baseUrl  = _supabaseUrl || '';
+      const anonKey  = _supabaseAnonKey || '';
+      if (!token || !baseUrl) throw new Error('Session invalide');
+
+      const uploadUrl = `${baseUrl}/storage/v1/object/avatars/${fileName}`;
+      await withRetry(() => uploadViaXHR(uploadUrl, fileToUpload, token, anonKey), 2, 1500);
+      return { ok: true };
+    } catch (xhrErr) {
+      return { ok: false, message: `fetch: ${fetchErr.message} | XHR: ${xhrErr.message}` };
+    }
+  }
 };
 
 const EditProfileModal = ({ isOpen, onClose }) => {
@@ -51,13 +101,11 @@ const EditProfileModal = ({ isOpen, onClose }) => {
   const [isFetching, setIsFetching] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+  const [uploadProgress, setUploadProgress] = useState('');
 
-  // Charger les données depuis la table users (pas juste auth)
   useEffect(() => {
     if (!currentUser || !isOpen) return;
-    setError('');
-    setSuccess('');
-    setAvatarFile(null);
+    setError(''); setSuccess(''); setAvatarFile(null); setUploadProgress('');
 
     const loadProfile = async () => {
       setIsFetching(true);
@@ -67,30 +115,19 @@ const EditProfileModal = ({ isOpen, onClose }) => {
           .select('username, bio, avatar_url')
           .eq('id', currentUser.id)
           .single();
-
         if (data) {
-          setFormData({
-            username: data.username || '',
-            bio: data.bio || ''
-          });
+          setFormData({ username: data.username || '', bio: data.bio || '' });
           setAvatarPreview(data.avatar_url || '');
         } else {
-          setFormData({
-            username: currentUser.user_metadata?.username || '',
-            bio: ''
-          });
+          setFormData({ username: currentUser.user_metadata?.username || '', bio: '' });
           setAvatarPreview(currentUser.avatar_url || '');
         }
       } catch {
-        setFormData({
-          username: currentUser.user_metadata?.username || '',
-          bio: ''
-        });
+        setFormData({ username: currentUser.user_metadata?.username || '', bio: '' });
       } finally {
         setIsFetching(false);
       }
     };
-
     loadProfile();
   }, [currentUser, isOpen]);
 
@@ -101,14 +138,8 @@ const EditProfileModal = ({ isOpen, onClose }) => {
   const handleAvatarChange = (e) => {
     const file = e.target.files[0];
     if (!file) return;
-    if (file.size > 5 * 1024 * 1024) {
-      setError("L'avatar ne doit pas dépasser 5 MB");
-      return;
-    }
-    if (!file.type.startsWith('image/')) {
-      setError('Veuillez sélectionner une image valide');
-      return;
-    }
+    if (file.size > 5 * 1024 * 1024) { setError("L'avatar ne doit pas dépasser 5 MB"); return; }
+    if (!file.type.startsWith('image/')) { setError('Veuillez sélectionner une image valide'); return; }
     setAvatarFile(file);
     setError('');
     const reader = new FileReader();
@@ -118,68 +149,55 @@ const EditProfileModal = ({ isOpen, onClose }) => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setIsLoading(true);
-    setError('');
-    setSuccess('');
+    setIsLoading(true); setError(''); setSuccess(''); setUploadProgress('');
 
     try {
-      let avatarUrl = avatarPreview.startsWith('http') ? avatarPreview : null;
+      let avatarUrl = avatarPreview && avatarPreview.startsWith('http') ? avatarPreview : null;
 
-      // Upload avatar
       if (avatarFile) {
-        // Compresser avant upload pour limiter les erreurs réseau sur mobile
-        const fileToUpload = await compressImage(avatarFile);
-        const fileExt = 'jpg'; // toujours jpeg après compression
-        const fileName = `avatar-${currentUser.id}.${fileExt}`;
+        setUploadProgress("Compression de l'image…");
+        // Double compression : d'abord 600px, puis si > 200 KB → 400px
+        let fileToUpload = await compressImage(avatarFile, 600, 0.80);
+        if (fileToUpload.size > 200 * 1024) {
+          fileToUpload = await compressImage(fileToUpload, 400, 0.65);
+        }
 
-        const { error: uploadError } = await withRetry(() =>
-          supabase.storage
-            .from('avatars')
-            .upload(fileName, fileToUpload, {
-              cacheControl: '3600',
-              upsert: true,
-              contentType: 'image/jpeg',
-            })
-        );
+        const fileName = `avatar-${currentUser.id}.jpg`;
+        setUploadProgress("Envoi de l'avatar…");
 
-        if (uploadError) {
-          // Essayer avec le fichier original si la compression a échoué
-          if (uploadError.message?.includes('row-level security') ||
-              uploadError.message?.includes('RLS')) {
-            setError(
-              'Erreur de permission storage. Veuillez exécuter fix-rls-avatars.sql dans Supabase puis réessayer.'
-            );
+        const result = await uploadAvatarRobust(supabase, fileName, fileToUpload);
+
+        if (!result.ok) {
+          if (result.rlsError) {
+            setError('Erreur de permission storage. Veuillez exécuter fix-rls-avatars.sql dans Supabase puis réessayer.');
           } else {
-            setError('Erreur upload avatar : ' + uploadError.message);
+            setError('Erreur upload avatar : ' + (result.message || 'Erreur inconnue'));
           }
-          setIsLoading(false);
+          setIsLoading(false); setUploadProgress('');
           return;
         }
 
-        const { data: { publicUrl } } = supabase.storage
-          .from('avatars')
-          .getPublicUrl(fileName);
-
+        setUploadProgress("Récupération de l'URL…");
+        const { data: { publicUrl } } = supabase.storage.from('avatars').getPublicUrl(fileName);
         avatarUrl = `${publicUrl}?t=${Date.now()}`;
       }
 
-      const updateData = {
-        username: formData.username.trim(),
-        bio: formData.bio.trim()
-      };
+      setUploadProgress('Mise à jour du profil…');
+      const updateData = { username: formData.username.trim(), bio: formData.bio.trim() };
       if (avatarUrl) updateData.avatar_url = avatarUrl;
 
       const { success: ok, message } = await updateProfile(updateData);
+      setUploadProgress('');
 
       if (ok) {
         setSuccess('Profil mis à jour !');
-        setTimeout(onClose, 1000);
+        setTimeout(onClose, 1200);
       } else {
         setError(message || 'Erreur lors de la mise à jour');
       }
     } catch (err) {
-      if (err.message?.toLowerCase().includes('fetch') ||
-          err.message?.toLowerCase().includes('network')) {
+      setUploadProgress('');
+      if (/fetch|network|failed|timeout/i.test(err.message || '')) {
         setError('Erreur réseau — vérifiez votre connexion et réessayez.');
       } else {
         setError('Erreur : ' + err.message);
@@ -205,13 +223,9 @@ const EditProfileModal = ({ isOpen, onClose }) => {
           exit={{ scale: 0.9, opacity: 0, y: 20 }}
           className="bg-gray-900 border border-cyan-500/30 rounded-2xl p-6 w-full max-w-md shadow-2xl max-h-[90vh] overflow-y-auto"
         >
-          {/* Header */}
           <div className="flex justify-between items-center mb-6">
             <h2 className="text-xl font-bold text-white">Modifier le profil</h2>
-            <button
-              onClick={onClose}
-              className="p-2 rounded-lg text-gray-400 hover:text-white hover:bg-white/10 transition-all"
-            >
+            <button onClick={onClose} className="p-2 rounded-lg text-gray-400 hover:text-white hover:bg-white/10 transition-all">
               <X className="w-5 h-5" />
             </button>
           </div>
@@ -224,6 +238,12 @@ const EditProfileModal = ({ isOpen, onClose }) => {
           {success && (
             <div className="mb-4 p-3 bg-cyan-500/10 border border-cyan-500/30 rounded-lg text-cyan-400 text-sm">
               {success}
+            </div>
+          )}
+          {uploadProgress && !error && !success && (
+            <div className="mb-4 p-3 bg-gray-800/60 border border-white/10 rounded-lg text-gray-300 text-sm flex items-center gap-2">
+              <div className="w-3 h-3 rounded-full border-2 border-cyan-500/30 border-t-cyan-400 animate-spin flex-shrink-0" />
+              {uploadProgress}
             </div>
           )}
 
@@ -242,10 +262,8 @@ const EditProfileModal = ({ isOpen, onClose }) => {
                     className="w-24 h-24 rounded-full object-cover border-2 border-cyan-500/50"
                     onError={(e) => { e.target.src = '/profil par defaut.png'; }}
                   />
-                  <label
-                    htmlFor="avatar-upload"
-                    className="absolute bottom-0 right-0 bg-gradient-to-r from-cyan-500 to-magenta-500 text-white p-2 rounded-full cursor-pointer hover:opacity-90 transition-opacity"
-                  >
+                  <label htmlFor="avatar-upload"
+                    className="absolute bottom-0 right-0 bg-gradient-to-r from-cyan-500 to-magenta-500 text-white p-2 rounded-full cursor-pointer hover:opacity-90 transition-opacity">
                     <Upload className="w-4 h-4" />
                   </label>
                   <input
@@ -265,15 +283,9 @@ const EditProfileModal = ({ isOpen, onClose }) => {
                   <User className="w-4 h-4 text-cyan-400" />
                   Nom d'utilisateur
                 </label>
-                <input
-                  type="text"
-                  name="username"
-                  value={formData.username}
-                  onChange={handleInputChange}
-                  required
-                  placeholder="Ton nom d'artiste..."
-                  className="w-full px-4 py-2.5 bg-gray-800 border border-cyan-500/30 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-cyan-400 focus:ring-2 focus:ring-cyan-400/20 transition-all"
-                />
+                <input type="text" name="username" value={formData.username} onChange={handleInputChange}
+                  required placeholder="Ton nom d'artiste..." autoComplete="nickname"
+                  className="w-full px-4 py-2.5 bg-gray-800 border border-cyan-500/30 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-cyan-400 focus:ring-2 focus:ring-cyan-400/20 transition-all" />
               </div>
 
               {/* Email readonly */}
@@ -282,12 +294,8 @@ const EditProfileModal = ({ isOpen, onClose }) => {
                   <Mail className="w-4 h-4 text-cyan-400" />
                   Email <span className="text-gray-500 text-xs">(non modifiable)</span>
                 </label>
-                <input
-                  type="email"
-                  value={currentUser?.email || ''}
-                  disabled
-                  className="w-full px-4 py-2.5 bg-gray-800/50 border border-gray-700 rounded-lg text-gray-500 cursor-not-allowed"
-                />
+                <input type="email" value={currentUser?.email || ''} disabled
+                  className="w-full px-4 py-2.5 bg-gray-800/50 border border-gray-700 rounded-lg text-gray-500 cursor-not-allowed" />
               </div>
 
               {/* Bio */}
@@ -296,32 +304,20 @@ const EditProfileModal = ({ isOpen, onClose }) => {
                   <FileText className="w-4 h-4 text-cyan-400" />
                   Biographie
                 </label>
-                <textarea
-                  name="bio"
-                  value={formData.bio}
-                  onChange={handleInputChange}
-                  rows={3}
-                  maxLength={500}
-                  placeholder="Parle de toi..."
-                  className="w-full px-4 py-2.5 bg-gray-800 border border-cyan-500/30 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-cyan-400 focus:ring-2 focus:ring-cyan-400/20 transition-all resize-none"
-                />
+                <textarea name="bio" value={formData.bio} onChange={handleInputChange}
+                  rows={3} maxLength={500} placeholder="Parle de toi..."
+                  className="w-full px-4 py-2.5 bg-gray-800 border border-cyan-500/30 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-cyan-400 focus:ring-2 focus:ring-cyan-400/20 transition-all resize-none" />
                 <p className="text-xs text-gray-500 mt-1 text-right">{formData.bio.length}/500</p>
               </div>
 
               {/* Buttons */}
               <div className="flex gap-3 pt-2">
-                <button
-                  type="button"
-                  onClick={onClose}
-                  className="flex-1 px-4 py-2.5 border border-gray-700 rounded-lg text-gray-400 hover:text-white hover:border-gray-600 transition-all"
-                >
+                <button type="button" onClick={onClose} disabled={isLoading}
+                  className="flex-1 px-4 py-2.5 border border-gray-700 rounded-lg text-gray-400 hover:text-white hover:border-gray-600 transition-all disabled:opacity-50">
                   Annuler
                 </button>
-                <button
-                  type="submit"
-                  disabled={isLoading}
-                  className="flex-1 px-4 py-2.5 bg-gradient-to-r from-cyan-500 to-magenta-500 hover:opacity-90 text-white rounded-lg font-medium transition-all disabled:opacity-60"
-                >
+                <button type="submit" disabled={isLoading}
+                  className="flex-1 px-4 py-2.5 bg-gradient-to-r from-cyan-500 to-magenta-500 hover:opacity-90 text-white rounded-lg font-medium transition-all disabled:opacity-60">
                   {isLoading ? 'Enregistrement...' : 'Enregistrer'}
                 </button>
               </div>

@@ -1,11 +1,12 @@
 /**
- * ArtistStatsCard — NovaSound TITAN LUX v30
+ * ArtistStatsCard — NovaSound TITAN LUX v50
  * Carte de statistiques visuelles pour le profil artiste.
  * Affiche plays total, likes total, sons publiés, abonnés — avec animations.
  */
-import React from 'react';
-import { Headphones, Heart, Music, Users } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Headphones, Heart, Music, Users, MessageCircle } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { supabase } from '@/lib/supabaseClient';
 
 const Stat = ({ icon: Icon, value, label, color, delay }) => (
   <motion.div
@@ -28,17 +29,32 @@ const Stat = ({ icon: Icon, value, label, color, delay }) => (
   </motion.div>
 );
 
-const ArtistStatsCard = ({ songs = [], followersCount = 0 }) => {
-  const totalPlays = songs.reduce((acc, s) => acc + (s.plays_count || 0), 0);
-  const totalLikes = songs.reduce((acc, s) => acc + (s.likes_count || 0), 0);
+const ArtistStatsCard = ({ songs = [], followersCount = 0, uploaderId }) => {
+  const totalPlays   = songs.reduce((acc, s) => acc + (s.plays_count || 0), 0);
+  const totalLikes   = songs.reduce((acc, s) => acc + (s.likes_count || 0), 0);
   const publishedCount = songs.filter(s => !s.is_archived).length;
+  const [totalComments, setTotalComments] = useState(null);
+
+  useEffect(() => {
+    if (!songs.length) return;
+    const songIds = songs.map(s => s.id);
+    let cancelled = false;
+    supabase
+      .from('song_comments')
+      .select('id', { count: 'exact', head: true })
+      .in('song_id', songIds)
+      .then(({ count }) => { if (!cancelled) setTotalComments(count ?? 0); })
+      .catch(() => {});
+    return () => { cancelled = true; };
+  }, [songs.length]);
 
   return (
-    <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-      <Stat icon={Headphones} value={totalPlays}   label="Écoutes totales" color="#06b6d4" delay={0}    />
-      <Stat icon={Heart}      value={totalLikes}   label="Likes totaux"    color="#ec4899" delay={0.06} />
-      <Stat icon={Music}      value={publishedCount} label="Sons publiés"  color="#8b5cf6" delay={0.12} />
-      <Stat icon={Users}      value={followersCount} label="Abonnés"       color="#f59e0b" delay={0.18} />
+    <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
+      <Stat icon={Headphones}     value={totalPlays}     label="Écoutes"   color="#06b6d4" delay={0}    />
+      <Stat icon={Heart}          value={totalLikes}     label="Likes"     color="#ec4899" delay={0.06} />
+      <Stat icon={Music}          value={publishedCount} label="Sons"      color="#8b5cf6" delay={0.12} />
+      <Stat icon={Users}          value={followersCount} label="Abonnés"   color="#f59e0b" delay={0.18} />
+      <Stat icon={MessageCircle}  value={totalComments ?? 0} label="Commentaires" color="#22c55e" delay={0.24} />
     </div>
   );
 };

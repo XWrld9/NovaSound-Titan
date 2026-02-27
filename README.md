@@ -1,4 +1,4 @@
-# NovaSound-TITAN LUX
+# NovaSound-TITAN LUX v50
 
 > *Ici chaque écoute compte. Bienvenue dans la nouvelle ère. À toi, artiste qui cherche à t'exprimer aux yeux du monde entier — ICI C'EST TA SCÈNE !*
 
@@ -368,6 +368,22 @@ NovaSound-Titan/
 - 🔧 **Cache SW** bumped → `novasound-titan-v5`.
 - 🔢 **Bump versions** : `package.json → 12.0.0`, client-info header → `12.0.0`.
 
+### v40.0 (2026-02-27) — Fix upload avatar mobile & plein écran PC + raccourcis clavier
+
+- 🔴 Fix **upload avatar "Failed to fetch" sur Android/iOS** : nouvelle stratégie d'upload à deux niveaux :
+  - **Niveau 1** : SDK Supabase avec retry ×3 (inchangé)
+  - **Niveau 2 (nouveau fallback)** : si fetch échoue (`TypeError: Failed to fetch` ou timeout réseau), bascule automatiquement sur un `XMLHttpRequest` PUT direct vers l'API REST Supabase Storage — contourne les limitations WebView Android et certains proxy mobiles
+  - Compression double : 600px JPEG 0.80 d'abord, puis 400px JPEG 0.65 si encore > 200 KB — garantit < 150 KB pour tout réseau mobile
+  - Indicateur de progression visuel pendant l'upload (compression / envoi / URL / mise à jour)
+- 🔴 Fix **boutons Précédent/Suivant en mode plein écran PC** : les boutons transport dans le player expanded utilisent désormais les **refs** (`goNextRef.current()`, `goPreviousRef.current()`) au lieu des closures directes — élimine tout risque de stale closure en mode fullscreen natif
+- ✨ **Raccourcis clavier** en mode expanded/plein écran :
+  - `→` / `←` : son suivant / précédent
+  - `Space` / `K` : play/pause
+  - `M` : muet/son
+  - `Echap` : quitter le plein écran ou réduire le player
+- 🔧 **Cache SW** bumped → `novasound-titan-v8`
+- 🔢 **Bump versions** : `package.json → 40.0.0`, client-info header → `40.0.0`
+
 ### v11.0 (2026-02-27) — Corrections RLS, upload mobile, notifications
 
 - 🔴 Fix **RLS Storage avatars** : politiques recréées proprement (DROP IF EXISTS + CREATE) — plus d'erreur "new row violates row-level security policy". La politique UPDATE utilisait `foldername()` inadapté aux fichiers plats `avatar-{uuid}.ext`, remplacé par `name LIKE '%uid%' OR owner = auth.uid()`.
@@ -499,3 +515,47 @@ MIT License — voir [LICENSE](LICENSE)
 
 > *"Ici chaque écoute compte. Bienvenue dans la nouvelle ère de la musique digitale."*  
 > **NovaSound-TITAN LUX — Votre scène, votre musique, votre communauté.**
+
+---
+
+## 📦 Changelog v50.0
+
+### 🎚️ AudioPlayer — Volume persistant + Vitesse de lecture
+- Volume et état mute sauvegardés dans `localStorage` → retrouvé à chaque rechargement
+- Bouton **vitesse de lecture** : 0.75×, 1×, 1.25×, 1.5×, 2× — menu flottant en mode expanded
+- **Durée restante** affichée à droite de la seek bar (`-mm:ss` au lieu de la durée totale)
+- Raccourci clavier `Escape` ferme aussi le menu vitesse
+- La vitesse est appliquée immédiatement à `audioRef.playbackRate` à chaque changement
+
+### 🎵 SongCard — Animation "En lecture" + Compteur commentaires
+- Nouvelle animation **égaliseur** 4 barres (CSS `@keyframes equalizer`) avec badge "LIVE" cyan
+- **Compteur de commentaires** affiché si > 0 (fetch léger depuis `song_comments`, non-bloquant)
+- Cliquable → redirige vers la page du son
+
+### 🏠 HomePage — Realtime
+- Souscription Supabase Realtime sur `songs INSERT` → nouveaux sons ajoutés en tête de liste sans rafraîchir
+- Badge **"NEW"** animé (gradient cyan-magenta, pulse) sur les cartes arrivées en temps réel
+
+### 🔍 ExplorerPage — Améliorations tri & stats
+- Nouveaux tris : **Plus longs** (`-duration_s`) et **Plus courts** (`duration_s`)
+- **Total exact** des morceaux affiché (requête `count: 'exact'`) plutôt que le nombre chargé
+
+### 👤 UserProfilePage — Statistiques enrichies
+- Compteur **Écoutes totales** ajouté dans les stats du profil (formaté k/M)
+- Badge ✦ **artiste populaire** si ≥ 1 000 écoutes totales
+
+### 🎨 ArtistProfilePage — Badge + 5ème stat
+- Badge ✦ populaire (même logique que UserProfilePage)
+- `ArtistStatsCard` : 5ème stat **Commentaires totaux** (fetch `song_comments`)
+- Grille passe de 4 à 5 colonnes (`sm:grid-cols-5`)
+
+### 📱 MusicUploadPage — Upload audio/cover robuste mobile
+- Même architecture XHR fallback que v40 (EditProfileModal) appliquée à l'upload audio + cover
+- Timeout XHR 60s (adapté aux gros fichiers audio)
+- Retry ×3 SDK puis fallback `XMLHttpRequest POST` direct si fetch échoue sur WebView Android
+
+### 🎨 CSS — Nouvelles animations
+- `@keyframes equalizer` pour l'animation des barres de l'égaliseur SongCard
+- `.scrollbar-hide` pour masquer la scrollbar sur mobile (tabs profil)
+
+**Version bump** : 40.0.0 → 50.0.0 | SW cache : v8 → v9

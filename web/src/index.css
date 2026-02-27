@@ -112,3 +112,13 @@ button {
 @keyframes spin {
   to { transform: rotate(360deg); }
 }
+
+/* Animation égaliseur — SongCard "En lecture" */
+@keyframes equalizer {
+  0%   { transform: scaleY(0.4); }
+  100% { transform: scaleY(1.0); }
+}
+
+/* Masquer scrollbar sur mobile (tabs profil) */
+.scrollbar-hide::-webkit-scrollbar { display: none; }
+.scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
