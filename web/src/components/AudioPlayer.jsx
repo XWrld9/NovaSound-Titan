@@ -648,7 +648,7 @@ const AudioPlayer = ({ currentSong, playlist = [], onNext, onPrevious, onClose }
                   <Slider value={[currentTime]} max={duration || 100} step={0.1} onValueChange={handleSeek} className="cursor-pointer" />
                   <div className="flex justify-between text-xs text-gray-400 mt-1.5 tabular-nums">
                     <span>{fmtTime(currentTime)}</span>
-                    <span className="text-gray-600">{duration > 0 ? `-${fmtTime(duration - currentTime)}` : fmtTime(duration)}</span>
+                    <span className="text-gray-600">{(duration > 0 || currentSong?.duration_s) ? `-${fmtTime((duration > 0 ? duration : (currentSong?.duration_s || 0)) - currentTime)}` : "--:--"}</span>
                   </div>
                 </div>
 
@@ -931,7 +931,7 @@ const AudioPlayer = ({ currentSong, playlist = [], onNext, onPrevious, onClose }
               </div>
               <div className="flex justify-between text-[10px] text-gray-700 px-4 pb-1.5 tabular-nums">
                 <span>{fmtTime(currentTime)}</span>
-                <span>{fmtTime(duration)}</span>
+                <span>{fmtTime(duration > 0 ? duration : (currentSong?.duration_s || 0))}</span>
               </div>
             </div>
 
@@ -1023,7 +1023,7 @@ const AudioPlayer = ({ currentSong, playlist = [], onNext, onPrevious, onClose }
                 <div className="flex items-center gap-2 w-full max-w-xs lg:max-w-sm">
                   <span className="text-xs text-gray-700 w-8 text-right tabular-nums">{fmtTime(currentTime)}</span>
                   <div className="flex-1"><Slider value={[currentTime]} max={duration || 100} step={0.1} onValueChange={handleSeek} className="cursor-pointer" /></div>
-                  <span className="text-xs text-gray-700 w-8 tabular-nums">{fmtTime(duration)}</span>
+                  <span className="text-xs text-gray-700 w-8 tabular-nums">{fmtTime(duration > 0 ? duration : (currentSong?.duration_s || 0))}</span>
                 </div>
               </div>
 

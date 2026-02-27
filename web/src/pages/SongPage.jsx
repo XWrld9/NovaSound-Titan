@@ -33,6 +33,7 @@ const SongPage = () => {
   const [artist,       setArtist]       = useState(null);
   const [artistEmail,  setArtistEmail]  = useState(null);
   const [loading,      setLoading]      = useState(true);
+  const [error,        setError]         = useState(false);
   const [showShare,    setShowShare]    = useState(false);
   const [showPlaylist, setShowPlaylist] = useState(false);
   const [siblings,     setSiblings]     = useState([]);
@@ -53,7 +54,7 @@ const SongPage = () => {
     try {
       setLoading(true);
       const { data, error } = await supabase.from('songs').select('*').eq('id', id).single();
-      if (error || !data) { navigate('/', { replace: true }); return; }
+      if (error || !data) { setError(true); setLoading(false); return; }
       setSong(data);
 
       // Profil artiste
@@ -91,7 +92,7 @@ const SongPage = () => {
           .order('created_at', { ascending: false }).limit(5);
         setMoreBySame(sameSongs || []);
       }
-    } catch { navigate('/', { replace: true }); }
+    } catch { setError(true); }
     finally { setLoading(false); }
   };
 
@@ -103,6 +104,42 @@ const SongPage = () => {
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-950 flex flex-col pb-36 md:pb-24">
+        <Header />
+        <main className="flex-1 container mx-auto px-4 py-8 max-w-5xl">
+          <div className="animate-pulse space-y-6">
+            <div className="flex flex-col md:flex-row gap-8">
+              <div className="w-full md:w-72 aspect-square bg-gray-800 rounded-2xl flex-shrink-0" />
+              <div className="flex-1 space-y-4 pt-2">
+                <div className="h-8 bg-gray-800 rounded w-3/4" />
+                <div className="h-5 bg-gray-800 rounded w-1/2" />
+                <div className="h-4 bg-gray-800 rounded w-1/4 mt-2" />
+                <div className="flex gap-3 mt-6">
+                  <div className="h-10 bg-gray-800 rounded-xl w-32" />
+                  <div className="h-10 bg-gray-800 rounded-xl w-24" />
+                  <div className="h-10 bg-gray-800 rounded-xl w-24" />
+                </div>
+              </div>
+            </div>
+          </div>
+        </main>
+        <Footer />
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen bg-gray-950 flex flex-col pb-36 md:pb-24">
+        <Header />
+        <main className="flex-1 container mx-auto px-4 py-16 flex flex-col items-center justify-center">
+          <Music className="w-16 h-16 text-gray-700 mb-4" />
+          <h2 className="text-xl font-bold text-white mb-2">Son introuvable</h2>
+          <p className="text-gray-500 mb-6">Ce morceau n'existe pas ou a été supprimé.</p>
+          <button onClick={() => navigate('/')} className="px-6 py-2.5 bg-cyan-500 hover:bg-cyan-600 text-white rounded-xl font-semibold transition-colors">
+            Retour à l'accueil
+          </button>
+        </main>
+        <Footer />
       </div>
     );
   }
@@ -257,7 +294,7 @@ const SongPage = () => {
                     {song.duration_s && (
                       <div className="flex items-center gap-1.5">
                         <Music className="w-4 h-4 text-gray-600" />
-                        <span>{Math.floor(song.duration_s/60)}:{String(song.duration_s%60).padStart(2,'0')}</span>
+                        <span>{Math.floor(song.duration_s/60)}:{String(Math.round(song.duration_s%60)).padStart(2,'0')}</span>
                       </div>
                     )}
                     {formattedDate && (

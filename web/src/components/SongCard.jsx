@@ -138,10 +138,12 @@ const SongCard = memo(({ song: initialSong, onPlay, isPlaying, setCurrentSong, c
             <span className="text-xs text-cyan-300 font-medium">{formatPlays(song.plays_count)}</span>
           </div>
 
-          {/* Durée */}
-          <div className="absolute bottom-2 right-2 bg-black/70 backdrop-blur-sm px-1.5 py-0.5 rounded text-[10px] text-gray-300 tabular-nums font-medium">
-            {durationStr}
-          </div>
+          {/* Durée — affichée uniquement si connue */}
+          {song.duration_s > 0 && (
+            <div className="absolute bottom-2 right-2 bg-black/70 backdrop-blur-sm px-1.5 py-0.5 rounded text-[10px] text-gray-300 tabular-nums font-medium">
+              {durationStr}
+            </div>
+          )}
 
           {/* Page son */}
           <Link to={`/song/${song.id}`} onClick={e => e.stopPropagation()}

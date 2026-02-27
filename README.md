@@ -1,5 +1,48 @@
 ## 📦 Changelog v131.0 — Compatibilité universelle tous appareils
 
+## 📦 Changelog v150.0 — Fix page blanche Explorer · Durée · Robustesse
+
+### 🔴 Fix CRITIQUE — Page blanche au clic sur un son dans l'Explorer
+
+**Symptôme** : Cliquer sur le titre ou le bouton ↗ d'une SongCard dans l'Explorer (vue grille) ouvrait une page entièrement blanche.
+
+**Cause 1 — Skeleton SongPage vide** : L'état `loading` de `SongPage` retournait un `<div>` vide sans `<Header>` ni contenu visible. Pendant le chargement Supabase (~300–800ms), l'utilisateur voyait uniquement le fond noir — expérience identique à une page blanche.
+
+**Fix** : `SongPage` retourne désormais un vrai skeleton animé (pochette + titre + boutons) avec `<Header>` et `<Footer>` pendant le chargement — le layout est stable immédiatement.
+
+**Cause 2 — Erreur JS silencieuse dans `SongRow` (vue liste)** : `SongRow` contenait un `useEffect` qui appelait `setSongs()` — une fonction définie dans le composant parent `ExplorerPage` et hors de portée dans `SongRow`. Cette `ReferenceError` silencieuse pouvait casser le rendu de la vue liste.
+
+**Fix** : `useEffect` retiré de `SongRow`. Le listener `novasound:song-updated` est désormais placé correctement dans `ExplorerPage` pour mettre à jour `songs[]` après édition d'un titre/artiste.
+
+**Cause 3 — SongPage redirige vers `/` sur toute erreur** : Le `catch` de `fetchSong` appelait `navigate('/', { replace: true })` même sur erreur réseau temporaire. L'utilisateur était expulsé de la page sans comprendre pourquoi.
+
+**Fix** : En cas d'erreur ou de son introuvable, `SongPage` affiche désormais un état d'erreur clair ("Son introuvable") avec un bouton retour à l'accueil — pas de redirection automatique.
+
+---
+
+### 🔴 Fix — Durée `--:--` affichée pour les sons sans durée en base
+
+**Symptôme** : Les SongCards et la vue liste affichaient systématiquement `--:--` pour les morceaux dont la colonne `duration_s` est `NULL` en base (morceaux uploadés avant v20).
+
+**Fix — `SongCard`** : Le badge durée est désormais conditionnel — il n'apparaît que si `song.duration_s > 0`. Plus de `--:--` visible.
+
+**Fix — `SongRow` (vue liste)** : Même logique — cellule durée vide si `duration_s` manquant.
+
+**Fix — `AudioPlayer` mini-player mobile** : Utilise `song.duration_s` comme valeur de fallback avant que l'`<audio>` ait chargé ses métadonnées — la durée totale s'affiche dès l'ouverture du player au lieu de `0:00`.
+
+**Fix — `AudioPlayer` expanded + desktop** : Même fallback sur `currentSong.duration_s` pour l'affichage durée restante (`-mm:ss`).
+
+**Fix — `SongPage`** : La durée affichait les secondes sans `Math.round()` → les décimales de `duration_s % 60` pouvaient produire des valeurs incorrectes. Corrigé.
+
+---
+
+### 🔧 Fixes mineurs
+
+- `SongActionsMenu` : le listener `novasound:song-updated` dans `ExplorerPage` met désormais à jour les données en temps réel sans erreur JS
+- Version bump : 131.0.0 → 150.0.0 | SW cache : `novasound-titan-v21` → `novasound-titan-v22`
+
+---
+
 ### 📐 Layout mobile — Player + BottomNav
 - Paddings bas unifiés : **pb-36 md:pb-32** sur toutes les pages (pb-24/pb-28 étaient insuffisants)
 - Le contenu n'est plus masqué par le mini-player + BottomNav sur iPhone/Android

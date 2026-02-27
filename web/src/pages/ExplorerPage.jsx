@@ -94,16 +94,6 @@ const SongRow = ({ song, index, onPlay, isPlaying, currentUser }) => {
   };
 
 
-  // Sync song-updated (titre/artiste edites depuis le menu)
-  useEffect(() => {
-    const handler = (e) => {
-      const updated = e.detail;
-      if (!updated?.id) return;
-      setSongs(prev => prev.map(s => s.id === updated.id ? { ...s, ...updated } : s));
-    };
-    window.addEventListener('novasound:song-updated', handler);
-    return () => window.removeEventListener('novasound:song-updated', handler);
-  }, []);
 
   return (
     <>
@@ -168,9 +158,9 @@ const SongRow = ({ song, index, onPlay, isPlaying, currentUser }) => {
           <span className="text-xs tabular-nums">{formatPlays(song.plays_count)}</span>
         </div>
 
-        {/* Durée */}
+        {/* Durée — seulement si connue */}
         <span className="hidden sm:block text-xs text-gray-600 tabular-nums flex-shrink-0 w-10 text-right">
-          {fmtDur(song.duration_s)}
+          {song.duration_s > 0 ? fmtDur(song.duration_s) : ''}
         </span>
 
         {/* Actions (visible au hover) */}
@@ -279,6 +269,17 @@ const ExplorerPage = () => {
     } catch {}
     finally { setLoading(false); setInitialLoad(false); }
   };
+
+  // Sync song-updated (titre/artiste modifiés depuis le menu ⋯)
+  useEffect(() => {
+    const handler = (e) => {
+      const updated = e.detail;
+      if (!updated?.id) return;
+      setSongs(prev => prev.map(s => s.id === updated.id ? { ...s, ...updated } : s));
+    };
+    window.addEventListener('novasound:song-updated', handler);
+    return () => window.removeEventListener('novasound:song-updated', handler);
+  }, []);
 
   const handleScroll = useCallback(() => {
     const near = window.innerHeight + document.documentElement.scrollTop >= document.documentElement.offsetHeight - 400;
