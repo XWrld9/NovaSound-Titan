@@ -64,7 +64,12 @@ const ListSkeleton = () => (
 );
 
 // ── Ligne vue liste ───────────────────────────────────────────────
-const fmtDur = (s) => { if (!s) return null; return `${Math.floor(s/60)}:${String(s%60).padStart(2,'0')}`; };
+const fmtDur = (s) => { 
+  if (!s || s <= 0 || isNaN(s)) return '--:--'; 
+  const minutes = Math.floor(s/60); 
+  const seconds = Math.floor(s%60); 
+  return `${minutes}:${String(seconds).padStart(2,'0')}`; 
+};
 
 const SongRow = ({ song, index, onPlay, isPlaying, currentUser }) => {
   const [qFlash,   setQFlash]   = useState(false);
@@ -164,11 +169,9 @@ const SongRow = ({ song, index, onPlay, isPlaying, currentUser }) => {
         </div>
 
         {/* Durée */}
-        {fmtDur(song.duration_s) && (
-          <span className="hidden sm:block text-xs text-gray-600 tabular-nums flex-shrink-0 w-10 text-right">
-            {fmtDur(song.duration_s)}
-          </span>
-        )}
+        <span className="hidden sm:block text-xs text-gray-600 tabular-nums flex-shrink-0 w-10 text-right">
+          {fmtDur(song.duration_s)}
+        </span>
 
         {/* Actions (visible au hover) */}
         <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0">

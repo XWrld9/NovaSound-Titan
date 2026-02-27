@@ -14,8 +14,10 @@ import AddToPlaylistModal from '@/components/AddToPlaylistModal';
 import { formatPlays } from '@/lib/utils';
 
 const fmtDuration = (s) => {
-  if (!s || s <= 0) return null;
-  return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
+  if (!s || s <= 0 || isNaN(s)) return '--:--';
+  const minutes = Math.floor(s / 60);
+  const seconds = Math.floor(s % 60);
+  return `${minutes}:${String(seconds).padStart(2, '0')}`;
 };
 
 const SongCard = memo(({ song: initialSong, onPlay, isPlaying, setCurrentSong, currentSong, onArchived, onDeleted }) => {
@@ -137,11 +139,9 @@ const SongCard = memo(({ song: initialSong, onPlay, isPlaying, setCurrentSong, c
           </div>
 
           {/* Durée */}
-          {durationStr && (
-            <div className="absolute bottom-2 right-2 bg-black/70 backdrop-blur-sm px-1.5 py-0.5 rounded text-[10px] text-gray-300 tabular-nums font-medium">
-              {durationStr}
-            </div>
-          )}
+          <div className="absolute bottom-2 right-2 bg-black/70 backdrop-blur-sm px-1.5 py-0.5 rounded text-[10px] text-gray-300 tabular-nums font-medium">
+            {durationStr}
+          </div>
 
           {/* Page son */}
           <Link to={`/song/${song.id}`} onClick={e => e.stopPropagation()}
