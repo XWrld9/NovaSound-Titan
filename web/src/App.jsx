@@ -12,6 +12,7 @@ import ProtectedRoute from '@/components/ProtectedRoute';
 import LoadingSpinner from '@/components/LoadingSpinner';
 import InstallBanner from '@/components/InstallBanner';
 import AudioPlayer from '@/components/AudioPlayer';
+import OnboardingToast from '@/components/OnboardingToast';
 
 // Pages chargées immédiatement (critiques)
 import HomePage from '@/pages/HomePage';
@@ -78,6 +79,7 @@ function App() {
                   </Suspense>
                   {/* Player global — persiste pendant toute la navigation */}
                   <GlobalPlayer />
+                  <OnboardingToast />
                 </Router>
               </NotificationProvider>
             </PlayerProvider>

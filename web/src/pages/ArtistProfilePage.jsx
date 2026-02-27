@@ -9,6 +9,7 @@ import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import SongCard from '@/components/SongCard';
 import FollowButton from '@/components/FollowButton';
+import ArtistStatsCard from '@/components/ArtistStatsCard';
 import { Music, User, Users, Headphones, Calendar, Share2 } from 'lucide-react';
 import { formatPlays } from '@/lib/utils';
 import { toPng } from 'html-to-image';
@@ -408,29 +409,9 @@ const ArtistProfilePage = () => {
                   </div>
                 )}
 
-                {/* Stats */}
-                <div className="flex flex-wrap gap-5 justify-center md:justify-start mb-5">
-                  <div className="text-center">
-                    <div className="text-xl font-bold text-cyan-400">{songs.length}</div>
-                    <div className="text-xs text-gray-500">Morceaux</div>
-                  </div>
-                  <div className="text-center">
-                    <div className="text-xl font-bold text-fuchsia-400">{followers.length}</div>
-                    <div className="text-xs text-gray-500">Abonnés</div>
-                  </div>
-                  <div className="text-center">
-                    <div className="text-xl font-bold text-green-400">{formatPlays(totalPlays)}</div>
-                    <div className="text-xs text-gray-500">Écoutes</div>
-                  </div>
-                  {artist.created_at && (
-                    <div className="text-center">
-                      <div className="text-xl font-bold text-gray-300 flex items-center gap-1 justify-center">
-                        <Calendar className="w-4 h-4" />
-                        {new Date(artist.created_at).getFullYear()}
-                      </div>
-                      <div className="text-xs text-gray-500">Membre depuis</div>
-                    </div>
-                  )}
+                {/* Stats — Carte visuelle v30 */}
+                <div className="mb-5 w-full">
+                  <ArtistStatsCard songs={songs} followersCount={followers.length} />
                 </div>
 
                 {/* Boutons d'action — flex-wrap pour mobile */}

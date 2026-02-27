@@ -13,6 +13,8 @@ import { usePlayer } from '@/contexts/PlayerContext';
 import LottieAnimation from '@/components/LottieAnimation';
 import playAnimation from '@/animations/play-animation.json';
 import { useNavigate } from 'react-router-dom';
+import { useGenreTheme } from '@/hooks/useGenreTheme';
+import WaveformVisualizer from '@/components/WaveformVisualizer';
 import SongShareModal from '@/components/SongShareModal';
 
 const isIOS = () =>
@@ -46,6 +48,7 @@ const fmtSleep = (s) => {
 // ── Composant principal ───────────────────────────────────────────────────────
 const AudioPlayer = ({ currentSong, playlist = [], onNext, onPrevious, onClose }) => {
   const { currentUser } = useAuth();
+  const genreTheme = useGenreTheme(currentSong?.genre);
   const navigate = useNavigate();
   const audioRef = useRef(null);
 
@@ -332,9 +335,14 @@ const AudioPlayer = ({ currentSong, playlist = [], onNext, onPrevious, onClose }
     ? (isCoverMode ? 'Quitter la vue couverture' : 'Vue couverture')
     : (isCoverMode || isNativeFS ? 'Quitter le plein écran' : 'Plein écran');
 
+  // Fond dynamique selon le genre du son en lecture
+  const genreGlowColor = genreTheme.glow;
   const expandedBg = isCoverMode && blurBg
     ? { background: `linear-gradient(rgba(0,0,0,0.60),rgba(0,0,0,0.80)), url("${blurBg}") center/cover no-repeat` }
-    : { background: 'linear-gradient(180deg, #0a0f23 0%, #030712 55%)' };
+    : {
+        background: `radial-gradient(ellipse at 30% 0%, ${genreGlowColor} 0%, transparent 60%), linear-gradient(180deg, #0a0f23 0%, #030712 55%)`,
+        transition: 'background 0.8s ease',
+      };
 
   // ── Sleep timer display ─────────────────────────────────────────
   const sleepOptions = [5, 10, 15, 20, 30, 45, 60];
@@ -375,8 +383,8 @@ const AudioPlayer = ({ currentSong, playlist = [], onNext, onPrevious, onClose }
             onClick={() => { setShowSleepMenu(false); }}
           >
             {!isCoverMode && (
-              <div className="absolute inset-0 opacity-25 pointer-events-none"
-                style={{ background: 'radial-gradient(ellipse at 50% -10%, rgba(6,182,212,0.5) 0%, transparent 65%)' }} />
+              <div className="absolute inset-0 opacity-30 pointer-events-none"
+                style={{ background: `radial-gradient(ellipse at 50% -10%, ${genreTheme.glow.replace('0.35', '0.55')} 0%, transparent 65%)`, transition: 'background 0.8s ease' }} />
             )}
 
             {/* HEADER */}
@@ -519,6 +527,15 @@ const AudioPlayer = ({ currentSong, playlist = [], onNext, onPrevious, onClose }
                   </div>
                 </div>
 
+                {/* Waveform Visualizer */}
+                <WaveformVisualizer
+                  isPlaying={isPlaying}
+                  barCount={36}
+                  color={genreTheme.primary}
+                  height={28}
+                  className="w-full opacity-70"
+                />
+
                 {/* Seek bar */}
                 <div>
                   <Slider value={[currentTime]} max={duration || 100} step={0.1} onValueChange={handleSeek} className="cursor-pointer" />
@@ -538,7 +555,11 @@ const AudioPlayer = ({ currentSong, playlist = [], onNext, onPrevious, onClose }
                     <SkipBack className="w-7 h-7" />
                   </button>
                   <button onClick={togglePlay}
-                    className="w-14 h-14 rounded-full bg-white text-gray-900 hover:scale-105 active:scale-95 transition-all shadow-xl flex items-center justify-center">
+                    className="w-14 h-14 rounded-full hover:scale-105 active:scale-95 transition-all shadow-xl flex items-center justify-center text-white"
+                    style={{
+                      background: `linear-gradient(135deg, ${genreTheme.primary}, ${genreTheme.secondary})`,
+                      boxShadow: `0 4px 24px ${genreTheme.glow}`,
+                    }}>
                     {isPlaying ? <Pause className="w-7 h-7" /> : <Play className="w-7 h-7 ml-0.5" />}
                   </button>
                   <button onClick={(e) => { e.stopPropagation(); goNext(); }} className="p-2 text-gray-300 hover:text-white hover:scale-110 transition-all">
@@ -706,7 +727,8 @@ const AudioPlayer = ({ currentSong, playlist = [], onNext, onPrevious, onClose }
                     <SkipBack className="w-5 h-5" />
                   </button>
                   <button onClick={togglePlay}
-                    className="w-9 h-9 rounded-full bg-white text-gray-900 flex items-center justify-center shadow-md active:scale-90 transition-transform">
+                    className="w-9 h-9 rounded-full flex items-center justify-center shadow-md active:scale-90 transition-transform text-white"
+                    style={{ background: `linear-gradient(135deg, ${genreTheme.primary}, ${genreTheme.secondary})` }}>
                     {isPlaying ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4 ml-0.5" />}
                   </button>
                   <button onClick={(e) => { e.stopPropagation(); goNext(); }} className="p-1.5 text-gray-500">
@@ -794,7 +816,8 @@ const AudioPlayer = ({ currentSong, playlist = [], onNext, onPrevious, onClose }
                   <button onClick={(e) => { e.stopPropagation(); goPrevious(); }} className="text-gray-400 hover:text-white hover:scale-110 transition-all">
                     <SkipBack className="w-5 h-5" />
                   </button>
-                  <button onClick={togglePlay} className="w-9 h-9 rounded-full bg-white text-gray-900 hover:scale-105 active:scale-95 transition-all shadow-lg flex items-center justify-center">
+                  <button onClick={togglePlay} className="w-9 h-9 rounded-full hover:scale-105 active:scale-95 transition-all shadow-lg flex items-center justify-center text-white"
+                    style={{ background: `linear-gradient(135deg, ${genreTheme.primary}, ${genreTheme.secondary})`, boxShadow: `0 2px 12px ${genreTheme.glow}` }}>
                     {isPlaying ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4 ml-0.5" />}
                   </button>
                   <button onClick={(e) => { e.stopPropagation(); goNext(); }} className="text-gray-400 hover:text-white hover:scale-110 transition-all">

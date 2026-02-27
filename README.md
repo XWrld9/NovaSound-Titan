@@ -210,14 +210,26 @@ NovaSound-Titan/
 
 ---
 
-## 🎵 Fonctionnalités v20.0
+## 🎵 Fonctionnalités v30.0
 
 **Player**
+- **Thème couleur dynamique** : fond, bouton Play et visualiseur changent de couleur selon le genre du son en lecture — 19 thèmes (Afrobeats, Hip-Hop, R&B, etc.)
+- **Waveform Visualizer** : 36 barres CSS animées dans le player expanded, synchronisées sur play/pause
 - **File d'attente (Queue)** : bouton ⊕ sur chaque SongCard pour empiler des sons. Panneau dédié dans le player expanded (slide from bottom) avec liste réorderable, suppression individuelle, bouton "Vider". Le son suivant en queue est prioritaire sur la playlist.
 - **Sleep Timer (minuteur de sommeil)** : arrête automatiquement la lecture après 5, 10, 15, 20, 30, 45 ou 60 minutes. Compte à rebours visible dans le header du player (🌙 + timer) et dans le mini-player mobile. Annulable à tout moment.
 - **Swipe-to-close mobile** : glisser le mini-player vers le bas (>60px) ferme le lecteur naturellement.
 - **Mode immersif** : fond pochette flou + plein écran natif (Android/Desktop) ou CSS (iOS), inchangé et stable.
 - **Badge genre** visible dans le player expanded et dans le mini-player desktop.
+
+**Homepage**
+- **SpotlightCarousel** : carrousel auto-défilant des 5 derniers sons avec fond pochette, lecture directe, navigation flèches + dots
+- **Section "Top 3 du moment"** : les 3 sons les plus écoutés, affichés avec médailles 🥇🥈🥉, pochette en fond flou, plays count et genre. Lecture directe au clic.
+
+**Profils Artiste**
+- **ArtistStatsCard** : 4 cartes visuelles animées (écoutes, likes, sons, abonnés) avec formatage intelligent
+
+**Onboarding**
+- **Guide 4 étapes** pour les nouveaux utilisateurs : apparaît une seule fois, thèmes colorés, raccourcis vers les pages clés
 
 **Catalogue**
 - **Genres musicaux** : 17 genres disponibles (Afrobeats, Hip-Hop, R&B, Pop, Électronique, Trap, Gospel, Jazz, Reggae, Dancehall, Amapiano, Coupé-Décalé, Rock, Classique, Folk, Latin, Drill)
@@ -309,6 +321,18 @@ NovaSound-Titan/
 ---
 
 ## 📝 Changelog
+
+### v30.0 (2026-02-27) — Thème Genre · Waveform · Carrousel · Stats Artiste · Onboarding
+
+- 🎨 **Thème couleur dynamique par genre** dans le player : le fond lumineux, le bouton Play et le visualiseur s'adaptent automatiquement à la couleur du genre du son en lecture (17 thèmes distincts — Afrobeats → amber, Hip-Hop → violet, Trap → rouge, Gospel → orange…). `useGenreTheme.js` centralisé.
+- 🎵 **Waveform Visualizer** dans le player expanded : 36 barres CSS animées synchronisées sur le play/pause — zero overhead (pas de Web Audio API). Couleur accordée au thème genre. `WaveformVisualizer.jsx`.
+- 🎠 **SpotlightCarousel** sur la HomePage : carrousel auto-défilant des 5 derniers sons, entre la Hero section et le Top 3. Auto-défilement toutes les 5 secondes, navigation par flèches et dots, fond pochette avec overlay gradient. Lecture directe au clic. `SpotlightCarousel.jsx`.
+- 📊 **ArtistStatsCard** sur les profils artiste : remplace les stats textuelles par 4 cartes visuelles animées (écoutes totales, likes totaux, sons publiés, abonnés) avec icônes et formatage intelligent (1.2k, 3.4M…). `ArtistStatsCard.jsx`.
+- 🎓 **OnboardingToast** — guide 4 étapes pour les nouveaux utilisateurs : apparaît 1,8s après la première connexion, visible une seule fois par compte (flag `novasound.onboarding.{uid}` en localStorage), thème par étape, navigation Suivant/Terminer + raccourci vers Explorer/Upload/Profil. `OnboardingToast.jsx`.
+- 🗄 **v30-migration.sql** : index composites `(genre, plays_count)` + `(uploader_id, created_at)`, vue `spotlight_songs`, fonction RPC `get_artist_stats(uuid)`, colonne `bio_url` sur `users`.
+- 🔢 **Versions** : `package.json → 30.0.0` · SW cache `novasound-titan-v7` · client-info `30.0.0`.
+
+---
 
 ### v20.0 (2026-02-27) — Queue · Sleep Timer · Genres · Top 3 · Squelettes · Swipe
 

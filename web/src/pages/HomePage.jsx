@@ -13,11 +13,13 @@ import { useAuth } from '@/contexts/AuthContext';
 import NewsLikeButton from '@/components/NewsLikeButton';
 import NewsShareButton from '@/components/NewsShareButton';
 import SongActionsMenu from '@/components/SongActionsMenu';
+import SpotlightCarousel from '@/components/SpotlightCarousel';
 
 const HomePage = () => {
   const { isAuthenticated } = useAuth();
   const [featuredSongs, setFeaturedSongs] = useState([]);
   const [topSongs,      setTopSongs]      = useState([]);
+  const [spotlightSongs, setSpotlightSongs] = useState([]);
   const [newsItems, setNewsItems] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedNews, setSelectedNews] = useState(null);
@@ -33,7 +35,7 @@ const HomePage = () => {
     }, 5000); // 5 secondes max
 
     try {
-      const [{ data: songs, error: songsError }, { data: news, error: newsError }, { data: top }] = await Promise.all([
+      const [{ data: songs, error: songsError }, { data: news, error: newsError }, { data: top }, { data: spotlight }] = await Promise.all([
         supabase
           .from('songs')
           .select('*')
@@ -51,6 +53,12 @@ const HomePage = () => {
           .eq('is_archived', false)
           .order('plays_count', { ascending: false })
           .limit(3),
+        supabase
+          .from('songs')
+          .select('*')
+          .eq('is_archived', false)
+          .order('created_at', { ascending: false })
+          .limit(5),
       ]);
 
       if (songsError) throw songsError;
@@ -62,6 +70,7 @@ const HomePage = () => {
 
       setFeaturedSongs(songs || []);
       setTopSongs((top || []).filter(s => !s.is_archived));
+      setSpotlightSongs((spotlight || []).filter(s => !s.is_archived));
     } catch (error) {
       console.error('Error fetching data:', error);
       // En cas d'erreur, afficher quand même les données vides
@@ -140,6 +149,17 @@ const HomePage = () => {
               </motion.div>
             </div>
           </section>
+
+          {/* ── SPOTLIGHT CARROUSEL ── */}
+          {spotlightSongs.length > 0 && (
+            <section className="container mx-auto px-4 -mt-6 relative z-10 mb-4">
+              <SpotlightCarousel
+                songs={spotlightSongs}
+                onPlay={playSong}
+                currentSong={currentSong}
+              />
+            </section>
+          )}
 
           {/* ── TOP 3 SONS ── */}
           {topSongs.length > 0 && (
