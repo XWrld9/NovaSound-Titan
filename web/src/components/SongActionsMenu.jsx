@@ -252,7 +252,7 @@ const EditSongModal = ({ song, onSaved, onCancel }) => {
 
   const handleSave = async () => {
     if (!title.trim()) { setError('Le titre est obligatoire'); return; }
-    if (!artist.trim()) { setError('Le nom d'artiste est obligatoire'); return; }
+    if (!artist.trim()) { setError("Le nom d'artiste est obligatoire"); return; }
     setSaving(true);
     setError('');
     try {

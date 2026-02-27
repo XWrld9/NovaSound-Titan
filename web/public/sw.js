@@ -1,4 +1,4 @@
-const CACHE_NAME = 'novasound-titan-v11';
+const CACHE_NAME = 'novasound-titan-v12';
 const STATIC_ASSETS = [
   '/',
   '/index.html',

@@ -1,3 +1,12 @@
+## 📦 Changelog v80.0
+
+### 🔴 Fix Build — SongActionsMenu apostrophe
+- Correction d'un bug de syntaxe JSX dans `SongActionsMenu.jsx` ligne 255 : l'apostrophe dans `'Le nom d'artiste est obligatoire'` cassait le build esbuild/Vite (`Expected ")" but found "artiste"`)
+- Fix : chaîne convertie en guillemets doubles → `"Le nom d'artiste est obligatoire"`
+- **Version bump** : 75.0.0 → 80.0.0 | SW cache : novasound-titan-v11 → novasound-titan-v12
+
+---
+
 ## 📦 Changelog v75.0
 
 ### 🎵 Synchronisation Playlist Lecture ↔ Playlist Profil
