@@ -1,3 +1,45 @@
+## 📦 Changelog v90.0
+
+### 🔍 Audit complet synchronisation — 3 bugs supplémentaires corrigés
+
+**Bug 1 — Modale d'édition playlist en double (`MyPlaylistsPage`)**
+- Le bloc `<AnimatePresence>{editTarget && ...}` était rendu **deux fois** dans le JSX (copier-coller oublié)
+- Fix : suppression du bloc dupliqué
+
+**Bug 2 — Ajout d'un son à une playlist ne se reflétait pas en temps réel (`AddToPlaylistModal`)**
+- Quand l'utilisateur ajoutait un son depuis le modal ⊕, la `PlaylistPage` déjà ouverte en fond ne se mettait pas à jour
+- Fix : dispatch `novasound:playlist-song-added` dans `handleAdd` et `handleCreate` de `AddToPlaylistModal`
+
+**Bug 3 — `PlaylistPage` n'écoutait pas les ajouts de sons**
+- Fix : nouveau listener `novasound:playlist-song-added` dans `PlaylistPage` → ajoute le son à la liste locale si la playlist correspond
+
+**Version bump** : 85.0.0 → 90.0.0 | SW cache : novasound-titan-v13 → novasound-titan-v14
+
+---
+
+## 📦 Changelog v85.0
+
+### 🔄 Synchronisation universelle après modification d'une publication
+
+**Problème** : Après avoir modifié le titre ou le nom d'artiste d'un son via le menu ⋯, les changements n'apparaissaient pas dans :
+- Le mini player / file d'attente (Image 1)
+- La PlaylistPage (Image 2)
+- Les pages profil, explorer, artiste, page du son (Image 3)
+
+**Cause** : L'événement `novasound:song-updated` était dispatché mais aucun composant ne l'écoutait.
+
+**Fix** : Ajout de listeners `novasound:song-updated` dans :
+- `PlayerContext` → met à jour `currentSong`, `playlist[]`, et `queue[]` en mémoire
+- `PlaylistPage` → met à jour la liste locale des sons de la playlist
+- `UserProfilePage` → met à jour `userSongs`, `likedSongs`, `favoriteSongs`
+- `ArtistProfilePage` → met à jour `songs[]`
+- `ExplorerPage` → met à jour `songs[]`
+- `SongPage` → met à jour le `song` affiché
+
+**Version bump** : 80.0.0 → 85.0.0 | SW cache : novasound-titan-v12 → novasound-titan-v13
+
+---
+
 ## 📦 Changelog v80.0
 
 ### 🔴 Fix Build — SongActionsMenu apostrophe

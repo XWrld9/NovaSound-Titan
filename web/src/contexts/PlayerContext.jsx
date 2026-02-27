@@ -36,6 +36,32 @@ export const PlayerProvider = ({ children }) => {
   useEffect(() => { radioModeRef.current = radioMode; }, [radioMode]);
   useEffect(() => { currentPlaylistIdRef.current = currentPlaylistId; }, [currentPlaylistId]);
 
+  // ── Sync song-updated event (title/artist/description edites) ────
+  useEffect(() => {
+    const handler = (e) => {
+      const updated = e.detail;
+      if (!updated?.id) return;
+      setCurrentSong(prev => {
+        if (!prev || prev.id !== updated.id) return prev;
+        const next = { ...prev, ...updated };
+        currentSongRef.current = next;
+        return next;
+      });
+      setPlaylist(prev => {
+        const next = prev.map(s => s.id === updated.id ? { ...s, ...updated } : s);
+        playlistRef.current = next;
+        return next;
+      });
+      setQueue(prev => {
+        const next = prev.map(s => s.id === updated.id ? { ...s, ...updated } : s);
+        queueRef.current = next;
+        return next;
+      });
+    };
+    window.addEventListener('novasound:song-updated', handler);
+    return () => window.removeEventListener('novasound:song-updated', handler);
+  }, []);
+
   // ── Fetch prochain son radio ──────────────────────────────────────
   const fetchRadioNext = useCallback(async (currentSongData) => {
     if (!currentSongData) return null;

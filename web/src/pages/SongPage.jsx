@@ -152,6 +152,18 @@ const SongPage = () => {
     </motion.div>
   );
 
+
+  // Sync song-updated (titre/artiste edites depuis le menu)
+  useEffect(() => {
+    const handler = (e) => {
+      const updated = e.detail;
+      if (!updated?.id) return;
+      setSong(prev => prev && prev.id === updated.id ? { ...prev, ...updated } : prev);
+    };
+    window.addEventListener('novasound:song-updated', handler);
+    return () => window.removeEventListener('novasound:song-updated', handler);
+  }, []);
+
   return (
     <>
       <Helmet>

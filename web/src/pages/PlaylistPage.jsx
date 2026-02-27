@@ -48,6 +48,32 @@ const PlaylistPage = () => {
     };
     window.addEventListener('novasound:playlist-song-removed', handler);
     return () => window.removeEventListener('novasound:playlist-song-removed', handler);
+  }, []);
+
+  // Mettre à jour les songs si un titre/artiste est edite
+  useEffect(() => {
+    const handler = (e) => {
+      const updated = e.detail;
+      if (!updated?.id) return;
+      setSongs(prev => prev.map(s => s.id === updated.id ? { ...s, ...updated } : s));
+    };
+    window.addEventListener('novasound:song-updated', handler);
+    return () => window.removeEventListener('novasound:song-updated', handler);
+  }, [id]);
+
+  // Rafraîchir si un son est ajouté à CETTE playlist depuis AddToPlaylistModal
+  useEffect(() => {
+    const handler = (e) => {
+      if (e.detail?.playlistId !== id) return;
+      const newSong = e.detail?.song;
+      if (!newSong) return;
+      setSongs(prev => {
+        if (prev.find(s => s.id === newSong.id)) return prev; // déjà présent
+        return [...prev, newSong];
+      });
+    };
+    window.addEventListener('novasound:playlist-song-added', handler);
+    return () => window.removeEventListener('novasound:playlist-song-added', handler);
   }, [id]);
 
   const fetchPlaylist = async () => {

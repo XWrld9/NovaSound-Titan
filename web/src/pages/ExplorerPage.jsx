@@ -88,6 +88,18 @@ const SongRow = ({ song, index, onPlay, isPlaying, currentUser }) => {
     document.body.appendChild(a); a.click(); document.body.removeChild(a);
   };
 
+
+  // Sync song-updated (titre/artiste edites depuis le menu)
+  useEffect(() => {
+    const handler = (e) => {
+      const updated = e.detail;
+      if (!updated?.id) return;
+      setSongs(prev => prev.map(s => s.id === updated.id ? { ...s, ...updated } : s));
+    };
+    window.addEventListener('novasound:song-updated', handler);
+    return () => window.removeEventListener('novasound:song-updated', handler);
+  }, []);
+
   return (
     <>
       <motion.div

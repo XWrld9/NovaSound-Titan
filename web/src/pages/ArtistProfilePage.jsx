@@ -101,6 +101,18 @@ const ArtistShareModal = ({ artist, onClose }) => {
     try { await navigator.clipboard.writeText(shareUrl); setCopied(true); setTimeout(() => setCopied(false), 2000); } catch {}
   };
 
+
+  // Sync song-updated (titre/artiste edites depuis le menu)
+  useEffect(() => {
+    const handler = (e) => {
+      const updated = e.detail;
+      if (!updated?.id) return;
+      setSongs(prev => prev.map(s => s.id === updated.id ? { ...s, ...updated } : s));
+    };
+    window.addEventListener('novasound:song-updated', handler);
+    return () => window.removeEventListener('novasound:song-updated', handler);
+  }, []);
+
   return (
     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
       className="fixed inset-0 z-[200] flex items-center justify-center p-4"

@@ -31,6 +31,9 @@ const AddToPlaylistModal = ({ song, onClose }) => {
       setAddedIds(prev => new Set([...prev, playlist.id]));
       setFeedback(`Ajouté à « ${playlist.name} »`);
       setTimeout(() => setFeedback(''), 2000);
+      window.dispatchEvent(new CustomEvent('novasound:playlist-song-added', {
+        detail: { playlistId: playlist.id, song },
+      }));
     }
     setSaving(false);
   };
@@ -44,6 +47,9 @@ const AddToPlaylistModal = ({ song, onClose }) => {
       setAddedIds(prev => new Set([...prev, pl.id]));
       setFeedback(`Playlist « ${pl.name} » créée !`);
       setTimeout(() => setFeedback(''), 2000);
+      window.dispatchEvent(new CustomEvent('novasound:playlist-song-added', {
+        detail: { playlistId: pl.id, song },
+      }));
     }
     setNewName('');
     setCreating(false);
