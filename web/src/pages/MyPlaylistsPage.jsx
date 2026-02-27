@@ -275,7 +275,7 @@ const MyPlaylistsPage = () => {
                 />
                 <button
                   onClick={() => setEditPublic(!editPublic)}
-                  className={\}
+                  className={`flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-full border transition-all ${editPublic ? "border-cyan-500/40 text-cyan-400 bg-cyan-500/10" : "border-white/10 text-gray-500"}`}
                 >
                   {editPublic ? <Globe className="w-3 h-3" /> : <Lock className="w-3 h-3" />}
                   {editPublic ? 'Publique' : 'Privée'}
