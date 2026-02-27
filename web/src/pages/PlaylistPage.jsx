@@ -21,7 +21,7 @@ const PlaylistPage = () => {
   const { id }      = useParams();
   const navigate    = useNavigate();
   const { currentUser } = useAuth();
-  const { playSong, currentSong, isVisible } = usePlayer();
+  const { playSong, currentSong, isVisible, removeFromPlaylist, currentPlaylistId } = usePlayer();
   const { deletePlaylist, removeSongFromPlaylist, updatePlaylist } = usePlaylist();
 
   const [playlist,   setPlaylist]   = useState(null);
@@ -38,6 +38,17 @@ const PlaylistPage = () => {
   const isOwner = currentUser && playlist?.owner_id === currentUser.id;
 
   useEffect(() => { fetchPlaylist(); }, [id]);
+
+  // Synchro bidirectionnelle : si le PlayerContext retire un son depuis le mini-player, répercuter ici
+  useEffect(() => {
+    const handler = (e) => {
+      if (e.detail?.playlistId === id && e.detail?.songId) {
+        setSongs(prev => prev.filter(s => s.id !== e.detail.songId));
+      }
+    };
+    window.addEventListener('novasound:playlist-song-removed', handler);
+    return () => window.removeEventListener('novasound:playlist-song-removed', handler);
+  }, [id]);
 
   const fetchPlaylist = async () => {
     setLoading(true);
@@ -75,18 +86,22 @@ const PlaylistPage = () => {
   const handlePlayAll = (startIdx = 0) => {
     if (!songs.length) return;
     const ordered = songs.slice(startIdx);
-    playSong(ordered[0], ordered);
+    playSong(ordered[0], ordered, id);
   };
 
   const handlePlayShuffle = () => {
     if (!songs.length) return;
     const shuffled = [...songs].sort(() => Math.random() - 0.5);
-    playSong(shuffled[0], shuffled);
+    playSong(shuffled[0], shuffled, id);
   };
 
   const handleRemoveSong = async (songId) => {
     await removeSongFromPlaylist(id, songId);
     setSongs(prev => prev.filter(s => s.id !== songId));
+    // Synchro avec le player si c'est cette playlist qui est lue
+    if (currentPlaylistId === id) {
+      removeFromPlaylist(songId);
+    }
   };
 
   const handleSaveEdit = async () => {

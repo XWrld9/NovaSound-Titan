@@ -713,6 +713,16 @@ const AudioPlayer = ({ currentSong, playlist = [], onNext, onPrevious, onClose }
             {/* ── PANNEAU QUEUE (slide from bottom) ── */}
             <AnimatePresence>
               {showQueue && (
+                <>
+                  {/* Overlay flou derrière la playlist */}
+                  <motion.div
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    transition={{ duration: 0.25 }}
+                    className="absolute inset-0 z-10 pointer-events-none"
+                    style={{ backdropFilter: 'blur(8px)', WebkitBackdropFilter: 'blur(8px)', background: 'rgba(3,7,18,0.55)' }}
+                  />
                 <motion.div
                   initial={{ y: '100%' }}
                   animate={{ y: 0 }}
@@ -728,14 +738,14 @@ const AudioPlayer = ({ currentSong, playlist = [], onNext, onPrevious, onClose }
                       <span className="text-white font-bold text-sm">File d'attente</span>
                       <span className="text-xs text-gray-500 bg-white/8 px-1.5 py-0.5 rounded-full">{queue.length}</span>
                     </div>
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-3">
                       {queue.length > 0 && (
                         <button onClick={clearQueue}
-                          className="flex items-center gap-1 text-xs text-red-400 hover:text-red-300 transition-colors px-2 py-1 rounded-lg hover:bg-red-500/10">
-                          <Trash2 className="w-3 h-3" />Vider
+                          className="flex items-center gap-1.5 text-xs text-red-400 hover:text-red-300 transition-colors px-3 py-1.5 rounded-full border border-red-500/20 hover:bg-red-500/10 min-w-[60px]">
+                          <Trash2 className="w-3 h-3 flex-shrink-0" /><span>Vider</span>
                         </button>
                       )}
-                      <button onClick={() => setShowQueue(false)} className="p-1.5 text-gray-500 hover:text-white transition-colors rounded-lg hover:bg-white/8">
+                      <button onClick={() => setShowQueue(false)} className="p-2 text-gray-500 hover:text-white transition-colors rounded-lg hover:bg-white/8 ml-1">
                         <X className="w-4 h-4" />
                       </button>
                     </div>
@@ -761,14 +771,16 @@ const AudioPlayer = ({ currentSong, playlist = [], onNext, onPrevious, onClose }
                             <p className="text-gray-500 text-xs truncate">{s.artist}</p>
                           </div>
                           <button onClick={() => removeFromQueue(i)}
-                            className="opacity-0 group-hover:opacity-100 p-1.5 text-gray-600 hover:text-red-400 transition-all rounded-lg hover:bg-red-500/10">
-                            <X className="w-3.5 h-3.5" />
+                            className="opacity-0 group-hover:opacity-100 p-1.5 text-gray-600 hover:text-red-400 transition-all rounded-lg hover:bg-red-500/10"
+                            title="Retirer de la file">
+                            <Trash2 className="w-3.5 h-3.5" />
                           </button>
                         </div>
                       ))
                     )}
                   </div>
                 </motion.div>
+                </>
               )}
             </AnimatePresence>
 

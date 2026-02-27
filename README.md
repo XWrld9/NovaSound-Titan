@@ -1,4 +1,41 @@
-# NovaSound-TITAN LUX v50
+## 📦 Changelog v75.0
+
+### 🎵 Synchronisation Playlist Lecture ↔ Playlist Profil
+- `PlayerContext` étendu : `currentPlaylistId` mémorise la playlist Supabase en cours de lecture
+- `playSong()` accepte maintenant un 3ème argument `playlistId` pour lier le player à une playlist profil
+- `removeFromPlaylist()` : retire un son de la playlist de lecture ET supprime la ligne `playlist_songs` en base — synchro bidirectionnelle
+- `PlaylistPage` : `handlePlayAll/handlePlayShuffle` transmettent l'ID de playlist au player ; `handleRemoveSong` appelle `removeFromPlaylist` si la playlist courante est liée
+- Event `novasound:playlist-song-removed` : écoute dans `PlaylistPage` pour répercuter les suppressions faites depuis le mini-player
+
+### 📋 Mini Playlist (Queue Panel)
+- **Icône poubelle** 🗑️ par musique dans la file d'attente (remplace le X) — plus explicite, jamais ambigu
+- **Boutons "Vider" et "X" espacés** (`gap-3`, bouton Vider avec bordure `min-w-[60px]`) — fini la confusion sur mobile
+- **Flou d'arrière-plan** : à l'apparition du panneau queue, un overlay `backdrop-filter: blur(8px)` assombrit le contenu du player — la liste est parfaitement lisible
+
+### ✏️ Gestion Playlists Profil
+- `MyPlaylistsPage` : bouton **Modifier** (crayon bleu) sur chaque carte playlist → modale d'édition (nom, description, public/privé)
+- Modal d'édition avec validation, bouton Enregistrer/Annuler, synchronisé avec `PlaylistContext.updatePlaylist()`
+
+### 🎤 Modification de Publication (Artiste)
+- `SongActionsMenu` : nouvelle option **Modifier** (icône Edit2, couleur bleue) dans le menu ⋯
+- `EditSongModal` : modale dédiée permettant de modifier **nom d'artiste**, **titre** et **description** (champs indépendants — modifie uniquement les champs changés)
+- Validation côté client : titre et nom d'artiste obligatoires
+- Event `novasound:song-updated` dispatché après sauvegarde pour notifier les composants parents
+
+### 📱 Upload Musique — iOS & Gestionnaires de Fichiers
+- **Magnétophone supprimé** — plus d'icône ambiguë
+- **2 zones de sélection distinctes** :
+  - 🗂️ **Mes fichiers** (icône dossier bleu) → Files.app iOS, Explorateur Android
+  - ☁️ **Cloud / Stockage** (icône upload orange) → iCloud Drive, Google Drive, carte SD
+- `multiple={false}` explicite sur tous les `<input type="file">` audio
+- `capture` jamais défini → le système ouvre toujours le gestionnaire de fichiers, jamais le micro/caméra
+- Zone "Changer" visible après sélection — meilleure UX
+- Pochette : même refonte visuelle
+
+### 🔧 Fixes divers
+- `package.json` → v75.0.0 · SW cache `novasound-titan-v10`
+
+# NovaSound-TITAN LUX v75
 
 > *Ici chaque écoute compte. Bienvenue dans la nouvelle ère. À toi, artiste qui cherche à t'exprimer aux yeux du monde entier — ICI C'EST TA SCÈNE !*
 
@@ -49,16 +86,24 @@ npm run dev
 
 | Étape | Fichier | Ce que ça fait |
 |-------|---------|----------------|
-| 1 | `setup-supabase.sql` | Tables, RLS, triggers, création auto profil à l'inscription |
+| 1 | `setup-supabase.sql` | Tables de base, RLS, triggers, création auto profil |
 | 2 | `news-likes.sql` | Table `news_likes` + trigger `likes_count` |
 | 3 | `increment-plays.sql` | Fonction RPC atomique pour les écoutes |
 | 4 | `fix-rls-avatars.sql` | Politiques RLS sur le bucket `avatars` |
 | 5 | `moderation-system.sql` | Table `reports` + rôles modérateur/admin |
 | 6 | `enable-realtime.sql` | Active Supabase Realtime sur `likes` et `news_likes` |
-| 7 | `archive-songs.sql` | Colonnes `is_archived` + `is_deleted` + politiques RLS mises à jour |
-| 8 | `comments-favorites.sql` | Tables `favorites`, `song_comments`, `comment_likes` + triggers + RLS |
+| 7 | `archive-songs.sql` | Colonnes `is_archived` + `is_deleted` + politiques RLS |
+| 8 | `comments-favorites.sql` | Tables `favorites`, `song_comments`, `comment_likes` + RLS |
+| 9 | `v20-migration.sql` | Colonnes `genre` et `duration_s` sur `songs` + index |
+| 10 | `v30-migration.sql` | Index perf + vue `spotlight_songs` + `get_artist_stats()` + `bio_url` |
+| 11 | `v60-migration.sql` | Tables `playlists` + `playlist_songs` + RLS + RPC `add_song_to_playlist` |
+| 12 | `v70-migration.sql` | Table `messages` (messagerie privée) + RLS + index |
+| 13 | `v71-fix-upload-rls.sql` | Fix politiques RLS Storage (upload audio/cover sans erreur 401) |
+| 14 | `notifications.sql` | Table `notifications` + RLS + Realtime |
+| 15 | `owner-edit-delete-rls.sql` | Droits propriétaire : modifier/supprimer ses propres sons |
+| 16 | `fix-comments-rls.sql` | Correction RLS commentaires |
 
-> ⚠️ **Ne pas exécuter d'autres fichiers SQL.** Tous les scripts intermédiaires ont été fusionnés ou supprimés.
+> ⚠️ **Exécuter tous les fichiers dans l'ordre.** Chaque script utilise `IF NOT EXISTS` — aucun risque de doublon sur une base déjà peuplée.
 
 ### Buckets Storage à créer manuellement
 
@@ -172,14 +217,22 @@ NovaSound-Titan/
     │       ├── LoginPage.jsx            # Renvoi email confirmation
     │       ├── MusicUploadPage.jsx      # Upload iOS robuste
     │       └── ...
-    ├── setup-supabase.sql       # ⚠️ Exécuter en 1er
-    ├── news-likes.sql           # ⚠️ Exécuter en 2e
-    ├── increment-plays.sql      # ⚠️ Exécuter en 3e
-    ├── fix-rls-avatars.sql      # ⚠️ Exécuter en 4e
-    ├── moderation-system.sql    # ⚠️ Exécuter en 5e
-    ├── enable-realtime.sql      # ⚠️ Exécuter en 6e
-    ├── archive-songs.sql        # ⚠️ Exécuter en 7e
-    └── comments-favorites.sql   # ⚠️ Exécuter en 8e
+    ├── setup-supabase.sql       # ⚠️ Étape 1
+    ├── news-likes.sql           # ⚠️ Étape 2
+    ├── increment-plays.sql      # ⚠️ Étape 3
+    ├── fix-rls-avatars.sql      # ⚠️ Étape 4
+    ├── moderation-system.sql    # ⚠️ Étape 5
+    ├── enable-realtime.sql      # ⚠️ Étape 6
+    ├── archive-songs.sql        # ⚠️ Étape 7
+    ├── comments-favorites.sql   # ⚠️ Étape 8
+    ├── v20-migration.sql        # ⚠️ Étape 9
+    ├── v30-migration.sql        # ⚠️ Étape 10
+    ├── v60-migration.sql        # ⚠️ Étape 11
+    ├── v70-migration.sql        # ⚠️ Étape 12
+    ├── v71-fix-upload-rls.sql   # ⚠️ Étape 13
+    ├── notifications.sql        # ⚠️ Étape 14
+    ├── owner-edit-delete-rls.sql # ⚠️ Étape 15
+    └── fix-comments-rls.sql     # ⚠️ Étape 16
 ```
 
 ---

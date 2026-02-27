@@ -12,13 +12,13 @@ import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import {
   Plus, ListMusic, Lock, Globe, Loader2, Trash2,
-  Play, ArrowLeft, Music,
+  ArrowLeft, Edit2, Check, X as XIcon,
 } from 'lucide-react';
 
 const MyPlaylistsPage = () => {
   const navigate = useNavigate();
   const { currentUser } = useAuth();
-  const { myPlaylists, loadingPl, fetchMyPlaylists, createPlaylist, deletePlaylist } = usePlaylist();
+  const { myPlaylists, loadingPl, fetchMyPlaylists, createPlaylist, deletePlaylist, updatePlaylist } = usePlaylist();
 
   const [showCreate,  setShowCreate]  = useState(false);
   const [newName,     setNewName]     = useState('');
@@ -26,10 +26,35 @@ const MyPlaylistsPage = () => {
   const [isPublic,    setIsPublic]    = useState(true);
   const [saving,      setSaving]      = useState(false);
   const [confirmTarget, setConfirmTarget] = useState(null); // playlist à supprimer
+  const [editTarget,    setEditTarget]    = useState(null); // playlist en édition
+  const [editName,      setEditName]      = useState('');
+  const [editDesc,      setEditDesc]      = useState('');
+  const [editPublic,    setEditPublic]    = useState(true);
+  const [editSaving,    setEditSaving]    = useState(false);
 
   useEffect(() => {
     if (currentUser) fetchMyPlaylists();
   }, [currentUser, fetchMyPlaylists]);
+
+  const handleEdit = (e, pl) => {
+    e.preventDefault(); e.stopPropagation();
+    setEditTarget(pl);
+    setEditName(pl.name);
+    setEditDesc(pl.description || '');
+    setEditPublic(pl.is_public);
+  };
+
+  const handleSaveEdit = async () => {
+    if (!editName.trim() || !editTarget) return;
+    setEditSaving(true);
+    await updatePlaylist(editTarget.id, {
+      name: editName.trim(),
+      description: editDesc.trim(),
+      is_public: editPublic,
+    });
+    setEditTarget(null);
+    setEditSaving(false);
+  };
 
   const handleCreate = async () => {
     if (!newName.trim()) return;
@@ -182,7 +207,14 @@ const MyPlaylistsPage = () => {
                   </div>
 
                   {/* Actions */}
-                  <div className="flex items-center gap-1 flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
+                  <div className="flex items-center gap-2 flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <button
+                      onClick={e => handleEdit(e, pl)}
+                      className="p-2 text-gray-600 hover:text-cyan-400 transition-colors rounded-xl hover:bg-cyan-500/10"
+                      title="Modifier"
+                    >
+                      <Edit2 className="w-3.5 h-3.5" />
+                    </button>
                     <button
                       onClick={e => handleDelete(e, pl)}
                       className="p-2 text-gray-600 hover:text-red-400 transition-colors rounded-xl hover:bg-red-500/10"
@@ -198,6 +230,136 @@ const MyPlaylistsPage = () => {
         )}
       </main>
       <Footer />
+
+      {/* ─── Modale d'édition playlist ─────────────────────────────── */}
+      <AnimatePresence>
+        {editTarget && (
+          <motion.div
+            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[200] flex items-center justify-center p-4"
+            style={{ backgroundColor: 'rgba(0,0,0,0.75)', backdropFilter: 'blur(6px)' }}
+            onClick={() => setEditTarget(null)}
+          >
+            <motion.div
+              initial={{ scale: 0.92, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.92, opacity: 0 }}
+              className="bg-gray-900 border border-white/10 rounded-2xl p-6 max-w-sm w-full shadow-2xl"
+              onClick={e => e.stopPropagation()}
+            >
+              <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center gap-2">
+                  <Edit2 className="w-4 h-4 text-cyan-400" />
+                  <p className="text-white font-bold">Modifier la playlist</p>
+                </div>
+                <button onClick={() => setEditTarget(null)} className="p-1.5 text-gray-500 hover:text-white rounded-lg">
+                  <XIcon className="w-4 h-4" />
+                </button>
+              </div>
+              <div className="space-y-3">
+                <input
+                  autoFocus
+                  type="text"
+                  value={editName}
+                  onChange={e => setEditName(e.target.value)}
+                  onKeyDown={e => { if (e.key === 'Enter') handleSaveEdit(); if (e.key === 'Escape') setEditTarget(null); }}
+                  placeholder="Nom de la playlist"
+                  maxLength={60}
+                  className="w-full bg-gray-800 border border-white/10 rounded-xl px-4 py-2.5 text-white text-sm placeholder-gray-600 focus:outline-none focus:border-cyan-500/50"
+                />
+                <textarea
+                  value={editDesc}
+                  onChange={e => setEditDesc(e.target.value)}
+                  placeholder="Description (optionnelle)"
+                  rows={2}
+                  maxLength={200}
+                  className="w-full bg-gray-800 border border-white/10 rounded-xl px-4 py-2.5 text-white text-sm placeholder-gray-600 focus:outline-none focus:border-cyan-500/50 resize-none"
+                />
+                <button
+                  onClick={() => setEditPublic(!editPublic)}
+                  className={\}
+                >
+                  {editPublic ? <Globe className="w-3 h-3" /> : <Lock className="w-3 h-3" />}
+                  {editPublic ? 'Publique' : 'Privée'}
+                </button>
+              </div>
+              <div className="flex gap-3 mt-5">
+                <button onClick={() => setEditTarget(null)} className="flex-1 py-2.5 rounded-xl border border-white/10 text-gray-400 hover:text-white text-sm font-semibold transition-all">
+                  Annuler
+                </button>
+                <button onClick={handleSaveEdit} disabled={!editName.trim() || editSaving}
+                  className="flex-1 py-2.5 rounded-xl bg-cyan-500 hover:bg-cyan-400 text-white text-sm font-bold transition-all flex items-center justify-center gap-2 disabled:opacity-50">
+                  {editSaving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Check className="w-3.5 h-3.5" />}
+                  Enregistrer
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* ─── Modale d'édition playlist ─────────────────────────────── */}
+      <AnimatePresence>
+        {editTarget && (
+          <motion.div
+            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[200] flex items-center justify-center p-4"
+            style={{ backgroundColor: 'rgba(0,0,0,0.75)', backdropFilter: 'blur(6px)' }}
+            onClick={() => setEditTarget(null)}
+          >
+            <motion.div
+              initial={{ scale: 0.92, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.92, opacity: 0 }}
+              className="bg-gray-900 border border-white/10 rounded-2xl p-6 max-w-sm w-full shadow-2xl"
+              onClick={e => e.stopPropagation()}
+            >
+              <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center gap-2">
+                  <Edit2 className="w-4 h-4 text-cyan-400" />
+                  <p className="text-white font-bold">Modifier la playlist</p>
+                </div>
+                <button onClick={() => setEditTarget(null)} className="p-1.5 text-gray-500 hover:text-white rounded-lg">
+                  <XIcon className="w-4 h-4" />
+                </button>
+              </div>
+              <div className="space-y-3">
+                <input
+                  autoFocus
+                  type="text"
+                  value={editName}
+                  onChange={e => setEditName(e.target.value)}
+                  onKeyDown={e => { if (e.key === 'Enter') handleSaveEdit(); if (e.key === 'Escape') setEditTarget(null); }}
+                  placeholder="Nom de la playlist"
+                  maxLength={60}
+                  className="w-full bg-gray-800 border border-white/10 rounded-xl px-4 py-2.5 text-white text-sm placeholder-gray-600 focus:outline-none focus:border-cyan-500/50"
+                />
+                <textarea
+                  value={editDesc}
+                  onChange={e => setEditDesc(e.target.value)}
+                  placeholder="Description (optionnelle)"
+                  rows={2}
+                  maxLength={200}
+                  className="w-full bg-gray-800 border border-white/10 rounded-xl px-4 py-2.5 text-white text-sm placeholder-gray-600 focus:outline-none focus:border-cyan-500/50 resize-none"
+                />
+                <button
+                  onClick={() => setEditPublic(!editPublic)}
+                  className={`flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-full border transition-all ${editPublic ? 'border-cyan-500/40 text-cyan-400 bg-cyan-500/10' : 'border-white/10 text-gray-500'}`}
+                >
+                  {editPublic ? <Globe className="w-3 h-3" /> : <Lock className="w-3 h-3" />}
+                  {editPublic ? 'Publique' : 'Privée'}
+                </button>
+              </div>
+              <div className="flex gap-3 mt-5">
+                <button onClick={() => setEditTarget(null)} className="flex-1 py-2.5 rounded-xl border border-white/10 text-gray-400 hover:text-white text-sm font-semibold transition-all">
+                  Annuler
+                </button>
+                <button onClick={handleSaveEdit} disabled={!editName.trim() || editSaving}
+                  className="flex-1 py-2.5 rounded-xl bg-cyan-500 hover:bg-cyan-400 text-white text-sm font-bold transition-all flex items-center justify-center gap-2 disabled:opacity-50">
+                  {editSaving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Check className="w-3.5 h-3.5" />}
+                  Enregistrer
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Confirmation suppression — remplace window.confirm (bloqué en iOS PWA standalone) */}
       <AnimatePresence>

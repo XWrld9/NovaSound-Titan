@@ -1,9 +1,8 @@
 /**
- * PlayerContext — NovaSound TITAN LUX v70
- * Nouvelles fonctionnalités v70 :
- *   - radioMode      : lecture infinie basée sur genre/artiste du son courant
- *   - toggleRadio    : activer / désactiver le mode radio
- *   - radioLoading   : indique qu'on charge le prochain son radio
+ * PlayerContext — NovaSound TITAN LUX v75
+ * Nouvelles fonctionnalités v75 :
+ *   - currentPlaylistId  : ID de la playlist Supabase en cours de lecture
+ *   - removeFromPlaylist : retire un son de la playlist lecture ET synchro DB playlist profil
  */
 import React, { createContext, useContext, useState, useRef, useCallback, useEffect } from 'react';
 import { supabase } from '@/lib/supabaseClient';
@@ -17,25 +16,27 @@ export const usePlayer = () => {
 };
 
 export const PlayerProvider = ({ children }) => {
-  const [currentSong,  setCurrentSong]  = useState(null);
-  const [playlist,     setPlaylist]      = useState([]);
-  const [queue,        setQueue]         = useState([]);
-  const [isVisible,    setIsVisible]     = useState(false);
-  const [sleepTimer,   setSleepTimerVal] = useState(null);
-  const [radioMode,    setRadioMode]     = useState(false);
-  const [radioLoading, setRadioLoading]  = useState(false);
+  const [currentSong,       setCurrentSong]       = useState(null);
+  const [playlist,          setPlaylist]           = useState([]);
+  const [queue,             setQueue]              = useState([]);
+  const [isVisible,         setIsVisible]          = useState(false);
+  const [sleepTimer,        setSleepTimerVal]      = useState(null);
+  const [radioMode,         setRadioMode]          = useState(false);
+  const [radioLoading,      setRadioLoading]       = useState(false);
+  const [currentPlaylistId, setCurrentPlaylistId]  = useState(null);
 
-  const playlistRef      = useRef([]);
-  const currentSongRef   = useRef(null);
-  const queueRef         = useRef([]);
-  const sleepIntervalRef = useRef(null);
-  const radioModeRef     = useRef(false);
+  const playlistRef          = useRef([]);
+  const currentSongRef       = useRef(null);
+  const queueRef             = useRef([]);
+  const sleepIntervalRef     = useRef(null);
+  const radioModeRef         = useRef(false);
+  const currentPlaylistIdRef = useRef(null);
 
   useEffect(() => { queueRef.current = queue; }, [queue]);
   useEffect(() => { radioModeRef.current = radioMode; }, [radioMode]);
+  useEffect(() => { currentPlaylistIdRef.current = currentPlaylistId; }, [currentPlaylistId]);
 
   // ── Fetch prochain son radio ──────────────────────────────────────
-  // Cherche d'abord par genre, puis par artiste, puis aléatoire
   const fetchRadioNext = useCallback(async (currentSongData) => {
     if (!currentSongData) return null;
     setRadioLoading(true);
@@ -46,7 +47,6 @@ export const PlayerProvider = ({ children }) => {
         ...queueRef.current.map(s => s.id),
       ].filter(Boolean);
 
-      // Tenter 1 : même genre
       if (currentSongData.genre) {
         const { data } = await supabase
           .from('songs')
@@ -62,7 +62,6 @@ export const PlayerProvider = ({ children }) => {
         }
       }
 
-      // Tenter 2 : même artiste
       const { data: byArtist } = await supabase
         .from('songs')
         .select('*')
@@ -72,7 +71,6 @@ export const PlayerProvider = ({ children }) => {
         .limit(5);
       if (byArtist?.length) return byArtist[Math.floor(Math.random() * byArtist.length)];
 
-      // Tenter 3 : populaire aléatoire
       const { data: popular } = await supabase
         .from('songs')
         .select('*')
@@ -86,9 +84,7 @@ export const PlayerProvider = ({ children }) => {
     return null;
   }, []);
 
-  const toggleRadio = useCallback(() => {
-    setRadioMode(prev => !prev);
-  }, []);
+  const toggleRadio = useCallback(() => setRadioMode(prev => !prev), []);
 
   // ── Sleep timer ─────────────────────────────────────────────────
   const clearSleepTimer = useCallback(() => {
@@ -112,8 +108,8 @@ export const PlayerProvider = ({ children }) => {
     }, 1000);
   }, []);
 
-  // ── playSong ─────────────────────────────────────────────────────
-  const playSong = useCallback((song, songList = []) => {
+  // ── playSong : accepte un playlistId optionnel pour la synchro ───
+  const playSong = useCallback((song, songList = [], playlistId = null) => {
     if (!song) return;
     const list = (songList.length ? songList : [song]).filter(s => !s.is_archived);
     if (!list.find(s => s.id === song.id)) list.unshift(song);
@@ -122,9 +118,44 @@ export const PlayerProvider = ({ children }) => {
     setPlaylist(list);
     setCurrentSong(song);
     setIsVisible(true);
+    setCurrentPlaylistId(playlistId || null);
   }, []);
 
-  // ── handleNext : queue prioritaire, puis radio si activé ────────
+  // ── Retirer un son de la playlist lecture + synchro DB ───────────
+  const removeFromPlaylist = useCallback(async (songId) => {
+    const newList = playlistRef.current.filter(s => s.id !== songId);
+    playlistRef.current = newList;
+    setPlaylist(newList);
+
+    if (currentSongRef.current?.id === songId) {
+      if (newList.length > 0) {
+        currentSongRef.current = newList[0];
+        setCurrentSong(newList[0]);
+      } else {
+        currentSongRef.current = null;
+        setCurrentSong(null);
+        setIsVisible(false);
+      }
+    }
+
+    const plId = currentPlaylistIdRef.current;
+    if (plId) {
+      try {
+        await supabase
+          .from('playlist_songs')
+          .delete()
+          .eq('playlist_id', plId)
+          .eq('song_id', songId);
+        window.dispatchEvent(new CustomEvent('novasound:playlist-song-removed', {
+          detail: { playlistId: plId, songId },
+        }));
+      } catch (err) {
+        console.warn('[PlayerContext] removeFromPlaylist sync error:', err);
+      }
+    }
+  }, []);
+
+  // ── handleNext ────────────────────────────────────────────────────
   const handleNext = useCallback(async (songOverride) => {
     if (!songOverride && queueRef.current.length > 0) {
       const [next, ...rest] = queueRef.current;
@@ -139,16 +170,14 @@ export const PlayerProvider = ({ children }) => {
       setCurrentSong(songOverride);
       return;
     }
-    const pl = playlistRef.current;
-    const cs = currentSongRef.current;
+    const pl  = playlistRef.current;
+    const cs  = currentSongRef.current;
     const idx = pl.findIndex(s => s.id === cs?.id);
     const isLast = idx === pl.length - 1 || pl.length === 0;
 
-    // Fin de playlist + radio mode → chercher un son similaire
     if (isLast && radioModeRef.current && cs) {
       const radioSong = await fetchRadioNext(cs);
       if (radioSong) {
-        // Ajouter à la playlist
         playlistRef.current = [...pl, radioSong];
         setPlaylist([...pl, radioSong]);
         currentSongRef.current = radioSong;
@@ -157,15 +186,14 @@ export const PlayerProvider = ({ children }) => {
       }
     }
 
-    // Comportement standard
     const song = pl[(idx + 1) % pl.length];
     if (song) { currentSongRef.current = song; setCurrentSong(song); }
   }, [fetchRadioNext]);
 
   const handlePrevious = useCallback((songOverride) => {
     const song = songOverride || (() => {
-      const pl = playlistRef.current;
-      const cs = currentSongRef.current;
+      const pl  = playlistRef.current;
+      const cs  = currentSongRef.current;
       if (!pl.length || !cs) return null;
       const idx = pl.findIndex(s => s.id === cs.id);
       return pl[(idx - 1 + pl.length) % pl.length];
@@ -180,6 +208,7 @@ export const PlayerProvider = ({ children }) => {
     setPlaylist([]);
     setQueue([]);
     setRadioMode(false);
+    setCurrentPlaylistId(null);
     playlistRef.current    = [];
     currentSongRef.current = null;
     queueRef.current       = [];
@@ -217,9 +246,10 @@ export const PlayerProvider = ({ children }) => {
   return (
     <PlayerContext.Provider value={{
       currentSong, playlist, queue, isVisible, sleepTimer,
-      radioMode, radioLoading,
+      radioMode, radioLoading, currentPlaylistId,
       playSong, handleNext, handlePrevious, closePlayer,
       addToQueue, removeFromQueue, clearQueue,
+      removeFromPlaylist, setCurrentPlaylistId,
       setSleepTimer, clearSleepTimer, toggleRadio,
     }}>
       {children}

@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import ReactDOM from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { MoreVertical, Archive, ArchiveRestore, Trash2, AlertTriangle } from 'lucide-react';
+import { MoreVertical, Archive, ArchiveRestore, Trash2, AlertTriangle, Edit2, Check, X as XIcon } from 'lucide-react';
 import { supabase } from '@/lib/supabaseClient';
 import { useAuth } from '@/contexts/AuthContext';
 
@@ -174,6 +174,24 @@ const DropdownMenu = ({ anchorRef, open, onClose, isArchived, isAdmin, isOwner, 
       }}
       onClick={(e) => e.stopPropagation()}
     >
+      {/* Modifier */}
+      <button
+        onClick={() => { onAction('edit'); onClose(); }}
+        style={{
+          width: '100%', display: 'flex', alignItems: 'center', gap: 10,
+          padding: '11px 16px', background: 'none', border: 'none',
+          color: '#60a5fa',
+          fontSize: 13, fontWeight: 600, cursor: 'pointer', textAlign: 'left',
+        }}
+        onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(96,165,250,0.10)'}
+        onMouseLeave={(e) => e.currentTarget.style.background = 'none'}
+      >
+        <Edit2 style={{ width: 15, height: 15, flexShrink: 0 }} />
+        Modifier
+      </button>
+
+      <div style={{ height: 1, background: 'rgba(255,255,255,0.08)', margin: '0 10px' }} />
+
       {/* Archiver / Restaurer */}
       <button
         onClick={() => { onAction(isArchived ? 'unarchive' : 'archive'); onClose(); }}
@@ -221,6 +239,194 @@ const DropdownMenu = ({ anchorRef, open, onClose, isArchived, isAdmin, isOwner, 
   );
 };
 
+
+/* ─────────────────────────────────────────────────────────────
+   EditSongModal — modifier titre, nom artiste, description
+   ───────────────────────────────────────────────────────────── */
+const EditSongModal = ({ song, onSaved, onCancel }) => {
+  const [title,       setTitle]       = React.useState(song.title || '');
+  const [artist,      setArtist]      = React.useState(song.artist || '');
+  const [description, setDescription] = React.useState(song.description || '');
+  const [saving,      setSaving]      = React.useState(false);
+  const [error,       setError]       = React.useState('');
+
+  const handleSave = async () => {
+    if (!title.trim()) { setError('Le titre est obligatoire'); return; }
+    if (!artist.trim()) { setError('Le nom d'artiste est obligatoire'); return; }
+    setSaving(true);
+    setError('');
+    try {
+      const updates = {};
+      if (title.trim()       !== song.title)       updates.title       = title.trim();
+      if (artist.trim()      !== song.artist)       updates.artist      = artist.trim();
+      if (description.trim() !== (song.description || '')) updates.description = description.trim();
+
+      if (Object.keys(updates).length === 0) { onCancel(); return; }
+
+      const { error: err } = await supabase.from('songs').update(updates).eq('id', song.id);
+      if (err) throw err;
+      onSaved({ ...song, ...updates });
+    } catch (e) {
+      setError('Erreur lors de la sauvegarde — réessaie.');
+      console.error('[EditSongModal]', e);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return ReactDOM.createPortal(
+    <motion.div
+      initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+      style={{
+        position: 'fixed', inset: 0, zIndex: 9999,
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        padding: '16px',
+        background: 'rgba(0,0,0,0.82)',
+        backdropFilter: 'blur(8px)', WebkitBackdropFilter: 'blur(8px)',
+      }}
+      onClick={(e) => { if (e.target === e.currentTarget && !saving) onCancel(); }}
+    >
+      <motion.div
+        initial={{ scale: 0.88, opacity: 0, y: 16 }}
+        animate={{ scale: 1, opacity: 1, y: 0 }}
+        exit={{ scale: 0.88, opacity: 0, y: 16 }}
+        transition={{ type: 'spring', stiffness: 420, damping: 34 }}
+        style={{
+          width: '100%', maxWidth: 400,
+          borderRadius: 20, padding: '24px',
+          background: '#13131f',
+          border: '1.5px solid rgba(96,165,250,0.25)',
+          boxShadow: '0 24px 60px rgba(0,0,0,0.6)',
+        }}
+        onClick={(e) => e.stopPropagation()}
+      >
+        {/* Header */}
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            <div style={{ padding: 8, borderRadius: '50%', background: 'rgba(96,165,250,0.15)', color: '#60a5fa' }}>
+              <Edit2 style={{ width: 16, height: 16 }} />
+            </div>
+            <span style={{ color: '#fff', fontWeight: 700, fontSize: 16 }}>Modifier la publication</span>
+          </div>
+          <button
+            onClick={onCancel} disabled={saving}
+            style={{ padding: 6, borderRadius: 8, background: 'none', border: 'none', color: 'rgba(156,163,175,1)', cursor: 'pointer' }}
+          >
+            <XIcon style={{ width: 16, height: 16 }} />
+          </button>
+        </div>
+
+        {/* Champs */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+          <div>
+            <label style={{ color: 'rgba(156,163,175,1)', fontSize: 12, fontWeight: 600, marginBottom: 6, display: 'block' }}>
+              Titre du morceau *
+            </label>
+            <input
+              autoFocus
+              type="text"
+              value={title}
+              onChange={e => setTitle(e.target.value)}
+              placeholder="Titre"
+              maxLength={120}
+              style={{
+                width: '100%', padding: '10px 14px',
+                background: 'rgba(255,255,255,0.06)',
+                border: '1px solid rgba(255,255,255,0.12)',
+                borderRadius: 10, color: '#fff', fontSize: 14,
+                outline: 'none', boxSizing: 'border-box',
+              }}
+              onFocus={e => e.target.style.borderColor = 'rgba(96,165,250,0.6)'}
+              onBlur={e => e.target.style.borderColor = 'rgba(255,255,255,0.12)'}
+            />
+          </div>
+          <div>
+            <label style={{ color: 'rgba(156,163,175,1)', fontSize: 12, fontWeight: 600, marginBottom: 6, display: 'block' }}>
+              Nom d'artiste *
+            </label>
+            <input
+              type="text"
+              value={artist}
+              onChange={e => setArtist(e.target.value)}
+              placeholder="Nom d'artiste"
+              maxLength={80}
+              style={{
+                width: '100%', padding: '10px 14px',
+                background: 'rgba(255,255,255,0.06)',
+                border: '1px solid rgba(255,255,255,0.12)',
+                borderRadius: 10, color: '#fff', fontSize: 14,
+                outline: 'none', boxSizing: 'border-box',
+              }}
+              onFocus={e => e.target.style.borderColor = 'rgba(96,165,250,0.6)'}
+              onBlur={e => e.target.style.borderColor = 'rgba(255,255,255,0.12)'}
+            />
+          </div>
+          <div>
+            <label style={{ color: 'rgba(156,163,175,1)', fontSize: 12, fontWeight: 600, marginBottom: 6, display: 'block' }}>
+              Description <span style={{ color: 'rgba(107,114,128,1)', fontWeight: 400 }}>(optionnel)</span>
+            </label>
+            <textarea
+              value={description}
+              onChange={e => setDescription(e.target.value)}
+              placeholder="Décris ton morceau…"
+              rows={3}
+              maxLength={500}
+              style={{
+                width: '100%', padding: '10px 14px',
+                background: 'rgba(255,255,255,0.06)',
+                border: '1px solid rgba(255,255,255,0.12)',
+                borderRadius: 10, color: '#fff', fontSize: 14,
+                outline: 'none', resize: 'none', boxSizing: 'border-box',
+                fontFamily: 'inherit',
+              }}
+              onFocus={e => e.target.style.borderColor = 'rgba(96,165,250,0.6)'}
+              onBlur={e => e.target.style.borderColor = 'rgba(255,255,255,0.12)'}
+            />
+          </div>
+        </div>
+
+        {/* Erreur */}
+        {error && (
+          <div style={{ marginTop: 12, padding: '10px 14px', background: 'rgba(239,68,68,0.10)', border: '1px solid rgba(239,68,68,0.25)', borderRadius: 10, color: '#f87171', fontSize: 12 }}>
+            {error}
+          </div>
+        )}
+
+        {/* Boutons */}
+        <div style={{ display: 'flex', gap: 10, marginTop: 20 }}>
+          <button
+            onClick={onCancel} disabled={saving}
+            style={{
+              flex: 1, padding: '11px 0', borderRadius: 12,
+              background: 'rgba(255,255,255,0.07)', border: 'none',
+              color: 'rgba(255,255,255,0.5)', fontSize: 14, fontWeight: 500,
+              cursor: saving ? 'default' : 'pointer', opacity: saving ? 0.5 : 1,
+            }}
+          >
+            Annuler
+          </button>
+          <button
+            onClick={handleSave} disabled={saving || !title.trim() || !artist.trim()}
+            style={{
+              flex: 1, padding: '11px 0', borderRadius: 12,
+              background: saving || !title.trim() || !artist.trim() ? 'rgba(96,165,250,0.4)' : '#3b82f6',
+              border: 'none', color: '#fff', fontSize: 14, fontWeight: 700,
+              cursor: (saving || !title.trim() || !artist.trim()) ? 'default' : 'pointer',
+              display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+            }}
+          >
+            {saving
+              ? <div style={{ width: 16, height: 16, borderRadius: '50%', border: '2px solid rgba(255,255,255,0.3)', borderTopColor: '#fff', animation: 'spin 0.7s linear infinite' }} />
+              : <><Check style={{ width: 14, height: 14 }} />Enregistrer</>
+            }
+          </button>
+        </div>
+      </motion.div>
+    </motion.div>,
+    document.body
+  );
+};
+
 /* ─────────────────────────────────────────────────────────────
    SongActionsMenu — composant principal
    ───────────────────────────────────────────────────────────── */
@@ -228,6 +434,7 @@ const SongActionsMenu = ({ song, onArchived, onDeleted }) => {
   const { currentUser } = useAuth();
   const [open, setOpen] = useState(false);
   const [confirm, setConfirm] = useState(null);
+  const [showEdit, setShowEdit] = useState(false);
   const [loading, setLoading] = useState(false);
   const [toast, setToast] = useState(null);
   const btnRef = useRef(null);
@@ -324,7 +531,10 @@ const SongActionsMenu = ({ song, onArchived, onDeleted }) => {
               isArchived={!!song.is_archived}
               isAdmin={isAdmin}
               isOwner={isOwner}
-              onAction={setConfirm}
+              onAction={(action) => {
+                if (action === 'edit') { setShowEdit(true); }
+                else { setConfirm(action); }
+              }}
             />
           )}
         </AnimatePresence>
@@ -351,6 +561,23 @@ const SongActionsMenu = ({ song, onArchived, onDeleted }) => {
             {toast.msg}
           </motion.div>,
           document.body
+        )}
+      </AnimatePresence>
+
+      {/* Modale d'édition */}
+      <AnimatePresence>
+        {showEdit && (
+          <EditSongModal
+            song={song}
+            onSaved={(updated) => {
+              setShowEdit(false);
+              showToast('Publication modifiée ✓', '#60a5fa');
+              // Notifier le parent pour rafraîchir si nécessaire
+              window.dispatchEvent(new CustomEvent('novasound:song-updated', { detail: updated }));
+              onArchived?.(song.id, !!song.is_archived); // force re-render trick
+            }}
+            onCancel={() => setShowEdit(false)}
+          />
         )}
       </AnimatePresence>
 

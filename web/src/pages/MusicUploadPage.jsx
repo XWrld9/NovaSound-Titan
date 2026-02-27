@@ -21,7 +21,7 @@ import { useNavigate } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
-import { Upload, Music, Image, AlertCircle, CheckCircle, Lock } from 'lucide-react';
+import { Upload, Image, AlertCircle, CheckCircle, Lock, FileAudio } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { supabase, supabaseUrl as _supabaseUrl, supabaseAnonKey as _supabaseAnonKey } from '@/lib/supabaseClient';
 import Header from '@/components/Header';
@@ -482,64 +482,129 @@ const MusicUploadPage = () => {
                   <label className="block text-sm font-medium text-gray-300 mb-2">
                     Fichier audio * <span className="text-gray-500 text-xs">(Max 50 Mo — MP3, WAV, AAC, M4A…)</span>
                   </label>
-                  <div className="relative w-full">
-                    <div className={`flex items-center justify-center gap-3 w-full px-4 py-8 bg-gray-900/50 border-2 border-dashed rounded-lg transition-all pointer-events-none ${audioFile ? 'border-cyan-400/60' : 'border-cyan-500/30'}`}>
-                      <Music className="w-6 h-6 text-cyan-400 flex-shrink-0" />
-                      <div className="text-center min-w-0">
-                        <span className="text-gray-300 block truncate max-w-[240px]">
-                          {audioFile ? audioFile.name : 'Appuyer pour choisir un fichier audio'}
-                        </span>
-                        {!audioFile && (
-                          <span className="text-gray-500 text-xs mt-1 block">MP3, WAV, AAC, M4A — Max 50 Mo</span>
-                        )}
-                        {audioFile && (
-                          <span className="text-cyan-400 text-xs mt-1 block">
-                            {fmtMB(audioFile.size)} Mo ✓
-                            {audioDuration && ` · ${Math.floor(audioDuration/60)}:${String(audioDuration%60).padStart(2,'0')}`}
-                          </span>
-                        )}
+
+                  {audioFile ? (
+                    /* Fichier sélectionné */
+                    <div className="flex items-center gap-3 w-full px-4 py-4 bg-cyan-500/10 border border-cyan-400/40 rounded-xl">
+                      <FileAudio className="w-8 h-8 text-cyan-400 flex-shrink-0" />
+                      <div className="flex-1 min-w-0">
+                        <p className="text-white text-sm font-semibold truncate">{audioFile.name}</p>
+                        <p className="text-cyan-400 text-xs mt-0.5">
+                          {fmtMB(audioFile.size)} Mo ✓
+                          {audioDuration && ` · ${Math.floor(audioDuration/60)}:${String(audioDuration%60).padStart(2,'0')}`}
+                        </p>
                       </div>
+                      <button
+                        type="button"
+                        onClick={() => { setAudioFile(null); setAudioDuration(null); }}
+                        disabled={loading}
+                        className="text-gray-500 hover:text-red-400 transition-colors text-xs px-2 py-1 rounded-lg"
+                      >
+                        Changer
+                      </button>
                     </div>
-                    <input
-                      type="file"
-                      accept="audio/*,.mp3,.wav,.aac,.m4a,.ogg,.flac,.opus,.mp4,.m4b"
-                      onChange={handleAudioChange}
-                      disabled={loading}
-                      style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', opacity: 0, cursor: 'pointer', zIndex: 10 }}
-                      // Ajout pour Android/iOS explorateur de fichiers natif
-                      {...((typeof navigator !== 'undefined' && /android|iphone|ipad|ipod/i.test(navigator.userAgent.toLowerCase())) && {
-                        capture: undefined, // Désactiver la capture pour forcer l'explorateur
-                        multiple: false
-                      })}
-                    />
-                  </div>
+                  ) : (
+                    /* Zone de sélection — 2 options gestionnaires de fichiers */
+                    <div className="space-y-2.5">
+                      <p className="text-gray-500 text-xs text-center">Choisis la source :</p>
+                      <div className="grid grid-cols-2 gap-3">
+                        {/* Option 1 : Gestionnaire de fichiers système (Files/Explorateur) */}
+                        <div className="relative">
+                          <div className={`flex flex-col items-center justify-center gap-2 w-full px-3 py-5 bg-gray-900/70 border border-dashed border-gray-700 rounded-xl transition-all pointer-events-none hover:border-cyan-500/50`}>
+                            <div className="w-10 h-10 rounded-xl bg-blue-500/15 flex items-center justify-center">
+                              {/* Files/Explorateur icon */}
+                              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#3b82f6" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                <path d="M3 7a2 2 0 0 1 2-2h3.17a2 2 0 0 1 1.42.59l1.83 1.83A2 2 0 0 0 12.83 8H19a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+                              </svg>
+                            </div>
+                            <div className="text-center">
+                              <p className="text-white text-xs font-semibold">Mes fichiers</p>
+                              <p className="text-gray-500 text-[10px]">Files / Explorer</p>
+                            </div>
+                          </div>
+                          <input
+                            type="file"
+                            accept="audio/*,.mp3,.wav,.aac,.m4a,.ogg,.flac,.opus,.mp4,.m4b"
+                            onChange={handleAudioChange}
+                            disabled={loading}
+                            multiple={false}
+                            style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', opacity: 0, cursor: 'pointer', zIndex: 10 }}
+                          />
+                        </div>
+
+                        {/* Option 2 : Stockage local (iCloud Drive / Google Drive / SD Card) */}
+                        <div className="relative">
+                          <div className={`flex flex-col items-center justify-center gap-2 w-full px-3 py-5 bg-gray-900/70 border border-dashed border-gray-700 rounded-xl transition-all pointer-events-none hover:border-cyan-500/50`}>
+                            <div className="w-10 h-10 rounded-xl bg-orange-500/15 flex items-center justify-center">
+                              {/* Cloud/Storage icon */}
+                              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#f97316" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                <polyline points="16 16 12 12 8 16"/>
+                                <line x1="12" y1="12" x2="12" y2="21"/>
+                                <path d="M20.39 18.39A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.3"/>
+                              </svg>
+                            </div>
+                            <div className="text-center">
+                              <p className="text-white text-xs font-semibold">Cloud / Stockage</p>
+                              <p className="text-gray-500 text-[10px]">iCloud · Drive · SD</p>
+                            </div>
+                          </div>
+                          <input
+                            type="file"
+                            accept="audio/*,.mp3,.wav,.aac,.m4a,.ogg,.flac,.opus,.mp4,.m4b"
+                            onChange={handleAudioChange}
+                            disabled={loading}
+                            multiple={false}
+                            style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', opacity: 0, cursor: 'pointer', zIndex: 10 }}
+                          />
+                        </div>
+                      </div>
+                      <p className="text-gray-600 text-[10px] text-center">MP3, WAV, AAC, M4A, OGG, FLAC — Max 50 Mo</p>
+                    </div>
+                  )}
                 </div>
 
                 {/* Pochette */}
                 <div>
                   <label className="block text-sm font-medium text-gray-300 mb-2">
-                    Pochette d'album <span className="text-gray-500 text-xs">(Max 20 Mo)</span>
+                    Pochette d'album <span className="text-gray-500 text-xs">(optionnel — Max 20 Mo)</span>
                   </label>
-                  <div className="relative w-full">
-                    <div className={`flex items-center justify-center gap-3 w-full px-4 py-8 bg-gray-900/50 border-2 border-dashed rounded-lg transition-all pointer-events-none ${albumCover ? 'border-cyan-400/60' : 'border-cyan-500/30'}`}>
-                      <Image className="w-6 h-6 text-cyan-400 flex-shrink-0" />
-                      <div className="text-center min-w-0">
-                        <span className="text-gray-300 block truncate max-w-[240px]">
-                          {albumCover ? albumCover.name : 'Appuyer pour ajouter une pochette (optionnel)'}
-                        </span>
-                        {albumCover && (
-                          <span className="text-cyan-400 text-xs mt-1 block">{fmtMB(albumCover.size)} Mo ✓</span>
-                        )}
+                  {albumCover ? (
+                    <div className="flex items-center gap-3 w-full px-4 py-4 bg-cyan-500/10 border border-cyan-400/40 rounded-xl">
+                      <Image className="w-8 h-8 text-cyan-400 flex-shrink-0" />
+                      <div className="flex-1 min-w-0">
+                        <p className="text-white text-sm font-semibold truncate">{albumCover.name}</p>
+                        <p className="text-cyan-400 text-xs mt-0.5">{fmtMB(albumCover.size)} Mo ✓</p>
                       </div>
+                      <button
+                        type="button"
+                        onClick={() => setAlbumCover(null)}
+                        disabled={loading}
+                        className="text-gray-500 hover:text-red-400 transition-colors text-xs px-2 py-1 rounded-lg"
+                      >
+                        Changer
+                      </button>
                     </div>
-                    <input
-                      type="file"
-                      accept="image/*,.jpg,.jpeg,.png,.webp,.gif"
-                      onChange={handleCoverChange}
-                      disabled={loading}
-                      style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', opacity: 0, cursor: 'pointer', zIndex: 10 }}
-                    />
-                  </div>
+                  ) : (
+                    <div className="relative w-full">
+                      <div className="flex items-center justify-center gap-3 w-full px-4 py-6 bg-gray-900/50 border-2 border-dashed border-cyan-500/30 rounded-xl transition-all pointer-events-none">
+                        <div className="w-10 h-10 rounded-xl bg-cyan-500/10 flex items-center justify-center flex-shrink-0">
+                          <Image className="w-5 h-5 text-cyan-400" />
+                        </div>
+                        <div className="text-center">
+                          <p className="text-gray-300 text-sm">Ajouter une pochette</p>
+                          <p className="text-gray-600 text-xs mt-0.5">JPG, PNG, WEBP — Max 20 Mo</p>
+                        </div>
+                      </div>
+                      <input
+                        type="file"
+                        accept="image/*,.jpg,.jpeg,.png,.webp,.gif"
+                        onChange={handleCoverChange}
+                        disabled={loading}
+                        multiple={false}
+                        style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', opacity: 0, cursor: 'pointer', zIndex: 10 }}
+                      />
+                    </div>
+                  )}
                 </div>
 
                 {/* Bouton submit */}
