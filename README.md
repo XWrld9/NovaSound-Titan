@@ -210,7 +210,42 @@ NovaSound-Titan/
 
 ---
 
-## 🎵 Fonctionnalités v12.0
+## 🎵 Fonctionnalités v20.0
+
+**Player**
+- **File d'attente (Queue)** : bouton ⊕ sur chaque SongCard pour empiler des sons. Panneau dédié dans le player expanded (slide from bottom) avec liste réorderable, suppression individuelle, bouton "Vider". Le son suivant en queue est prioritaire sur la playlist.
+- **Sleep Timer (minuteur de sommeil)** : arrête automatiquement la lecture après 5, 10, 15, 20, 30, 45 ou 60 minutes. Compte à rebours visible dans le header du player (🌙 + timer) et dans le mini-player mobile. Annulable à tout moment.
+- **Swipe-to-close mobile** : glisser le mini-player vers le bas (>60px) ferme le lecteur naturellement.
+- **Mode immersif** : fond pochette flou + plein écran natif (Android/Desktop) ou CSS (iOS), inchangé et stable.
+- **Badge genre** visible dans le player expanded et dans le mini-player desktop.
+
+**Catalogue**
+- **Genres musicaux** : 17 genres disponibles (Afrobeats, Hip-Hop, R&B, Pop, Électronique, Trap, Gospel, Jazz, Reggae, Dancehall, Amapiano, Coupé-Décalé, Rock, Classique, Folk, Latin, Drill)
+- **Durée auto-détectée** à l'upload via l'API Audio HTML5 — affichée sur les SongCards (coin bas droit) et dans le player
+- **Badge genre** sur les SongCards et dans le player
+
+**Explorer**
+- **Filtre par genre** : chips cliquables au-dessus de la grille — filtre côté Supabase
+- **Squelettes de chargement** (skeleton screens) au premier chargement et lors de la pagination — plus de spinner blanc solitaire
+- **Tri "Plus aimés"** (likes_count) ajouté en option
+- Compteur de résultats contextuel ("42+ morceaux · Afrobeats")
+
+**Homepage**
+- **Section "Top 3 du moment"** : les 3 sons les plus écoutés, affichés avec médailles 🥇🥈🥉, pochette en fond flou, plays count et genre. Lecture directe au clic.
+
+**Upload**
+- **Sélecteur de genre** : chips interactives dans le formulaire d'upload
+- **Durée auto** : détectée à la sélection du fichier, affichée dans le champ
+
+**SQL**
+- Migration `v20-migration.sql` : colonnes `genre TEXT`, `duration_s INTEGER`, index sur genre/likes_count/plays_count
+
+**Infrastructure**
+- `package.json → 20.0.0` · SW cache `novasound-titan-v6` · client-info `20.0.0`
+
+---
+
+
 
 **Artistes**
 - Upload audio (50 MB max) + pochette album — robuste sur iOS
@@ -274,6 +309,20 @@ NovaSound-Titan/
 ---
 
 ## 📝 Changelog
+
+### v20.0 (2026-02-27) — Queue · Sleep Timer · Genres · Top 3 · Squelettes · Swipe
+
+- ✨ **File d'attente (Queue)** : bouton ⊕ sur toutes les SongCards → panneau slide-up dans le player expanded, suppression individuelle, vider en un clic. `PlayerContext` étendu : `queue`, `addToQueue`, `removeFromQueue`, `clearQueue`. Le prochain son en queue est prioritaire sur la playlist normale.
+- 🌙 **Sleep Timer** : minuteur de sommeil 5/10/15/20/30/45/60 min. Compte à rebours affiché en temps réel sur le badge (header expanded + mini-player). Pause automatique quand le timer arrive à 0. Annulable à tout moment. `PlayerContext` étendu : `sleepTimer`, `setSleepTimer`, `clearSleepTimer`.
+- 👆 **Swipe-to-close** : glisser le mini-player mobile vers le bas > 60px ferme le lecteur. Indicateur visuel (pill handle) en haut du mini-player.
+- 🎵 **Genres musicaux** : 17 genres sélectionnables à l'upload (chips interactives). Filtre par genre dans l'Explorer (requête Supabase `.eq('genre', selectedGenre)`). Badge genre sur les SongCards et dans le player (expanded + desktop mini).
+- ⏱ **Durée auto-détectée** à l'upload via `new Audio()` → `onloadedmetadata`. Affichée sur les SongCards (overlay coin bas droit) et dans les métadonnées.
+- 🏆 **Top 3 du moment** sur la HomePage : les 3 sons les plus écoutés (`order plays_count DESC LIMIT 3`), médailles 🥇🥈🥉, fond pochette flou, lecture directe au clic.
+- 💀 **Skeleton screens** dans l'Explorer : 8 squelettes animés au premier chargement, 4 à la pagination. Remplace l'ancien spinner.
+- 📊 **Tri "Plus aimés"** ajouté dans l'Explorer (option `likes_count DESC`).
+- 🎨 **Indicateur de lecture** redesigné en SongCard : 3 barres animées au lieu du point.
+- 🗄 `v20-migration.sql` : `ALTER TABLE songs ADD COLUMN genre TEXT`, `ADD COLUMN duration_s INTEGER` + index optimisés.
+- 🔢 Versions : `package.json → 20.0.0` · SW cache `v6` · client-info `20.0.0`.
 
 ### v12.0 (2026-02-27) — Loop/Repeat parfait iOS+Android + Plein écran immersif
 

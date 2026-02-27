@@ -15,14 +15,22 @@ const MusicUploadPage = () => {
   const [formData, setFormData] = useState({
     title: '',
     artist: '',
-    description: ''
+    description: '',
+    genre: '',
   });
   const [audioFile, setAudioFile] = useState(null);
+  const [audioDuration, setAudioDuration] = useState(null); // secondes détectées auto
   const [albumCover, setAlbumCover] = useState(null);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [loading, setLoading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
+
+  const GENRES = [
+    'Afrobeats', 'Hip-Hop', 'R&B', 'Pop', 'Électronique', 'Trap',
+    'Gospel', 'Jazz', 'Reggae', 'Dancehall', 'Amapiano', 'Coupé-Décalé',
+    'Rock', 'Classique', 'Folk', 'Country', 'Latin', 'Drill', 'Outro',
+  ];
 
   const handleChange = (e) => {
     setFormData({
@@ -34,12 +42,21 @@ const MusicUploadPage = () => {
   const handleAudioChange = (e) => {
     const file = e.target.files[0];
     if (file) {
-      if (file.size > 52428800) { // 50MB
+      if (file.size > 52428800) {
         setError('Le fichier audio ne doit pas dépasser 50 Mo');
         return;
       }
       setAudioFile(file);
       setError('');
+      // Auto-détecter la durée
+      const url = URL.createObjectURL(file);
+      const audio = new Audio();
+      audio.onloadedmetadata = () => {
+        if (isFinite(audio.duration)) setAudioDuration(Math.round(audio.duration));
+        URL.revokeObjectURL(url);
+      };
+      audio.onerror = () => { URL.revokeObjectURL(url); };
+      audio.src = url;
     }
   };
 
@@ -153,7 +170,9 @@ const MusicUploadPage = () => {
         cover_url: albumCoverUrl,
         plays_count: 0,
         likes_count: 0,
-        created_at: new Date().toISOString()
+        created_at: new Date().toISOString(),
+        genre: formData.genre || null,
+        duration_s: audioDuration || null,
       };
 
       const { error: insertError } = await supabase
@@ -287,6 +306,25 @@ const MusicUploadPage = () => {
                   />
                 </div>
 
+                {/* Sélecteur de genre */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-300 mb-2">Genre <span className="text-gray-500 text-xs">(optionnel)</span></label>
+                  <div className="flex flex-wrap gap-2">
+                    {GENRES.map(g => (
+                      <button
+                        key={g}
+                        type="button"
+                        onClick={() => setFormData(prev => ({ ...prev, genre: prev.genre === g ? '' : g }))}
+                        className={`px-3 py-1.5 rounded-full text-xs font-semibold border transition-all ${
+                          formData.genre === g
+                            ? 'bg-cyan-500/20 border-cyan-400 text-cyan-300'
+                            : 'border-gray-700 text-gray-400 hover:border-cyan-500/50 hover:text-gray-200'
+                        }`}
+                      >{g}</button>
+                    ))}
+                  </div>
+                </div>
+
                 <div>
                   <label className="block text-sm font-medium text-gray-300 mb-2">Fichier audio * (Max 50 Mo — MP3, WAV, AAC, M4A…)</label>
                   <div className="relative">
@@ -305,7 +343,8 @@ const MusicUploadPage = () => {
                           )}
                           {audioFile && (
                             <span className="text-cyan-400 text-xs mt-1 block">
-                              {(audioFile.size / 1024 / 1024).toFixed(1)} Mo — prêt à uploader ✓
+                              {(audioFile.size / 1024 / 1024).toFixed(1)} Mo — prêt ✓
+                              {audioDuration && ` · ${Math.floor(audioDuration/60)}:${String(audioDuration%60).padStart(2,'0')}`}
                             </span>
                           )}
                         </div>

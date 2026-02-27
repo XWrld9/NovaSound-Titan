@@ -1,8 +1,9 @@
 import React, { useState, memo } from 'react';
-import { Play, Download, Share2, Music, Headphones, ExternalLink } from 'lucide-react';
+import { Play, Download, Share2, Music, Headphones, ExternalLink, Plus, Check } from 'lucide-react';
 import { Link } from 'react-router-dom';
-import { AnimatePresence } from 'framer-motion';
+import { AnimatePresence, motion } from 'framer-motion';
 import { useAuth } from '@/contexts/AuthContext';
+import { usePlayer } from '@/contexts/PlayerContext';
 import LikeButton from '@/components/LikeButton';
 import FavoriteButton from '@/components/FavoriteButton';
 import ReportButton from './ReportButton';
@@ -10,11 +11,18 @@ import SongShareModal from '@/components/SongShareModal';
 import SongActionsMenu from '@/components/SongActionsMenu';
 import { formatPlays } from '@/lib/utils';
 
+const fmtDuration = (s) => {
+  if (!s || s <= 0) return null;
+  return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
+};
+
 const SongCard = memo(({ song: initialSong, onPlay, isPlaying, setCurrentSong, currentSong, onArchived, onDeleted }) => {
   const { currentUser } = useAuth();
+  const { addToQueue } = usePlayer();
   const [song, setSong] = useState(initialSong);
   const [isHovered, setIsHovered] = useState(false);
   const [showShare, setShowShare] = useState(false);
+  const [queueFlash, setQueueFlash] = useState(false);
 
   React.useEffect(() => { setSong(initialSong); }, [initialSong]);
 
@@ -24,6 +32,14 @@ const SongCard = memo(({ song: initialSong, onPlay, isPlaying, setCurrentSong, c
     if (song.is_archived) return;
     if (onPlay) onPlay(song);
     else if (setCurrentSong) setCurrentSong(song);
+  };
+
+  const handleAddToQueue = (e) => {
+    e.stopPropagation();
+    if (song.is_archived) return;
+    addToQueue(song);
+    setQueueFlash(true);
+    setTimeout(() => setQueueFlash(false), 1200);
   };
 
   const handleDownload = (e) => {
@@ -43,6 +59,8 @@ const SongCard = memo(({ song: initialSong, onPlay, isPlaying, setCurrentSong, c
     setShowShare(true);
   };
 
+  const durationStr = fmtDuration(song.duration_s);
+
   return (
     <>
       <div
@@ -51,7 +69,6 @@ const SongCard = memo(({ song: initialSong, onPlay, isPlaying, setCurrentSong, c
         onMouseEnter={() => setIsHovered(true)}
         onMouseLeave={() => setIsHovered(false)}
       >
-        {/* Badge archivé */}
         {song.is_archived && (
           <div className="absolute top-2 left-2 z-10 flex items-center gap-1 bg-amber-500/90 backdrop-blur-sm px-2 py-0.5 rounded-full">
             <span className="text-[10px] text-white font-bold tracking-wide">ARCHIVÉ</span>
@@ -61,40 +78,32 @@ const SongCard = memo(({ song: initialSong, onPlay, isPlaying, setCurrentSong, c
         {/* Pochette */}
         <div className="relative aspect-square rounded-t-xl overflow-hidden">
           {song.cover_url ? (
-            <img
-              src={song.cover_url}
-              alt={song.title}
-              className="w-full h-full object-cover"
-              loading="lazy"
-              decoding="async"
-            />
+            <img src={song.cover_url} alt={song.title} className="w-full h-full object-cover" loading="lazy" decoding="async" />
           ) : (
             <div className="w-full h-full bg-gradient-to-br from-cyan-500 to-magenta-500 flex items-center justify-center">
               <Music className="w-16 h-16 text-white" />
             </div>
           )}
 
-          {/* Bouton Play — toujours visible sur mobile, hover sur desktop */}
           {!song.is_archived && (
             <div className="absolute inset-0 bg-black/40 md:bg-transparent md:group-hover:bg-black/50 flex items-center justify-center transition-all duration-200">
-              <button
-                onClick={handlePlay}
+              <button onClick={handlePlay}
                 className="p-4 rounded-full bg-gradient-to-r from-cyan-500 to-magenta-500 hover:from-cyan-600 hover:to-magenta-600 transform md:scale-90 md:opacity-0 md:group-hover:scale-100 md:group-hover:opacity-100 active:scale-95 transition-all duration-200 shadow-xl shadow-cyan-500/40"
-                aria-label="Lancer la lecture"
-              >
+                aria-label="Lancer la lecture">
                 <Play className="w-8 h-8 text-white fill-current" />
               </button>
             </div>
           )}
-          {song.is_archived && (
-            <div className="absolute inset-0 bg-black/30 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-              <span className="text-amber-400 text-xs font-semibold">Son archivé</span>
-            </div>
-          )}
 
-          {/* Lecture en cours */}
           {isPlaying && (
-            <div className="absolute top-2 left-2 w-3 h-3 rounded-full bg-cyan-400 animate-pulse shadow-lg shadow-cyan-400/50" />
+            <div className="absolute top-2 left-2 flex items-center gap-1 bg-black/60 backdrop-blur-sm px-2 py-0.5 rounded-full">
+              <div className="flex gap-px items-end h-3">
+                {[1,2,3].map(i => (
+                  <div key={i} className="w-1 bg-cyan-400 rounded-full animate-pulse"
+                    style={{ height: `${4 + i * 3}px`, animationDelay: `${i * 0.15}s` }} />
+                ))}
+              </div>
+            </div>
           )}
 
           {/* Badge plays */}
@@ -103,77 +112,80 @@ const SongCard = memo(({ song: initialSong, onPlay, isPlaying, setCurrentSong, c
             <span className="text-xs text-cyan-300 font-medium">{formatPlays(song.plays_count)}</span>
           </div>
 
-          {/* Lien page dédiée — coin haut droite, TOUJOURS visible sur tous les appareils */}
-          <Link
-            to={`/song/${song.id}`}
-            onClick={e => e.stopPropagation()}
+          {/* Durée */}
+          {durationStr && (
+            <div className="absolute bottom-2 right-2 bg-black/70 backdrop-blur-sm px-1.5 py-0.5 rounded text-[10px] text-gray-300 tabular-nums font-medium">
+              {durationStr}
+            </div>
+          )}
+
+          {/* Page son */}
+          <Link to={`/song/${song.id}`} onClick={e => e.stopPropagation()}
             className="absolute top-2 right-2 p-1.5 rounded-full bg-black/70 text-white hover:bg-cyan-500 hover:text-white transition-all z-20"
-            title="Voir la page du son & commenter"
-            aria-label="Voir la page du son"
-            style={{ boxShadow: '0 2px 8px rgba(0,0,0,0.5)' }}
-          >
+            title="Voir la page du son" style={{ boxShadow: '0 2px 8px rgba(0,0,0,0.5)' }}>
             <ExternalLink className="w-3.5 h-3.5" />
           </Link>
         </div>
 
         {/* Infos */}
-        <div className="p-4">
-          {/* Titre → page du son */}
-          <Link
-            to={`/song/${song.id}`}
-            onClick={e => e.stopPropagation()}
-            className="text-white font-semibold truncate text-base block hover:text-cyan-400 transition-colors"
-          >
+        <div className="p-3.5">
+          <Link to={`/song/${song.id}`} onClick={e => e.stopPropagation()}
+            className="text-white font-semibold truncate text-sm block hover:text-cyan-400 transition-colors">
             {song.title}
           </Link>
 
           {song.uploader_id ? (
-            <Link
-              to={`/artist/${song.uploader_id}`}
-              className="text-gray-400 text-sm truncate block hover:text-cyan-400 transition-colors mt-0.5"
-              onClick={e => e.stopPropagation()}
-            >
+            <Link to={`/artist/${song.uploader_id}`}
+              className="text-gray-400 text-xs truncate block hover:text-cyan-400 transition-colors mt-0.5"
+              onClick={e => e.stopPropagation()}>
               {song.artist}
             </Link>
           ) : (
-            <p className="text-gray-400 text-sm truncate mt-0.5">{song.artist}</p>
+            <p className="text-gray-400 text-xs truncate mt-0.5">{song.artist}</p>
           )}
 
-          <div className="flex items-center justify-between mt-3">
+          {/* Genre badge */}
+          {song.genre && (
+            <div className="mt-1.5">
+              <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-cyan-500/10 text-cyan-400 border border-cyan-500/20 inline-block">
+                {song.genre}
+              </span>
+            </div>
+          )}
+
+          <div className="flex items-center justify-between mt-2.5">
             <LikeButton songId={song.id} initialLikes={song.likes_count || 0} />
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1.5">
               {!song.is_archived && (
                 <>
                   <FavoriteButton songId={song.id} size="sm" />
-                  <button onClick={handleDownload} className="text-gray-400 hover:text-cyan-400 transition-colors" title="Télécharger">
-                    <Download className="w-4 h-4" />
+                  {/* ⊕ Ajouter à la file */}
+                  <button onClick={handleAddToQueue}
+                    className={`transition-all p-1 rounded-md ${queueFlash ? 'text-cyan-400 bg-cyan-500/15' : 'text-gray-400 hover:text-cyan-400 hover:bg-cyan-500/10'}`}
+                    title="Ajouter à la file d'attente">
+                    {queueFlash ? <Check className="w-3.5 h-3.5" /> : <Plus className="w-3.5 h-3.5" />}
                   </button>
-                  <button onClick={handleShare} className="text-gray-400 hover:text-white transition-colors" title="Partager">
-                    <Share2 className="w-4 h-4" />
+                  <button onClick={handleDownload} className="text-gray-400 hover:text-cyan-400 transition-colors p-1" title="Télécharger">
+                    <Download className="w-3.5 h-3.5" />
+                  </button>
+                  <button onClick={handleShare} className="text-gray-400 hover:text-white transition-colors p-1" title="Partager">
+                    <Share2 className="w-3.5 h-3.5" />
                   </button>
                   <ReportButton contentType="song" contentId={song.id} />
                 </>
               )}
               <SongActionsMenu
                 song={song}
-                onArchived={(id, isArch) => {
-                  setSong((s) => ({ ...s, is_archived: isArch }));
-                  onArchived?.(id, isArch);
-                }}
-                onDeleted={(id) => {
-                  onDeleted?.(id);
-                }}
+                onArchived={(id, isArch) => { setSong((s) => ({ ...s, is_archived: isArch })); onArchived?.(id, isArch); }}
+                onDeleted={(id) => { onDeleted?.(id); }}
               />
             </div>
           </div>
         </div>
       </div>
 
-      {/* Share Modal */}
       <AnimatePresence>
-        {showShare && (
-          <SongShareModal song={song} onClose={() => setShowShare(false)} />
-        )}
+        {showShare && <SongShareModal song={song} onClose={() => setShowShare(false)} />}
       </AnimatePresence>
     </>
   );

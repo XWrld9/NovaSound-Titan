@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { usePlayer } from '@/contexts/PlayerContext';
 import { Link } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
-import { Music, Play, TrendingUp, Newspaper, X, Calendar, User, Headphones, ExternalLink } from 'lucide-react';
+import { Music, Play, TrendingUp, Newspaper, X, Calendar, User, Headphones, ExternalLink, Trophy } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { supabase } from '@/lib/supabaseClient';
 import { formatPlays } from '@/lib/utils';
@@ -17,6 +17,7 @@ import SongActionsMenu from '@/components/SongActionsMenu';
 const HomePage = () => {
   const { isAuthenticated } = useAuth();
   const [featuredSongs, setFeaturedSongs] = useState([]);
+  const [topSongs,      setTopSongs]      = useState([]);
   const [newsItems, setNewsItems] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedNews, setSelectedNews] = useState(null);
@@ -32,7 +33,7 @@ const HomePage = () => {
     }, 5000); // 5 secondes max
 
     try {
-      const [{ data: songs, error: songsError }, { data: news, error: newsError }] = await Promise.all([
+      const [{ data: songs, error: songsError }, { data: news, error: newsError }, { data: top }] = await Promise.all([
         supabase
           .from('songs')
           .select('*')
@@ -43,7 +44,13 @@ const HomePage = () => {
           .from('news')
           .select('*, users:author_id(username)')
           .order('created_at', { ascending: false })
-          .limit(6)
+          .limit(6),
+        supabase
+          .from('songs')
+          .select('*')
+          .eq('is_archived', false)
+          .order('plays_count', { ascending: false })
+          .limit(3),
       ]);
 
       if (songsError) throw songsError;
@@ -54,6 +61,7 @@ const HomePage = () => {
       }
 
       setFeaturedSongs(songs || []);
+      setTopSongs((top || []).filter(s => !s.is_archived));
     } catch (error) {
       console.error('Error fetching data:', error);
       // En cas d'erreur, afficher quand même les données vides
@@ -132,6 +140,66 @@ const HomePage = () => {
               </motion.div>
             </div>
           </section>
+
+          {/* ── TOP 3 SONS ── */}
+          {topSongs.length > 0 && (
+            <section className="relative py-10 overflow-hidden">
+              <div className="absolute inset-0 bg-gradient-to-b from-transparent via-amber-950/20 to-transparent pointer-events-none" />
+              <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-amber-500/30 to-transparent" />
+              <div className="container mx-auto px-4 relative">
+                <div className="flex items-center gap-3 mb-6">
+                  <div className="w-1 h-8 bg-gradient-to-b from-amber-400 to-amber-600 rounded-full" />
+                  <h2 className="text-2xl md:text-3xl font-bold text-white flex items-center gap-3">
+                    <Trophy className="w-6 h-6 md:w-7 md:h-7 text-amber-400" />
+                    Top 3 du moment
+                  </h2>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                  {topSongs.map((song, rank) => {
+                    const medals = ['🥇','🥈','🥉'];
+                    return (
+                      <motion.div key={song.id}
+                        initial={{ opacity: 0, y: 12 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: rank * 0.08 }}
+                        className="relative bg-gray-800/80 border border-amber-500/20 rounded-2xl overflow-hidden hover:border-amber-400/50 transition-all group cursor-pointer hover:shadow-lg hover:shadow-amber-500/10"
+                        onClick={() => playSong(song)}
+                      >
+                        {/* Pochette fond */}
+                        {song.cover_url && (
+                          <div className="absolute inset-0 opacity-15 group-hover:opacity-20 transition-opacity"
+                            style={{ backgroundImage: `url(${song.cover_url})`, backgroundSize: 'cover', backgroundPosition: 'center', filter: 'blur(8px)', transform: 'scale(1.1)' }} />
+                        )}
+                        <div className="relative flex items-center gap-4 p-4">
+                          <span className="text-2xl flex-shrink-0">{medals[rank]}</span>
+                          <div className="w-14 h-14 rounded-xl overflow-hidden flex-shrink-0 shadow-lg border border-white/10">
+                            {song.cover_url
+                              ? <img src={song.cover_url} alt={song.title} className="w-full h-full object-cover" />
+                              : <div className="w-full h-full bg-gradient-to-br from-amber-500 to-orange-600 flex items-center justify-center"><Music className="w-6 h-6 text-white" /></div>
+                            }
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className="text-white font-bold text-sm truncate group-hover:text-amber-300 transition-colors">{song.title}</p>
+                            <p className="text-gray-400 text-xs truncate mt-0.5">{song.artist}</p>
+                            <div className="flex items-center gap-1 mt-1">
+                              <Headphones className="w-3 h-3 text-amber-400" />
+                              <span className="text-xs text-amber-400 font-semibold">{formatPlays(song.plays_count)}</span>
+                              {song.genre && (
+                                <span className="text-[9px] px-1.5 py-px rounded-full bg-white/10 text-gray-400 ml-1">{song.genre}</span>
+                              )}
+                            </div>
+                          </div>
+                          <div className="flex-shrink-0 p-2 rounded-full bg-white/10 group-hover:bg-amber-500/20 transition-all">
+                            <Play className="w-4 h-4 text-white fill-current" />
+                          </div>
+                        </div>
+                      </motion.div>
+                    );
+                  })}
+                </div>
+              </div>
+            </section>
+          )}
 
           {/* Featured Songs */}
           <section className="relative py-12 md:py-16 overflow-hidden">
