@@ -152,8 +152,8 @@ const ChatMessage = memo(({
         )}
 
         {/* Contenu */}
-        <p className="text-sm text-gray-200 leading-relaxed break-words whitespace-pre-wrap">
-          {msg.content}
+        <p className={`text-sm leading-relaxed break-words whitespace-pre-wrap ${msg._pending ? 'text-gray-500 italic' : 'text-gray-200'}`}>
+          {msg.content}{msg._pending ? ' ···' : ''}
         </p>
 
         {/* Réactions */}

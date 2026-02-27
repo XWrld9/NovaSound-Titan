@@ -1,3 +1,20 @@
+## 📦 Changelog v101.0 — Fix messages chat
+
+### 🔴 Fix CRITIQUE — 3 bugs bloquant l'envoi de messages
+
+**Bug 1 — Provider nesting cassé dans `App.jsx`**
+`<ChatProvider>` était imbriqué avec une indentation incorrecte à l'intérieur de `<MessageProvider>` → les balises fermantes étaient désalignées → React ne montait pas `ChatContext` correctement → `sendChatMessage` était undefined au moment de l'appel.
+
+**Bug 2 — Pas d'optimistic update**
+Les messages n'apparaissaient qu'après confirmation Realtime Supabase (latence réseau + Realtime non configuré si SQL pas encore exécuté). Ajout d'un affichage immédiat du message (grisé + `···`) avant confirmation serveur, remplacé par la vraie donnée au retour, ou annulé en cas d'erreur.
+
+**Bug 3 — `currentUser` incomplet dans l'optimistic message**
+Le message optimiste récupère maintenant `username` et `avatar_url` depuis `currentUser.user_metadata` en fallback.
+
+**Version bump** : 100.0.0 → 101.0.0 | SW cache : novasound-titan-v16 → novasound-titan-v17
+
+---
+
 ## 📦 Changelog v100.0 — Chat Public Global 🌐
 
 ### 🆕 Nouveau système : Chat Global communautaire (remplace la messagerie privée)

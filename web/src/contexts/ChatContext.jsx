@@ -127,18 +127,47 @@ export const ChatProvider = ({ children }) => {
       payload.reply_to_content  = replyTo.content?.slice(0, 120);
       payload.reply_to_username = replyTo.users?.username || replyTo.username || 'Utilisateur';
     }
-    const { data, error } = await supabase
-      .from('chat_messages')
-      .insert(payload)
-      .select(`
-        id, user_id, content, reply_to_id, reply_to_content, reply_to_username,
-        created_at, is_deleted,
-        users!chat_messages_user_id_fkey(id, username, avatar_url)
-      `)
-      .single();
-    if (error) throw error;
-    return data;
-  }, [currentUser?.id]);
+
+    // ── Optimistic update : afficher le message immédiatement ─────
+    const tempId = `temp-${Date.now()}`;
+    const optimistic = {
+      id: tempId,
+      user_id: currentUser.id,
+      content: content.trim(),
+      reply_to_id:       payload.reply_to_id || null,
+      reply_to_content:  payload.reply_to_content || null,
+      reply_to_username: payload.reply_to_username || null,
+      created_at: new Date().toISOString(),
+      is_deleted: false,
+      _pending: true,
+      users: {
+        id: currentUser.id,
+        username: currentUser.username || currentUser.user_metadata?.username || currentUser.email?.split('@')[0] || 'Moi',
+        avatar_url: currentUser.avatar_url || currentUser.user_metadata?.avatar_url || null,
+      },
+    };
+    setMessages(prev => [...prev, optimistic]);
+
+    try {
+      const { data, error } = await supabase
+        .from('chat_messages')
+        .insert(payload)
+        .select(`
+          id, user_id, content, reply_to_id, reply_to_content, reply_to_username,
+          created_at, is_deleted,
+          users!chat_messages_user_id_fkey(id, username, avatar_url)
+        `)
+        .single();
+      if (error) throw error;
+      // Remplacer le message temporaire par le vrai
+      setMessages(prev => prev.map(m => m.id === tempId ? { ...data, _pending: false } : m));
+      return data;
+    } catch (err) {
+      // Annuler l'optimistic update en cas d'erreur
+      setMessages(prev => prev.filter(m => m.id !== tempId));
+      throw err;
+    }
+  }, [currentUser]);
 
   // ── Supprimer (soft delete) ──────────────────────────────────────
   const deleteChatMessage = useCallback(async (messageId) => {

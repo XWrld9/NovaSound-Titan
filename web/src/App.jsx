@@ -67,10 +67,10 @@ function App() {
             <PlayerProvider>
               <PlaylistProvider>
                 <MessageProvider>
-              <ChatProvider>
-                  <NotificationProvider>
-                    <NotificationToast />
-                    <Router>
+                  <ChatProvider>
+                    <NotificationProvider>
+                      <NotificationToast />
+                      <Router>
                       <ScrollToTop />
                       <InstallBanner />
                       <Suspense fallback={<div className="min-h-screen bg-gray-950 flex items-center justify-center"><LoadingSpinner /></div>}>
@@ -105,9 +105,9 @@ function App() {
                       <BottomNav />
                       <OnboardingToast />
                     </Router>
-                  </NotificationProvider>
-                </ChatProvider>
-              </MessageProvider>
+                    </NotificationProvider>
+                  </ChatProvider>
+                </MessageProvider>
               </PlaylistProvider>
             </PlayerProvider>
           </AuthProvider>
