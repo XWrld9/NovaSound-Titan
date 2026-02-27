@@ -248,16 +248,6 @@ const Header = () => {
                   {/* Cloche notifications desktop */}
                   <NotificationBell />
 
-                  {/* Messages desktop */}
-                  <Link to="/messages" className="relative p-2 rounded-full text-gray-400 hover:text-white hover:bg-white/10 transition-all" title="Messages">
-                    <MessageCircle className="w-5 h-5" />
-                    {msgUnread > 0 && (
-                      <span className="absolute -top-0.5 -right-0.5 min-w-[18px] h-[18px] rounded-full bg-gradient-to-r from-cyan-500 to-pink-500 text-white text-[10px] font-bold flex items-center justify-center px-1 shadow-lg pointer-events-none">
-                        {msgUnread > 99 ? '99+' : msgUnread}
-                      </span>
-                    )}
-                  </Link>
-
                   <Link to="/upload">
                     <Button className="bg-gradient-to-r from-cyan-500 to-magenta-500 hover:from-cyan-600 hover:to-magenta-600 text-white rounded-full px-6 font-medium shadow-lg shadow-cyan-500/20">
                       <Upload className="w-4 h-4 mr-2" />Uploader
@@ -289,12 +279,6 @@ const Header = () => {
                         </Link>
                         <Link to="/playlists" className="block px-4 py-2 text-sm text-gray-300 hover:bg-cyan-500/10 hover:text-cyan-400 rounded-lg flex items-center gap-2">
                           <ListMusic className="w-4 h-4" />Mes playlists
-                        </Link>
-                        <Link to="/messages" className="block px-4 py-2 text-sm text-gray-300 hover:bg-cyan-500/10 hover:text-cyan-400 rounded-lg flex items-center gap-2 relative">
-                          <MessageCircle className="w-4 h-4" />Messages
-                          {msgUnread > 0 && (
-                            <span className="ml-auto text-[10px] font-bold bg-cyan-500/20 text-cyan-400 rounded-full px-1.5 py-0.5">{msgUnread}</span>
-                          )}
                         </Link>
                         <Link to="/stats" className="block px-4 py-2 text-sm text-gray-300 hover:bg-cyan-500/10 hover:text-cyan-400 rounded-lg flex items-center gap-2">
                           <BarChart2 className="w-4 h-4" />Mes stats
@@ -433,12 +417,6 @@ const Header = () => {
                       </Link>
                       <Link to="/playlists" onClick={closeMenu} className="flex items-center gap-3 px-4 py-3 text-gray-300 hover:bg-cyan-500/10 hover:text-cyan-400 rounded-lg transition-colors">
                         <ListMusic className="w-5 h-5 text-cyan-400" />Mes playlists
-                      </Link>
-                      <Link to="/messages" onClick={closeMenu} className="flex items-center gap-3 px-4 py-3 text-gray-300 hover:bg-cyan-500/10 hover:text-cyan-400 rounded-lg transition-colors relative">
-                        <MessageCircle className="w-5 h-5 text-cyan-400" />Messages
-                        {msgUnread > 0 && (
-                          <span className="ml-auto text-[10px] font-bold bg-cyan-500/20 text-cyan-400 rounded-full px-2 py-0.5">{msgUnread > 99 ? '99+' : msgUnread}</span>
-                        )}
                       </Link>
                       <Link to="/stats" onClick={closeMenu} className="flex items-center gap-3 px-4 py-3 text-gray-300 hover:bg-cyan-500/10 hover:text-cyan-400 rounded-lg transition-colors">
                         <BarChart2 className="w-5 h-5 text-cyan-400" />Mes stats

@@ -16,9 +16,10 @@ export const useChat = () => useContext(ChatContext);
 // Filtres de période disponibles
 export const CHAT_PERIODS = [
   { key: 'today',   label: "Aujourd'hui",  hours: 24 },
-  { key: '7d',      label: '7 derniers jours', hours: 24 * 7 },
-  { key: '30d',     label: '30 derniers jours', hours: 24 * 30 },
-  { key: 'all',     label: 'Tout voir',    hours: null },
+  { key: '7d',      label: '7 jours',      hours: 24 * 7 },
+  { key: 'month',   label: 'Ce mois',      hours: null, monthFilter: true },
+  { key: 'year',    label: 'Cette année',  hours: null, yearFilter: true },
+  { key: 'all',     label: 'Tout',         hours: null },
 ];
 
 const PAGE_SIZE = 40;
@@ -53,6 +54,16 @@ export const ChatProvider = ({ children }) => {
       if (p.hours) {
         const since = new Date(Date.now() - p.hours * 3_600_000).toISOString();
         query = query.gte('created_at', since);
+      } else if (p.monthFilter) {
+        const now = new Date();
+        const firstDay = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
+        const lastDay  = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59).toISOString();
+        query = query.gte('created_at', firstDay).lte('created_at', lastDay);
+      } else if (p.yearFilter) {
+        const now = new Date();
+        const firstDay = new Date(now.getFullYear(), 0, 1).toISOString();
+        const lastDay  = new Date(now.getFullYear(), 11, 31, 23, 59, 59).toISOString();
+        query = query.gte('created_at', firstDay).lte('created_at', lastDay);
       }
 
       if (!reset && oldestRef.current) {

@@ -3,7 +3,7 @@ import {
   Play, Pause, SkipBack, SkipForward, Volume2, VolumeX, Volume1,
   Shuffle, Repeat, Music, ChevronDown, Heart, Download, Share2,
   UserPlus, UserCheck, ExternalLink, X, Maximize2, Minimize2,
-  ListMusic, Moon, Trash2, Gauge, Radio,
+  ListMusic, Moon, Trash2, Gauge, Radio, Plus, Calendar,
 } from 'lucide-react';
 import { Slider } from '@/components/ui/slider';
 import { supabase } from '@/lib/supabaseClient';
@@ -16,6 +16,7 @@ import { useNavigate } from 'react-router-dom';
 import { useGenreTheme } from '@/hooks/useGenreTheme';
 import WaveformVisualizer from '@/components/WaveformVisualizer';
 import SongShareModal from '@/components/SongShareModal';
+import AddToPlaylistModal from '@/components/AddToPlaylistModal';
 
 const isIOS = () =>
   /iphone|ipad|ipod/i.test(navigator.userAgent) ||
@@ -87,8 +88,12 @@ const AudioPlayer = ({ currentSong, playlist = [], onNext, onPrevious, onClose }
   const [followId,       setFollowId]       = useState(null);
   const [showShareModal, setShowShareModal] = useState(false);
   const [blurBg,         setBlurBg]         = useState('');
-  const [showQueue,      setShowQueue]      = useState(false);
-  const [showSleepMenu,  setShowSleepMenu]  = useState(false);
+  const [showQueue,          setShowQueue]          = useState(false);
+  const [showSleepMenu,      setShowSleepMenu]      = useState(false);
+  const [showAddToPlaylist,  setShowAddToPlaylist]  = useState(false);
+  const [showMonthlySongs,   setShowMonthlySongs]   = useState(false);
+  const [monthlySongs,       setMonthlySongs]       = useState([]);
+  const [loadingMonthly,     setLoadingMonthly]     = useState(false);
 
   // Swipe-to-close (mini player, mobile)
   const swipeStartY   = useRef(null);
@@ -190,6 +195,33 @@ const AudioPlayer = ({ currentSong, playlist = [], onNext, onPrevious, onClose }
     }
   }, [isExpanded, isCoverMode, isNativeFS]);
   toggleImmersiveRef.current = toggleImmersive;
+
+  // ── Chargement des sons du mois ───────────────────────────────
+  const fetchMonthlySongs = useCallback(async () => {
+    if (loadingMonthly) return;
+    setLoadingMonthly(true);
+    try {
+      const now = new Date();
+      const firstDay = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
+      const lastDay  = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59).toISOString();
+      const { data } = await supabase
+        .from('songs')
+        .select('id, title, artist, cover_url, genre, plays_count')
+        .eq('is_archived', false)
+        .eq('is_deleted', false)
+        .gte('created_at', firstDay)
+        .lte('created_at', lastDay)
+        .order('plays_count', { ascending: false })
+        .limit(30);
+      setMonthlySongs(data || []);
+    } catch (e) { console.error(e); }
+    setLoadingMonthly(false);
+  }, [loadingMonthly]);
+
+  const openMonthlySongs = useCallback(() => {
+    setShowMonthlySongs(true);
+    fetchMonthlySongs();
+  }, [fetchMonthlySongs]);
 
   // ── Volume + persistence localStorage ─────────────────────────
   useEffect(() => {
@@ -738,7 +770,23 @@ const AudioPlayer = ({ currentSong, playlist = [], onNext, onPrevious, onClose }
                       <span className="text-white font-bold text-sm">File d'attente</span>
                       <span className="text-xs text-gray-500 bg-white/8 px-1.5 py-0.5 rounded-full">{queue.length}</span>
                     </div>
-                    <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-2">
+                      {/* Bouton Sons du mois */}
+                      <button
+                        onClick={() => { setShowQueue(false); openMonthlySongs(); }}
+                        className="flex items-center gap-1.5 text-xs text-cyan-400 hover:text-cyan-300 transition-colors px-2.5 py-1.5 rounded-full border border-cyan-500/20 hover:bg-cyan-500/10"
+                        title="Sons publiés ce mois">
+                        <Calendar className="w-3 h-3 flex-shrink-0" /><span>Ce mois</span>
+                      </button>
+                      {/* Bouton Ajouter à une playlist */}
+                      {currentSong && currentUser && (
+                        <button
+                          onClick={() => { setShowQueue(false); setShowAddToPlaylist(true); }}
+                          className="flex items-center gap-1.5 text-xs text-purple-400 hover:text-purple-300 transition-colors px-2.5 py-1.5 rounded-full border border-purple-500/20 hover:bg-purple-500/10"
+                          title="Ajouter à une playlist">
+                          <Plus className="w-3 h-3 flex-shrink-0" /><span>Playlist</span>
+                        </button>
+                      )}
                       {queue.length > 0 && (
                         <button onClick={clearQueue}
                           className="flex items-center gap-1.5 text-xs text-red-400 hover:text-red-300 transition-colors px-3 py-1.5 rounded-full border border-red-500/20 hover:bg-red-500/10 min-w-[60px]">
@@ -985,6 +1033,90 @@ const AudioPlayer = ({ currentSong, playlist = [], onNext, onPrevious, onClose }
                 <span className="text-xs text-gray-700 w-6 tabular-nums">{isMuted ? 0 : volume}</span>
               </div>
             </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* ── Modal Ajouter à une playlist ── */}
+      <AnimatePresence>
+        {showAddToPlaylist && currentSong && (
+          <AddToPlaylistModal
+            song={currentSong}
+            onClose={() => setShowAddToPlaylist(false)}
+          />
+        )}
+      </AnimatePresence>
+
+      {/* ── Modal Sons du mois ── */}
+      <AnimatePresence>
+        {showMonthlySongs && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[200] flex items-end sm:items-center justify-center p-0 sm:p-4"
+            style={{ backgroundColor: 'rgba(0,0,0,0.92)', backdropFilter: 'blur(8px)' }}
+            onClick={() => setShowMonthlySongs(false)}
+          >
+            <motion.div
+              initial={{ y: 40, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              exit={{ y: 40, opacity: 0 }}
+              transition={{ type: 'spring', damping: 28, stiffness: 300 }}
+              className="w-full sm:max-w-md bg-gray-950 border border-white/10 rounded-t-3xl sm:rounded-3xl shadow-2xl overflow-hidden"
+              style={{ maxHeight: '70vh' }}
+              onClick={e => e.stopPropagation()}
+            >
+              <div className="flex items-center justify-between px-5 py-4 border-b border-white/[0.06]">
+                <div className="flex items-center gap-2.5">
+                  <Calendar className="w-5 h-5 text-cyan-400" />
+                  <span className="text-white font-bold text-base">Sons du mois</span>
+                  <span className="text-xs text-gray-500 bg-white/8 px-1.5 py-0.5 rounded-full">
+                    {new Date().toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' })}
+                  </span>
+                </div>
+                <button onClick={() => setShowMonthlySongs(false)} className="p-2 text-gray-500 hover:text-white transition-colors rounded-xl">
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+              <div className="overflow-y-auto" style={{ maxHeight: 'calc(70vh - 68px)' }}>
+                {loadingMonthly ? (
+                  <div className="flex items-center justify-center py-16">
+                    <div className="w-6 h-6 rounded-full border-2 border-cyan-500/30 border-t-cyan-400 animate-spin" />
+                  </div>
+                ) : monthlySongs.length === 0 ? (
+                  <div className="flex flex-col items-center justify-center py-16 text-center px-6">
+                    <Music className="w-12 h-12 text-gray-700 mb-3" />
+                    <p className="text-gray-500 text-sm font-medium">Aucun son ce mois-ci</p>
+                  </div>
+                ) : (
+                  <div className="py-2">
+                    {monthlySongs.map((s) => (
+                      <button
+                        key={s.id}
+                        className="w-full flex items-center gap-3 px-4 py-2.5 hover:bg-white/[0.04] transition-colors text-left"
+                        onClick={() => {
+                          setShowMonthlySongs(false);
+                          navigate(`/song/${s.id}`);
+                        }}
+                      >
+                        {s.cover_url
+                          ? <img src={s.cover_url} alt="" className="w-11 h-11 rounded-xl object-cover flex-shrink-0 shadow-lg" />
+                          : <div className="w-11 h-11 rounded-xl bg-gray-800 flex items-center justify-center flex-shrink-0"><Music className="w-5 h-5 text-gray-600" /></div>
+                        }
+                        <div className="flex-1 min-w-0">
+                          <p className="text-white text-sm font-semibold truncate">{s.title}</p>
+                          <p className="text-gray-500 text-xs truncate">{s.artist}</p>
+                        </div>
+                        {s.genre && (
+                          <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-cyan-500/10 text-cyan-500 border border-cyan-500/20 flex-shrink-0">{s.genre}</span>
+                        )}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </motion.div>
           </motion.div>
         )}
       </AnimatePresence>

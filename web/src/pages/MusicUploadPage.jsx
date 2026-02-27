@@ -504,61 +504,26 @@ const MusicUploadPage = () => {
                       </button>
                     </div>
                   ) : (
-                    /* Zone de sélection — 2 options gestionnaires de fichiers */
-                    <div className="space-y-2.5">
-                      <p className="text-gray-500 text-xs text-center">Choisis la source :</p>
-                      <div className="grid grid-cols-2 gap-3">
-                        {/* Option 1 : Gestionnaire de fichiers système (Files/Explorateur) */}
-                        <div className="relative">
-                          <div className={`flex flex-col items-center justify-center gap-2 w-full px-3 py-5 bg-gray-900/70 border border-dashed border-gray-700 rounded-xl transition-all pointer-events-none hover:border-cyan-500/50`}>
-                            <div className="w-10 h-10 rounded-xl bg-blue-500/15 flex items-center justify-center">
-                              {/* Files/Explorateur icon */}
-                              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#3b82f6" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                <path d="M3 7a2 2 0 0 1 2-2h3.17a2 2 0 0 1 1.42.59l1.83 1.83A2 2 0 0 0 12.83 8H19a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
-                              </svg>
-                            </div>
-                            <div className="text-center">
-                              <p className="text-white text-xs font-semibold">Mes fichiers</p>
-                              <p className="text-gray-500 text-[10px]">Files / Explorer</p>
-                            </div>
-                          </div>
-                          <input
-                            type="file"
-                            accept="audio/*,.mp3,.wav,.aac,.m4a,.ogg,.flac,.opus,.mp4,.m4b"
-                            onChange={handleAudioChange}
-                            disabled={loading}
-                            multiple={false}
-                            style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', opacity: 0, cursor: 'pointer', zIndex: 10 }}
-                          />
+                    /* Zone unique d'import audio — ouvre directement le gestionnaire de fichiers natif */
+                    <div className="relative">
+                      <div className="flex flex-col items-center justify-center gap-3 w-full px-4 py-8 bg-gray-900/70 border-2 border-dashed border-cyan-500/30 rounded-2xl transition-all pointer-events-none hover:border-cyan-500/60 hover:bg-gray-900/90">
+                        <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-cyan-500/20 to-magenta-500/20 border border-white/10 flex items-center justify-center">
+                          <FileAudio className="w-7 h-7 text-cyan-400" />
                         </div>
-
-                        {/* Option 2 : Stockage local (iCloud Drive / Google Drive / SD Card) */}
-                        <div className="relative">
-                          <div className={`flex flex-col items-center justify-center gap-2 w-full px-3 py-5 bg-gray-900/70 border border-dashed border-gray-700 rounded-xl transition-all pointer-events-none hover:border-cyan-500/50`}>
-                            <div className="w-10 h-10 rounded-xl bg-orange-500/15 flex items-center justify-center">
-                              {/* Cloud/Storage icon */}
-                              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#f97316" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                <polyline points="16 16 12 12 8 16"/>
-                                <line x1="12" y1="12" x2="12" y2="21"/>
-                                <path d="M20.39 18.39A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.3"/>
-                              </svg>
-                            </div>
-                            <div className="text-center">
-                              <p className="text-white text-xs font-semibold">Cloud / Stockage</p>
-                              <p className="text-gray-500 text-[10px]">iCloud · Drive · SD</p>
-                            </div>
-                          </div>
-                          <input
-                            type="file"
-                            accept="audio/*,.mp3,.wav,.aac,.m4a,.ogg,.flac,.opus,.mp4,.m4b"
-                            onChange={handleAudioChange}
-                            disabled={loading}
-                            multiple={false}
-                            style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', opacity: 0, cursor: 'pointer', zIndex: 10 }}
-                          />
+                        <div className="text-center">
+                          <p className="text-white text-sm font-bold">Importer un fichier audio</p>
+                          <p className="text-gray-400 text-xs mt-1">Appuie pour ouvrir ton gestionnaire de fichiers</p>
+                          <p className="text-gray-600 text-[10px] mt-2">MP3 · WAV · AAC · M4A · OGG · FLAC — Max 50 Mo</p>
                         </div>
                       </div>
-                      <p className="text-gray-600 text-[10px] text-center">MP3, WAV, AAC, M4A, OGG, FLAC — Max 50 Mo</p>
+                      <input
+                        type="file"
+                        accept="audio/*,.mp3,.wav,.aac,.m4a,.ogg,.flac,.opus,.mp4,.m4b"
+                        onChange={handleAudioChange}
+                        disabled={loading}
+                        multiple={false}
+                        style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', opacity: 0, cursor: 'pointer', zIndex: 10 }}
+                      />
                     </div>
                   )}
                 </div>

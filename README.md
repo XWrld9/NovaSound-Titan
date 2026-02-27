@@ -1,3 +1,68 @@
+## 📦 Changelog v120.0 — Mini-Playlist · Chat · Upload · Refonte UX
+
+### 1. 🎵 Mini-Playlist (File d'attente) — 2 nouveaux boutons
+
+**Bouton « Playlist »** (icône + violet) :
+- Ouvre directement `AddToPlaylistModal` pour le son en cours de lecture
+- Identique au bouton ⊕ des SongCards dans Explorer — même fonctionnalité, intégré à la mini-playlist
+- Visible uniquement si l'utilisateur est connecté
+
+**Bouton « Ce mois » (icône calendrier cyan)** :
+- Affiche tous les sons publiés pendant le mois en cours (modal slide-up)
+- Triés par nombre d'écoutes décroissant
+- Cliquer sur un son navigue vers sa page `/song/:id`
+
+---
+
+### 2. 💬 Chat Global — Tagage @username & onglet "Mes messages"
+
+**Tagage @username** :
+- Taper `@` dans la zone de saisie déclenche une autocomplétion des utilisateurs inscrits
+- La liste filtre en temps réel selon les caractères saisis après `@`
+- Cliquer sur un utilisateur dans la liste l'insère dans le texte
+- Les @mentions apparaissent en cyan dans les bulles de message
+
+**Onglet « Mes messages »** :
+- Affiche tous les messages du chat global contenant `@votre_pseudo`
+- Cliquer sur un message reçu : navigue vers le Chat Global, highlight le message original (2s en cyan) ET pré-rempli automatiquement la zone de saisie avec `@expéditeur `
+- Rechargement automatique à chaque ouverture de l'onglet
+
+**Nouveaux filtres de période** :
+- Aujourd'hui · 7 jours · Ce mois · Cette année · Tout
+- "Ce mois" : messages depuis le 1er du mois courant
+- "Cette année" : messages depuis le 1er janvier
+
+---
+
+### 3. 🗑️ Messagerie privée retirée des menus
+
+- Lien « Messages » retiré du header desktop (icône + lien dans le dropdown)
+- Lien « Messages » retiré du menu mobile hamburger
+- Le Chat Global reste le point d'entrée unique de communication
+- La route `/messages` reste accessible techniquement mais n'est plus mise en avant
+
+---
+
+### 4. 📁 Upload Musique — Zone unique d'import
+
+- Les 2 zones distinctes ("Mes fichiers" / "Cloud / Stockage") remplacées par **une seule grande zone** avec icône FileAudio cyan
+- Une seule balise `<input type="file" accept="audio/*,...">` — le système d'exploitation choisit lui-même le picker approprié :
+  - **iOS** → Files.app (accès à iCloud Drive, stockage local, apps tierces)
+  - **Android** → Gestionnaire de fichiers natif (stockage interne, carte SD, Drive)
+  - **PC/Mac** → Explorateur de fichiers / Finder
+- `multiple={false}` — un seul fichier à la fois
+- Aucun attribut `capture` — jamais d'ouverture caméra/micro
+
+---
+
+### 🔧 Fixes divers détectés et corrigés
+
+- Import `MessageCircle` retiré du Header (inutile après suppression du lien Messages)
+- Autocomplétion @mention : `onMouseDown` (pas `onClick`) pour éviter la perte de focus sur l'input
+- Navigation `/chat?highlight=ID&tagger=USERNAME` pour la redirection depuis "Mes messages"
+
+**Version bump** : 101.0.0 → 120.0.0 | SW cache : novasound-titan-v17 → novasound-titan-v18
+
 ## 📦 Changelog v101.0 — Fix messages chat
 
 ### 🔴 Fix CRITIQUE — 3 bugs bloquant l'envoi de messages
