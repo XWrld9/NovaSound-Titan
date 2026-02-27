@@ -122,3 +122,20 @@ button {
 /* Masquer scrollbar sur mobile (tabs profil) */
 .scrollbar-hide::-webkit-scrollbar { display: none; }
 .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
+
+/* Respect de prefers-reduced-motion — accessibilité */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* Fix input zoom iOS — fontSize minimum 16px (déjà dans le CSS mais renforcement) */
+@media screen and (-webkit-min-device-pixel-ratio: 0) {
+  select, textarea, input[type="text"], input[type="search"],
+  input[type="email"], input[type="password"] {
+    font-size: 16px !important;
+  }
+}

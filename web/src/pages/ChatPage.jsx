@@ -12,6 +12,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { useChat, CHAT_PERIODS } from '@/contexts/ChatContext';
+import { usePlayer } from '@/contexts/PlayerContext';
 import { supabase } from '@/lib/supabaseClient';
 import Header from '@/components/Header';
 import {
@@ -241,6 +242,7 @@ const ChatPage = () => {
   const navigate  = useNavigate();
   const location  = useLocation();
   const chatCtx   = useChat();
+  const { isVisible: playerVisible } = usePlayer();
 
   // Guard si ChatContext non dispo (ne devrait pas arriver)
   const {
@@ -440,7 +442,7 @@ const ChatPage = () => {
       <div className="min-h-screen bg-gray-950 flex flex-col">
         <Header />
 
-        <div className="flex-1 flex flex-col" style={{ height: 'calc(100vh - 64px)' }}>
+        <div className="flex-1 flex flex-col" style={{ height: `calc(100dvh - 64px - ${playerVisible ? '56px' : '0px'})` }}>
 
           {/* Barre supérieure */}
           <div className="flex-shrink-0 border-b border-white/[0.06] bg-gray-950/95 backdrop-blur-sm px-4 py-3">

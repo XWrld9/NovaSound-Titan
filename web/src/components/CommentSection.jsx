@@ -219,7 +219,7 @@ const CommentRow = ({ comment, currentUser, songUploaderEmail, onDeleted, onUpda
             <textarea
               value={editVal}
               onChange={e => setEditVal(e.target.value.slice(0, MAX_CHARS))}
-              autoFocus rows={3}
+              ref={el => el && setTimeout(() => el.focus(), 50)} rows={3}
               className="w-full bg-gray-800/80 border border-cyan-500/40 rounded-xl px-3 py-2 text-sm text-white resize-none focus:outline-none focus:border-cyan-400 transition-colors"
               style={{ fontSize: 13 }}
             />

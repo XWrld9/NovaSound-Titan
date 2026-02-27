@@ -69,7 +69,7 @@ const TrendingPage = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-950 flex flex-col pb-28">
+    <div className="min-h-screen bg-gray-950 flex flex-col pb-36 md:pb-28">
       <Helmet>
         <title>Trending — NovaSound</title>
         <meta name="description" content="Les sons et artistes en vogue sur NovaSound" />

@@ -77,7 +77,7 @@ const MyPlaylistsPage = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-950 flex flex-col pb-28">
+    <div className="min-h-screen bg-gray-950 flex flex-col pb-36 md:pb-28">
       <Helmet><title>Mes Playlists — NovaSound</title></Helmet>
       <Header />
 
@@ -112,7 +112,7 @@ const MyPlaylistsPage = () => {
               <div className="bg-gray-900/80 border border-white/10 rounded-2xl p-5 space-y-3">
                 <h3 className="text-white font-bold text-sm">Nouvelle playlist</h3>
                 <input
-                  autoFocus
+                  ref={el => el && setTimeout(() => el.focus(), 50)}
                   type="text"
                   value={newName}
                   onChange={e => setNewName(e.target.value)}
@@ -256,7 +256,7 @@ const MyPlaylistsPage = () => {
               </div>
               <div className="space-y-3">
                 <input
-                  autoFocus
+                  ref={el => el && setTimeout(() => el.focus(), 50)}
                   type="text"
                   value={editName}
                   onChange={e => setEditName(e.target.value)}

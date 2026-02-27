@@ -1,3 +1,27 @@
+## 📦 Changelog v131.0 — Compatibilité universelle tous appareils
+
+### 📐 Layout mobile — Player + BottomNav
+- Paddings bas unifiés : **pb-36 md:pb-32** sur toutes les pages (pb-24/pb-28 étaient insuffisants)
+- Le contenu n'est plus masqué par le mini-player + BottomNav sur iPhone/Android
+- **ChatPage** hauteur dynamique quand le player est actif
+
+### 📏 iOS Safari — 100dvh
+- `calc(100vh - 64px)` → `calc(100dvh - 64px)` : barre d'URL flottante iOS corrigée
+
+### 🎵 WaveformVisualizer — Android < 7
+- CSS custom properties supprimées, chaque barre a sa propre keyframe `waveBar_N`
+
+### ⌨️ autoFocus remplacé partout
+- `ref={el => el && setTimeout(() => el.focus(), 50)}` dans tous les modals/forms
+- Évite le scroll/zoom brutal sur iOS Safari
+
+### ♿ prefers-reduced-motion
+- Animations CSS désactivées si l'utilisateur le demande dans ses réglages système
+
+**Version bump** : 130.0.0 → 131.0.0 | SW cache : novasound-titan-v20 → novasound-titan-v21
+
+---
+
 ## 📦 Changelog v130.0 — Nettoyage · Radio · Online · Playlists sync
 
 ### 🧹 Suppression complète de l'ancienne messagerie privée
@@ -29,7 +53,7 @@
 - Import `MessageCircle` conservé (icône de commentaires dans SongCard — usage légitime)
 - Service Worker bumped : `novasound-titan-v19` → `novasound-titan-v20`
 
-**Version bump** : 121.0.0 → 130.0.0 | SW cache : novasound-titan-v19 → novasound-titan-v20
+**Version bump** : 130.0.0 → 131.0.0 | SW cache : novasound-titan-v20 → novasound-titan-v21
 
 ---
 

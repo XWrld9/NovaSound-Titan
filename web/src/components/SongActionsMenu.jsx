@@ -323,7 +323,7 @@ const EditSongModal = ({ song, onSaved, onCancel }) => {
               Titre du morceau *
             </label>
             <input
-              autoFocus
+              ref={el => el && setTimeout(() => el.focus(), 50)}
               type="text"
               value={title}
               onChange={e => setTitle(e.target.value)}

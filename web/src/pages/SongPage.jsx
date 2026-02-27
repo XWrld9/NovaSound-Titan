@@ -102,10 +102,7 @@ const SongPage = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-950 flex flex-col pb-24">
-        <Header />
-        <div className="flex-1 flex items-center justify-center">
-          <div className="w-10 h-10 rounded-full border-2 border-cyan-500/30 border-t-cyan-500 animate-spin" />
+      <div className="min-h-screen bg-gray-950 flex flex-col pb-36 md:pb-24">
         </div>
       </div>
     );
@@ -181,7 +178,7 @@ const SongPage = () => {
         {ogImage && <meta name="twitter:image" content={ogImage} />}
       </Helmet>
 
-      <div className="min-h-screen bg-gray-950 flex flex-col pb-32">
+      <div className="min-h-screen bg-gray-950 flex flex-col pb-36 md:pb-32">
         <Header />
 
         <main className="flex-1 container mx-auto px-4 py-8 max-w-4xl">

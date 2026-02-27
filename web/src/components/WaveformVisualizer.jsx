@@ -41,20 +41,18 @@ const WaveformVisualizer = ({
             transition: isPlaying
               ? `height ${bar.duration}s ease-in-out ${bar.delay}s, opacity 0.3s`
               : 'height 0.4s ease-out, opacity 0.3s',
-            animation: isPlaying
-              ? `waveBar ${bar.duration}s ease-in-out ${bar.delay}s infinite alternate`
-              : 'none',
-            '--min-h': `${bar.minH}%`,
-            '--max-h': `${bar.maxH}%`,
+            animationName: isPlaying ? `waveBar_${i}` : 'none',
+            animationDuration: `${bar.duration}s`,
+            animationTimingFunction: 'ease-in-out',
+            animationDelay: `${bar.delay}s`,
+            animationIterationCount: 'infinite',
+            animationDirection: 'alternate',
           }}
         />
       ))}
-      <style>{`
-        @keyframes waveBar {
-          0%   { height: var(--min-h); }
-          100% { height: var(--max-h); }
-        }
-      `}</style>
+      <style>{bars.map((bar, i) =>
+        `@keyframes waveBar_${i} { 0% { height: ${bar.minH}%; } 100% { height: ${bar.maxH}%; } }`
+      ).join('\n')}</style>
     </div>
   );
 };

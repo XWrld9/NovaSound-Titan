@@ -163,7 +163,7 @@ const AddToPlaylistModal = ({ song, onClose }) => {
               className="space-y-3"
             >
               <input
-                autoFocus
+                ref={el => el && setTimeout(() => el.focus(), 50)}
                 type="text"
                 value={newName}
                 onChange={e => setNewName(e.target.value)}

@@ -158,7 +158,7 @@ const PlaylistPage = () => {
   );
 
   return (
-    <div className="min-h-screen bg-gray-950 flex flex-col pb-28">
+    <div className="min-h-screen bg-gray-950 flex flex-col pb-36 md:pb-28">
       <Helmet>
         <title>{playlist?.name || 'Playlist'} — NovaSound</title>
       </Helmet>
@@ -244,7 +244,7 @@ const PlaylistPage = () => {
               /* Mode édition */
               <div className="space-y-3">
                 <input
-                  autoFocus
+                  ref={el => el && setTimeout(() => el.focus(), 50)}
                   type="text"
                   value={editName}
                   onChange={e => setEditName(e.target.value)}

@@ -42,7 +42,7 @@ const NewsPage = () => {
         <meta name="description" content="Latest updates and news from the NovaSound community" />
       </Helmet>
 
-      <div className="min-h-screen bg-gray-950 flex flex-col pb-24 md:pb-32">
+      <div className="min-h-screen bg-gray-950 flex flex-col pb-36 md:pb-32">
         <Header />
 
         <main className="flex-1 container mx-auto px-4 py-8 max-w-4xl">

@@ -319,7 +319,7 @@ const MusicUploadPage = () => {
         <meta name="description" content="Uploade ta musique sur NovaSound TITAN LUX et partage-la avec le monde" />
       </Helmet>
 
-      <div className="min-h-screen bg-gray-950 flex flex-col pb-24 md:pb-32">
+      <div className="min-h-screen bg-gray-950 flex flex-col pb-36 md:pb-32">
         <Header />
 
         <main className="flex-1 container mx-auto px-4 py-12">

@@ -158,7 +158,7 @@ const UserProfilePage = () => {
         <meta name="description" content="Votre profil utilisateur NovaSound-Titan" />
       </Helmet>
 
-      <div className="min-h-screen bg-gray-950 pb-24 md:pb-32 overflow-x-hidden">
+      <div className="min-h-screen bg-gray-950 pb-36 md:pb-32 overflow-x-hidden">
         <Header />
 
         <main className="container mx-auto px-4 py-8">

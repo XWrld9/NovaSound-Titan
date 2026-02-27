@@ -171,7 +171,7 @@ const ArtistStatsPage = () => {
         <meta name="description" content="Dashboard analytics artiste NovaSound" />
       </Helmet>
 
-      <div className="min-h-screen bg-gray-950 flex flex-col pb-28">
+      <div className="min-h-screen bg-gray-950 flex flex-col pb-36 md:pb-28">
         <Header />
 
         <main className="flex-1 container mx-auto px-4 py-8 max-w-4xl">
