@@ -173,10 +173,41 @@ const MusicUploadPage = () => {
     setUploadBytes({ loaded: 0, total: audioFile.size });
 
     try {
-      // ── Récupérer le token de session ─────────────────────────
-      const { data: sessionData } = await supabase.auth.getSession();
-      const token = sessionData?.session?.access_token;
-      if (!token) throw new Error('Session expirée — reconnectez-vous');
+      // ── Récupérer le token de session avec retry ───────────────────
+      let sessionData = null;
+      let token = null;
+      
+      // Premier essai
+      try {
+        sessionData = await supabase.auth.getSession();
+        token = sessionData?.session?.access_token;
+      } catch (e) {
+        console.warn('[Upload] getSession échec, essai refresh:', e);
+      }
+      
+      // Si pas de token, essayer de rafraîchir
+      if (!token) {
+        try {
+          const { data: refreshData } = await supabase.auth.refreshSession();
+          token = refreshData?.session?.access_token;
+        } catch (e) {
+          console.warn('[Upload] refreshSession échec:', e);
+        }
+      }
+      
+      // Dernier essai : récupérer l'utilisateur courant
+      if (!token && currentUser) {
+        try {
+          const { data: userData } = await supabase.auth.getUser();
+          // Pas de token direct ici, mais on continue avec l'auth implicite
+        } catch (e) {
+          console.warn('[Upload] getUser échec:', e);
+        }
+      }
+      
+      if (!token && !currentUser) {
+        throw new Error('Session expirée — reconnectez-vous');
+      }
 
       // ── Phase 1 : Upload audio via XHR (jamais via SDK fetch) ─
       setUploadPhase('audio');
@@ -473,6 +504,11 @@ const MusicUploadPage = () => {
                       onChange={handleAudioChange}
                       disabled={loading}
                       style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', opacity: 0, cursor: 'pointer', zIndex: 10 }}
+                      // Ajout pour Android/iOS explorateur de fichiers natif
+                      {...((typeof navigator !== 'undefined' && /android|iphone|ipad|ipod/i.test(navigator.userAgent.toLowerCase())) && {
+                        capture: undefined, // Désactiver la capture pour forcer l'explorateur
+                        multiple: false
+                      })}
                     />
                   </div>
                 </div>

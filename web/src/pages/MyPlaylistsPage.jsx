@@ -156,7 +156,7 @@ const MyPlaylistsPage = () => {
               >
                 <Link
                   to={`/playlist/${pl.id}`}
-                  className="flex items-center gap-4 p-4 bg-gray-900/60 border border-white/8 rounded-2xl hover:border-cyan-500/25 hover:bg-gray-900/90 transition-all group"
+                  className="flex items-center gap-4 p-4 bg-gray-900/90 border border-white/20 rounded-2xl hover:border-cyan-500/25 hover:bg-gray-900 transition-all group md:bg-gray-900/60 md:border-white/8"
                 >
                   {/* Cover */}
                   <div className="w-16 h-16 rounded-xl overflow-hidden flex-shrink-0 bg-gradient-to-br from-cyan-500/20 to-magenta-500/20 flex items-center justify-center border border-white/8">
