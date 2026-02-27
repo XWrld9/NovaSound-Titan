@@ -103,7 +103,6 @@ const SongPage = () => {
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-950 flex flex-col pb-36 md:pb-24">
-        </div>
       </div>
     );
   }
