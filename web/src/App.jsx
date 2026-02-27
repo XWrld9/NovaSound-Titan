@@ -5,6 +5,7 @@ import { NotificationProvider } from '@/contexts/NotificationContext';
 import { NotificationToast } from '@/components/NotificationBell';
 import { PlayerProvider, usePlayer } from '@/contexts/PlayerContext';
 import { PlaylistProvider } from '@/contexts/PlaylistContext';
+import { MessageProvider } from '@/contexts/MessageContext';
 import { HelmetProvider } from 'react-helmet-async';
 import { DialogProvider } from '@/components/ui/Dialog';
 import { ToastProvider } from '@/components/ui/Toast';
@@ -14,6 +15,7 @@ import LoadingSpinner from '@/components/LoadingSpinner';
 import InstallBanner from '@/components/InstallBanner';
 import AudioPlayer from '@/components/AudioPlayer';
 import OnboardingToast from '@/components/OnboardingToast';
+import BottomNav from '@/components/BottomNav';
 
 // Pages chargées immédiatement (critiques)
 import HomePage from '@/pages/HomePage';
@@ -35,6 +37,9 @@ const AuthCallbackPage  = lazy(() => import('@/pages/AuthCallbackPage'));
 const TrendingPage      = lazy(() => import('@/pages/TrendingPage'));
 const PlaylistPage      = lazy(() => import('@/pages/PlaylistPage'));
 const MyPlaylistsPage   = lazy(() => import('@/pages/MyPlaylistsPage'));
+const MessagesPage      = lazy(() => import('@/pages/MessagesPage'));
+const ArtistStatsPage   = lazy(() => import('@/pages/ArtistStatsPage'));
+const SearchPage        = lazy(() => import('@/pages/SearchPage'));
 
 /* ── Player global — monté UNE SEULE FOIS, survit à toute navigation ── */
 const GlobalPlayer = () => {
@@ -59,37 +64,45 @@ function App() {
           <AuthProvider>
             <PlayerProvider>
               <PlaylistProvider>
-                <NotificationProvider>
-                  <NotificationToast />
-                  <Router>
-                    <ScrollToTop />
-                    <InstallBanner />
-                    <Suspense fallback={<div className="min-h-screen bg-gray-950 flex items-center justify-center"><LoadingSpinner /></div>}>
-                      <Routes>
-                        <Route path="/"               element={<HomePage />} />
-                        <Route path="/login"           element={<LoginPage />} />
-                        <Route path="/signup"          element={<SignupPage />} />
-                        <Route path="/explorer"        element={<ExplorerPage />} />
-                        <Route path="/news"            element={<NewsPage />} />
-                        <Route path="/trending"        element={<TrendingPage />} />
-                        <Route path="/artist/:id"      element={<ArtistProfilePage />} />
-                        <Route path="/song/:id"        element={<SongPage />} />
-                        <Route path="/playlist/:id"    element={<PlaylistPage />} />
-                        <Route path="/privacy"         element={<PrivacyPolicy />} />
-                        <Route path="/terms"           element={<TermsOfService />} />
-                        <Route path="/copyright"       element={<CopyrightInfo />} />
-                        <Route path="/upload"          element={<ProtectedRoute><MusicUploadPage /></ProtectedRoute>} />
-                        <Route path="/profile"         element={<ProtectedRoute><UserProfilePage /></ProtectedRoute>} />
-                        <Route path="/playlists"       element={<ProtectedRoute><MyPlaylistsPage /></ProtectedRoute>} />
-                        <Route path="/moderation"      element={<ProtectedRoute><ModerationPanel /></ProtectedRoute>} />
-                        <Route path="/auth/callback"   element={<AuthCallbackPage />} />
-                      </Routes>
-                    </Suspense>
-                    {/* Player global — persiste pendant toute la navigation */}
-                    <GlobalPlayer />
-                    <OnboardingToast />
-                  </Router>
-                </NotificationProvider>
+                <MessageProvider>
+                  <NotificationProvider>
+                    <NotificationToast />
+                    <Router>
+                      <ScrollToTop />
+                      <InstallBanner />
+                      <Suspense fallback={<div className="min-h-screen bg-gray-950 flex items-center justify-center"><LoadingSpinner /></div>}>
+                        <Routes>
+                          <Route path="/"               element={<HomePage />} />
+                          <Route path="/login"           element={<LoginPage />} />
+                          <Route path="/signup"          element={<SignupPage />} />
+                          <Route path="/search"          element={<SearchPage />} />
+                          <Route path="/explorer"        element={<ExplorerPage />} />
+                          <Route path="/news"            element={<NewsPage />} />
+                          <Route path="/trending"        element={<TrendingPage />} />
+                          <Route path="/artist/:id"      element={<ArtistProfilePage />} />
+                          <Route path="/song/:id"        element={<SongPage />} />
+                          <Route path="/playlist/:id"    element={<PlaylistPage />} />
+                          <Route path="/privacy"         element={<PrivacyPolicy />} />
+                          <Route path="/terms"           element={<TermsOfService />} />
+                          <Route path="/copyright"       element={<CopyrightInfo />} />
+                          <Route path="/upload"          element={<ProtectedRoute><MusicUploadPage /></ProtectedRoute>} />
+                          <Route path="/profile"         element={<ProtectedRoute><UserProfilePage /></ProtectedRoute>} />
+                          <Route path="/playlists"       element={<ProtectedRoute><MyPlaylistsPage /></ProtectedRoute>} />
+                          <Route path="/messages"        element={<ProtectedRoute><MessagesPage /></ProtectedRoute>} />
+                          <Route path="/messages/:userId" element={<ProtectedRoute><MessagesPage /></ProtectedRoute>} />
+                          <Route path="/stats"           element={<ProtectedRoute><ArtistStatsPage /></ProtectedRoute>} />
+                          <Route path="/moderation"      element={<ProtectedRoute><ModerationPanel /></ProtectedRoute>} />
+                          <Route path="/auth/callback"   element={<AuthCallbackPage />} />
+                        </Routes>
+                      </Suspense>
+                      {/* Player global — persiste pendant toute la navigation */}
+                      <GlobalPlayer />
+                      {/* Bottom nav mobile — v70 */}
+                      <BottomNav />
+                      <OnboardingToast />
+                    </Router>
+                  </NotificationProvider>
+                </MessageProvider>
               </PlaylistProvider>
             </PlayerProvider>
           </AuthProvider>

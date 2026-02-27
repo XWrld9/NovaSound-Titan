@@ -3,7 +3,7 @@ import { Helmet } from 'react-helmet-async';
 import { usePlayer } from '@/contexts/PlayerContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
-import { Music, Upload, Heart, Edit3, LogOut, Users, UserPlus, Archive, Bookmark, ListMusic } from 'lucide-react';
+import { Music, Upload, Heart, Edit3, LogOut, Users, UserPlus, Archive, Bookmark, ListMusic, BarChart2 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { supabase } from '@/lib/supabaseClient';
 import Header from '@/components/Header';
@@ -286,6 +286,15 @@ const UserProfilePage = () => {
                       Mes playlists
                     </Button>
                   </Link>
+
+                  {userSongs.filter(s => !s.is_archived).length > 0 && (
+                    <Link to="/stats">
+                      <Button variant="outline" className="border-purple-500/50 text-purple-400 hover:bg-purple-500/10">
+                        <BarChart2 className="w-4 h-4 mr-2" />
+                        Mes stats
+                      </Button>
+                    </Link>
+                  )}
                   
                   <Button
                     onClick={handleLogout}

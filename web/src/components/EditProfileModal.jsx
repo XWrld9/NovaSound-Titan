@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { X, Upload, User, Mail, FileText } from 'lucide-react';
+import { X, Upload, User, Mail, FileText, Instagram, Youtube, Music2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabaseUrl as _supabaseUrl, supabaseAnonKey as _supabaseAnonKey } from '@/lib/supabaseClient';
@@ -94,7 +94,7 @@ const uploadAvatarRobust = async (supabase, fileName, fileToUpload) => {
 
 const EditProfileModal = ({ isOpen, onClose }) => {
   const { currentUser, updateProfile, supabase } = useAuth();
-  const [formData, setFormData] = useState({ username: '', bio: '' });
+  const [formData, setFormData] = useState({ username: '', bio: '', social_links: {} });
   const [avatarFile, setAvatarFile] = useState(null);
   const [avatarPreview, setAvatarPreview] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -116,7 +116,7 @@ const EditProfileModal = ({ isOpen, onClose }) => {
           .eq('id', currentUser.id)
           .single();
         if (data) {
-          setFormData({ username: data.username || '', bio: data.bio || '' });
+          setFormData({ username: data.username || '', bio: data.bio || '', social_links: data.social_links || {} });
           setAvatarPreview(data.avatar_url || '');
         } else {
           setFormData({ username: currentUser.user_metadata?.username || '', bio: '' });
@@ -183,7 +183,7 @@ const EditProfileModal = ({ isOpen, onClose }) => {
       }
 
       setUploadProgress('Mise à jour du profil…');
-      const updateData = { username: formData.username.trim(), bio: formData.bio.trim() };
+      const updateData = { username: formData.username.trim(), bio: formData.bio.trim(), social_links: formData.social_links || {} };
       if (avatarUrl) updateData.avatar_url = avatarUrl;
 
       const { success: ok, message } = await updateProfile(updateData);
@@ -308,6 +308,36 @@ const EditProfileModal = ({ isOpen, onClose }) => {
                   rows={3} maxLength={500} placeholder="Parle de toi..."
                   className="w-full px-4 py-2.5 bg-gray-800 border border-cyan-500/30 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-cyan-400 focus:ring-2 focus:ring-cyan-400/20 transition-all resize-none" />
                 <p className="text-xs text-gray-500 mt-1 text-right">{formData.bio.length}/500</p>
+              </div>
+
+              {/* Réseaux sociaux */}
+              <div>
+                <label className="flex items-center gap-2 text-sm font-medium text-gray-300 mb-3">
+                  <Music2 className="w-4 h-4 text-cyan-400" />
+                  Réseaux sociaux <span className="text-gray-500 text-xs">(optionnel)</span>
+                </label>
+                <div className="space-y-2.5">
+                  {[
+                    { key: 'instagram', icon: Instagram, placeholder: 'instagram.com/tonpseudo', label: 'Instagram', color: 'text-pink-400' },
+                    { key: 'tiktok',    icon: Music2,    placeholder: 'tiktok.com/@tonpseudo',   label: 'TikTok',    color: 'text-cyan-300' },
+                    { key: 'youtube',   icon: Youtube,   placeholder: 'youtube.com/@tachaine',   label: 'YouTube',   color: 'text-red-400'  },
+                    { key: 'soundcloud',icon: Music2,    placeholder: 'soundcloud.com/tonpseudo', label: 'SoundCloud',color: 'text-orange-400'},
+                  ].map(({ key, icon: Icon, placeholder, label, color }) => (
+                    <div key={key} className="relative">
+                      <Icon className={`absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 ${color} pointer-events-none`} />
+                      <input
+                        type="url"
+                        value={formData.social_links?.[key] || ''}
+                        onChange={e => setFormData(prev => ({
+                          ...prev,
+                          social_links: { ...prev.social_links, [key]: e.target.value }
+                        }))}
+                        placeholder={placeholder}
+                        className="w-full pl-9 pr-4 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white placeholder-gray-600 text-sm focus:outline-none focus:border-cyan-400/50 focus:ring-1 focus:ring-cyan-400/20 transition-all"
+                      />
+                    </div>
+                  ))}
+                </div>
               </div>
 
               {/* Buttons */}

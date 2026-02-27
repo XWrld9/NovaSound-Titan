@@ -16,21 +16,30 @@ const safeStorage = {
   }
 };
 
-// Fetch avec retry automatique (1 retry sur erreur réseau/abort)
+// Fetch avec retry automatique — SAUF pour les uploads Storage (timeout adaptatif)
 const fetchWithRetry = async (url, options = {}, retries = 1) => {
+  // Ne jamais imposer de timeout court sur les uploads Storage
+  // /storage/v1/object/ = upload de fichier → pas de timeout global
+  const isStorageUpload =
+    typeof url === 'string' &&
+    url.includes('/storage/v1/object/') &&
+    (options.method === 'POST' || options.method === 'PUT');
+
+  if (isStorageUpload) {
+    // Laisser passer sans timeout — le XHR avec onprogress gère ça côté upload
+    return fetch(url, options);
+  }
+
+  // Pour toutes les autres requêtes API : timeout 30s avec retry
   const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), 30000); // 30s timeout
+  const timeout = setTimeout(() => controller.abort(), 30000);
   try {
-    const res = await fetch(url, {
-      ...options,
-      signal: controller.signal
-    });
+    const res = await fetch(url, { ...options, signal: controller.signal });
     clearTimeout(timeout);
     return res;
   } catch (err) {
     clearTimeout(timeout);
     if (retries > 0 && (err.name === 'AbortError' || err.name === 'TypeError')) {
-      // Attendre 1 seconde avant de retry
       await new Promise(r => setTimeout(r, 1000));
       return fetchWithRetry(url, options, retries - 1);
     }
@@ -66,7 +75,7 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
   },
   global: {
     headers: {
-      'X-Client-Info': 'novasound-titan-web/60.0.0'
+      'X-Client-Info': 'novasound-titan-web/70.0.0'
     },
     fetch: fetchWithRetry
   }

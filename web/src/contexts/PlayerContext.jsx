@@ -1,14 +1,12 @@
 /**
- * PlayerContext — NovaSound TITAN LUX v20
- * Nouvelles fonctionnalités :
- *   - queue          : file d'attente manuelle (après le son courant)
- *   - addToQueue     : ajouter un son en queue depuis n'importe quelle SongCard
- *   - removeFromQueue / clearQueue
- *   - sleepTimer     : compte à rebours en secondes (null = inactif)
- *   - setSleepTimer  : activer le minuteur (en minutes)
- *   - clearSleepTimer: désactiver le minuteur
+ * PlayerContext — NovaSound TITAN LUX v70
+ * Nouvelles fonctionnalités v70 :
+ *   - radioMode      : lecture infinie basée sur genre/artiste du son courant
+ *   - toggleRadio    : activer / désactiver le mode radio
+ *   - radioLoading   : indique qu'on charge le prochain son radio
  */
 import React, { createContext, useContext, useState, useRef, useCallback, useEffect } from 'react';
+import { supabase } from '@/lib/supabaseClient';
 
 const PlayerContext = createContext(null);
 
@@ -24,13 +22,73 @@ export const PlayerProvider = ({ children }) => {
   const [queue,        setQueue]         = useState([]);
   const [isVisible,    setIsVisible]     = useState(false);
   const [sleepTimer,   setSleepTimerVal] = useState(null);
+  const [radioMode,    setRadioMode]     = useState(false);
+  const [radioLoading, setRadioLoading]  = useState(false);
 
   const playlistRef      = useRef([]);
   const currentSongRef   = useRef(null);
   const queueRef         = useRef([]);
   const sleepIntervalRef = useRef(null);
+  const radioModeRef     = useRef(false);
 
   useEffect(() => { queueRef.current = queue; }, [queue]);
+  useEffect(() => { radioModeRef.current = radioMode; }, [radioMode]);
+
+  // ── Fetch prochain son radio ──────────────────────────────────────
+  // Cherche d'abord par genre, puis par artiste, puis aléatoire
+  const fetchRadioNext = useCallback(async (currentSongData) => {
+    if (!currentSongData) return null;
+    setRadioLoading(true);
+    try {
+      const excludeIds = [
+        currentSongData.id,
+        ...playlistRef.current.map(s => s.id),
+        ...queueRef.current.map(s => s.id),
+      ].filter(Boolean);
+
+      // Tenter 1 : même genre
+      if (currentSongData.genre) {
+        const { data } = await supabase
+          .from('songs')
+          .select('*')
+          .eq('is_archived', false)
+          .eq('genre', currentSongData.genre)
+          .not('id', 'in', `(${excludeIds.join(',')})`)
+          .order('plays_count', { ascending: false })
+          .limit(10);
+        if (data?.length) {
+          const pool = data.slice(0, Math.min(5, data.length));
+          return pool[Math.floor(Math.random() * pool.length)];
+        }
+      }
+
+      // Tenter 2 : même artiste
+      const { data: byArtist } = await supabase
+        .from('songs')
+        .select('*')
+        .eq('is_archived', false)
+        .ilike('artist', `%${currentSongData.artist}%`)
+        .not('id', 'in', `(${excludeIds.join(',')})`)
+        .limit(5);
+      if (byArtist?.length) return byArtist[Math.floor(Math.random() * byArtist.length)];
+
+      // Tenter 3 : populaire aléatoire
+      const { data: popular } = await supabase
+        .from('songs')
+        .select('*')
+        .eq('is_archived', false)
+        .not('id', 'in', `(${excludeIds.join(',')})`)
+        .order('plays_count', { ascending: false })
+        .limit(20);
+      if (popular?.length) return popular[Math.floor(Math.random() * popular.length)];
+    } catch {}
+    finally { setRadioLoading(false); }
+    return null;
+  }, []);
+
+  const toggleRadio = useCallback(() => {
+    setRadioMode(prev => !prev);
+  }, []);
 
   // ── Sleep timer ─────────────────────────────────────────────────
   const clearSleepTimer = useCallback(() => {
@@ -66,8 +124,8 @@ export const PlayerProvider = ({ children }) => {
     setIsVisible(true);
   }, []);
 
-  // ── handleNext : queue prioritaire ──────────────────────────────
-  const handleNext = useCallback((songOverride) => {
+  // ── handleNext : queue prioritaire, puis radio si activé ────────
+  const handleNext = useCallback(async (songOverride) => {
     if (!songOverride && queueRef.current.length > 0) {
       const [next, ...rest] = queueRef.current;
       queueRef.current = rest;
@@ -76,15 +134,33 @@ export const PlayerProvider = ({ children }) => {
       setCurrentSong(next);
       return;
     }
-    const song = songOverride || (() => {
-      const pl = playlistRef.current;
-      const cs = currentSongRef.current;
-      if (!pl.length || !cs) return null;
-      const idx = pl.findIndex(s => s.id === cs.id);
-      return pl[(idx + 1) % pl.length];
-    })();
+    if (songOverride) {
+      currentSongRef.current = songOverride;
+      setCurrentSong(songOverride);
+      return;
+    }
+    const pl = playlistRef.current;
+    const cs = currentSongRef.current;
+    const idx = pl.findIndex(s => s.id === cs?.id);
+    const isLast = idx === pl.length - 1 || pl.length === 0;
+
+    // Fin de playlist + radio mode → chercher un son similaire
+    if (isLast && radioModeRef.current && cs) {
+      const radioSong = await fetchRadioNext(cs);
+      if (radioSong) {
+        // Ajouter à la playlist
+        playlistRef.current = [...pl, radioSong];
+        setPlaylist([...pl, radioSong]);
+        currentSongRef.current = radioSong;
+        setCurrentSong(radioSong);
+        return;
+      }
+    }
+
+    // Comportement standard
+    const song = pl[(idx + 1) % pl.length];
     if (song) { currentSongRef.current = song; setCurrentSong(song); }
-  }, []);
+  }, [fetchRadioNext]);
 
   const handlePrevious = useCallback((songOverride) => {
     const song = songOverride || (() => {
@@ -103,6 +179,7 @@ export const PlayerProvider = ({ children }) => {
     setCurrentSong(null);
     setPlaylist([]);
     setQueue([]);
+    setRadioMode(false);
     playlistRef.current    = [];
     currentSongRef.current = null;
     queueRef.current       = [];
@@ -140,9 +217,10 @@ export const PlayerProvider = ({ children }) => {
   return (
     <PlayerContext.Provider value={{
       currentSong, playlist, queue, isVisible, sleepTimer,
+      radioMode, radioLoading,
       playSong, handleNext, handlePrevious, closePlayer,
       addToQueue, removeFromQueue, clearQueue,
-      setSleepTimer, clearSleepTimer,
+      setSleepTimer, clearSleepTimer, toggleRadio,
     }}>
       {children}
     </PlayerContext.Provider>

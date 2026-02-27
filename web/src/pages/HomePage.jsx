@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { usePlayer } from '@/contexts/PlayerContext';
 import { Link } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
-import { Music, Play, TrendingUp, Newspaper, X, Calendar, User, Headphones, ExternalLink, Trophy } from 'lucide-react';
+import { Music, Play, TrendingUp, Newspaper, X, Calendar, User, Headphones, ExternalLink, Trophy, Clock, History } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { supabase } from '@/lib/supabaseClient';
 import { formatPlays } from '@/lib/utils';
@@ -15,9 +15,32 @@ import NewsShareButton from '@/components/NewsShareButton';
 import SongActionsMenu from '@/components/SongActionsMenu';
 import SpotlightCarousel from '@/components/SpotlightCarousel';
 
+// ── Historique d'écoute local (localStorage) ────────────────────────
+const HIST_KEY = (uid) => uid ? `novasound.history.${uid}` : null;
+const MAX_HIST = 8;
+
+export const logListened = (song, uid) => {
+  const key = HIST_KEY(uid);
+  if (!key || !song?.id) return;
+  try {
+    const prev = JSON.parse(localStorage.getItem(key) || '[]').filter(s => s.id !== song.id);
+    const slim  = { id: song.id, title: song.title, artist: song.artist, cover_url: song.cover_url || null };
+    localStorage.setItem(key, JSON.stringify([slim, ...prev].slice(0, MAX_HIST)));
+  } catch {}
+};
+
+const getListened = (uid) => {
+  const key = HIST_KEY(uid);
+  if (!key) return [];
+  try { return JSON.parse(localStorage.getItem(key) || '[]'); }
+  catch { return []; }
+};
+
 const HomePage = () => {
   const { isAuthenticated } = useAuth();
+  const { currentUser } = useAuth();
   const [featuredSongs, setFeaturedSongs] = useState([]);
+  const [listenedHistory, setListenedHistory] = useState([]);
   const [topSongs,      setTopSongs]      = useState([]);
   const [spotlightSongs, setSpotlightSongs] = useState([]);
   const [newsItems, setNewsItems] = useState([]);
@@ -29,6 +52,11 @@ const HomePage = () => {
   useEffect(() => {
     fetchData();
   }, []);
+
+  // Charger l'historique d'écoute local
+  useEffect(() => {
+    setListenedHistory(getListened(currentUser?.id));
+  }, [currentUser?.id]);
 
   // Realtime : écouter les nouveaux sons publiés pendant la session
   useEffect(() => {
@@ -104,7 +132,12 @@ const HomePage = () => {
   const { playSong: globalPlaySong, currentSong } = usePlayer();
 
   // Lance la lecture avec toute la liste de la homepage comme playlist
-  const playSong = (song) => globalPlaySong(song, featuredSongs.filter(s => !s.is_archived));
+  const playSong = (song) => {
+    globalPlaySong(song, featuredSongs.filter(s => !s.is_archived));
+    logListened(song, currentUser?.id);
+    // Refresh history display
+    setListenedHistory(getListened(currentUser?.id));
+  };
 
   return (
     <>
@@ -177,6 +210,44 @@ const HomePage = () => {
                 onPlay={playSong}
                 currentSong={currentSong}
               />
+            </section>
+          )}
+
+          {/* ── CONTINUER L'ÉCOUTE (si historique local) ── */}
+          {isAuthenticated && listenedHistory.length > 0 && (
+            <section className="container mx-auto px-4 py-6 relative z-10">
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-lg font-bold text-white flex items-center gap-2">
+                  <History className="w-5 h-5 text-cyan-400" />
+                  Continuer l'écoute
+                </h2>
+              </div>
+              <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-8 gap-3">
+                {listenedHistory.map((song, i) => (
+                  <motion.div
+                    key={song.id}
+                    initial={{ opacity: 0, scale: 0.9 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    transition={{ delay: i * 0.06 }}
+                    className="group cursor-pointer"
+                    onClick={() => playSong(song)}
+                  >
+                    <div className="relative aspect-square rounded-xl overflow-hidden bg-gray-800 mb-2">
+                      {song.cover_url
+                        ? <img src={song.cover_url} alt={song.title} className="w-full h-full object-cover" />
+                        : <div className="w-full h-full flex items-center justify-center"><Music className="w-6 h-6 text-gray-600" /></div>
+                      }
+                      <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity">
+                        <div className="w-9 h-9 rounded-full bg-cyan-500 flex items-center justify-center shadow-lg">
+                          <Play className="w-4 h-4 text-white fill-white ml-0.5" />
+                        </div>
+                      </div>
+                    </div>
+                    <p className="text-white text-xs font-medium truncate">{song.title}</p>
+                    <p className="text-gray-500 text-xs truncate">{song.artist}</p>
+                  </motion.div>
+                ))}
+              </div>
             </section>
           )}
 

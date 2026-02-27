@@ -3,7 +3,7 @@ import {
   Play, Pause, SkipBack, SkipForward, Volume2, VolumeX, Volume1,
   Shuffle, Repeat, Music, ChevronDown, Heart, Download, Share2,
   UserPlus, UserCheck, ExternalLink, X, Maximize2, Minimize2,
-  ListMusic, Moon, Trash2, Gauge,
+  ListMusic, Moon, Trash2, Gauge, Radio,
 } from 'lucide-react';
 import { Slider } from '@/components/ui/slider';
 import { supabase } from '@/lib/supabaseClient';
@@ -64,6 +64,7 @@ const AudioPlayer = ({ currentSong, playlist = [], onNext, onPrevious, onClose }
   const {
     queue, addToQueue, removeFromQueue, clearQueue,
     sleepTimer, setSleepTimer, clearSleepTimer,
+    radioMode, radioLoading, toggleRadio,
   } = usePlayer();
 
   const [isPlaying,      setIsPlaying]      = useState(false);
@@ -451,6 +452,21 @@ const AudioPlayer = ({ currentSong, playlist = [], onNext, onPrevious, onClose }
               </button>
               <p className="text-xs text-gray-400 uppercase tracking-widest font-medium">En écoute</p>
               <div className="flex items-center gap-1.5">
+                {/* Bouton Radio */}
+                <button
+                  onClick={(e) => { e.stopPropagation(); toggleRadio(); }}
+                  className={`p-2 rounded-full border transition-all relative ${radioMode ? 'bg-cyan-500/20 border-cyan-500/50 text-cyan-400' : 'bg-black/30 border-white/10 text-gray-400 hover:text-white'}`}
+                  title={radioMode ? 'Mode Radio activé — cliquer pour désactiver' : 'Activer le mode Radio (lecture infinie)'}
+                >
+                  {radioLoading
+                    ? <div className="w-4 h-4 rounded-full border-2 border-cyan-400/40 border-t-cyan-400 animate-spin" />
+                    : <Radio className="w-4 h-4" />
+                  }
+                  {radioMode && !radioLoading && (
+                    <span className="absolute -top-1 -right-1 w-2 h-2 rounded-full bg-cyan-400 animate-pulse" />
+                  )}
+                </button>
+
                 {/* Sleep timer */}
                 <div className="relative">
                   <button
