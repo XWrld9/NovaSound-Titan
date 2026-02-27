@@ -6,8 +6,8 @@
 -- ── Table messages ────────────────────────────────────────────────
 CREATE TABLE IF NOT EXISTS messages (
   id            UUID        DEFAULT gen_random_uuid() PRIMARY KEY,
-  sender_id     UUID        NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-  recipient_id  UUID        NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  sender_id     TEXT        NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  recipient_id  TEXT        NOT NULL REFERENCES users(id) ON DELETE CASCADE,
   content       TEXT        NOT NULL CHECK (char_length(content) > 0 AND char_length(content) <= 2000),
   is_read       BOOLEAN     NOT NULL DEFAULT false,
   created_at    TIMESTAMPTZ NOT NULL DEFAULT now()
@@ -45,13 +45,13 @@ CREATE POLICY "messages_delete_own" ON messages
 -- ── Fonction RPC get_conversations ───────────────────────────────
 -- Retourne la liste des conversations de l'utilisateur avec le
 -- dernier message et le nombre de messages non lus
-CREATE OR REPLACE FUNCTION get_conversations(p_user_id UUID)
+CREATE OR REPLACE FUNCTION get_conversations(p_user_id TEXT)
 RETURNS TABLE (
-  other_user_id         UUID,
+  other_user_id         TEXT,
   other_user            JSONB,
   last_message          TEXT,
   last_message_at       TIMESTAMPTZ,
-  last_message_sender_id UUID,
+  last_message_sender_id TEXT,
   unread_count          BIGINT
 )
 LANGUAGE sql
