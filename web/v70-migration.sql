@@ -26,21 +26,21 @@ ALTER TABLE messages ENABLE ROW LEVEL SECURITY;
 -- Voir uniquement ses propres messages (envoyés ou reçus)
 CREATE POLICY "messages_select_own" ON messages
   FOR SELECT USING (
-    auth.uid() = sender_id OR auth.uid() = recipient_id
+    auth.uid()::text = sender_id OR auth.uid()::text = recipient_id
   );
 
 -- Envoyer uniquement en tant que soi-même
 CREATE POLICY "messages_insert_own" ON messages
-  FOR INSERT WITH CHECK (auth.uid() = sender_id);
+  FOR INSERT WITH CHECK (auth.uid()::text = sender_id);
 
 -- Marquer comme lu uniquement si destinataire
 CREATE POLICY "messages_update_read" ON messages
-  FOR UPDATE USING (auth.uid() = recipient_id)
-  WITH CHECK (auth.uid() = recipient_id);
+  FOR UPDATE USING (auth.uid()::text = recipient_id)
+  WITH CHECK (auth.uid()::text = recipient_id);
 
 -- Supprimer uniquement ses propres messages (expéditeur)
 CREATE POLICY "messages_delete_own" ON messages
-  FOR DELETE USING (auth.uid() = sender_id);
+  FOR DELETE USING (auth.uid()::text = sender_id);
 
 -- ── Fonction RPC get_conversations ───────────────────────────────
 -- Retourne la liste des conversations de l'utilisateur avec le
