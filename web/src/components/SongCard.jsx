@@ -1,5 +1,5 @@
 import React, { useState, memo, useEffect } from 'react';
-import { Play, Download, Share2, Music, Headphones, ExternalLink, Plus, Check, MessageCircle } from 'lucide-react';
+import { Play, Download, Share2, Music, Headphones, ExternalLink, Plus, Check, MessageCircle, ListMusic } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { AnimatePresence, motion } from 'framer-motion';
 import { useAuth } from '@/contexts/AuthContext';
@@ -10,6 +10,7 @@ import FavoriteButton from '@/components/FavoriteButton';
 import ReportButton from './ReportButton';
 import SongShareModal from '@/components/SongShareModal';
 import SongActionsMenu from '@/components/SongActionsMenu';
+import AddToPlaylistModal from '@/components/AddToPlaylistModal';
 import { formatPlays } from '@/lib/utils';
 
 const fmtDuration = (s) => {
@@ -25,6 +26,7 @@ const SongCard = memo(({ song: initialSong, onPlay, isPlaying, setCurrentSong, c
   const [showShare, setShowShare] = useState(false);
   const [queueFlash, setQueueFlash] = useState(false);
   const [commentCount, setCommentCount] = useState(null);
+  const [showPlaylistModal, setShowPlaylistModal] = useState(false);
 
   React.useEffect(() => { setSong(initialSong); }, [initialSong]);
 
@@ -200,6 +202,16 @@ const SongCard = memo(({ song: initialSong, onPlay, isPlaying, setCurrentSong, c
                     title="Ajouter à la file d'attente">
                     {queueFlash ? <Check className="w-3.5 h-3.5" /> : <Plus className="w-3.5 h-3.5" />}
                   </button>
+                  {/* 🎵 Ajouter à une playlist */}
+                  {currentUser && (
+                    <button
+                      onClick={e => { e.stopPropagation(); setShowPlaylistModal(true); }}
+                      className="text-gray-400 hover:text-magenta-400 transition-colors p-1 rounded-md hover:bg-magenta-500/10"
+                      title="Ajouter à une playlist"
+                    >
+                      <ListMusic className="w-3.5 h-3.5" />
+                    </button>
+                  )}
                   <button onClick={handleDownload} className="text-gray-400 hover:text-cyan-400 transition-colors p-1" title="Télécharger">
                     <Download className="w-3.5 h-3.5" />
                   </button>
@@ -221,6 +233,7 @@ const SongCard = memo(({ song: initialSong, onPlay, isPlaying, setCurrentSong, c
 
       <AnimatePresence>
         {showShare && <SongShareModal song={song} onClose={() => setShowShare(false)} />}
+        {showPlaylistModal && <AddToPlaylistModal song={song} onClose={() => setShowPlaylistModal(false)} />}
       </AnimatePresence>
     </>
   );

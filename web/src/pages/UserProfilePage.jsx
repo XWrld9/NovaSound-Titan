@@ -3,7 +3,7 @@ import { Helmet } from 'react-helmet-async';
 import { usePlayer } from '@/contexts/PlayerContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
-import { Music, Upload, Heart, Edit3, LogOut, Users, UserPlus, Archive, Bookmark } from 'lucide-react';
+import { Music, Upload, Heart, Edit3, LogOut, Users, UserPlus, Archive, Bookmark, ListMusic } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { supabase } from '@/lib/supabaseClient';
 import Header from '@/components/Header';
@@ -277,6 +277,13 @@ const UserProfilePage = () => {
                     <Button className="bg-green-500 hover:bg-green-600">
                       <Upload className="w-4 h-4 mr-2" />
                       Upload un son
+                    </Button>
+                  </Link>
+
+                  <Link to="/playlists">
+                    <Button variant="outline" className="border-cyan-500/50 text-cyan-400 hover:bg-cyan-500/10">
+                      <ListMusic className="w-4 h-4 mr-2" />
+                      Mes playlists
                     </Button>
                   </Link>
                   

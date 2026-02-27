@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Search, Upload, User, LogOut, Menu, X, Globe, Newspaper, Music, Download, Share, Bell } from 'lucide-react';
+import { Search, Upload, User, LogOut, Menu, X, Globe, Newspaper, Music, Download, Share, Bell, TrendingUp, ListMusic } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/lib/supabaseClient';
 import { Button } from '@/components/ui/button';
@@ -168,6 +168,9 @@ const Header = () => {
               <Link to="/explorer" className="text-gray-300 hover:text-cyan-400 transition-colors flex items-center gap-2 font-medium">
                 <Globe className="w-4 h-4" />Explorer
               </Link>
+              <Link to="/trending" className="text-gray-300 hover:text-cyan-400 transition-colors flex items-center gap-2 font-medium">
+                <TrendingUp className="w-4 h-4" />Trending
+              </Link>
               <Link to="/news" className="text-gray-300 hover:text-cyan-400 transition-colors flex items-center gap-2 font-medium">
                 <Newspaper className="w-4 h-4" />Actualités
               </Link>
@@ -265,6 +268,9 @@ const Header = () => {
                       <div className="p-2">
                         <Link to="/profile" className="block px-4 py-2 text-sm text-gray-300 hover:bg-cyan-500/10 hover:text-cyan-400 rounded-lg">
                           Mon profil
+                        </Link>
+                        <Link to="/playlists" className="block px-4 py-2 text-sm text-gray-300 hover:bg-cyan-500/10 hover:text-cyan-400 rounded-lg flex items-center gap-2">
+                          <ListMusic className="w-4 h-4" />Mes playlists
                         </Link>
                         <button onClick={handleLogout} className="w-full text-left px-4 py-2 text-sm text-red-400 hover:bg-red-500/10 rounded-lg flex items-center gap-2">
                           <LogOut className="w-4 h-4" />Déconnexion
@@ -380,6 +386,9 @@ const Header = () => {
                   <Link to="/explorer" onClick={closeMenu} className="flex items-center gap-3 px-4 py-3 text-gray-300 hover:bg-cyan-500/10 hover:text-cyan-400 rounded-lg transition-colors">
                     <Globe className="w-5 h-5 text-cyan-400" />Explorer
                   </Link>
+                  <Link to="/trending" onClick={closeMenu} className="flex items-center gap-3 px-4 py-3 text-gray-300 hover:bg-cyan-500/10 hover:text-cyan-400 rounded-lg transition-colors">
+                    <TrendingUp className="w-5 h-5 text-cyan-400" />Trending
+                  </Link>
                   <Link to="/news" onClick={closeMenu} className="flex items-center gap-3 px-4 py-3 text-gray-300 hover:bg-cyan-500/10 hover:text-cyan-400 rounded-lg transition-colors">
                     <Newspaper className="w-5 h-5 text-cyan-400" />Actualités
                   </Link>
@@ -390,6 +399,9 @@ const Header = () => {
                       <NotificationBell mobile closeMenu={closeMenu} />
                       <Link to="/upload" onClick={closeMenu} className="flex items-center gap-3 px-4 py-3 text-gray-300 hover:bg-cyan-500/10 hover:text-cyan-400 rounded-lg transition-colors">
                         <Upload className="w-5 h-5 text-cyan-400" />Uploader un son
+                      </Link>
+                      <Link to="/playlists" onClick={closeMenu} className="flex items-center gap-3 px-4 py-3 text-gray-300 hover:bg-cyan-500/10 hover:text-cyan-400 rounded-lg transition-colors">
+                        <ListMusic className="w-5 h-5 text-cyan-400" />Mes playlists
                       </Link>
                       <Link to="/profile" onClick={closeMenu} className="flex items-center gap-3 px-4 py-3 text-gray-300 hover:bg-cyan-500/10 hover:text-cyan-400 rounded-lg transition-colors">
                         <User className="w-5 h-5 text-magenta-400" />Mon profil
