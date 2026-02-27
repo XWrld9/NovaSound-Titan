@@ -6,11 +6,11 @@ import { NotificationToast } from '@/components/NotificationBell';
 import { PlayerProvider, usePlayer } from '@/contexts/PlayerContext';
 import { PlaylistProvider } from '@/contexts/PlaylistContext';
 import { ChatProvider } from '@/contexts/ChatContext';
-import { MessageProvider } from '@/contexts/MessageContext';
 import { HelmetProvider } from 'react-helmet-async';
 import { DialogProvider } from '@/components/ui/Dialog';
 import { ToastProvider } from '@/components/ui/Toast';
 import ScrollToTop from '@/components/ScrollToTop';
+import ErrorBoundary from '@/components/ErrorBoundary';
 import ProtectedRoute from '@/components/ProtectedRoute';
 import LoadingSpinner from '@/components/LoadingSpinner';
 import InstallBanner from '@/components/InstallBanner';
@@ -65,13 +65,13 @@ function App() {
           <AuthProvider>
             <PlayerProvider>
               <PlaylistProvider>
-                <MessageProvider>
-                  <ChatProvider>
+                <ChatProvider>
                     <NotificationProvider>
                       <NotificationToast />
                       <Router>
                       <ScrollToTop />
                       <InstallBanner />
+                      <ErrorBoundary>
                       <Suspense fallback={<div className="min-h-screen bg-gray-950 flex items-center justify-center"><LoadingSpinner /></div>}>
                         <Routes>
                           <Route path="/"               element={<HomePage />} />
@@ -96,6 +96,7 @@ function App() {
                           <Route path="/auth/callback"   element={<AuthCallbackPage />} />
                         </Routes>
                       </Suspense>
+                      </ErrorBoundary>
                       {/* Player global — persiste pendant toute la navigation */}
                       <GlobalPlayer />
                       {/* Bottom nav mobile — v70 */}
@@ -103,8 +104,7 @@ function App() {
                       <OnboardingToast />
                     </Router>
                     </NotificationProvider>
-                  </ChatProvider>
-                </MessageProvider>
+                </ChatProvider>
               </PlaylistProvider>
             </PlayerProvider>
           </AuthProvider>

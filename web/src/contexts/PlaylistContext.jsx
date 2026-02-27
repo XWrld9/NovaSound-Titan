@@ -2,7 +2,7 @@
  * PlaylistContext — NovaSound TITAN LUX v60
  * Gestion globale des playlists : création, lecture, ajout de sons.
  */
-import React, { createContext, useContext, useState, useCallback } from 'react';
+import React, { createContext, useContext, useState, useCallback, useEffect } from 'react';
 import { supabase } from '@/lib/supabaseClient';
 import { useAuth } from '@/contexts/AuthContext';
 
@@ -18,6 +18,16 @@ export const PlaylistProvider = ({ children }) => {
   const { currentUser } = useAuth();
   const [myPlaylists, setMyPlaylists]   = useState([]);
   const [loadingPl,   setLoadingPl]     = useState(false);
+
+  // ── Auto-charger les playlists dès que l'utilisateur est connecté ──
+  useEffect(() => {
+    if (currentUser) {
+      fetchMyPlaylists();
+    } else {
+      setMyPlaylists([]);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentUser?.id]);
 
   // ── Charger les playlists de l'utilisateur ──────────────────────
   const fetchMyPlaylists = useCallback(async () => {

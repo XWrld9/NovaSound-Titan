@@ -400,10 +400,9 @@ const Header = () => {
                   <Link to="/news" onClick={closeMenu} className="flex items-center gap-3 px-4 py-3 text-gray-300 hover:bg-cyan-500/10 hover:text-cyan-400 rounded-lg transition-colors">
                     <Newspaper className="w-5 h-5 text-cyan-400" />Actualités
                   </Link>
-                          <Link to="/chat" className="flex items-center gap-2 text-gray-300 hover:text-cyan-400 transition-colors" onClick={() => setIsMenuOpen(false)}>
-                            <Globe className="w-4 h-4" />
-                            <span>Chat Global</span>
-                          </Link>
+                  <Link to="/chat" onClick={closeMenu} className="flex items-center gap-3 px-4 py-3 text-gray-300 hover:bg-cyan-500/10 hover:text-cyan-400 rounded-lg transition-colors">
+                    <Globe className="w-5 h-5 text-cyan-400" />Chat Global
+                  </Link>
                   {isAuthenticated && (
                     <>
                       <div className="my-2 border-t border-gray-800" />

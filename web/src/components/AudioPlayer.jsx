@@ -13,7 +13,7 @@ import { usePlayer } from '@/contexts/PlayerContext';
 import LottieAnimation from '@/components/LottieAnimation';
 import playAnimation from '@/animations/play-animation.json';
 import { useNavigate } from 'react-router-dom';
-import { useGenreTheme } from '@/hooks/useGenreTheme';
+import { useToast } from '@/components/ui/Toast';
 import WaveformVisualizer from '@/components/WaveformVisualizer';
 import SongShareModal from '@/components/SongShareModal';
 import AddToPlaylistModal from '@/components/AddToPlaylistModal';
@@ -59,6 +59,7 @@ const AudioPlayer = ({ currentSong, playlist = [], onNext, onPrevious, onClose }
   const { currentUser } = useAuth();
   const genreTheme = useGenreTheme(currentSong?.genre);
   const navigate = useNavigate();
+  const toast = useToast();
   const audioRef = useRef(null);
 
   // Queue & Sleep timer depuis PlayerContext
@@ -486,7 +487,11 @@ const AudioPlayer = ({ currentSong, playlist = [], onNext, onPrevious, onClose }
               <div className="flex items-center gap-1.5">
                 {/* Bouton Radio */}
                 <button
-                  onClick={(e) => { e.stopPropagation(); toggleRadio(); }}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    toggleRadio();
+                    toast.info(radioMode ? 'Mode Radio désactivé' : 'Mode Radio activé — lecture infinie 📻', { duration: 2500 });
+                  }}
                   className={`p-2 rounded-full border transition-all relative ${radioMode ? 'bg-cyan-500/20 border-cyan-500/50 text-cyan-400' : 'bg-black/30 border-white/10 text-gray-400 hover:text-white'}`}
                   title={radioMode ? 'Mode Radio activé — cliquer pour désactiver' : 'Activer le mode Radio (lecture infinie)'}
                 >

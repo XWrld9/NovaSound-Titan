@@ -11,7 +11,11 @@ import { supabase } from '@/lib/supabaseClient';
 import { useAuth } from './AuthContext';
 
 const ChatContext = createContext(null);
-export const useChat = () => useContext(ChatContext);
+export const useChat = () => {
+  const ctx = useContext(ChatContext);
+  if (!ctx) throw new Error('useChat must be used inside ChatProvider');
+  return ctx;
+};
 
 // Filtres de période disponibles
 export const CHAT_PERIODS = [

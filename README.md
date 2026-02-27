@@ -1,4 +1,39 @@
-## 📦 Changelog v120.0 — Mini-Playlist · Chat · Upload · Refonte UX
+## 📦 Changelog v130.0 — Nettoyage · Radio · Online · Playlists sync
+
+### 🧹 Suppression complète de l'ancienne messagerie privée
+
+- Fichiers `MessagesPage.jsx` et `MessageContext.jsx` **supprimés** définitivement
+- `MessageProvider` retiré de `App.jsx` — zéro import, zéro référence restante
+- Lien bugué `setIsMenuOpen` dans le menu mobile du Header **corrigé** → `closeMenu()` (le Chat Global était inaccessible depuis le menu mobile)
+- Plus aucun lien ne mène à une page blanche liée à l'ancienne messagerie
+
+### 🟢 Compteur d'utilisateurs en ligne — visible de tous
+
+- Le badge "X en ligne" dans le Chat Global est désormais **visible de tous les utilisateurs**, pas seulement de l'admin
+- Affiché dans l'en-tête du Chat avec animation pulse verte
+
+### 📻 Mode Radio — feedback visuel + toast
+
+- Activation/désactivation du mode Radio déclenche maintenant un **toast de confirmation** immédiat ("Mode Radio activé 📻" / "Mode Radio désactivé")
+- L'état actif est clairement indiqué (bouton cyan avec point animé)
+- La logique radio (lecture infinie basée sur le genre/artiste) était déjà fonctionnelle
+
+### 🎵 Playlists — synchronisation automatique
+
+- `PlaylistContext` charge désormais automatiquement les playlists **dès la connexion** de l'utilisateur (plus besoin de visiter `/playlists` d'abord)
+- Le modal "Ajouter à une playlist" dans le player affiche immédiatement les playlists créées depuis le profil
+- Synchronisation bidirectionnelle : création depuis le profil ↔ visible dans le player, et vice versa
+
+### 🔧 Fixes mineurs
+
+- Import `MessageCircle` conservé (icône de commentaires dans SongCard — usage légitime)
+- Service Worker bumped : `novasound-titan-v19` → `novasound-titan-v20`
+
+**Version bump** : 121.0.0 → 130.0.0 | SW cache : novasound-titan-v19 → novasound-titan-v20
+
+---
+
+
 
 ### 1. 🎵 Mini-Playlist (File d'attente) — 2 nouveaux boutons
 
