@@ -71,6 +71,8 @@ const uploadViaXHR = async ({ bucket, path, file, token, onProgress }) => {
     xhr.setRequestHeader('apikey', anonKey);
     xhr.setRequestHeader('Content-Type', contentType);
     xhr.setRequestHeader('Cache-Control', '3600');
+    // Ajout du owner pour les politiques RLS
+    xhr.setRequestHeader('x-supabase-auth', token);
 
     // Vraie progression en temps réel
     xhr.upload.onprogress = (e) => {

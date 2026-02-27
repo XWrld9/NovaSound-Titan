@@ -56,7 +56,7 @@ const AddToPlaylistModal = ({ song, onClose }) => {
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
       className="fixed inset-0 z-[150] flex items-end sm:items-center justify-center p-0 sm:p-4"
-      style={{ backgroundColor: 'rgba(0,0,0,0.75)', backdropFilter: 'blur(6px)' }}
+      style={{ backgroundColor: 'rgba(0,0,0,0.92)', backdropFilter: 'blur(8px)' }}
       onClick={onClose}
     >
       <motion.div
