@@ -5,6 +5,7 @@ import { NotificationProvider } from '@/contexts/NotificationContext';
 import { NotificationToast } from '@/components/NotificationBell';
 import { PlayerProvider, usePlayer } from '@/contexts/PlayerContext';
 import { PlaylistProvider } from '@/contexts/PlaylistContext';
+import { ChatProvider } from '@/contexts/ChatContext';
 import { MessageProvider } from '@/contexts/MessageContext';
 import { HelmetProvider } from 'react-helmet-async';
 import { DialogProvider } from '@/components/ui/Dialog';
@@ -38,6 +39,7 @@ const TrendingPage      = lazy(() => import('@/pages/TrendingPage'));
 const PlaylistPage      = lazy(() => import('@/pages/PlaylistPage'));
 const MyPlaylistsPage   = lazy(() => import('@/pages/MyPlaylistsPage'));
 const MessagesPage      = lazy(() => import('@/pages/MessagesPage'));
+const ChatPage          = lazy(() => import('@/pages/ChatPage'));
 const ArtistStatsPage   = lazy(() => import('@/pages/ArtistStatsPage'));
 const SearchPage        = lazy(() => import('@/pages/SearchPage'));
 
@@ -65,6 +67,7 @@ function App() {
             <PlayerProvider>
               <PlaylistProvider>
                 <MessageProvider>
+              <ChatProvider>
                   <NotificationProvider>
                     <NotificationToast />
                     <Router>
@@ -88,7 +91,8 @@ function App() {
                           <Route path="/upload"          element={<ProtectedRoute><MusicUploadPage /></ProtectedRoute>} />
                           <Route path="/profile"         element={<ProtectedRoute><UserProfilePage /></ProtectedRoute>} />
                           <Route path="/playlists"       element={<ProtectedRoute><MyPlaylistsPage /></ProtectedRoute>} />
-                          <Route path="/messages"        element={<ProtectedRoute><MessagesPage /></ProtectedRoute>} />
+                          <Route path="/chat" element={<ChatPage />} />
+                          <Route path="/messages"         element={<ProtectedRoute><MessagesPage /></ProtectedRoute>} />
                           <Route path="/messages/:userId" element={<ProtectedRoute><MessagesPage /></ProtectedRoute>} />
                           <Route path="/stats"           element={<ProtectedRoute><ArtistStatsPage /></ProtectedRoute>} />
                           <Route path="/moderation"      element={<ProtectedRoute><ModerationPanel /></ProtectedRoute>} />
@@ -102,7 +106,8 @@ function App() {
                       <OnboardingToast />
                     </Router>
                   </NotificationProvider>
-                </MessageProvider>
+                </ChatProvider>
+              </MessageProvider>
               </PlaylistProvider>
             </PlayerProvider>
           </AuthProvider>

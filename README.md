@@ -1,3 +1,64 @@
+## 📦 Changelog v100.0 — Chat Public Global 🌐
+
+### 🆕 Nouveau système : Chat Global communautaire (remplace la messagerie privée)
+
+Inspiré du chat communautaire de Lord Mobile — une boîte de conversation commune à TOUS les utilisateurs.
+
+#### Fonctionnalités
+
+**Filtres de période**
+- Aujourd'hui · 7 derniers jours · 30 derniers jours · Tout voir
+- Changement de période instant avec rechargement
+
+**Reply / Tagage de message**
+- Cliquer sur un message → bouton "Répondre" → preview du message cité dans la saisie
+- Le message envoyé affiche le bloc cité avec l'auteur et un extrait
+- Cliquer sur le bloc cité scrolle vers le message original (highlight cyan 2s)
+
+**Réactions emoji**
+- Palette : ❤️ 🔥 🎵 👏 😂 🙌 💯 😍
+- Toggle : cliquer une réaction déjà posée l'enlève
+- Realtime : les réactions des autres apparaissent instantanément
+- Compteur par emoji avec indicateur "j'ai réagi" (couleur cyan)
+
+**Realtime Supabase**
+- Nouveau message → apparaît immédiatement pour tout le monde
+- Soft delete → disparaît instantanément pour tout le monde
+- Présence : compteur "X en ligne" (Supabase Presence)
+
+**UX**
+- Scroll auto en bas sur nouveau message (si déjà en bas)
+- Bouton flottant ↓ pour revenir en bas
+- Pagination remontante (charger plus) avec maintien de position
+- Compteur de caractères (max 1000)
+- Shift+Enter = saut de ligne, Enter = envoyer
+- Connecté requis pour écrire (non-connectés peuvent lire)
+- Soft delete (auteur + admin) — message retiré sans laisser de trace
+
+#### Fichiers ajoutés/modifiés
+| Fichier | Action |
+|---------|--------|
+| `v100-chat-public.sql` | **Nouveau** — tables `chat_messages` + `chat_reactions` + RLS + fix RLS messages privés |
+| `src/contexts/ChatContext.jsx` | **Nouveau** — context global : fetch, realtime, réactions, période, présence |
+| `src/pages/ChatPage.jsx` | **Nouveau** — interface complète 517 lignes |
+| `src/App.jsx` | Route `/chat` + `<ChatProvider>` |
+| `src/components/Header.jsx` | Lien "Chat" dans nav desktop + mobile |
+
+#### SQL à exécuter dans Supabase (étape 17)
+```sql
+-- Depuis Supabase Dashboard → SQL Editor
+-- Exécuter : v100-chat-public.sql
+```
+Ce script inclut aussi le **fix du bug messages privés** (RLS UUID vs TEXT).
+
+### 🔴 Fix messages privés — messages qui ne partent pas
+- **Cause** : policies RLS sur la table `messages` utilisaient `auth.uid()` (UUID) comparé à `sender_id` (TEXT) — certains projets Supabase refusent ce cast implicite
+- **Fix** : toutes les policies recrées avec `auth.uid()::text` explicite dans `v100-chat-public.sql`
+
+**Version bump** : 95.0.0 → 100.0.0 | SW cache : novasound-titan-v15 → novasound-titan-v16
+
+---
+
 ## 📦 Changelog v95.0
 
 ### 🔴 Fix CRITIQUE — Messagerie : clavier iOS qui disparaît + messages non envoyés
