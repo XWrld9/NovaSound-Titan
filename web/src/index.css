@@ -139,3 +139,24 @@ button {
     font-size: 16px !important;
   }
 }
+
+/* ── Chat Page — Zone de saisie mobile ──────────────────────────────
+   Sur mobile (md-), la BottomNav est fixed en bas (~56px) + safe-area iOS.
+   Le padding-bottom de la zone input doit compenser pour que le textarea
+   reste visible au-dessus de la BottomNav et du mini-player.
+   Sur desktop (md+), BottomNav est cachée → padding normal.
+   ─────────────────────────────────────────────────────────────────── */
+.chat-input-zone {
+  padding-bottom: calc(56px + env(safe-area-inset-bottom, 0px) + 0.75rem);
+}
+
+@media (min-width: 768px) {
+  .chat-input-zone {
+    padding-bottom: 0.75rem;
+  }
+}
+
+/* Quand le player est actif, on ajoute encore 80px sur mobile */
+.chat-page-container.player-active .chat-input-zone {
+  padding-bottom: calc(56px + 80px + env(safe-area-inset-bottom, 0px) + 0.75rem);
+}

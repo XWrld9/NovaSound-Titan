@@ -442,9 +442,7 @@ const SongActionsMenu = ({ song, onArchived, onDeleted }) => {
   const isOwner = currentUser && song.uploader_id && (currentUser.id === song.uploader_id || currentUser.id === String(song.uploader_id));
   const isAdmin = currentUser && currentUser.email === ADMIN_EMAIL;
 
-  if (!isOwner && !isAdmin) return null;
-
-  // Fermer dropdown si clic dehors
+  // Fermer dropdown si clic dehors — useEffect AVANT tout return conditionnel
   useEffect(() => {
     if (!open) return;
     const handler = (e) => {
@@ -457,6 +455,8 @@ const SongActionsMenu = ({ song, onArchived, onDeleted }) => {
       document.removeEventListener('touchstart', handler, true);
     };
   }, [open]);
+
+  if (!isOwner && !isAdmin) return null;
 
   const showToast = (msg, color) => {
     setToast({ msg, color });

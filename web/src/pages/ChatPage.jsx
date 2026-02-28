@@ -112,20 +112,18 @@ const ChatMessage = memo(({
   const [savingEdit,  setSavingEdit]  = useState(false);
   const editRef = useRef(null);
 
-  if (!msg) return null;
-
-  const user      = extractUser(msg);
-  const isOwn     = !!(currentUser?.id && msg.user_id === currentUser.id);
+  const user      = msg ? extractUser(msg) : null;
+  const isOwn     = !!(currentUser?.id && msg?.user_id === currentUser.id);
   const isAdmin   = currentUserEmail === ADMIN_EMAIL;
   const canDelete = isAdmin;
-  const ageMs     = Date.now() - new Date(msg.created_at || 0).getTime();
+  const ageMs     = msg ? Date.now() - new Date(msg.created_at || 0).getTime() : 0;
   const canEdit   = isOwn && ageMs < EDIT_WINDOW_MS;
-  const isHighlighted = highlightId === msg.id;
+  const isHighlighted = highlightId === msg?.id;
 
   const handleSaveEdit = async () => {
-    if (!editText.trim() || editText.trim() === msg.content) { setEditing(false); return; }
+    if (!editText.trim() || editText.trim() === msg?.content) { setEditing(false); return; }
     setSavingEdit(true);
-    const ok = await onEdit(msg.id, editText.trim());
+    const ok = await onEdit(msg?.id, editText.trim());
     setSavingEdit(false);
     if (ok) setEditing(false);
   };
@@ -133,6 +131,8 @@ const ChatMessage = memo(({
   useEffect(() => {
     if (editing) setTimeout(() => { editRef.current?.focus(); editRef.current?.select(); }, 50);
   }, [editing]);
+
+  if (!msg) return null;
 
   return (
     <motion.div
@@ -442,7 +442,14 @@ const ChatPage = () => {
       <div className="min-h-screen bg-gray-950 flex flex-col">
         <Header />
 
-        <div className="flex-1 flex flex-col" style={{ height: `calc(100dvh - 64px - ${playerVisible ? '56px' : '0px'})` }}>
+        <div
+          className={`flex-1 flex flex-col chat-page-container${playerVisible ? ' player-active' : ''}`}
+          style={{
+            // Mobile: Header(64) + BottomNav(56) + safe-area + player si visible
+            // Desktop (md+): Header(64) + player si visible (pas de BottomNav)
+            height: `calc(100dvh - 64px - ${playerVisible ? '80px' : '0px'})`,
+          }}
+        >
 
           {/* Barre supérieure */}
           <div className="flex-shrink-0 border-b border-white/[0.06] bg-gray-950/95 backdrop-blur-sm px-4 py-3">
@@ -612,7 +619,7 @@ const ChatPage = () => {
               </AnimatePresence>
 
               {/* Zone de saisie */}
-              <div className="flex-shrink-0 border-t border-white/[0.06] bg-gray-950/95 backdrop-blur-sm px-4 py-3 relative">
+              <div className="flex-shrink-0 border-t border-white/[0.06] bg-gray-950/95 backdrop-blur-sm px-4 pt-3 md:py-3 relative chat-input-zone">
                 <div className="max-w-3xl mx-auto">
                   <AnimatePresence>
                     {replyTo && (

@@ -45,22 +45,6 @@ const SongPage = () => {
     else navigate('/');
   };
 
-  useEffect(() => {
-    if (id) fetchSong();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [id]);
-
-  // Sync song-updated (titre/artiste edites depuis le menu)
-  useEffect(() => {
-    const handler = (e) => {
-      const updated = e.detail;
-      if (!updated?.id) return;
-      setSong(prev => prev && prev.id === updated.id ? { ...prev, ...updated } : prev);
-    };
-    window.addEventListener('novasound:song-updated', handler);
-    return () => window.removeEventListener('novasound:song-updated', handler);
-  }, []);
-
   const fetchSong = async () => {
     try {
       setLoading(true);
@@ -106,6 +90,23 @@ const SongPage = () => {
     } catch { setError(true); }
     finally { setLoading(false); }
   };
+  useEffect(() => {
+    if (id) fetchSong();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [id]);
+
+  // Sync song-updated (titre/artiste edites depuis le menu)
+  useEffect(() => {
+    const handler = (e) => {
+      const updated = e.detail;
+      if (!updated?.id) return;
+      setSong(prev => prev && prev.id === updated.id ? { ...prev, ...updated } : prev);
+    };
+    window.addEventListener('novasound:song-updated', handler);
+    return () => window.removeEventListener('novasound:song-updated', handler);
+  }, []);
+
+
 
   const handlePlay = () => {
     if (!song) return;
