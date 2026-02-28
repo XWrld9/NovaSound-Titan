@@ -1,10 +1,11 @@
 /**
- * ChatContext — NovaSound TITAN LUX v100
- * Chat Public Global — boîte commune à tous les utilisateurs
- * - Chargement paginé par période (aujourd'hui / 7j / 30j / tout)
- * - Realtime INSERT + UPDATE (réactions)
- * - Envoi de messages avec reply (tagage)
- * - Toggle réactions emoji
+ * ChatContext — NovaSound TITAN LUX v160
+ * Chat Public Global
+ * NOUVEAU v160 :
+ *  - @tous / @everyone / @all / @todos / @tutti / @allen → notifie TOUS les utilisateurs
+ *  - Suppression de message par l'AUTEUR lui-même (pas seulement l'admin)
+ *  - Reply → auto-tag @username + notification dans "Mes messages" ET "Notifications"
+ *  - Notification écran (push) déclenchée pour les réponses et @mention
  */
 import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
 import { supabase } from '@/lib/supabaseClient';
@@ -26,18 +27,41 @@ export const CHAT_PERIODS = [
   { key: 'all',     label: 'Tout',         hours: null },
 ];
 
+// Détection @tous multilingue
+export const MENTION_ALL_PATTERN = /(?:^|\s)@(tous|all|everyone|todo|todos|tutti|allen|alle|everybody|chacun|tout-le-monde|الكل|みんな|全员|全員)(?:\s|$)/i;
+export const isMentionAll = (text) => MENTION_ALL_PATTERN.test(text);
+
 const PAGE_SIZE = 40;
+
+// ── Helper : insérer une notification Supabase ───────────────────
+const insertNotification = async ({ userId, type, title, body, url, senderId, senderName, msgId }) => {
+  if (!userId) return;
+  try {
+    await supabase.from('notifications').insert({
+      user_id:  userId,
+      type,
+      title,
+      body:     body?.slice(0, 200) || '',
+      url:      url || '/chat',
+      icon_url: '/icon-192.png',
+      is_read:  false,
+      metadata: JSON.stringify({ msgId, senderId, senderName }),
+    });
+  } catch (err) {
+    console.error('[Chat] insertNotification:', err);
+  }
+};
 
 export const ChatProvider = ({ children }) => {
   const { currentUser } = useAuth();
-  const [messages,     setMessages]     = useState([]);
-  const [reactions,    setReactions]    = useState({}); // { messageId: [{emoji, count, userReacted}] }
-  const [loading,      setLoading]      = useState(false);
-  const [hasMore,      setHasMore]      = useState(false);
-  const [period,       setPeriod]       = useState('today');
-  const [onlineCount,  setOnlineCount]  = useState(0);
-  const channelRef  = useRef(null);
-  const oldestRef   = useRef(null);
+  const [messages,    setMessages]   = useState([]);
+  const [reactions,   setReactions]  = useState({});
+  const [loading,     setLoading]    = useState(false);
+  const [hasMore,     setHasMore]    = useState(false);
+  const [period,      setPeriod]     = useState('today');
+  const [onlineCount, setOnlineCount] = useState(0);
+  const channelRef = useRef(null);
+  const oldestRef  = useRef(null);
 
   // ── Charger les messages ─────────────────────────────────────────
   const fetchMessages = useCallback(async (periodKey = period, reset = true) => {
@@ -60,37 +84,27 @@ export const ChatProvider = ({ children }) => {
         query = query.gte('created_at', since);
       } else if (p.monthFilter) {
         const now = new Date();
-        const firstDay = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
-        const lastDay  = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59).toISOString();
-        query = query.gte('created_at', firstDay).lte('created_at', lastDay);
+        query = query
+          .gte('created_at', new Date(now.getFullYear(), now.getMonth(), 1).toISOString())
+          .lte('created_at', new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59).toISOString());
       } else if (p.yearFilter) {
         const now = new Date();
-        const firstDay = new Date(now.getFullYear(), 0, 1).toISOString();
-        const lastDay  = new Date(now.getFullYear(), 11, 31, 23, 59, 59).toISOString();
-        query = query.gte('created_at', firstDay).lte('created_at', lastDay);
+        query = query
+          .gte('created_at', new Date(now.getFullYear(), 0, 1).toISOString())
+          .lte('created_at', new Date(now.getFullYear(), 11, 31, 23, 59, 59).toISOString());
       }
 
-      if (!reset && oldestRef.current) {
-        query = query.lt('created_at', oldestRef.current);
-      }
+      if (!reset && oldestRef.current) query = query.lt('created_at', oldestRef.current);
 
       const { data, error } = await query;
       if (error) throw error;
 
-      const msgs = (data || []).reverse(); // chronologique
-      if (reset) {
-        setMessages(msgs);
-      } else {
-        setMessages(prev => [...msgs, ...prev]);
-      }
+      const msgs = (data || []).reverse();
+      if (reset) setMessages(msgs);
+      else setMessages(prev => [...msgs, ...prev]);
       setHasMore((data || []).length === PAGE_SIZE);
       if (msgs.length > 0) oldestRef.current = msgs[0].created_at;
-
-      // Charger les réactions pour ces messages
-      if (msgs.length > 0) {
-        const ids = msgs.map(m => m.id);
-        fetchReactions(ids);
-      }
+      if (msgs.length > 0) fetchReactions(msgs.map(m => m.id));
     } catch (err) {
       console.error('[Chat] fetchMessages:', err);
     } finally {
@@ -105,7 +119,6 @@ export const ChatProvider = ({ children }) => {
       .from('chat_reactions')
       .select('message_id, user_id, emoji')
       .in('message_id', messageIds);
-
     if (!data) return;
     const map = {};
     for (const r of data) {
@@ -117,14 +130,12 @@ export const ChatProvider = ({ children }) => {
     setReactions(prev => ({ ...prev, ...map }));
   }, []);
 
-  // ── Changer de période ───────────────────────────────────────────
   const changePeriod = useCallback((newPeriod) => {
     setPeriod(newPeriod);
     oldestRef.current = null;
     fetchMessages(newPeriod, true);
   }, [fetchMessages]);
 
-  // ── Charger plus (pagination remontante) ─────────────────────────
   const loadMore = useCallback(() => {
     if (!hasMore || loading) return;
     fetchMessages(period, false);
@@ -133,31 +144,52 @@ export const ChatProvider = ({ children }) => {
   // ── Envoyer un message ───────────────────────────────────────────
   const sendChatMessage = useCallback(async (content, replyTo = null) => {
     if (!currentUser?.id || !content.trim()) return null;
-    const payload = {
-      user_id: currentUser.id,
-      content: content.trim(),
-    };
+
+    const senderName = currentUser.username
+      || currentUser.user_metadata?.username
+      || currentUser.email?.split('@')[0]
+      || 'Utilisateur';
+
+    // Si c'est une réponse → auto-tag l'auteur du message original
+    let finalContent = content.trim();
+    let replyTargetId    = null;
+    let replyTargetName  = null;
+
     if (replyTo) {
-      payload.reply_to_id       = replyTo.id;
-      payload.reply_to_content  = replyTo.content?.slice(0, 120);
-      payload.reply_to_username = replyTo.users?.username || replyTo.username || 'Utilisateur';
+      const ru = replyTo.users;
+      replyTargetName = Array.isArray(ru) ? ru[0]?.username : (ru?.username || replyTo.reply_to_username || 'Utilisateur');
+      replyTargetId   = Array.isArray(ru) ? ru[0]?.id       : (ru?.id   || replyTo.user_id || null);
+      const autoTag   = `@${replyTargetName} `;
+      if (!finalContent.startsWith(`@${replyTargetName}`)) {
+        finalContent = autoTag + finalContent;
+      }
     }
 
-    // ── Optimistic update : afficher le message immédiatement ─────
+    const payload = {
+      user_id: currentUser.id,
+      content: finalContent,
+      ...(replyTo ? {
+        reply_to_id:       replyTo.id,
+        reply_to_content:  replyTo.content?.slice(0, 120),
+        reply_to_username: replyTargetName,
+      } : {}),
+    };
+
+    // Optimistic update
     const tempId = `temp-${Date.now()}`;
     const optimistic = {
-      id: tempId,
+      id:  tempId,
       user_id: currentUser.id,
-      content: content.trim(),
-      reply_to_id:       payload.reply_to_id || null,
-      reply_to_content:  payload.reply_to_content || null,
+      content: finalContent,
+      reply_to_id:       payload.reply_to_id       || null,
+      reply_to_content:  payload.reply_to_content  || null,
       reply_to_username: payload.reply_to_username || null,
       created_at: new Date().toISOString(),
       is_deleted: false,
       _pending: true,
       users: {
-        id: currentUser.id,
-        username: currentUser.username || currentUser.user_metadata?.username || currentUser.email?.split('@')[0] || 'Moi',
+        id:         currentUser.id,
+        username:   senderName,
         avatar_url: currentUser.avatar_url || currentUser.user_metadata?.avatar_url || null,
       },
     };
@@ -174,52 +206,114 @@ export const ChatProvider = ({ children }) => {
         `)
         .single();
       if (error) throw error;
-      // Remplacer le message temporaire par le vrai
+
       setMessages(prev => prev.map(m => m.id === tempId ? { ...data, _pending: false } : m));
+
+      // ── Post-envoi : notifications ──────────────────────────────
+
+      // 1. Notification de réponse → auteur du message original
+      if (replyTo && replyTargetId && replyTargetId !== currentUser.id) {
+        await insertNotification({
+          userId:     replyTargetId,
+          type:       'chat_reply',
+          title:      `💬 ${senderName} a répondu à ton message`,
+          body:       finalContent,
+          url:        `/chat?highlight=${data.id}&tagger=${encodeURIComponent(senderName)}`,
+          senderId:   currentUser.id,
+          senderName,
+          msgId:      data.id,
+        });
+      }
+
+      // 2. @tous → notifier tout le monde
+      if (isMentionAll(finalContent)) {
+        const { data: allUsers } = await supabase
+          .from('users').select('id').neq('id', currentUser.id).limit(500);
+        if (allUsers?.length) {
+          const batch = allUsers.map(u => ({
+            user_id:  u.id,
+            type:     'chat_mention_all',
+            title:    `📢 ${senderName} a mentionné @tous dans le chat`,
+            body:     finalContent.slice(0, 200),
+            url:      `/chat?highlight=${data.id}&tagger=${encodeURIComponent(senderName)}`,
+            icon_url: '/icon-192.png',
+            is_read:  false,
+            metadata: JSON.stringify({ msgId: data.id, senderId: currentUser.id, senderName }),
+          }));
+          for (let i = 0; i < batch.length; i += 100) {
+            await supabase.from('notifications').insert(batch.slice(i, i + 100));
+          }
+        }
+      } else {
+        // 3. @username individuels (hors reply déjà notifié)
+        const mentions = [...new Set((finalContent.match(/@(\w+)/g) || []).map(m => m.slice(1).toLowerCase()))];
+        for (const uname of mentions) {
+          if (uname.toLowerCase() === senderName.toLowerCase()) continue;
+          if (replyTargetName && uname.toLowerCase() === replyTargetName.toLowerCase()) continue; // déjà notifié via reply
+          const { data: targetUser } = await supabase
+            .from('users').select('id').ilike('username', uname).single();
+          if (targetUser?.id && targetUser.id !== currentUser.id) {
+            await insertNotification({
+              userId:     targetUser.id,
+              type:       'chat_mention',
+              title:      `💬 ${senderName} t'a mentionné dans le chat`,
+              body:       finalContent,
+              url:        `/chat?highlight=${data.id}&tagger=${encodeURIComponent(senderName)}`,
+              senderId:   currentUser.id,
+              senderName,
+              msgId:      data.id,
+            });
+          }
+        }
+      }
+
       return data;
     } catch (err) {
-      // Annuler l'optimistic update en cas d'erreur
       setMessages(prev => prev.filter(m => m.id !== tempId));
       throw err;
     }
   }, [currentUser]);
 
-  // ── Supprimer (soft delete) — ADMIN UNIQUEMENT ───────────────────
+  // ── Supprimer — AUTEUR ou ADMIN ─────────────────────────────────
   const deleteChatMessage = useCallback(async (messageId) => {
-    if (!currentUser?.email || currentUser.email !== 'eloadxfamily@gmail.com') return;
-    await supabase
-      .from('chat_messages')
+    if (!currentUser?.id) return;
+    const isAdmin  = currentUser.email === 'eloadxfamily@gmail.com';
+    // Trouver le message dans l'état local pour vérifier l'auteur
+    const msg      = messages.find(m => m.id === messageId);
+    const isAuthor = msg && msg.user_id === currentUser.id;
+
+    if (!isAdmin && !isAuthor) return;
+
+    await supabase.from('chat_messages')
       .update({ is_deleted: true })
       .eq('id', messageId);
     setMessages(prev => prev.filter(m => m.id !== messageId));
-  }, [currentUser?.email]);
+  }, [currentUser, messages]);
 
-  // ── Modifier son propre message (dans les 20min) ──────────────────
+  // ── Modifier (auteur, 20min) ─────────────────────────────────────
   const editChatMessage = useCallback(async (messageId, newContent) => {
     if (!currentUser?.id || !newContent.trim()) return false;
     const msg = messages.find(m => m.id === messageId);
-    if (!msg) return false;
-    if (msg.user_id !== currentUser.id) return false;
-    const ageMs = Date.now() - new Date(msg.created_at).getTime();
-    if (ageMs > 20 * 60 * 1000) return false; // 20 minutes max
+    if (!msg || msg.user_id !== currentUser.id) return false;
+    if (Date.now() - new Date(msg.created_at).getTime() > 20 * 60 * 1000) return false;
     const { error } = await supabase
       .from('chat_messages')
       .update({ content: newContent.trim() })
       .eq('id', messageId)
       .eq('user_id', currentUser.id);
     if (error) return false;
-    setMessages(prev => prev.map(m => m.id === messageId ? { ...m, content: newContent.trim(), _edited: true } : m));
+    setMessages(prev => prev.map(m =>
+      m.id === messageId ? { ...m, content: newContent.trim(), _edited: true } : m
+    ));
     return true;
   }, [currentUser?.id, messages]);
 
-  // ── Toggle réaction emoji ────────────────────────────────────────
+  // ── Toggle réaction ──────────────────────────────────────────────
   const toggleReaction = useCallback(async (messageId, emoji) => {
     if (!currentUser?.id) return;
-    const uid = currentUser.id;
-    const msgReactions = reactions[messageId]?.[emoji];
-    const hasReacted = msgReactions?.users?.includes(uid);
+    const uid        = currentUser.id;
+    const hasReacted = reactions[messageId]?.[emoji]?.users?.includes(uid);
 
-    // Optimistic update
     setReactions(prev => {
       const cur = { ...(prev[messageId] || {}) };
       if (hasReacted) {
@@ -234,30 +328,21 @@ export const ChatProvider = ({ children }) => {
     });
 
     if (hasReacted) {
-      await supabase.from('chat_reactions')
-        .delete()
-        .eq('message_id', messageId)
-        .eq('user_id', uid)
-        .eq('emoji', emoji);
+      await supabase.from('chat_reactions').delete()
+        .eq('message_id', messageId).eq('user_id', uid).eq('emoji', emoji);
     } else {
-      await supabase.from('chat_reactions')
-        .insert({ message_id: messageId, user_id: uid, emoji });
+      await supabase.from('chat_reactions').insert({ message_id: messageId, user_id: uid, emoji });
     }
   }, [currentUser?.id, reactions]);
 
   // ── Realtime ─────────────────────────────────────────────────────
   useEffect(() => {
     fetchMessages(period, true);
-
     if (channelRef.current) supabase.removeChannel(channelRef.current);
 
     const channel = supabase
-      .channel('chat_public_global')
-      // Nouveau message
-      .on('postgres_changes', {
-        event: 'INSERT', schema: 'public', table: 'chat_messages',
-      }, async (payload) => {
-        // Récupérer les infos user du nouveau message
+      .channel('chat_public_global_v160')
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'chat_messages' }, async (payload) => {
         const { data } = await supabase
           .from('chat_messages')
           .select(`
@@ -274,18 +359,18 @@ export const ChatProvider = ({ children }) => {
           });
         }
       })
-      // Soft delete
-      .on('postgres_changes', {
-        event: 'UPDATE', schema: 'public', table: 'chat_messages',
-      }, (payload) => {
+      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'chat_messages' }, (payload) => {
         if (payload.new.is_deleted) {
           setMessages(prev => prev.filter(m => m.id !== payload.new.id));
+        } else {
+          setMessages(prev => prev.map(m =>
+            m.id === payload.new.id
+              ? { ...m, content: payload.new.content, _edited: true }
+              : m
+          ));
         }
       })
-      // Réaction ajoutée
-      .on('postgres_changes', {
-        event: 'INSERT', schema: 'public', table: 'chat_reactions',
-      }, (payload) => {
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'chat_reactions' }, (payload) => {
         const { message_id, user_id, emoji } = payload.new;
         setReactions(prev => {
           const cur = { ...(prev[message_id] || {}) };
@@ -296,10 +381,7 @@ export const ChatProvider = ({ children }) => {
           return { ...prev, [message_id]: cur };
         });
       })
-      // Réaction supprimée
-      .on('postgres_changes', {
-        event: 'DELETE', schema: 'public', table: 'chat_reactions',
-      }, (payload) => {
+      .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'chat_reactions' }, (payload) => {
         const { message_id, user_id, emoji } = payload.old;
         setReactions(prev => {
           const cur = { ...(prev[message_id] || {}) };
@@ -310,10 +392,8 @@ export const ChatProvider = ({ children }) => {
           return { ...prev, [message_id]: cur };
         });
       })
-      // Présence (compteur en ligne)
       .on('presence', { event: 'sync' }, () => {
-        const state = channel.presenceState();
-        setOnlineCount(Object.keys(state).length);
+        setOnlineCount(Object.keys(channel.presenceState()).length);
       })
       .subscribe(async (status) => {
         if (status === 'SUBSCRIBED' && currentUser?.id) {
@@ -323,6 +403,7 @@ export const ChatProvider = ({ children }) => {
 
     channelRef.current = channel;
     return () => supabase.removeChannel(channel);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentUser?.id, period]);
 
   return (
@@ -330,6 +411,7 @@ export const ChatProvider = ({ children }) => {
       messages, reactions, loading, hasMore, period, onlineCount,
       fetchMessages, changePeriod, loadMore,
       sendChatMessage, deleteChatMessage, editChatMessage, toggleReaction,
+      isMentionAll,
     }}>
       {children}
     </ChatContext.Provider>

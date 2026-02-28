@@ -10,12 +10,14 @@ import NewsLikeButton from '@/components/NewsLikeButton';
 import { useAuth } from '@/contexts/AuthContext';
 import { Newspaper, Calendar, User, X, ChevronRight } from 'lucide-react';
 import NewsShareButton from '@/components/NewsShareButton';
+import NewsCommentSection from '@/components/NewsCommentSection';
 
 const NewsPage = () => {
   const { isAuthenticated } = useAuth();
   const [news, setNews] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedNews, setSelectedNews] = useState(null);
+  const [expandedComments, setExpandedComments] = useState(new Set());
 
   useEffect(() => { fetchNews(); }, []);
 
@@ -116,6 +118,14 @@ const NewsPage = () => {
                       <ReportButton contentType="news" contentId={item.id} />
                     </div>
                   </div>
+
+                  {/* Section commentaires inline */}
+                  <div className="px-6 pb-4">
+                    <NewsCommentSection
+                      newsId={item.id}
+                      newsAuthorId={item.author_id}
+                    />
+                  </div>
                 </motion.div>
               ))
             ) : (
@@ -171,6 +181,11 @@ const NewsPage = () => {
                   <p className="text-gray-300 leading-relaxed whitespace-pre-wrap text-base">
                     {selectedNews.content}
                   </p>
+                  {/* Commentaires dans le modal aussi */}
+                  <NewsCommentSection
+                    newsId={selectedNews.id}
+                    newsAuthorId={selectedNews.author_id}
+                  />
                 </div>
 
                 {/* Footer modal */}

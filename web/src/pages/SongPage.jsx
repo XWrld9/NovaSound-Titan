@@ -50,6 +50,7 @@ const SongPage = () => {
       setLoading(true);
       const { data, error } = await supabase.from('songs').select('*').eq('id', id).single();
       if (error || !data) { setError(true); setLoading(false); return; }
+      if (data.is_deleted) { setError(true); setLoading(false); return; }
       setSong(data);
 
       // Profil artiste
@@ -156,7 +157,20 @@ const SongPage = () => {
     );
   }
 
-  if (!song) return null;
+  if (!song) {
+    return (
+      <div className="min-h-screen bg-gray-950 flex flex-col pb-36 md:pb-24">
+        <Header />
+        <main className="flex-1 container mx-auto px-4 py-16 flex flex-col items-center justify-center">
+          <Music className="w-16 h-16 text-gray-700 mb-4" />
+          <h2 className="text-xl font-bold text-white mb-2">Son introuvable</h2>
+          <p className="text-gray-500 mb-6">Ce morceau n'existe pas ou a été supprimé.</p>
+          <button onClick={() => navigate('/')} className="px-6 py-2.5 bg-cyan-500 hover:bg-cyan-600 text-white rounded-xl font-semibold transition-colors">Retour à l'accueil</button>
+        </main>
+        <Footer />
+      </div>
+    );
+  }
 
   const coverUrl   = song.cover_url || null;
   const pageUrl    = `${window.location.origin}/#/song/${id}`;

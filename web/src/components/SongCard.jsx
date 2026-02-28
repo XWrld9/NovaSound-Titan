@@ -184,7 +184,7 @@ const SongCard = memo(({ song: initialSong, onPlay, isPlaying, setCurrentSong, c
               <LikeButton songId={song.id} initialLikes={song.likes_count || 0} />
               {commentCount !== null && commentCount > 0 && (
                 <Link
-                  to={`/chat?tagger=${song.artist?.replace(/\s+/g, '_') || 'unknown'}`}
+                  to={`/song/${song.id}`}
                   className="flex items-center gap-1 text-gray-500 hover:text-cyan-400 transition-colors"
                   title={`${commentCount} commentaire${commentCount > 1 ? 's' : ''}`}
                   onClick={e => e.stopPropagation()}

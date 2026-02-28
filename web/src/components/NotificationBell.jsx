@@ -3,18 +3,20 @@ import ReactDOM from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Bell, BellOff, Check, CheckCheck, Trash2, X,
-  Heart, MessageCircle, UserPlus, Music, Newspaper
+  Heart, MessageCircle, UserPlus, Music, Newspaper, Reply, AtSign
 } from 'lucide-react';
 import { useNotifications } from '@/contexts/NotificationContext';
 import { useAuth } from '@/contexts/AuthContext';
 
 /* ── Icônes par type ── */
 const TYPE_ICON = {
-  like:     <Heart        className="w-3.5 h-3.5 text-pink-400 fill-current" />,
-  comment:  <MessageCircle className="w-3.5 h-3.5 text-cyan-400" />,
-  follow:   <UserPlus     className="w-3.5 h-3.5 text-purple-400" />,
-  new_song: <Music        className="w-3.5 h-3.5 text-green-400" />,
-  news:     <Newspaper    className="w-3.5 h-3.5 text-amber-400" />,
+  like:         <Heart        className="w-3.5 h-3.5 text-pink-400 fill-current" />,
+  comment:      <MessageCircle className="w-3.5 h-3.5 text-cyan-400" />,
+  follow:       <UserPlus     className="w-3.5 h-3.5 text-purple-400" />,
+  new_song:     <Music        className="w-3.5 h-3.5 text-green-400" />,
+  news:         <Newspaper    className="w-3.5 h-3.5 text-amber-400" />,
+  chat_reply:   <Reply        className="w-3.5 h-3.5 text-fuchsia-400" />,
+  chat_mention: <AtSign       className="w-3.5 h-3.5 text-cyan-300" />,
 };
 
 const timeAgo = (dateStr) => {

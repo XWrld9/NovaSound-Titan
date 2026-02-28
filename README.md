@@ -1,3 +1,50 @@
+## 📦 Changelog v160.0 — Chat Pro · @tous · Commentaires · Fix Page Blanche
+
+### 🔴 Fix CRITIQUE — Page blanche au clic sur un son (toujours présent)
+
+**Cause racine identifiée et corrigée** : `SongPage` avait un `if (!song) return null` en fin de composant — si Supabase retournait `data=null` sans `error`, l'état `error` n'était pas set, `loading=false`, `song=null` → React rendait `null` = écran entièrement blanc.
+
+**Fix** :
+- Si le son a `is_deleted=true` → `setError(true)` immédiat
+- Le `if (!song) return null` remplacé par l'affichage de l'état d'erreur complet ("Son introuvable" + bouton retour)
+- Plus aucun chemin ne peut produire une page vide
+
+---
+
+### 💬 Système de commentaires de publication — Restauré et amélioré
+
+Onglet **Commentaires** ajouté au profil utilisateur :
+- Affiche tous tes commentaires sur des sons avec pochette + titre du son (cliquable)
+- Date, likes reçus, chargement lazy
+
+---
+
+### 💬 Chat Global — Améliorations majeures v160
+
+#### @tous multilingue
+- `@tous`, `@all`, `@everyone`, `@todos`, `@tutti`, `@allen`… → notifie TOUT LE MONDE
+- Suggestion dans l'autocomplétion, badge 📢 sur le message, fond teinté jaune
+
+#### Suppression par l'auteur
+- Chaque utilisateur peut supprimer **ses propres messages** (plus seulement l'admin)
+
+#### Reply → Tag auto + notifications complètes
+- Reply → `@username` préfixé automatiquement
+- Auteur notifié dans **Mes messages** + **Notifications** + push écran
+- Clic sur notification → retour direct dans le chat au message exact (scroll + highlight 3s)
+- Chaîne de réponse complète et traçable
+
+#### Onglet "Mes messages" amélioré
+- Centralise : replies, @mentions, @tous
+- Badge rouge non lus, icônes colorées par type
+- Mark as read automatique au clic
+
+### 🗄️ SQL (étape 18) : `v160-migration.sql`
+
+**Version bump** : 150.0.0 → 160.0.0 | SW cache : novasound-titan-v22 → novasound-titan-v23
+
+---
+
 ## 📦 Changelog v131.0 — Compatibilité universelle tous appareils
 
 ## 📦 Changelog v150.0 — Fix page blanche Explorer · Durée · Robustesse

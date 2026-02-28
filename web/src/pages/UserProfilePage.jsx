@@ -3,7 +3,7 @@ import { Helmet } from 'react-helmet-async';
 import { usePlayer } from '@/contexts/PlayerContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
-import { Music, Upload, Heart, Edit3, LogOut, Users, UserPlus, Archive, Bookmark, ListMusic, BarChart2 } from 'lucide-react';
+import { Music, Upload, Heart, Edit3, LogOut, Users, UserPlus, Archive, Bookmark, ListMusic, BarChart2, MessageCircle, ExternalLink } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { supabase } from '@/lib/supabaseClient';
 import Header from '@/components/Header';
@@ -22,11 +22,13 @@ const UserProfilePage = () => {
   const [likedSongs, setLikedSongs] = useState([]);
   const [followers, setFollowers] = useState([]);
   const [following, setFollowing] = useState([]);
-  const [activeTab, setActiveTab] = useState('songs'); // songs, archived, favorites, followers, following
+  const [activeTab, setActiveTab] = useState('songs'); // songs, archived, favorites, liked, followers, following, comments
   const [loading, setLoading] = useState(true);
   const { playSong: globalPlaySong, currentSong } = usePlayer();
   const [showEditModal, setShowEditModal] = useState(false);
   const [bioExpanded, setBioExpanded] = useState(false);
+  const [myComments, setMyComments] = useState([]);
+  const [loadingComments, setLoadingComments] = useState(false);
 
   // Charger le profil et les données en une seule fois
   useEffect(() => {
@@ -115,6 +117,30 @@ const UserProfilePage = () => {
     await logout();
     navigate('/login');
   };
+
+  // ── Charger mes commentaires ─────────────────────────────────────
+  const fetchMyComments = async () => {
+    if (!currentUser?.id) return;
+    setLoadingComments(true);
+    try {
+      const { data } = await supabase
+        .from('song_comments')
+        .select('id, content, created_at, likes_count, song_id, songs(id, title, artist, cover_url)')
+        .eq('user_id', currentUser.id)
+        .eq('is_deleted', false)
+        .order('created_at', { ascending: false })
+        .limit(50);
+      setMyComments(data || []);
+    } catch (e) {
+      console.error('[UserProfile] fetchMyComments:', e);
+    }
+    setLoadingComments(false);
+  };
+
+  useEffect(() => {
+    if (activeTab === 'comments' && currentUser) fetchMyComments();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeTab, currentUser]);
 
   const handleSongArchived = (songId, isArchived) => {
     setUserSongs(prev => prev.map(s => s.id === songId ? { ...s, is_archived: isArchived } : s));
@@ -302,12 +328,13 @@ const UserProfilePage = () => {
           {/* Onglets — scroll horizontal sur mobile */}
           <div className="flex gap-1 mb-6 border-b border-gray-800 overflow-x-auto scrollbar-hide">
             {[
-              { id: 'songs',     icon: Music,     label: 'Morceaux',    mobileLabel: 'Sons',     color: 'cyan',   count: userSongs.filter(s => !s.is_archived).length },
-              { id: 'archived',  icon: Archive,   label: 'Archivés',    mobileLabel: 'Archivés', color: 'amber',  count: userSongs.filter(s => s.is_archived).length },
-              { id: 'favorites', icon: Bookmark,  label: 'Favoris',     mobileLabel: 'Favoris',  color: 'purple', count: favoriteSongs.length },
-              { id: 'liked',     icon: Heart,     label: 'Likés',       mobileLabel: 'Likés',    color: 'pink',   count: likedSongs.length },
-              { id: 'followers', icon: Users,     label: 'Abonnés',     mobileLabel: 'Abonnés',  color: 'green',  count: followers.length },
-              { id: 'following', icon: UserPlus,  label: 'Abonnements', mobileLabel: 'Suivis',   color: 'blue',   count: following.length },
+              { id: 'songs',     icon: Music,          label: 'Morceaux',    mobileLabel: 'Sons',     color: 'cyan',   count: userSongs.filter(s => !s.is_archived).length },
+              { id: 'archived',  icon: Archive,        label: 'Archivés',    mobileLabel: 'Archivés', color: 'amber',  count: userSongs.filter(s => s.is_archived).length },
+              { id: 'favorites', icon: Bookmark,       label: 'Favoris',     mobileLabel: 'Favoris',  color: 'purple', count: favoriteSongs.length },
+              { id: 'liked',     icon: Heart,          label: 'Likés',       mobileLabel: 'Likés',    color: 'pink',   count: likedSongs.length },
+              { id: 'comments',  icon: MessageCircle,  label: 'Commentaires',mobileLabel: 'Comms',    color: 'teal',   count: myComments.length },
+              { id: 'followers', icon: Users,          label: 'Abonnés',     mobileLabel: 'Abonnés',  color: 'green',  count: followers.length },
+              { id: 'following', icon: UserPlus,       label: 'Abonnements', mobileLabel: 'Suivis',   color: 'blue',   count: following.length },
             ].map(({ id, icon: Icon, label, mobileLabel, color, count }) => (
               <button
                 key={id}
@@ -451,6 +478,68 @@ const UserProfilePage = () => {
                       <p className="text-gray-400 text-lg">Aucun son liké</p>
                       <p className="text-gray-500 text-sm mt-2">Les sons que tu ❤️ apparaîtront ici</p>
                     </div>
+                  )}
+                </div>
+              )}
+
+              {activeTab === 'comments' && (
+                <div className="space-y-3">
+                  {loadingComments ? (
+                    <div className="flex justify-center py-12">
+                      <div className="w-7 h-7 rounded-full border-2 border-teal-500/30 border-t-teal-500 animate-spin" />
+                    </div>
+                  ) : myComments.length === 0 ? (
+                    <div className="flex flex-col items-center justify-center py-16 text-center">
+                      <MessageCircle className="w-14 h-14 text-gray-800 mb-4" />
+                      <p className="text-gray-500 font-semibold">Aucun commentaire</p>
+                      <p className="text-gray-700 text-sm mt-1">Tes commentaires sur les publications apparaîtront ici</p>
+                    </div>
+                  ) : (
+                    myComments.map(comment => {
+                      const song = comment.songs;
+                      return (
+                        <motion.div
+                          key={comment.id}
+                          initial={{ opacity: 0, y: 8 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          className="bg-gray-900/60 border border-gray-800/60 rounded-2xl p-4 hover:border-teal-500/20 transition-all"
+                        >
+                          {/* En-tête : lien vers la publication */}
+                          {song && (
+                            <Link
+                              to={`/song/${song.id}`}
+                              className="flex items-center gap-3 mb-3 group"
+                            >
+                              {song.cover_url ? (
+                                <img src={song.cover_url} alt={song.title} className="w-10 h-10 rounded-lg object-cover border border-white/10 flex-shrink-0" />
+                              ) : (
+                                <div className="w-10 h-10 rounded-lg bg-gray-800 flex items-center justify-center flex-shrink-0">
+                                  <Music className="w-4 h-4 text-gray-600" />
+                                </div>
+                              )}
+                              <div className="flex-1 min-w-0">
+                                <p className="text-sm font-semibold text-white group-hover:text-teal-400 transition-colors truncate">{song.title}</p>
+                                <p className="text-xs text-gray-500 truncate">{song.artist}</p>
+                              </div>
+                              <ExternalLink className="w-3.5 h-3.5 text-gray-600 group-hover:text-teal-400 transition-colors flex-shrink-0" />
+                            </Link>
+                          )}
+                          {/* Contenu du commentaire */}
+                          <p className="text-sm text-gray-300 leading-relaxed whitespace-pre-wrap break-words">{comment.content}</p>
+                          <div className="flex items-center gap-4 mt-2">
+                            <span className="text-[11px] text-gray-600">
+                              {new Date(comment.created_at).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' })}
+                            </span>
+                            {comment.likes_count > 0 && (
+                              <span className="text-[11px] text-gray-600 flex items-center gap-1">
+                                <Heart className="w-3 h-3 text-pink-500" />
+                                {comment.likes_count}
+                              </span>
+                            )}
+                          </div>
+                        </motion.div>
+                      );
+                    })
                   )}
                 </div>
               )}
