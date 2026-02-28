@@ -691,16 +691,16 @@ const ChatPage = () => {
                   <motion.button
                     initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.8 }}
                     onClick={() => { isAtBottom.current = true; bottomRef.current?.scrollIntoView({ behavior: 'smooth' }); setShowScroll(false); }}
-                    className=\"fixed right-4 z-40 w-10 h-10 rounded-full bg-cyan-500 hover:bg-cyan-400 shadow-lg shadow-cyan-500/30 flex items-center justify-center text-white\"
+                    className="fixed right-4 z-40 w-10 h-10 rounded-full bg-cyan-500 hover:bg-cyan-400 shadow-lg shadow-cyan-500/30 flex items-center justify-center text-white"
                     style={{ bottom: `calc(${playerVisible ? '72px + ' : ''}56px + env(safe-area-inset-bottom, 0px) + 72px)` }}>
-                    <ChevronUp className=\"w-5 h-5 rotate-180\" />
+                    <ChevronUp className="w-5 h-5 rotate-180" />
                   </motion.button>
                 )}
               </AnimatePresence>
 
               {/* Zone de saisie — grande, confortable sur mobile */}
               <div
-                className=\"flex-shrink-0 border-t border-white/[0.06] bg-gray-950/98 backdrop-blur-xl px-3 pt-2 relative\"
+                className="flex-shrink-0 border-t border-white/[0.06] bg-gray-950/98 backdrop-blur-xl px-3 pt-2 relative"
                 style={{
                   paddingBottom: `calc(${playerVisible ? '72px + ' : ''}56px + env(safe-area-inset-bottom, 8px) + 6px)`,
                 }}
