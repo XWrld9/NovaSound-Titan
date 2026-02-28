@@ -8,6 +8,7 @@ import {
 } from 'lucide-react';
 import { supabase } from '@/lib/supabaseClient';
 import { useAuth } from '@/contexts/AuthContext';
+import { useChat } from '@/contexts/ChatContext'; // Importer useChat pour accéder à insertNotification
 import { Link } from 'react-router-dom';
 
 const ADMIN_EMAIL = 'eloadxfamily@gmail.com';
@@ -285,6 +286,7 @@ const CommentRow = ({ comment, currentUser, songUploaderEmail, onDeleted, onUpda
 /* ── CommentSection ─────────────────────────────────────────── */
 const CommentSection = ({ songId, songUploaderEmail, onCommentChange }) => {
   const { currentUser } = useAuth();
+  const chatCtx = useChat(); // Accéder au ChatContext pour insertNotification
   const [comments, setComments] = useState([]);
   const [loading, setLoading]   = useState(true);
   const [submitting, setSubmitting] = useState(false);
@@ -296,6 +298,67 @@ const CommentSection = ({ songId, songUploaderEmail, onCommentChange }) => {
     setToast({ msg, color });
     setTimeout(() => setToast(null), 3000);
   };
+
+  /* ── Envoi des notifications pour les commentaires (utilise le système existant) ── */
+  const sendCommentNotifications = useCallback(async (commentData, songData) => {
+    if (!currentUser || !commentData || !songData) return;
+
+    try {
+      // Récupérer la fonction insertNotification du ChatContext
+      // Note: insertNotification est définie dans ChatContext, nous allons l'utiliser directement
+      const { insertNotification } = chatCtx || {};
+
+      // 1. Notification à l'auteur de la chanson (si ce n'est pas lui-même)
+      if (songData.uploader_id && songData.uploader_id !== currentUser.id && insertNotification) {
+        await insertNotification({
+          userId: songData.uploader_id,
+          type: 'comment',
+          title: 'Nouveau commentaire',
+          body: `${currentUser.username || 'Quelqu\'un'} a commenté ta chanson "${songData.title || ''}"`,
+          url: `/song/${songData.id}#comment-${commentData.id}`,
+          senderId: currentUser.id,
+          senderName: currentUser.username,
+          msgId: commentData.id,
+        });
+      }
+
+      // 2. Notification globale aux autres utilisateurs actifs
+      if (insertNotification) {
+        // Récupérer les utilisateurs actifs (limité pour éviter la surcharge)
+        const { data: activeUsers } = await supabase
+          .from('users')
+          .select('id')
+          .neq('id', currentUser.id) // Pas de notification à soi-même
+          .neq('id', songData.uploader_id || '') // Pas de notification à l'auteur (déjà notifié)
+          .gte('last_seen', new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString()) // Actifs depuis 7 jours
+          .limit(50); // Limiter à 50 utilisateurs
+
+        if (activeUsers && activeUsers.length > 0) {
+          // Envoyer les notifications en lot
+          const notificationPromises = activeUsers.map(user =>
+            insertNotification({
+              userId: user.id,
+              type: 'comment',
+              title: 'Nouveau commentaire',
+              body: `${currentUser.username || 'Quelqu\'un'} a commenté "${songData.title || ''}"`,
+              url: `/song/${songData.id}#comment-${commentData.id}`,
+              senderId: currentUser.id,
+              senderName: currentUser.username,
+              msgId: commentData.id,
+            })
+          );
+
+          // Exécuter en parallèle mais ne pas attendre (non bloquant)
+          Promise.allSettled(notificationPromises).catch(error => {
+            console.error('[CommentSection] Erreur envoi notifications globales:', error);
+          });
+        }
+      }
+    } catch (error) {
+      console.error('[CommentSection] Erreur envoi notifications:', error);
+      // Ne pas bloquer l'expérience utilisateur si les notifications échouent
+    }
+  }, [currentUser, chatCtx]);
 
   /* ── Chargement : 2 requêtes séparées pour éviter le join manquant ── */
   const loadComments = useCallback(async () => {
@@ -424,7 +487,26 @@ const CommentSection = ({ songId, songUploaderEmail, onCommentChange }) => {
           ? { ...data, _liked: false, user: tempComment.user }
           : c
       ));
+
+      // Récupérer les infos de la chanson pour les notifications
+      try {
+        const { data: songData } = await supabase
+          .from('songs')
+          .select('id, title, uploader_id')
+          .eq('id', songId)
+          .single();
+
+        if (songData) {
+          // Envoyer les notifications de manière asynchrone (non bloquant)
+          sendCommentNotifications(data, songData);
+        }
+      } catch (notifError) {
+        console.error('[CommentSection] Erreur récupération infos chanson:', notifError);
+        // Ne pas bloquer l'expérience utilisateur
+      }
+
       showToast('Commentaire publié ✓', '#22d3ee');
+      onCommentChange?.(); // Notifier le parent qu'un commentaire a été ajouté
     } else {
       // Rollback
       setComments(prev => prev.filter(c => c.id !== tempId));

@@ -423,7 +423,7 @@ export const ChatProvider = ({ children }) => {
       messages, reactions, loading, hasMore, period, onlineCount,
       fetchMessages, changePeriod, loadMore,
       sendChatMessage, deleteChatMessage, editChatMessage, toggleReaction,
-      isMentionAll,
+      isMentionAll, insertNotification, // Exposer insertNotification
     }}>
       {children}
     </ChatContext.Provider>
