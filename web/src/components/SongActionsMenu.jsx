@@ -602,68 +602,63 @@ const SongActionsMenu = ({ song, onArchived, onDeleted }) => {
         )}
       </AnimatePresence>
 
-      {/* Drawer Commentaires */}
-      <AnimatePresence>
-        {showComments && ReactDOM.createPortal(
+      {/* Drawer Commentaires — portal direct, sans AnimatePresence */}
+      {showComments && ReactDOM.createPortal(
+        <div
+          style={{
+            position: 'fixed', inset: 0, zIndex: 9990,
+            background: 'rgba(0,0,0,0.75)',
+            backdropFilter: 'blur(6px)', WebkitBackdropFilter: 'blur(6px)',
+            display: 'flex', alignItems: 'flex-end',
+          }}
+          onClick={() => setShowComments(false)}
+        >
           <motion.div
-            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+            initial={{ y: '100%' }} animate={{ y: 0 }}
+            transition={{ type: 'spring', damping: 28, stiffness: 280 }}
             style={{
-              position: 'fixed', inset: 0, zIndex: 9990,
-              background: 'rgba(0,0,0,0.75)',
-              backdropFilter: 'blur(6px)', WebkitBackdropFilter: 'blur(6px)',
-              display: 'flex', alignItems: 'flex-end',
+              width: '100%', maxWidth: 640, margin: '0 auto',
+              maxHeight: '82vh',
+              background: '#0d1117',
+              borderRadius: '20px 20px 0 0',
+              border: '1px solid rgba(255,255,255,0.1)',
+              display: 'flex', flexDirection: 'column',
+              overflow: 'hidden',
+              paddingBottom: 'env(safe-area-inset-bottom, 0px)',
             }}
-            onClick={() => setShowComments(false)}
+            onClick={(e) => e.stopPropagation()}
           >
-            <motion.div
-              initial={{ y: '100%' }} animate={{ y: 0 }} exit={{ y: '100%' }}
-              transition={{ type: 'spring', damping: 28, stiffness: 280 }}
-              style={{
-                width: '100%', maxWidth: 640, margin: '0 auto',
-                maxHeight: '82vh',
-                background: '#0d1117',
-                borderRadius: '20px 20px 0 0',
-                border: '1px solid rgba(255,255,255,0.1)',
-                display: 'flex', flexDirection: 'column',
-                overflow: 'hidden',
-                paddingBottom: 'env(safe-area-inset-bottom, 0px)',
-              }}
-              onClick={(e) => e.stopPropagation()}
-            >
-              {/* Header du drawer */}
-              <div style={{
-                display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                padding: '16px 20px 12px',
-                borderBottom: '1px solid rgba(255,255,255,0.06)',
-                flexShrink: 0,
-              }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                  <MessageCircle style={{ width: 18, height: 18, color: '#34d399' }} />
-                  <div>
-                    <p style={{ color: '#fff', fontWeight: 700, fontSize: 15, margin: 0 }}>Commentaires</p>
-                    <p style={{ color: 'rgba(156,163,175,1)', fontSize: 12, margin: 0 }}>{song.title}</p>
-                  </div>
+            <div style={{
+              display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+              padding: '16px 20px 12px',
+              borderBottom: '1px solid rgba(255,255,255,0.06)',
+              flexShrink: 0,
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                <MessageCircle style={{ width: 18, height: 18, color: '#34d399' }} />
+                <div>
+                  <p style={{ color: '#fff', fontWeight: 700, fontSize: 15, margin: 0 }}>Commentaires</p>
+                  <p style={{ color: 'rgba(156,163,175,1)', fontSize: 12, margin: 0 }}>{song.title}</p>
                 </div>
-                <button
-                  onClick={() => setShowComments(false)}
-                  style={{
-                    padding: 6, borderRadius: '50%', background: 'rgba(255,255,255,0.08)',
-                    border: 'none', color: 'rgba(156,163,175,1)', cursor: 'pointer',
-                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  }}
-                >
-                  <XIcon style={{ width: 16, height: 16 }} />
-                </button>
               </div>
-              {/* CommentSection scrollable */}
-              <div style={{ flex: 1, overflowY: 'auto', padding: '0 4px' }}>
-                <CommentSection songId={song.id} />
-              </div>
-            </motion.div>
-          </motion.div>,
-          document.body
-        )}
-      </AnimatePresence>
+              <button
+                onClick={() => setShowComments(false)}
+                style={{
+                  padding: 6, borderRadius: '50%', background: 'rgba(255,255,255,0.08)',
+                  border: 'none', color: 'rgba(156,163,175,1)', cursor: 'pointer',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                }}
+              >
+                <XIcon style={{ width: 16, height: 16 }} />
+              </button>
+            </div>
+            <div style={{ flex: 1, overflowY: 'auto', padding: '0 4px' }}>
+              <CommentSection songId={song.id} />
+            </div>
+          </motion.div>
+        </div>,
+        document.body
+      )}
 
       {/* Modale de confirmation */}
       <AnimatePresence>
