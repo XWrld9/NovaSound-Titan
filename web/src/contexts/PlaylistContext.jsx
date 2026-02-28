@@ -61,11 +61,15 @@ export const PlaylistProvider = ({ children }) => {
 
   // ── Supprimer une playlist ──────────────────────────────────────
   const deletePlaylist = useCallback(async (playlistId) => {
+    if (!currentUser?.id) return;
     try {
-      await supabase.from('playlists').delete().eq('id', playlistId);
+      // Double protection : RLS + vérification owner côté client
+      await supabase.from('playlists').delete()
+        .eq('id', playlistId)
+        .eq('owner_id', currentUser.id); // seulement le créateur peut supprimer
       setMyPlaylists(prev => prev.filter(p => p.id !== playlistId));
     } catch {}
-  }, []);
+  }, [currentUser?.id]);
 
   // ── Ajouter un son à une playlist ──────────────────────────────
   const addSongToPlaylist = useCallback(async (playlistId, songId) => {

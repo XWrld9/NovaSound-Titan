@@ -53,14 +53,18 @@ const adaptiveTimeout = (file) => Math.max(120000, (file.size / 1024 / 1024) * 8
 
 // ════════════════════════════════════════════════════════════════════
 // uploadViaXHR — Fonction principale d'upload, XHR avec progression
+// iOS Fix v500 : FormData + retry automatique sur abort iOS Safari
+// Cause du "fetch aborted" iOS : Safari tue les XHR binaires directs
+// Solution : envoyer via FormData/Blob → Content-Type géré par le browser
 // ════════════════════════════════════════════════════════════════════
-const uploadViaXHR = async ({ bucket, path, file, token, onProgress }) => {
+const uploadViaXHR = async ({ bucket, path, file, token, onProgress, attempt = 0 }) => {
   const baseUrl = _supabaseUrl || '';
   const anonKey = _supabaseAnonKey || '';
   if (!token || !baseUrl) throw new Error('Session invalide — reconnectez-vous');
 
   const contentType = guessContentType(file);
   const timeoutMs   = adaptiveTimeout(file);
+  const iosDevice   = isIOS();
 
   return new Promise((resolve, reject) => {
     const xhr = new XMLHttpRequest();
@@ -69,10 +73,8 @@ const uploadViaXHR = async ({ bucket, path, file, token, onProgress }) => {
 
     xhr.setRequestHeader('Authorization', `Bearer ${token}`);
     xhr.setRequestHeader('apikey', anonKey);
-    xhr.setRequestHeader('Content-Type', contentType);
     xhr.setRequestHeader('Cache-Control', '3600');
-    // Ajout du owner pour les politiques RLS
-    xhr.setRequestHeader('x-supabase-auth', token);
+    // Ne pas définir Content-Type sur iOS (FormData le fait avec boundary)
 
     // Vraie progression en temps réel
     xhr.upload.onprogress = (e) => {
@@ -82,7 +84,6 @@ const uploadViaXHR = async ({ bucket, path, file, token, onProgress }) => {
     };
 
     xhr.onload = () => {
-      // 200 OK ou 409 Conflict (fichier déjà existant) = succès
       if (xhr.status < 300 || xhr.status === 409) {
         resolve();
       } else {
@@ -105,10 +106,45 @@ const uploadViaXHR = async ({ bucket, path, file, token, onProgress }) => {
       ));
     };
 
-    xhr.onabort = () => reject(new Error('Upload annulé'));
+    // iOS Safari peut abort les XHR quand l'app passe en arrière-plan
+    // On retry automatiquement jusqu'à 2 fois si c'est un abort iOS involontaire
+    xhr.onabort = () => {
+      if (iosDevice && attempt < 2) {
+        reject(new Error('__IOS_ABORT_RETRY__'));
+      } else {
+        reject(new Error('Upload annulé'));
+      }
+    };
 
-    xhr.send(file);
+    // iOS Safari : encapsuler dans FormData/Blob pour éviter "fetch aborted"
+    // sur les envois binaires directs (bug connu iOS 15-17 avec gros fichiers audio)
+    if (iosDevice) {
+      const fileName = path.split('/').pop() || 'audio.mp3';
+      const blob = new Blob([file], { type: contentType });
+      const formData = new FormData();
+      formData.append('', blob, fileName);
+      xhr.send(formData);
+    } else {
+      xhr.setRequestHeader('Content-Type', contentType);
+      xhr.send(file);
+    }
   });
+};
+
+// Wrapper avec retry automatique pour les abort iOS involontaires
+const uploadWithIOSRetry = async ({ bucket, path, file, token, onProgress }) => {
+  for (let attempt = 0; attempt <= 2; attempt++) {
+    try {
+      return await uploadViaXHR({ bucket, path, file, token, onProgress, attempt });
+    } catch (err) {
+      if (err.message === '__IOS_ABORT_RETRY__' && attempt < 2) {
+        console.warn(\`[Upload] iOS abort involontaire, retry \${attempt + 1}/2 dans \${1500 * (attempt + 1)}ms\`);
+        await new Promise(r => setTimeout(r, 1500 * (attempt + 1)));
+        continue;
+      }
+      throw err;
+    }
+  }
 };
 
 // ════════════════════════════════════════════════════════════════════
@@ -216,7 +252,7 @@ const MusicUploadPage = () => {
       const audioExt  = audioFile.name.split('.').pop().toLowerCase() || 'mp3';
       const audioPath = `${currentUser.id}-${Date.now()}.${audioExt}`;
 
-      await uploadViaXHR({
+      await uploadWithIOSRetry({
         bucket: 'audio',
         path: audioPath,
         file: audioFile,

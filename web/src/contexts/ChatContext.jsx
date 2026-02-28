@@ -225,23 +225,35 @@ export const ChatProvider = ({ children }) => {
         });
       }
 
-      // 2. @tous → notifier tout le monde
+      // 2. @tous → notifier tout le monde (max 1 fois par 5 min par sender pour éviter le spam)
       if (isMentionAll(finalContent)) {
-        const { data: allUsers } = await supabase
-          .from('users').select('id').neq('id', currentUser.id).limit(500);
-        if (allUsers?.length) {
-          const batch = allUsers.map(u => ({
-            user_id:  u.id,
-            type:     'chat_mention_all',
-            title:    `📢 ${senderName} a mentionné @tous dans le chat`,
-            body:     finalContent.slice(0, 200),
-            url:      `/chat?highlight=${data.id}&tagger=${encodeURIComponent(senderName)}`,
-            icon_url: '/icon-192.png',
-            is_read:  false,
-            metadata: JSON.stringify({ msgId: data.id, senderId: currentUser.id, senderName }),
-          }));
-          for (let i = 0; i < batch.length; i += 100) {
-            await supabase.from('notifications').insert(batch.slice(i, i + 100));
+        // Anti-spam : ne pas envoyer si le sender a déjà fait un @tous dans les 5 dernières minutes
+        const fiveMinAgo = new Date(Date.now() - 5 * 60 * 1000).toISOString();
+        const { data: recentAll } = await supabase
+          .from('notifications')
+          .select('id')
+          .eq('type', 'chat_mention_all')
+          .contains('metadata', JSON.stringify({ senderId: currentUser.id }))
+          .gte('created_at', fiveMinAgo)
+          .limit(1);
+        
+        if (!recentAll?.length) {
+          const { data: allUsers } = await supabase
+            .from('users').select('id').neq('id', currentUser.id).limit(500);
+          if (allUsers?.length) {
+            const batch = allUsers.map(u => ({
+              user_id:  u.id,
+              type:     'chat_mention_all',
+              title:    `📢 ${senderName} a mentionné @tous dans le chat`,
+              body:     finalContent.slice(0, 200),
+              url:      `/chat?highlight=${data.id}&tagger=${encodeURIComponent(senderName)}`,
+              icon_url: '/icon-192.png',
+              is_read:  false,
+              metadata: JSON.stringify({ msgId: data.id, senderId: currentUser.id, senderName }),
+            }));
+            for (let i = 0; i < batch.length; i += 100) {
+              await supabase.from('notifications').insert(batch.slice(i, i + 100));
+            }
           }
         }
       } else {

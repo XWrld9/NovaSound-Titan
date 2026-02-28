@@ -31,15 +31,25 @@ const timeAgo = (dateStr) => {
 };
 
 /* ── Toast in-app (quand l'app est au premier plan) ── */
+// Détecte iOS pour éviter les toasts "new_song" qui déclenchent des comportements inattendus
+const isIOSDevice = () =>
+  typeof navigator !== 'undefined' &&
+  (/iphone|ipad|ipod/i.test(navigator.userAgent) ||
+    (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1));
+
 export const NotificationToast = () => {
   const { notifications } = useNotifications();
   const [toasts, setToasts] = useState([]);
   const prevCountRef = useRef(0);
   const shownIds = useRef(new Set());
+  const ios = useRef(isIOSDevice());
 
   useEffect(() => {
     if (!notifications.length) return;
     const latest = notifications[0];
+    // Sur iOS : ne pas afficher les toasts "new_song" (l'install banner + ce toast
+    // peuvent déclencher des comportements indésirables sur Safari iOS)
+    if (ios.current && latest?.type === 'new_song') return;
     // N'afficher que les nouvelles notifs non lues jamais affichées
     if (latest && !latest.is_read && !shownIds.current.has(latest.id)) {
       shownIds.current.add(latest.id);
@@ -107,10 +117,16 @@ const NotifPanel = ({ panelRef, panelPos, onClose, mobile }) => {
   const {
     notifications, unreadCount, permission, pushEnabled, loading,
     requestPermission, disablePush,
-    markAsRead, markAllAsRead, deleteNotification, clearAll,
+    markAsRead, markAllAsRead, deleteNotification, clearAll, loadNotifications,
   } = useNotifications();
   const [tab, setTab] = useState('all');
   const displayed = tab === 'unread' ? notifications.filter(n => !n.is_read) : notifications;
+
+  // Re-sync depuis Supabase à l'ouverture du panel pour s'assurer que le badge est à jour
+  useEffect(() => {
+    if (loadNotifications) loadNotifications();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const handleClick = (notif) => {
     if (!notif.is_read) markAsRead(notif.id);

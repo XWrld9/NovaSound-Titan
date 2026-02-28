@@ -370,17 +370,32 @@ const ChatPage = () => {
   }, [currentUser?.id]);
 
   useEffect(() => {
-    if (activeTab === 'messages' && currentUser) fetchMyMessages();
+    if (activeTab === 'messages' && currentUser) {
+      fetchMyMessages();
+      // Recharger les notifs depuis le serveur pour avoir les données fraîches
+      if (notifCtx?.loadNotifications) notifCtx.loadNotifications();
+      // Marquer toutes les notifs chat non lues comme lues
+      const chatNotifs = (notifCtx?.notifications || [])
+        .filter(n => ['chat_reply', 'chat_mention', 'chat_mention_all'].includes(n.type) && !n.is_read);
+      if (chatNotifs.length > 0) {
+        chatNotifs.forEach(n => notifCtx.markAsRead(n.id).catch(() => {}));
+        setUnreadMsg(0);
+      }
+    }
   }, [activeTab, currentUser, fetchMyMessages]);
 
   // Compteur non lus en temps réel via NotificationContext
+  // Recalculé à chaque changement des notifications
   useEffect(() => {
-    if (!notifCtx) return;
-    const chatNotifs = (notifCtx.notifications || []).filter(
+    if (!notifCtx?.notifications) return;
+    const chatNotifs = notifCtx.notifications.filter(
       n => ['chat_reply', 'chat_mention', 'chat_mention_all'].includes(n.type) && !n.is_read
     );
-    setUnreadMsg(chatNotifs.length);
-  }, [notifCtx?.notifications]);
+    // Ne mettre à jour que si on est sur l'onglet global (évite race conditions)
+    if (activeTab !== 'messages') {
+      setUnreadMsg(chatNotifs.length);
+    }
+  }, [notifCtx?.notifications, activeTab]);
 
   // ── @mention autocomplétion ────────────────────────────────────────
   const handleTextChange = useCallback((e) => {
@@ -476,15 +491,15 @@ const ChatPage = () => {
 
   // Clic sur une notification "Mes messages" → nav vers le chat au bon message
   const handleNotifClick = useCallback(async (notif) => {
-    // Marquer comme lu
+    // Marquer comme lu dans Supabase ET dans l'état local
     if (!notif.is_read && notifCtx?.markAsRead) {
       await notifCtx.markAsRead(notif.id);
       setMyMessages(prev => prev.map(n => n.id === notif.id ? { ...n, is_read: true } : n));
       setUnreadMsg(c => Math.max(0, c - 1));
     }
     // Naviguer vers le chat avec highlight
-    setActiveTab('global');
     if (notif.url) {
+      setActiveTab('global');
       navigate(notif.url);
     }
   }, [notifCtx, navigate]);
@@ -691,16 +706,16 @@ const ChatPage = () => {
                   <motion.button
                     initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.8 }}
                     onClick={() => { isAtBottom.current = true; bottomRef.current?.scrollIntoView({ behavior: 'smooth' }); setShowScroll(false); }}
-                    className="fixed right-4 z-40 w-10 h-10 rounded-full bg-cyan-500 hover:bg-cyan-400 shadow-lg shadow-cyan-500/30 flex items-center justify-center text-white"
+                    className=\"fixed right-4 z-40 w-10 h-10 rounded-full bg-cyan-500 hover:bg-cyan-400 shadow-lg shadow-cyan-500/30 flex items-center justify-center text-white\"
                     style={{ bottom: `calc(${playerVisible ? '72px + ' : ''}56px + env(safe-area-inset-bottom, 0px) + 72px)` }}>
-                    <ChevronUp className="w-5 h-5 rotate-180" />
+                    <ChevronUp className=\"w-5 h-5 rotate-180\" />
                   </motion.button>
                 )}
               </AnimatePresence>
 
               {/* Zone de saisie — grande, confortable sur mobile */}
               <div
-                className="flex-shrink-0 border-t border-white/[0.06] bg-gray-950/98 backdrop-blur-xl px-3 pt-2 relative"
+                className=\"flex-shrink-0 border-t border-white/[0.06] bg-gray-950/98 backdrop-blur-xl px-3 pt-2 relative\"
                 style={{
                   paddingBottom: `calc(${playerVisible ? '72px + ' : ''}56px + env(safe-area-inset-bottom, 8px) + 6px)`,
                 }}

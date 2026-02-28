@@ -180,7 +180,7 @@ const InstallBanner = () => {
       {/* ══════════════════════════════════════════
           Desktop — Bandeau discret sous le header
       ══════════════════════════════════════════ */}
-      {canInstall && (
+      {canInstall && !isIOS() && (
         <motion.div
           key="install-banner-desktop"
           initial={{ opacity: 0, y: -20 }}

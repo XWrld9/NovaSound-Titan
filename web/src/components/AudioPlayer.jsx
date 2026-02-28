@@ -674,10 +674,16 @@ const AudioPlayer = ({ currentSong, playlist = [], onNext, onPrevious, onClose, 
                     <button onClick={handleDownload} className="text-gray-400 hover:text-cyan-400 transition-colors">
                       <Download className="w-5 h-5" />
                     </button>
-                    {/* Ajouter à la file */}
-                    <button onClick={() => addToQueue(currentSong)} className="text-gray-400 hover:text-cyan-400 transition-colors" title="Remettre en file">
+                    {/* Ajouter à la file d'attente */}
+                    <button onClick={() => addToQueue(currentSong)} className="text-gray-400 hover:text-cyan-400 transition-colors" title="Ajouter à la file d'attente">
                       <ListMusic className="w-4 h-4" />
                     </button>
+                    {/* Ajouter à une playlist */}
+                    {currentUser && (
+                      <button onClick={() => setShowAddToPlaylist(true)} className="text-gray-400 hover:text-purple-400 transition-colors" title="Ajouter à une playlist">
+                        <Plus className="w-4 h-4" />
+                      </button>
+                    )}
                     {currentSong?.uploader_id && (
                       <button onClick={(e) => { e.stopPropagation(); navigate(`/artist/${currentSong.uploader_id}`); setIsExpanded(false); setIsCoverMode(false); }}
                         className="text-gray-400 hover:text-cyan-400 transition-colors">
