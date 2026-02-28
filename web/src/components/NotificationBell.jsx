@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import ReactDOM from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useNavigate } from 'react-router-dom';
 import {
   Bell, BellOff, Check, CheckCheck, Trash2, X,
   Heart, MessageCircle, UserPlus, Music, Newspaper, Reply, AtSign
@@ -10,13 +11,14 @@ import { useAuth } from '@/contexts/AuthContext';
 
 /* ── Icônes par type ── */
 const TYPE_ICON = {
-  like:         <Heart        className="w-3.5 h-3.5 text-pink-400 fill-current" />,
-  comment:      <MessageCircle className="w-3.5 h-3.5 text-cyan-400" />,
-  follow:       <UserPlus     className="w-3.5 h-3.5 text-purple-400" />,
-  new_song:     <Music        className="w-3.5 h-3.5 text-green-400" />,
-  news:         <Newspaper    className="w-3.5 h-3.5 text-amber-400" />,
-  chat_reply:   <Reply        className="w-3.5 h-3.5 text-fuchsia-400" />,
-  chat_mention: <AtSign       className="w-3.5 h-3.5 text-cyan-300" />,
+  like:              <Heart        className="w-3.5 h-3.5 text-pink-400 fill-current" />,
+  comment:           <MessageCircle className="w-3.5 h-3.5 text-cyan-400" />,
+  follow:            <UserPlus     className="w-3.5 h-3.5 text-purple-400" />,
+  new_song:          <Music        className="w-3.5 h-3.5 text-green-400" />,
+  news:              <Newspaper    className="w-3.5 h-3.5 text-amber-400" />,
+  chat_reply:        <Reply        className="w-3.5 h-3.5 text-fuchsia-400" />,
+  chat_mention:      <AtSign       className="w-3.5 h-3.5 text-cyan-300" />,
+  chat_mention_all:  <AtSign       className="w-3.5 h-3.5 text-yellow-400" />,
 };
 
 const timeAgo = (dateStr) => {
@@ -101,6 +103,7 @@ export const NotificationToast = () => {
 
 /* ── Panel liste des notifications ── */
 const NotifPanel = ({ panelRef, panelPos, onClose, mobile }) => {
+  const navigate = useNavigate();
   const {
     notifications, unreadCount, permission, pushEnabled, loading,
     requestPermission, disablePush,
@@ -112,6 +115,11 @@ const NotifPanel = ({ panelRef, panelPos, onClose, mobile }) => {
   const handleClick = (notif) => {
     if (!notif.is_read) markAsRead(notif.id);
     onClose();
+    if (notif.url) {
+      // Nettoyer l'URL pour React Router (HashRouter)
+      const path = notif.url.replace(/^#\//, '/').replace(/^#/, '/');
+      navigate(path);
+    }
   };
 
   const panelStyle = mobile ? {
@@ -215,10 +223,6 @@ const NotifPanel = ({ panelRef, panelPos, onClose, mobile }) => {
                 className={`relative group flex items-start gap-3 px-4 py-3 hover:bg-white/[0.04] transition-colors border-b border-white/[0.04] cursor-pointer ${!notif.is_read ? 'bg-cyan-500/[0.04]' : ''}`}
                 onClick={() => {
                   handleClick(notif);
-                  if (notif.url) {
-                    const path = notif.url.replace(/^#\//, '/').replace(/^#/, '/');
-                    window.location.hash = '#' + path.replace(/^\//, '');
-                  }
                 }}
               >
                 {!notif.is_read && (

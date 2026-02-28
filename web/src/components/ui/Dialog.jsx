@@ -101,7 +101,7 @@ const DialogItem = ({ title, message, type = 'info', actions = [], showCloseButt
                   onClick={action.onClick || onClose}
                   className={`px-5 py-2 rounded-xl font-medium transition-all ${
                     action.primary
-                      ? 'bg-gradient-to-r from-cyan-500 to-magenta-500 text-white hover:opacity-90'
+                      ? 'bg-gradient-to-r from-cyan-500 to-fuchsia-500 text-white hover:opacity-90'
                       : 'bg-gray-800 text-gray-300 hover:bg-gray-700 border border-gray-700'
                   }`}
                 >

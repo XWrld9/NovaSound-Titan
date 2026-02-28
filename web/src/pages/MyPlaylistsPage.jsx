@@ -94,7 +94,7 @@ const MyPlaylistsPage = () => {
           </div>
           <button
             onClick={() => setShowCreate(true)}
-            className="flex items-center gap-2 bg-gradient-to-r from-cyan-500 to-magenta-500 hover:from-cyan-400 hover:to-magenta-400 text-white font-bold px-5 py-2.5 rounded-full text-sm transition-all shadow-lg active:scale-95"
+            className="flex items-center gap-2 bg-gradient-to-r from-cyan-500 to-fuchsia-500 hover:from-cyan-400 hover:to-fuchsia-400 text-white font-bold px-5 py-2.5 rounded-full text-sm transition-all shadow-lg active:scale-95"
           >
             <Plus className="w-4 h-4" /> Nouvelle
           </button>
@@ -165,7 +165,7 @@ const MyPlaylistsPage = () => {
             <p className="text-gray-700 text-sm mt-1 max-w-xs">Crée ta première playlist et organise tes sons favoris</p>
             <button
               onClick={() => setShowCreate(true)}
-              className="mt-5 flex items-center gap-2 bg-gradient-to-r from-cyan-500 to-magenta-500 text-white font-bold px-6 py-3 rounded-full text-sm transition-all shadow-lg hover:from-cyan-400 hover:to-magenta-400 active:scale-95"
+              className="mt-5 flex items-center gap-2 bg-gradient-to-r from-cyan-500 to-fuchsia-500 text-white font-bold px-6 py-3 rounded-full text-sm transition-all shadow-lg hover:from-cyan-400 hover:to-fuchsia-400 active:scale-95"
             >
               <Plus className="w-4 h-4" /> Créer ma première playlist
             </button>
@@ -184,7 +184,7 @@ const MyPlaylistsPage = () => {
                   className="flex items-center gap-4 p-4 bg-gray-900/90 border border-white/20 rounded-2xl hover:border-cyan-500/25 hover:bg-gray-900 transition-all group md:bg-gray-900/60 md:border-white/8"
                 >
                   {/* Cover */}
-                  <div className="w-16 h-16 rounded-xl overflow-hidden flex-shrink-0 bg-gradient-to-br from-cyan-500/20 to-magenta-500/20 flex items-center justify-center border border-white/8">
+                  <div className="w-16 h-16 rounded-xl overflow-hidden flex-shrink-0 bg-gradient-to-br from-cyan-500/20 to-fuchsia-500/20 flex items-center justify-center border border-white/8">
                     {pl.cover_url
                       ? <img src={pl.cover_url} alt="" className="w-full h-full object-cover" />
                       : <ListMusic className="w-8 h-8 text-gray-600" />

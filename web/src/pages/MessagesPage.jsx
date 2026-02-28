@@ -33,7 +33,7 @@ const fmtTime = (dateStr) =>
 const Avatar = memo(({ user, size = 10 }) => (
   user?.avatar_url
     ? <img src={user.avatar_url} alt={user.username || ''} className={`w-${size} h-${size} rounded-full object-cover border border-white/10 flex-shrink-0`} />
-    : <div className={`w-${size} h-${size} rounded-full bg-gradient-to-br from-cyan-500/30 to-magenta-500/30 border border-white/10 flex items-center justify-center flex-shrink-0`}>
+    : <div className={`w-${size} h-${size} rounded-full bg-gradient-to-br from-cyan-500/30 to-fuchsia-500/30 border border-white/10 flex items-center justify-center flex-shrink-0`}>
         <User className="w-4 h-4 text-gray-400" />
       </div>
 ));

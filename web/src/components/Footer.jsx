@@ -5,7 +5,7 @@ import { Mail, Music } from 'lucide-react';
 const Footer = () => (
   <footer className="bg-gray-950 border-t border-cyan-500/20 mt-auto relative overflow-hidden">
     <div className="absolute top-0 left-1/4 w-64 h-64 bg-cyan-500/5 rounded-full blur-3xl pointer-events-none" />
-    <div className="absolute bottom-0 right-1/4 w-64 h-64 bg-magenta-500/5 rounded-full blur-3xl pointer-events-none" />
+    <div className="absolute bottom-0 right-1/4 w-64 h-64 bg-fuchsia-500/5 rounded-full blur-3xl pointer-events-none" />
 
     <div className="container mx-auto px-4 py-10 relative z-10">
       <div className="grid grid-cols-1 md:grid-cols-4 gap-8 text-center md:text-left">
@@ -18,7 +18,7 @@ const Footer = () => (
               alt="Logo NovaSound"
               className="w-8 h-8 rounded-full border border-cyan-400"
             />
-            <span className="text-lg font-bold bg-gradient-to-r from-cyan-400 to-magenta-500 bg-clip-text text-transparent">
+            <span className="text-lg font-bold bg-gradient-to-r from-cyan-400 to-fuchsia-500 bg-clip-text text-transparent">
               NovaSound TITAN LUX
             </span>
           </div>
@@ -47,7 +47,7 @@ const Footer = () => (
 
         {/* Légal */}
         <div className="flex flex-col items-center md:items-start">
-          <h3 className="text-white font-semibold mb-4 border-b-2 border-magenta-500/30 pb-1 inline-block">Légal</h3>
+          <h3 className="text-white font-semibold mb-4 border-b-2 border-fuchsia-500/30 pb-1 inline-block">Légal</h3>
           <ul className="space-y-3">
             {[
               { to: '/privacy',   label: 'Politique de confidentialité' },
@@ -55,7 +55,7 @@ const Footer = () => (
               { to: '/copyright', label: "Droits d'auteur" },
             ].map(({ to, label }) => (
               <li key={to}>
-                <Link to={to} className="text-gray-400 text-sm hover:text-magenta-400 transition-colors">
+                <Link to={to} className="text-gray-400 text-sm hover:text-fuchsia-400 transition-colors">
                   {label}
                 </Link>
               </li>

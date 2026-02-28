@@ -169,7 +169,7 @@ const HomePage = () => {
               }}
             />
             <div className="absolute inset-0 bg-gradient-to-b from-gray-950/80 via-gray-950/60 to-gray-950" />
-            <div className="absolute inset-0 bg-gradient-to-r from-cyan-500/20 to-magenta-500/20" />
+            <div className="absolute inset-0 bg-gradient-to-r from-cyan-500/20 to-fuchsia-500/20" />
             
             <div className="relative container mx-auto px-4 h-full flex items-center justify-center md:justify-start text-center md:text-left">
               <motion.div
@@ -178,7 +178,7 @@ const HomePage = () => {
                 transition={{ duration: 0.5 }}
                 className="max-w-3xl"
               >
-                <h1 className="text-4xl sm:text-5xl md:text-7xl font-bold mb-4 md:mb-6 bg-gradient-to-r from-cyan-400 via-white to-magenta-500 bg-clip-text text-transparent leading-tight">
+                <h1 className="text-4xl sm:text-5xl md:text-7xl font-bold mb-4 md:mb-6 bg-gradient-to-r from-cyan-400 via-white to-fuchsia-500 bg-clip-text text-transparent leading-tight">
                   Ressens la vague sonore
                 </h1>
                 <p className="text-lg md:text-2xl text-gray-300 mb-6 md:mb-8 max-w-xl mx-auto md:mx-0">
@@ -187,7 +187,7 @@ const HomePage = () => {
                 <div className="flex flex-col sm:flex-row gap-4 justify-center md:justify-start">
                   {!isAuthenticated && (
                     <Link to="/signup" className="w-full sm:w-auto">
-                      <Button className="w-full sm:w-auto bg-gradient-to-r from-cyan-500 to-magenta-500 hover:from-cyan-600 hover:to-magenta-600 text-white text-lg px-8 py-6 font-semibold shadow-lg shadow-cyan-500/30">
+                      <Button className="w-full sm:w-auto bg-gradient-to-r from-cyan-500 to-fuchsia-500 hover:from-cyan-600 hover:to-fuchsia-600 text-white text-lg px-8 py-6 font-semibold shadow-lg shadow-cyan-500/30">
                         Commencer
                       </Button>
                     </Link>
@@ -348,7 +348,7 @@ const HomePage = () => {
                       style={{ overflow: 'visible' }}
                     >
                       {newSongIds.has(song.id) && (
-                        <div className="absolute -top-2 -right-2 z-30 bg-gradient-to-r from-cyan-500 to-magenta-500 text-white text-[9px] font-black px-2 py-0.5 rounded-full shadow-lg animate-pulse pointer-events-none">
+                        <div className="absolute -top-2 -right-2 z-30 bg-gradient-to-r from-cyan-500 to-fuchsia-500 text-white text-[9px] font-black px-2 py-0.5 rounded-full shadow-lg animate-pulse pointer-events-none">
                           NEW
                         </div>
                       )}
@@ -370,7 +370,7 @@ const HomePage = () => {
                         <div className="absolute inset-0 bg-black/40 md:bg-transparent md:group-hover:bg-black/60 flex items-center justify-center transition-all duration-200">
                           <button
                             onClick={() => playSong(song)}
-                            className="p-4 rounded-full bg-gradient-to-r from-cyan-500 to-magenta-500 hover:from-cyan-600 hover:to-magenta-600 transform md:scale-90 md:opacity-0 md:group-hover:scale-100 md:group-hover:opacity-100 active:scale-95 transition-all duration-200 shadow-xl shadow-cyan-500/40"
+                            className="p-4 rounded-full bg-gradient-to-r from-cyan-500 to-fuchsia-500 hover:from-cyan-600 hover:to-fuchsia-600 transform md:scale-90 md:opacity-0 md:group-hover:scale-100 md:group-hover:opacity-100 active:scale-95 transition-all duration-200 shadow-xl shadow-cyan-500/40"
                             aria-label="Lancer la lecture"
                           >
                             <Play className="w-6 h-6 text-white fill-current" />

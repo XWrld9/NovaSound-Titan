@@ -63,7 +63,7 @@ const MobileMenu = ({ isOpen, onClose }) => {
           >
             {/* Header */}
             <div className="p-4 border-b border-cyan-500/20 flex items-center justify-between bg-gray-900/50">
-              <span className="font-bold bg-gradient-to-r from-cyan-400 to-magenta-500 bg-clip-text text-transparent">
+              <span className="font-bold bg-gradient-to-r from-cyan-400 to-fuchsia-500 bg-clip-text text-transparent">
                 Menu
               </span>
               <button
@@ -79,7 +79,7 @@ const MobileMenu = ({ isOpen, onClose }) => {
               {/* User Info (if logged in) */}
               {isAuthenticated && currentUser && (
                 <div className="flex items-center gap-3 p-3 rounded-lg bg-cyan-500/10 border border-cyan-500/20">
-                  <div className="w-10 h-10 rounded-full bg-gradient-to-br from-cyan-500 to-magenta-500 flex items-center justify-center text-white font-bold">
+                  <div className="w-10 h-10 rounded-full bg-gradient-to-br from-cyan-500 to-fuchsia-500 flex items-center justify-center text-white font-bold">
                     {currentUser.username?.[0]?.toUpperCase() || 'U'}
                   </div>
                   <div className="flex-1 min-w-0">
@@ -107,7 +107,7 @@ const MobileMenu = ({ isOpen, onClose }) => {
                       onClick={onClose}
                       className="flex items-center gap-3 px-4 py-3 text-gray-300 hover:text-white hover:bg-white/5 rounded-lg transition-colors"
                     >
-                      <User className="w-5 h-5 text-magenta-400" />
+                      <User className="w-5 h-5 text-fuchsia-400" />
                       Mon profil
                     </Link>
                     <Link
@@ -134,7 +134,7 @@ const MobileMenu = ({ isOpen, onClose }) => {
                       onClick={onClose}
                       className="flex items-center gap-3 px-4 py-3 text-gray-300 hover:text-white hover:bg-white/5 rounded-lg transition-colors"
                     >
-                      <UserPlus className="w-5 h-5 text-magenta-400" />
+                      <UserPlus className="w-5 h-5 text-fuchsia-400" />
                       Inscription
                     </Link>
                   </>

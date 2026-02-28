@@ -56,7 +56,7 @@ const savedMuted  = () => { try { return localStorage.getItem(MUTED_KEY) === '1'
 const SPEED_OPTIONS = [0.75, 1, 1.25, 1.5, 2];
 
 // ── Composant principal ───────────────────────────────────────────────────────
-const AudioPlayer = ({ currentSong, playlist = [], onNext, onPrevious, onClose, shouldAutoPlay = false }) => {
+const AudioPlayer = ({ currentSong, playlist = [], onNext, onPrevious, onClose, shouldAutoPlay = false, resetAutoPlay }) => {
   const { currentUser } = useAuth();
   const genreTheme = useGenreTheme(currentSong?.genre);
   const navigate = useNavigate();
@@ -71,6 +71,7 @@ const AudioPlayer = ({ currentSong, playlist = [], onNext, onPrevious, onClose, 
   } = usePlayer();
 
   const [isPlaying,      setIsPlaying]      = useState(false);
+  const [isBuffering,    setIsBuffering]    = useState(false);
   const [currentTime,    setCurrentTime]    = useState(0);
   const [duration,       setDuration]       = useState(0);
   const [volume,         setVolume]         = useState(savedVolume);
@@ -109,11 +110,13 @@ const AudioPlayer = ({ currentSong, playlist = [], onNext, onPrevious, onClose, 
   // Ref vers toggleImmersive pour éviter les stale closures dans les useEffect clavier
   const toggleImmersiveRef = useRef(null);
 
-  // ── Sync shouldAutoPlay prop → autoPlayRef ─────────────────────
-  // Permet au PlayerContext de signaler "l'utilisateur veut jouer ce son maintenant"
-  // même lors du tout premier chargement (prevSongIdRef=null → isNewSong=false)
+  // ── Sync shouldAutoPlay prop → autoPlayRef + reset après usage ──
   useEffect(() => {
-    if (shouldAutoPlay) autoPlayRef.current = true;
+    if (shouldAutoPlay) {
+      autoPlayRef.current = true;
+      // Remettre à false immédiatement via contexte pour éviter les lectures parasites
+      resetAutoPlay?.();
+    }
   }, [shouldAutoPlay, currentSong?.id]);
 
   // ── Sleep timer end → pause ─────────────────────────────────────
@@ -300,7 +303,7 @@ const AudioPlayer = ({ currentSong, playlist = [], onNext, onPrevious, onClose, 
     audioRef.current.loop = (repeat === 'one');
     audioRef.current.playbackRate = playbackSpeed;
     audioRef.current.load();
-    setPlayRecorded(false); setCurrentTime(0); setDuration(0);
+    setPlayRecorded(false); setCurrentTime(0); setDuration(0); setIsBuffering(false);
     if (currentUser) { checkLikeStatus(); checkFollowStatus(); }
     else { setIsLiked(false); setLikeId(null); setIsFollowing(false); setFollowId(null); }
     // Lecture automatique si : changement de son (suivant/précédent) OU premier son
@@ -358,9 +361,19 @@ const AudioPlayer = ({ currentSong, playlist = [], onNext, onPrevious, onClose, 
   const togglePlay = (e) => {
     e?.stopPropagation();
     if (!audioRef.current || !currentSong) return;
-    if (isPlaying) { audioRef.current.pause(); autoPlayRef.current = false; }
-    else { audioRef.current.play().catch(() => {}); recordPlay(); autoPlayRef.current = true; }
-    setIsPlaying(!isPlaying);
+    // Utiliser l'état réel de l'audio (pas la state React qui peut être périmée)
+    const actuallyPaused = audioRef.current.paused;
+    if (!actuallyPaused) {
+      audioRef.current.pause();
+      autoPlayRef.current = false;
+      setIsPlaying(false);
+    } else {
+      audioRef.current.play().then(() => {
+        setIsPlaying(true);
+        recordPlay();
+        autoPlayRef.current = true;
+      }).catch(() => setIsPlaying(false));
+    }
   };
 
   const handleTimeUpdate = () => {
@@ -376,13 +389,24 @@ const AudioPlayer = ({ currentSong, playlist = [], onNext, onPrevious, onClose, 
 
   const goNext = useCallback(() => {
     autoPlayRef.current = true;
-    if (playlist.length > 1) {
-      const idx = playlist.findIndex(s => s.id === currentSong?.id);
-      let nextIdx;
-      if (shuffle) { do { nextIdx = Math.floor(Math.random() * playlist.length); } while (nextIdx === idx && playlist.length > 1); }
-      else { nextIdx = (idx + 1) % playlist.length; }
-      if (onNext) onNext(playlist[nextIdx]);
-    } else if (onNext) onNext();
+    if (playlist.length === 0) return;
+    if (playlist.length === 1) {
+      // Un seul son : rembobiner (comportement repeat:all implicite)
+      if (audioRef.current) {
+        audioRef.current.currentTime = 0;
+        audioRef.current.play().then(() => setIsPlaying(true)).catch(() => {});
+      }
+      return;
+    }
+    const idx = playlist.findIndex(s => s.id === currentSong?.id);
+    let nextIdx;
+    if (shuffle) {
+      do { nextIdx = Math.floor(Math.random() * playlist.length); }
+      while (nextIdx === idx && playlist.length > 1);
+    } else {
+      nextIdx = (idx + 1) % playlist.length;
+    }
+    if (onNext) onNext(playlist[nextIdx]);
   }, [playlist, currentSong?.id, shuffle, onNext]);
 
   const goPrevious = useCallback(() => {
@@ -395,9 +419,24 @@ const AudioPlayer = ({ currentSong, playlist = [], onNext, onPrevious, onClose, 
   }, [playlist, currentSong?.id, currentTime, onPrevious]);
 
   const handleEnded = useCallback(() => {
-    if (repeat === 'one') { if (audioRef.current) { audioRef.current.currentTime = 0; audioRef.current.play().catch(() => {}); } }
-    else { goNext(); }
-  }, [repeat, goNext]);
+    if (repeat === 'one') {
+      if (audioRef.current) {
+        audioRef.current.currentTime = 0;
+        audioRef.current.play().catch(() => {});
+      }
+    } else if (repeat === 'all') {
+      // repeat:all → toujours passer au suivant (y compris rembobiner si dernier)
+      goNext();
+    } else {
+      // repeat:off → passer au suivant sauf si c'est le dernier
+      const idx = playlist.findIndex(s => s.id === currentSong?.id);
+      if (idx < playlist.length - 1) {
+        goNext();
+      } else {
+        setIsPlaying(false);
+      }
+    }
+  }, [repeat, goNext, playlist, currentSong?.id]);
 
   goNextRef.current     = goNext;
   goPreviousRef.current = goPrevious;
@@ -453,8 +492,11 @@ const AudioPlayer = ({ currentSong, playlist = [], onNext, onPrevious, onClose, 
         onTimeUpdate={handleTimeUpdate}
         onLoadedMetadata={handleLoadedMetadata}
         onEnded={handleEnded}
-        onPlay={() => setIsPlaying(true)}
+        onPlay={() => { setIsPlaying(true); setIsBuffering(false); }}
         onPause={() => setIsPlaying(false)}
+        onWaiting={() => setIsBuffering(true)}
+        onCanPlay={() => setIsBuffering(false)}
+        onPlaying={() => setIsBuffering(false)}
         loop={repeat === 'one'}
         playsInline
         webkit-playsinline="true"
@@ -682,7 +724,7 @@ const AudioPlayer = ({ currentSong, playlist = [], onNext, onPrevious, onClose, 
                       background: `linear-gradient(135deg, ${genreTheme.primary}, ${genreTheme.secondary})`,
                       boxShadow: `0 4px 24px ${genreTheme.glow}`,
                     }}>
-                    {isPlaying ? <Pause className="w-7 h-7" /> : <Play className="w-7 h-7 ml-0.5" />}
+                    {isBuffering ? <div className="w-7 h-7 rounded-full border-2 border-white/30 border-t-white animate-spin" /> : isPlaying ? <Pause className="w-7 h-7" /> : <Play className="w-7 h-7 ml-0.5" />}
                   </button>
                   <button
                     type="button"
@@ -921,22 +963,19 @@ const AudioPlayer = ({ currentSong, playlist = [], onNext, onPrevious, onClose, 
                   </div>
                 </div>
                 <div className="flex items-center gap-1 flex-shrink-0">
-                  <button onClick={handleLike} className={`p-1.5 ${isLiked ? 'text-pink-500' : 'text-gray-600'}`}>
+                  <button onClick={handleLike} className={`p-1.5 transition-all active:scale-75 ${isLiked ? 'text-pink-500' : 'text-gray-500 hover:text-pink-400'}`}>
                     <Heart className={`w-4 h-4 ${isLiked ? 'fill-current' : ''}`} />
                   </button>
-                  <button onClick={(e) => { e.stopPropagation(); goPrevious(); }} className="p-1.5 text-gray-500">
+                  <button onClick={(e) => { e.stopPropagation(); goPrevious(); }} className="p-1.5 text-gray-400 hover:text-white active:scale-90 transition-all">
                     <SkipBack className="w-5 h-5" />
                   </button>
                   <button onClick={togglePlay}
-                    className="w-9 h-9 rounded-full flex items-center justify-center shadow-md active:scale-90 transition-transform text-white"
+                    className="w-10 h-10 rounded-full flex items-center justify-center shadow-md active:scale-90 hover:brightness-110 transition-all text-white"
                     style={{ background: `linear-gradient(135deg, ${genreTheme.primary}, ${genreTheme.secondary})` }}>
-                    {isPlaying ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4 ml-0.5" />}
+                    {isBuffering ? <div className="w-4 h-4 rounded-full border-2 border-white/30 border-t-white animate-spin" /> : isPlaying ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4 ml-0.5" />}
                   </button>
-                  <button onClick={(e) => { e.stopPropagation(); goNext(); }} className="p-1.5 text-gray-500">
+                  <button onClick={(e) => { e.stopPropagation(); goNext(); }} className="p-1.5 text-gray-400 hover:text-white active:scale-90 transition-all">
                     <SkipForward className="w-5 h-5" />
-                  </button>
-                  <button onClick={toggleMute} className="p-1.5 text-gray-600">
-                    <VolumeIcon className="w-4 h-4" />
                   </button>
                 </div>
               </div>
@@ -1019,7 +1058,7 @@ const AudioPlayer = ({ currentSong, playlist = [], onNext, onPrevious, onClose, 
                   </button>
                   <button onClick={togglePlay} className="w-9 h-9 rounded-full hover:scale-105 active:scale-95 transition-all shadow-lg flex items-center justify-center text-white"
                     style={{ background: `linear-gradient(135deg, ${genreTheme.primary}, ${genreTheme.secondary})`, boxShadow: `0 2px 12px ${genreTheme.glow}` }}>
-                    {isPlaying ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4 ml-0.5" />}
+                    {isBuffering ? <div className="w-4 h-4 rounded-full border-2 border-white/30 border-t-white animate-spin" /> : isPlaying ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4 ml-0.5" />}
                   </button>
                   <button onClick={(e) => { e.stopPropagation(); goNext(); }} className="text-gray-400 hover:text-white hover:scale-110 transition-all">
                     <SkipForward className="w-5 h-5" />

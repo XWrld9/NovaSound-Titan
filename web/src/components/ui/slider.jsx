@@ -44,7 +44,7 @@ const Slider = React.forwardRef(({ className, onValueChange, value, max = 100, s
         className="relative h-2 w-full grow overflow-hidden rounded-full bg-gray-800/60 cursor-pointer"
         style={{ touchAction: 'none' }}
       >
-        <SliderPrimitive.Range className="absolute h-full bg-gradient-to-r from-cyan-500 to-magenta-500" />
+        <SliderPrimitive.Range className="absolute h-full bg-gradient-to-r from-cyan-500 to-fuchsia-500" />
       </SliderPrimitive.Track>
       <SliderPrimitive.Thumb
         onTouchStart={e => e.stopPropagation()}

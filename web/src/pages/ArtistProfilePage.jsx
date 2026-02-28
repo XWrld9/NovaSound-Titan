@@ -324,7 +324,7 @@ const ArtistProfilePage = () => {
                   <img src={artist.avatar_url} alt={artist.username}
                     className="w-28 h-28 md:w-32 md:h-32 rounded-2xl object-cover border-4 border-gray-950 shadow-2xl shadow-black/60" />
                 ) : (
-                  <div className="w-28 h-28 md:w-32 md:h-32 rounded-2xl bg-gradient-to-br from-cyan-500 to-magenta-500 flex items-center justify-center border-4 border-gray-950 shadow-2xl">
+                  <div className="w-28 h-28 md:w-32 md:h-32 rounded-2xl bg-gradient-to-br from-cyan-500 to-fuchsia-500 flex items-center justify-center border-4 border-gray-950 shadow-2xl">
                     <Music className="w-14 h-14 text-white" />
                   </div>
                 )}
@@ -479,7 +479,7 @@ const ArtistProfilePage = () => {
                           <div className="w-10 h-10 rounded-lg overflow-hidden flex-shrink-0 border border-white/8">
                             {song.cover_url
                               ? <img src={song.cover_url} alt="" className="w-full h-full object-cover" loading="lazy" />
-                              : <div className="w-full h-full bg-gradient-to-br from-cyan-500/20 to-magenta-500/20 flex items-center justify-center"><Music className="w-4 h-4 text-cyan-400/40" /></div>
+                              : <div className="w-full h-full bg-gradient-to-br from-cyan-500/20 to-fuchsia-500/20 flex items-center justify-center"><Music className="w-4 h-4 text-cyan-400/40" /></div>
                             }
                           </div>
                           <div className="flex-1 min-w-0">

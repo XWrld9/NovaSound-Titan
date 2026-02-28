@@ -17,16 +17,16 @@ const TermsOfService = () => {
 
         <main className="flex-1 container mx-auto px-4 py-12 max-w-4xl">
           <div className="mb-12 text-center">
-            <h1 className="text-4xl md:text-5xl font-bold bg-gradient-to-r from-magenta-500 to-cyan-400 bg-clip-text text-transparent mb-4">
+            <h1 className="text-4xl md:text-5xl font-bold bg-gradient-to-r from-fuchsia-500 to-cyan-400 bg-clip-text text-transparent mb-4">
               Conditions d'Utilisation
             </h1>
             <p className="text-gray-400">Entrée en vigueur : 19 Février 2026</p>
           </div>
 
           <div className="space-y-12 text-gray-300 leading-relaxed">
-            <section className="bg-gray-900/50 backdrop-blur-sm border border-magenta-500/20 rounded-2xl p-8">
+            <section className="bg-gray-900/50 backdrop-blur-sm border border-fuchsia-500/20 rounded-2xl p-8">
               <div className="flex items-center gap-3 mb-6">
-                <CheckCircle className="w-8 h-8 text-magenta-500" />
+                <CheckCircle className="w-8 h-8 text-fuchsia-500" />
                 <h2 className="text-2xl font-bold text-white">1. Acceptation des Conditions</h2>
               </div>
               <p>
@@ -49,9 +49,9 @@ const TermsOfService = () => {
               </ul>
             </section>
 
-            <section className="bg-gray-900/50 backdrop-blur-sm border border-magenta-500/20 rounded-2xl p-8">
+            <section className="bg-gray-900/50 backdrop-blur-sm border border-fuchsia-500/20 rounded-2xl p-8">
               <div className="flex items-center gap-3 mb-6">
-                <AlertTriangle className="w-8 h-8 text-magenta-500" />
+                <AlertTriangle className="w-8 h-8 text-fuchsia-500" />
                 <h2 className="text-2xl font-bold text-white">3. Propriété Intellectuelle</h2>
               </div>
               <p className="mb-4">
@@ -74,7 +74,7 @@ const TermsOfService = () => {
 
             <div className="text-center pt-8 border-t border-gray-800">
               <p className="text-gray-500 mb-4">Contact pour les questions juridiques :</p>
-              <a href="mailto:eloadxfamily@gmail.com" className="text-cyan-400 hover:text-magenta-500 transition-colors font-semibold text-lg">
+              <a href="mailto:eloadxfamily@gmail.com" className="text-cyan-400 hover:text-fuchsia-500 transition-colors font-semibold text-lg">
                 eloadxfamily@gmail.com
               </a>
             </div>

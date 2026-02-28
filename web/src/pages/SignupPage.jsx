@@ -119,7 +119,7 @@ const SignupPage = () => {
                 alt="NovaSound TITAN LUX"
                 className="w-12 h-12 rounded-full border-2 border-cyan-400 shadow-lg shadow-cyan-500/30"
               />
-              <span className="text-2xl font-bold bg-gradient-to-r from-cyan-400 to-magenta-500 bg-clip-text text-transparent">
+              <span className="text-2xl font-bold bg-gradient-to-r from-cyan-400 to-fuchsia-500 bg-clip-text text-transparent">
                 NovaSound <span className="text-lg font-semibold">TITAN LUX</span>
               </span>
             </div>
@@ -246,7 +246,7 @@ const SignupPage = () => {
               <Button
                 type="submit"
                 disabled={loading || !!success || cooldown > 0}
-                className="w-full bg-gradient-to-r from-cyan-500 to-magenta-500 hover:from-cyan-600 hover:to-magenta-600 text-white py-3 text-lg font-semibold shadow-lg shadow-cyan-500/30 disabled:opacity-50"
+                className="w-full bg-gradient-to-r from-cyan-500 to-fuchsia-500 hover:from-cyan-600 hover:to-fuchsia-600 text-white py-3 text-lg font-semibold shadow-lg shadow-cyan-500/30 disabled:opacity-50"
               >
                 {loading ? "Création en cours..." : cooldown > 0 ? `Patienter ${cooldown}s...` : "Créer mon compte"}
               </Button>

@@ -79,7 +79,7 @@ const AddToPlaylistModal = ({ song, onClose }) => {
             <div className="w-9 h-9 rounded-xl overflow-hidden flex-shrink-0 shadow-md">
               {song.cover_url
                 ? <img src={song.cover_url} alt="" className="w-full h-full object-cover" />
-                : <div className="w-full h-full bg-gradient-to-br from-cyan-500 to-magenta-500 flex items-center justify-center"><Music className="w-4 h-4 text-white" /></div>
+                : <div className="w-full h-full bg-gradient-to-br from-cyan-500 to-fuchsia-500 flex items-center justify-center"><Music className="w-4 h-4 text-white" /></div>
               }
             </div>
             <div className="min-w-0">

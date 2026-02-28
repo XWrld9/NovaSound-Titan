@@ -113,7 +113,7 @@ const Header = () => {
             {/* Barre de recherche desktop */}
             <div className="hidden md:block flex-1 max-w-xl relative mx-4">
               <div className="relative group">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-cyan-400 group-focus-within:text-magenta-500 transition-colors" />
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-cyan-400 group-focus-within:text-fuchsia-500 transition-colors" />
                 <input
                   type="text"
                   placeholder="Rechercher des sons, des artistes..."
@@ -121,7 +121,7 @@ const Header = () => {
                   onChange={(e) => setSearchQuery(e.target.value)}
                   onFocus={() => searchQuery && setShowResults(true)}
                   onBlur={() => setTimeout(() => setShowResults(false), 200)}
-                  className="w-full pl-10 pr-4 py-2 bg-gray-900 border border-cyan-500/30 rounded-full text-white placeholder-gray-400 focus:outline-none focus:border-magenta-500 focus:ring-2 focus:ring-magenta-500/20 transition-all"
+                  className="w-full pl-10 pr-4 py-2 bg-gray-900 border border-cyan-500/30 rounded-full text-white placeholder-gray-400 focus:outline-none focus:border-fuchsia-500 focus:ring-2 focus:ring-fuchsia-500/20 transition-all"
                 />
               </div>
               <AnimatePresence>
@@ -143,7 +143,7 @@ const Header = () => {
                             {song.cover_url ? (
                               <img src={song.cover_url} alt={song.title} className="w-10 h-10 rounded object-cover" />
                             ) : (
-                              <div className="w-10 h-10 rounded bg-gradient-to-br from-cyan-500 to-magenta-500 flex items-center justify-center">
+                              <div className="w-10 h-10 rounded bg-gradient-to-br from-cyan-500 to-fuchsia-500 flex items-center justify-center">
                                 <Music className="w-5 h-5 text-white" />
                               </div>
                             )}
@@ -171,7 +171,7 @@ const Header = () => {
                 <Globe className="w-4 h-4" />Explorer
               </Link>
               <Link to="/trending" className="text-gray-300 hover:text-cyan-400 transition-colors flex items-center gap-2 font-medium">
-                <TrendingUp className="w-4 h-4" />Trending
+                <TrendingUp className="w-4 h-4" />Tendances
               </Link>
               <Link to="/news" className="text-gray-300 hover:text-cyan-400 transition-colors flex items-center gap-2 font-medium">
                 <Newspaper className="w-4 h-4" />Actualités
@@ -246,7 +246,7 @@ const Header = () => {
                   <NotificationBell />
 
                   <Link to="/upload">
-                    <Button className="bg-gradient-to-r from-cyan-500 to-magenta-500 hover:from-cyan-600 hover:to-magenta-600 text-white rounded-full px-6 font-medium shadow-lg shadow-cyan-500/20">
+                    <Button className="bg-gradient-to-r from-cyan-500 to-fuchsia-500 hover:from-cyan-600 hover:to-fuchsia-600 text-white rounded-full px-6 font-medium shadow-lg shadow-cyan-500/20">
                       <Upload className="w-4 h-4 mr-2" />Uploader
                     </Button>
                   </Link>
@@ -333,7 +333,7 @@ const Header = () => {
                     {avatarSrc ? (
                       <img key={avatarSrc} src={avatarSrc} alt="Avatar" className="w-9 h-9 rounded-full border border-cyan-500/50 object-cover flex-shrink-0" />
                     ) : (
-                      <div className="w-9 h-9 rounded-full bg-gradient-to-br from-cyan-500 to-magenta-500 flex items-center justify-center text-white font-bold text-sm flex-shrink-0">
+                      <div className="w-9 h-9 rounded-full bg-gradient-to-br from-cyan-500 to-fuchsia-500 flex items-center justify-center text-white font-bold text-sm flex-shrink-0">
                         {currentUser.username?.[0]?.toUpperCase() || 'U'}
                       </div>
                     )}
@@ -343,7 +343,7 @@ const Header = () => {
                     </div>
                   </div>
                 ) : (
-                  <span className="font-bold bg-gradient-to-r from-cyan-400 to-magenta-500 bg-clip-text text-transparent">Menu</span>
+                  <span className="font-bold bg-gradient-to-r from-cyan-400 to-fuchsia-500 bg-clip-text text-transparent">Menu</span>
                 )}
                 <button onClick={closeMenu} className="p-2 text-gray-400 hover:text-white hover:bg-white/10 rounded-full transition-colors ml-2 flex-shrink-0">
                   <X className="w-5 h-5" />
@@ -373,7 +373,7 @@ const Header = () => {
                         {song.cover_url ? (
                           <img src={song.cover_url} alt={song.title} className="w-8 h-8 rounded object-cover flex-shrink-0" />
                         ) : (
-                          <div className="w-8 h-8 rounded bg-gradient-to-br from-cyan-500/50 to-magenta-500/50 flex-shrink-0" />
+                          <div className="w-8 h-8 rounded bg-gradient-to-br from-cyan-500/50 to-fuchsia-500/50 flex-shrink-0" />
                         )}
                         <div className="min-w-0">
                           <p className="text-white text-xs font-medium truncate">{song.title}</p>
@@ -395,7 +395,7 @@ const Header = () => {
                     <Globe className="w-5 h-5 text-cyan-400" />Explorer
                   </Link>
                   <Link to="/trending" onClick={closeMenu} className="flex items-center gap-3 px-4 py-3 text-gray-300 hover:bg-cyan-500/10 hover:text-cyan-400 rounded-lg transition-colors">
-                    <TrendingUp className="w-5 h-5 text-cyan-400" />Trending
+                    <TrendingUp className="w-5 h-5 text-cyan-400" />Tendances
                   </Link>
                   <Link to="/news" onClick={closeMenu} className="flex items-center gap-3 px-4 py-3 text-gray-300 hover:bg-cyan-500/10 hover:text-cyan-400 rounded-lg transition-colors">
                     <Newspaper className="w-5 h-5 text-cyan-400" />Actualités
@@ -418,7 +418,7 @@ const Header = () => {
                         <BarChart2 className="w-5 h-5 text-cyan-400" />Mes stats
                       </Link>
                       <Link to="/profile" onClick={closeMenu} className="flex items-center gap-3 px-4 py-3 text-gray-300 hover:bg-cyan-500/10 hover:text-cyan-400 rounded-lg transition-colors">
-                        <User className="w-5 h-5 text-magenta-400" />Mon profil
+                        <User className="w-5 h-5 text-fuchsia-400" />Mon profil
                       </Link>
                     </>
                   )}
@@ -485,7 +485,7 @@ const Header = () => {
                       <Button className="w-full bg-cyan-600 hover:bg-cyan-700 text-white rounded-full">Connexion</Button>
                     </Link>
                     <Link to="/signup" onClick={closeMenu}>
-                      <Button className="w-full bg-gradient-to-r from-cyan-500 to-magenta-500 text-white rounded-full">Inscription</Button>
+                      <Button className="w-full bg-gradient-to-r from-cyan-500 to-fuchsia-500 text-white rounded-full">Inscription</Button>
                     </Link>
                   </div>
                 )}

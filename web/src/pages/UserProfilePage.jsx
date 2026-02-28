@@ -197,7 +197,7 @@ const UserProfilePage = () => {
             <div className="flex flex-col md:flex-row items-center md:items-start gap-6">
               {/* Avatar */}
               <div className="relative">
-                <div className="w-24 h-24 md:w-32 md:h-32 bg-gradient-to-br from-cyan-500 to-magenta-500 rounded-full flex items-center justify-center">
+                <div className="w-24 h-24 md:w-32 md:h-32 bg-gradient-to-br from-cyan-500 to-fuchsia-500 rounded-full flex items-center justify-center">
                   {(profile?.avatar_url || currentUser.avatar_url) ? (
                     <img
                       src={profile?.avatar_url || currentUser.avatar_url}
@@ -283,7 +283,7 @@ const UserProfilePage = () => {
                 <div className="flex flex-wrap gap-3 justify-center md:justify-start">
                   <Button
                     onClick={() => setShowEditModal(true)}
-                    className="bg-gradient-to-r from-cyan-500 to-magenta-500 hover:from-cyan-600 hover:to-magenta-600"
+                    className="bg-gradient-to-r from-cyan-500 to-fuchsia-500 hover:from-cyan-600 hover:to-fuchsia-600"
                   >
                     <Edit3 className="w-4 h-4 mr-2" />
                     Modifier le profil
@@ -391,7 +391,7 @@ const UserProfilePage = () => {
                       <Music className="w-16 h-16 text-gray-600 mx-auto mb-4" />
                       <p className="text-gray-400 text-lg mb-4">Aucun morceau uploadé</p>
                       <Link to="/upload">
-                        <Button className="bg-gradient-to-r from-cyan-500 to-magenta-500 hover:from-cyan-600 hover:to-magenta-600">
+                        <Button className="bg-gradient-to-r from-cyan-500 to-fuchsia-500 hover:from-cyan-600 hover:to-fuchsia-600">
                           <Upload className="w-4 h-4 mr-2" />
                           Upload ton premier morceau
                         </Button>

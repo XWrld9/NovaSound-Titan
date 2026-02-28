@@ -178,7 +178,7 @@ const PlaylistPage = () => {
           className="flex flex-col sm:flex-row gap-6 mb-8 p-5 bg-gray-900/60 border border-white/8 rounded-3xl"
         >
           {/* Cover */}
-          <div className="w-full sm:w-40 h-40 rounded-2xl overflow-hidden flex-shrink-0 shadow-2xl bg-gradient-to-br from-cyan-500/20 to-magenta-500/20 flex items-center justify-center border border-white/10">
+          <div className="w-full sm:w-40 h-40 rounded-2xl overflow-hidden flex-shrink-0 shadow-2xl bg-gradient-to-br from-cyan-500/20 to-fuchsia-500/20 flex items-center justify-center border border-white/10">
             {playlist?.cover_url
               ? <img src={playlist.cover_url} alt="" className="w-full h-full object-cover" />
               : <ListMusic className="w-16 h-16 text-gray-600" />
@@ -217,7 +217,7 @@ const PlaylistPage = () => {
                   {songs.length > 0 && (
                     <>
                       <button onClick={() => handlePlayAll(0)}
-                        className="flex items-center gap-2 bg-gradient-to-r from-cyan-500 to-magenta-500 hover:from-cyan-400 hover:to-magenta-400 text-white font-bold px-5 py-2.5 rounded-full text-sm transition-all shadow-lg shadow-cyan-500/20 active:scale-95">
+                        className="flex items-center gap-2 bg-gradient-to-r from-cyan-500 to-fuchsia-500 hover:from-cyan-400 hover:to-fuchsia-400 text-white font-bold px-5 py-2.5 rounded-full text-sm transition-all shadow-lg shadow-cyan-500/20 active:scale-95">
                         <Play className="w-4 h-4 fill-current" /> Lire tout
                       </button>
                       <button onClick={handlePlayShuffle}
@@ -320,7 +320,7 @@ const PlaylistPage = () => {
                   <div className="w-10 h-10 rounded-lg overflow-hidden flex-shrink-0 shadow">
                     {song.cover_url
                       ? <img src={song.cover_url} alt="" className="w-full h-full object-cover" loading="lazy" />
-                      : <div className="w-full h-full bg-gradient-to-br from-cyan-500 to-magenta-500 flex items-center justify-center"><Music className="w-4 h-4 text-white" /></div>
+                      : <div className="w-full h-full bg-gradient-to-br from-cyan-500 to-fuchsia-500 flex items-center justify-center"><Music className="w-4 h-4 text-white" /></div>
                     }
                   </div>
 

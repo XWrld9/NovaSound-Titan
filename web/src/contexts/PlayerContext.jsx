@@ -1,10 +1,8 @@
 /**
- * PlayerContext — NovaSound TITAN LUX v300
- * Fix v300 :
- *   - shouldAutoPlay  : flag transmis à AudioPlayer pour démarrer la lecture
- *                       automatiquement dès le premier clic (même 1er son)
- *   - currentPlaylistId  : ID de la playlist Supabase en cours de lecture
- *   - removeFromPlaylist : retire un son de la playlist lecture ET synchro DB playlist profil
+ * PlayerContext — NovaSound TITAN LUX v333
+ * Fixes v333 :
+ *   - shouldAutoPlay remis à false via resetAutoPlay() après lecture lancée
+ *   - shouldAutoPlay exposé + resetAutoPlay() exposé pour AudioPlayer
  */
 import React, { createContext, useContext, useState, useRef, useCallback, useEffect } from 'react';
 import { supabase } from '@/lib/supabaseClient';
@@ -39,7 +37,7 @@ export const PlayerProvider = ({ children }) => {
   useEffect(() => { radioModeRef.current = radioMode; }, [radioMode]);
   useEffect(() => { currentPlaylistIdRef.current = currentPlaylistId; }, [currentPlaylistId]);
 
-  // ── Sync song-updated event (title/artist/description edites) ────
+  // ── Sync song-updated event ──────────────────────────────────────
   useEffect(() => {
     const handler = (e) => {
       const updated = e.detail;
@@ -65,7 +63,7 @@ export const PlayerProvider = ({ children }) => {
     return () => window.removeEventListener('novasound:song-updated', handler);
   }, []);
 
-  // ── Fetch prochain son radio ──────────────────────────────────────
+  // ── Fetch prochain son radio ────────────────────────────────────
   const fetchRadioNext = useCallback(async (currentSongData) => {
     if (!currentSongData) return null;
     setRadioLoading(true);
@@ -76,42 +74,30 @@ export const PlayerProvider = ({ children }) => {
         ...queueRef.current.map(s => s.id),
       ].filter(Boolean);
 
-      // Applique le filtre d'exclusion seulement si la liste est non vide
-      // (un .not('id','in','()') vide cause une erreur Supabase)
-      const applyExclude = (q) =>
-        excludeIds.length > 0 ? q.not('id', 'in', `(${excludeIds.join(',')})`) : q;
-
       if (currentSongData.genre) {
-        const { data } = await applyExclude(
-          supabase.from('songs').select('*')
-            .eq('is_archived', false)
-            .eq('genre', currentSongData.genre)
-            .order('plays_count', { ascending: false })
-            .limit(10)
-        );
+        const { data } = await supabase
+          .from('songs').select('*')
+          .eq('is_archived', false).eq('genre', currentSongData.genre)
+          .not('id', 'in', `(${excludeIds.join(',')})`)
+          .order('plays_count', { ascending: false }).limit(10);
         if (data?.length) {
           const pool = data.slice(0, Math.min(5, data.length));
-          setRadioLoading(false);
           return pool[Math.floor(Math.random() * pool.length)];
         }
       }
 
-      const { data: byArtist } = await applyExclude(
-        supabase.from('songs').select('*')
-          .eq('is_archived', false)
-          .ilike('artist', `%${currentSongData.artist}%`)
-          .limit(5)
-      );
-      if (byArtist?.length) { setRadioLoading(false); return byArtist[Math.floor(Math.random() * byArtist.length)]; }
+      const { data: byArtist } = await supabase
+        .from('songs').select('*').eq('is_archived', false)
+        .ilike('artist', `%${currentSongData.artist}%`)
+        .not('id', 'in', `(${excludeIds.join(',')})`).limit(5);
+      if (byArtist?.length) return byArtist[Math.floor(Math.random() * byArtist.length)];
 
-      const { data: popular } = await applyExclude(
-        supabase.from('songs').select('*')
-          .eq('is_archived', false)
-          .order('plays_count', { ascending: false })
-          .limit(20)
-      );
-      if (popular?.length) { setRadioLoading(false); return popular[Math.floor(Math.random() * popular.length)]; }
-    } catch (e) { console.error('[Radio]', e); }
+      const { data: popular } = await supabase
+        .from('songs').select('*').eq('is_archived', false)
+        .not('id', 'in', `(${excludeIds.join(',')})`)
+        .order('plays_count', { ascending: false }).limit(20);
+      if (popular?.length) return popular[Math.floor(Math.random() * popular.length)];
+    } catch {}
     finally { setRadioLoading(false); }
     return null;
   }, []);
@@ -140,7 +126,10 @@ export const PlayerProvider = ({ children }) => {
     }, 1000);
   }, []);
 
-  // ── playSong : accepte un playlistId optionnel pour la synchro ───
+  // ── Réinitialiser shouldAutoPlay après usage par AudioPlayer ────
+  const resetAutoPlay = useCallback(() => setShouldAutoPlay(false), []);
+
+  // ── playSong ────────────────────────────────────────────────────
   const playSong = useCallback((song, songList = [], playlistId = null) => {
     if (!song) return;
     const list = (songList.length ? songList : [song]).filter(s => !s.is_archived);
@@ -150,11 +139,11 @@ export const PlayerProvider = ({ children }) => {
     setPlaylist(list);
     setCurrentSong(song);
     setIsVisible(true);
-    setShouldAutoPlay(true);
     setCurrentPlaylistId(playlistId || null);
+    setShouldAutoPlay(true);
   }, []);
 
-  // ── Retirer un son de la playlist lecture + synchro DB ───────────
+  // ── removeFromPlaylist ──────────────────────────────────────────
   const removeFromPlaylist = useCallback(async (songId) => {
     const newList = playlistRef.current.filter(s => s.id !== songId);
     playlistRef.current = newList;
@@ -174,11 +163,8 @@ export const PlayerProvider = ({ children }) => {
     const plId = currentPlaylistIdRef.current;
     if (plId) {
       try {
-        await supabase
-          .from('playlist_songs')
-          .delete()
-          .eq('playlist_id', plId)
-          .eq('song_id', songId);
+        await supabase.from('playlist_songs').delete()
+          .eq('playlist_id', plId).eq('song_id', songId);
         window.dispatchEvent(new CustomEvent('novasound:playlist-song-removed', {
           detail: { playlistId: plId, songId },
         }));
@@ -188,7 +174,7 @@ export const PlayerProvider = ({ children }) => {
     }
   }, []);
 
-  // ── handleNext ────────────────────────────────────────────────────
+  // ── handleNext ─────────────────────────────────────────────────
   const handleNext = useCallback(async (songOverride) => {
     if (!songOverride && queueRef.current.length > 0) {
       const [next, ...rest] = queueRef.current;
@@ -222,14 +208,14 @@ export const PlayerProvider = ({ children }) => {
       }
     }
 
-    const song = pl[(idx + 1) % pl.length];
-    if (song) { currentSongRef.current = song; setCurrentSong(song); setShouldAutoPlay(true); }
+    const nextSong = pl[(idx + 1) % pl.length];
+    if (nextSong) { currentSongRef.current = nextSong; setCurrentSong(nextSong); setShouldAutoPlay(true); }
   }, [fetchRadioNext]);
 
   const handlePrevious = useCallback((songOverride) => {
     const song = songOverride || (() => {
-      const pl  = playlistRef.current;
-      const cs  = currentSongRef.current;
+      const pl = playlistRef.current;
+      const cs = currentSongRef.current;
       if (!pl.length || !cs) return null;
       const idx = pl.findIndex(s => s.id === cs.id);
       return pl[(idx - 1 + pl.length) % pl.length];
@@ -252,7 +238,7 @@ export const PlayerProvider = ({ children }) => {
     window.dispatchEvent(new CustomEvent('novasound:close-player'));
   }, [clearSleepTimer]);
 
-  // ── Queue management ─────────────────────────────────────────────
+  // ── Queue management ────────────────────────────────────────────
   const addToQueue = useCallback((song) => {
     if (!song) return;
     setQueue(prev => {
@@ -288,7 +274,7 @@ export const PlayerProvider = ({ children }) => {
       playSong, handleNext, handlePrevious, closePlayer,
       addToQueue, removeFromQueue, clearQueue,
       removeFromPlaylist, setCurrentPlaylistId,
-      setSleepTimer, clearSleepTimer, toggleRadio,
+      setSleepTimer, clearSleepTimer, toggleRadio, resetAutoPlay,
     }}>
       {children}
     </PlayerContext.Provider>

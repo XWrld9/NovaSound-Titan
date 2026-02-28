@@ -8,7 +8,7 @@ const toastStyles = {
   success: { bg: 'bg-gradient-to-r from-cyan-500 to-cyan-600', border: 'border-cyan-400/30' },
   error:   { bg: 'bg-gradient-to-r from-red-500 to-rose-600',  border: 'border-red-400/30'  },
   warning: { bg: 'bg-gradient-to-r from-amber-500 to-orange-500', border: 'border-amber-400/30' },
-  info:    { bg: 'bg-gradient-to-r from-cyan-500 to-magenta-500', border: 'border-cyan-400/30' }
+  info:    { bg: 'bg-gradient-to-r from-cyan-500 to-fuchsia-500', border: 'border-cyan-400/30' }
 };
 
 const icons = {

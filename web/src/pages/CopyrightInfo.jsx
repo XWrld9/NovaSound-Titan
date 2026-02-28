@@ -17,7 +17,7 @@ const CopyrightInfo = () => {
 
         <main className="flex-1 container mx-auto px-4 py-12 max-w-4xl">
           <div className="mb-12 text-center">
-            <h1 className="text-4xl md:text-5xl font-bold bg-gradient-to-r from-cyan-400 to-magenta-500 bg-clip-text text-transparent mb-4">
+            <h1 className="text-4xl md:text-5xl font-bold bg-gradient-to-r from-cyan-400 to-fuchsia-500 bg-clip-text text-transparent mb-4">
               Informations sur les Droits d'Auteur
             </h1>
             <p className="text-gray-400">Protection de la propriété intellectuelle</p>
@@ -34,9 +34,9 @@ const CopyrightInfo = () => {
               </p>
             </section>
 
-            <section className="bg-gray-900/50 backdrop-blur-sm border border-magenta-500/20 rounded-2xl p-8">
+            <section className="bg-gray-900/50 backdrop-blur-sm border border-fuchsia-500/20 rounded-2xl p-8">
               <div className="flex items-center gap-3 mb-6">
-                <Flag className="w-8 h-8 text-magenta-500" />
+                <Flag className="w-8 h-8 text-fuchsia-500" />
                 <h2 className="text-2xl font-bold text-white">Politique DMCA</h2>
               </div>
               <p className="mb-4">
@@ -63,12 +63,12 @@ const CopyrightInfo = () => {
 
             <div className="text-center pt-8 border-t border-gray-800">
               <div className="flex flex-col items-center gap-4">
-                <Mail className="w-12 h-12 text-magenta-500" />
+                <Mail className="w-12 h-12 text-fuchsia-500" />
                 <h3 className="text-xl font-bold text-white">Signaler une infraction</h3>
                 <p className="text-gray-500">
                   Veuillez envoyer tous les avis de violation du droit d'auteur à :
                 </p>
-                <a href="mailto:eloadxfamily@gmail.com" className="text-cyan-400 hover:text-magenta-500 transition-colors font-semibold text-lg">
+                <a href="mailto:eloadxfamily@gmail.com" className="text-cyan-400 hover:text-fuchsia-500 transition-colors font-semibold text-lg">
                   eloadxfamily@gmail.com
                 </a>
               </div>

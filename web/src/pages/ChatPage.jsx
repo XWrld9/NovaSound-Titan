@@ -510,11 +510,10 @@ const ChatPage = () => {
         <Header />
 
         <div
-          className={`flex-1 flex flex-col`}
+          className={`flex-1 flex flex-col overflow-hidden`}
           style={{
-            /* Mobile : retire la hauteur du BottomNav (56px) + safe-area + player éventuel */
-            height: `calc(100dvh - 64px - ${playerVisible ? '80px' : '0px'})`,
-            paddingBottom: 'env(safe-area-inset-bottom, 0px)',
+            /* On laisse la zone input gérer son propre padding en bas */
+            height: 'calc(100dvh - 64px)',
           }}
         >
           {/* Barre supérieure */}
@@ -692,20 +691,20 @@ const ChatPage = () => {
                   <motion.button
                     initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.8 }}
                     onClick={() => { isAtBottom.current = true; bottomRef.current?.scrollIntoView({ behavior: 'smooth' }); setShowScroll(false); }}
-                    className="fixed bottom-[calc(56px+env(safe-area-inset-bottom,0px)+80px)] right-4 md:bottom-28 z-40 w-10 h-10 rounded-full bg-cyan-500 hover:bg-cyan-400 shadow-lg shadow-cyan-500/30 flex items-center justify-center text-white">
-                    <ChevronUp className="w-5 h-5 rotate-180" />
+                    className=\"fixed right-4 z-40 w-10 h-10 rounded-full bg-cyan-500 hover:bg-cyan-400 shadow-lg shadow-cyan-500/30 flex items-center justify-center text-white\"
+                    style={{ bottom: `calc(${playerVisible ? '72px + ' : ''}56px + env(safe-area-inset-bottom, 0px) + 72px)` }}>
+                    <ChevronUp className=\"w-5 h-5 rotate-180\" />
                   </motion.button>
                 )}
               </AnimatePresence>
 
-              {/* Zone de saisie */}
+              {/* Zone de saisie — grande, confortable sur mobile */}
               <div
-                className="flex-shrink-0 border-t border-white/[0.06] bg-gray-950/95 backdrop-blur-sm px-4 pt-3 relative chat-input-zone"
+                className=\"flex-shrink-0 border-t border-white/[0.06] bg-gray-950/98 backdrop-blur-xl px-3 pt-2 relative\"
                 style={{
-                  paddingBottom: 'calc(56px + env(safe-area-inset-bottom, 8px) + 8px)',
+                  paddingBottom: `calc(${playerVisible ? '72px + ' : ''}56px + env(safe-area-inset-bottom, 8px) + 6px)`,
                 }}
               >
-                <style>{`.chat-input-zone { padding-bottom: calc(56px + env(safe-area-inset-bottom, 8px) + 8px) !important; } @media(min-width:768px){ .chat-input-zone { padding-bottom: 12px !important; } }`}</style>
                 <div className="max-w-3xl mx-auto">
                   {/* Preview réponse */}
                   <AnimatePresence>
@@ -776,16 +775,16 @@ const ChatPage = () => {
                           placeholder="Écrire dans le chat… @tous pour mentionner tout le monde"
                           rows={1}
                           maxLength={MAX}
-                          style={{ resize: 'none', minHeight: 40, maxHeight: 120 }}
-                          className="w-full bg-gray-800/80 border border-white/[0.08] rounded-2xl px-4 py-2.5 pr-14 text-sm text-white placeholder-gray-600 focus:outline-none focus:border-cyan-500/40 transition-colors overflow-y-auto"
-                          onInput={e => { e.target.style.height = 'auto'; e.target.style.height = Math.min(e.target.scrollHeight, 120) + 'px'; }}
+                          style={{ resize: 'none', minHeight: 44, maxHeight: 140 }}
+                          className="w-full bg-gray-800/90 border border-white/[0.10] rounded-2xl px-4 py-3 pr-12 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-cyan-500/50 focus:bg-gray-800 transition-all overflow-y-auto leading-relaxed"
+                          onInput={e => { e.target.style.height = 'auto'; e.target.style.height = Math.min(e.target.scrollHeight, 140) + 'px'; }}
                         />
                         {text.length > MAX * 0.8 && (
-                          <span className={`absolute bottom-2.5 right-14 text-[10px] ${remaining < 50 ? 'text-red-400' : 'text-gray-600'}`}>{remaining}</span>
+                          <span className={`absolute bottom-3 right-12 text-[10px] ${remaining < 50 ? 'text-red-400' : 'text-gray-600'}`}>{remaining}</span>
                         )}
                       </div>
                       <button onClick={handleSend} disabled={!text.trim() || sending}
-                        className="w-10 h-10 rounded-full bg-gradient-to-br from-cyan-500 to-cyan-600 hover:from-cyan-400 hover:to-cyan-500 flex items-center justify-center flex-shrink-0 disabled:opacity-40 transition-all shadow-lg shadow-cyan-500/20">
+                        className="w-11 h-11 rounded-2xl bg-gradient-to-br from-cyan-500 to-cyan-600 hover:from-cyan-400 hover:to-cyan-500 flex items-center justify-center flex-shrink-0 disabled:opacity-30 transition-all shadow-lg shadow-cyan-500/20 active:scale-95">
                         {sending
                           ? <div className="w-4 h-4 rounded-full border-2 border-white/30 border-t-white animate-spin" />
                           : <Send className="w-4 h-4 text-white" />
@@ -793,7 +792,7 @@ const ChatPage = () => {
                       </button>
                     </div>
                   ) : (
-                    <div className="flex items-center justify-center gap-3 py-3 px-4 bg-white/[0.03] rounded-2xl border border-white/[0.06]">
+                    <div className="flex items-center justify-center gap-3 py-3.5 px-4 bg-white/[0.03] rounded-2xl border border-white/[0.06]">
                       <p className="text-gray-500 text-sm">Tu dois être connecté pour participer</p>
                       <Link to="/login" className="px-4 py-1.5 bg-cyan-500 hover:bg-cyan-400 text-white text-sm font-bold rounded-full transition-all">Connexion</Link>
                     </div>

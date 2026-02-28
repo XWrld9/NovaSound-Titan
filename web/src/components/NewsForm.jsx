@@ -49,7 +49,7 @@ const NewsForm = ({ onNewsCreated }) => {
   if (!currentUser) return null;
 
   return (
-    <div className="bg-gray-900/50 backdrop-blur-xl border border-magenta-500/30 rounded-xl p-6 mb-8">
+    <div className="bg-gray-900/50 backdrop-blur-xl border border-fuchsia-500/30 rounded-xl p-6 mb-8">
       <h3 className="text-xl font-bold text-white mb-4">Publier une actualité</h3>
       
       {error && (
@@ -74,7 +74,7 @@ const NewsForm = ({ onNewsCreated }) => {
             onChange={(e) => setTitle(e.target.value)}
             placeholder="Titre de l'actualité"
             required
-            className="w-full px-4 py-2 bg-gray-950/50 border border-magenta-500/30 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-magenta-400 focus:ring-1 focus:ring-magenta-400 transition-all"
+            className="w-full px-4 py-2 bg-gray-950/50 border border-fuchsia-500/30 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-fuchsia-400 focus:ring-1 focus:ring-fuchsia-400 transition-all"
           />
         </div>
         <div>
@@ -84,14 +84,14 @@ const NewsForm = ({ onNewsCreated }) => {
             placeholder="Quoi de neuf ?"
             required
             rows={3}
-            className="w-full px-4 py-2 bg-gray-950/50 border border-magenta-500/30 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-magenta-400 focus:ring-1 focus:ring-magenta-400 transition-all resize-none"
+            className="w-full px-4 py-2 bg-gray-950/50 border border-fuchsia-500/30 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-fuchsia-400 focus:ring-1 focus:ring-fuchsia-400 transition-all resize-none"
           />
         </div>
         <div className="flex justify-end">
           <Button 
             type="submit" 
             disabled={loading}
-            className="bg-magenta-600 hover:bg-magenta-700 text-white"
+            className="bg-fuchsia-600 hover:bg-fuchsia-700 text-white"
           >
             {loading ? 'Publication...' : 'Publier'}
             <Send className="w-4 h-4 ml-2" />

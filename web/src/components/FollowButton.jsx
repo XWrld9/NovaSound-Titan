@@ -104,7 +104,7 @@ const FollowButton = ({ userId, initialFollowers = 0, onFollowChange }) => {
       className={`flex items-center gap-2 px-5 py-2.5 rounded-full font-semibold text-sm transition-all disabled:opacity-60 ${
         isFollowing
           ? 'bg-gray-700 text-white hover:bg-red-500/20 hover:text-red-400 hover:border-red-500/40 border border-gray-600'
-          : 'bg-gradient-to-r from-cyan-500 to-magenta-500 text-white hover:opacity-90 shadow-lg shadow-cyan-500/20'
+          : 'bg-gradient-to-r from-cyan-500 to-fuchsia-500 text-white hover:opacity-90 shadow-lg shadow-cyan-500/20'
       }`}
       whileHover={{ scale: isLoading ? 1 : 1.03 }}
       whileTap={{ scale: isLoading ? 1 : 0.97 }}

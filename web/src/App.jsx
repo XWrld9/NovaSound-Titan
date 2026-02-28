@@ -46,7 +46,7 @@ const SearchPage        = lazy(() => import('@/pages/SearchPage'));
 
 /* ── Player global — monté UNE SEULE FOIS, survit à toute navigation ── */
 const GlobalPlayer = () => {
-  const { currentSong, playlist, isVisible, handleNext, handlePrevious, closePlayer, shouldAutoPlay } = usePlayer();
+  const { currentSong, playlist, isVisible, handleNext, handlePrevious, closePlayer, shouldAutoPlay, resetAutoPlay } = usePlayer();
   if (!isVisible || !currentSong) return null;
   return (
     <AudioPlayer
@@ -56,6 +56,7 @@ const GlobalPlayer = () => {
       onPrevious={handlePrevious}
       onClose={closePlayer}
       shouldAutoPlay={shouldAutoPlay}
+      resetAutoPlay={resetAutoPlay}
     />
   );
 };

@@ -329,7 +329,7 @@ const MusicUploadPage = () => {
             className="max-w-2xl mx-auto"
           >
             <div className="text-center mb-8">
-              <h1 className="text-4xl font-bold bg-gradient-to-r from-cyan-400 to-magenta-500 bg-clip-text text-transparent mb-4">
+              <h1 className="text-4xl font-bold bg-gradient-to-r from-cyan-400 to-fuchsia-500 bg-clip-text text-transparent mb-4">
                 Uploader ton morceau
               </h1>
               <p className="text-gray-400">Partage ta musique avec le monde entier</p>
@@ -397,7 +397,7 @@ const MusicUploadPage = () => {
                       {/* Barre visuelle */}
                       <div className="w-full bg-gray-700 rounded-full h-2.5 overflow-hidden">
                         <motion.div
-                          className="h-full rounded-full bg-gradient-to-r from-cyan-500 to-magenta-500"
+                          className="h-full rounded-full bg-gradient-to-r from-cyan-500 to-fuchsia-500"
                           style={{ width: `${uploadProgress}%` }}
                           transition={{ duration: 0.3, ease: 'easeOut' }}
                         />
@@ -507,7 +507,7 @@ const MusicUploadPage = () => {
                     /* Zone unique d'import audio — ouvre directement le gestionnaire de fichiers natif */
                     <div className="relative">
                       <div className="flex flex-col items-center justify-center gap-3 w-full px-4 py-8 bg-gray-900/70 border-2 border-dashed border-cyan-500/30 rounded-2xl transition-all pointer-events-none hover:border-cyan-500/60 hover:bg-gray-900/90">
-                        <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-cyan-500/20 to-magenta-500/20 border border-white/10 flex items-center justify-center">
+                        <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-cyan-500/20 to-fuchsia-500/20 border border-white/10 flex items-center justify-center">
                           <FileAudio className="w-7 h-7 text-cyan-400" />
                         </div>
                         <div className="text-center">
@@ -576,7 +576,7 @@ const MusicUploadPage = () => {
                 <Button
                   type="submit"
                   disabled={loading || !audioFile}
-                  className="w-full bg-gradient-to-r from-cyan-500 to-magenta-500 hover:from-cyan-600 hover:to-magenta-600 text-white py-3 text-lg font-semibold shadow-lg shadow-cyan-500/30 disabled:opacity-60"
+                  className="w-full bg-gradient-to-r from-cyan-500 to-fuchsia-500 hover:from-cyan-600 hover:to-fuchsia-600 text-white py-3 text-lg font-semibold shadow-lg shadow-cyan-500/30 disabled:opacity-60"
                 >
                   {loading ? (
                     <span className="flex items-center justify-center gap-2">

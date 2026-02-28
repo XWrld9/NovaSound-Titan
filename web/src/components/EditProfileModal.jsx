@@ -263,7 +263,7 @@ const EditProfileModal = ({ isOpen, onClose }) => {
                     onError={(e) => { e.target.src = '/profil par defaut.png'; }}
                   />
                   <label htmlFor="avatar-upload"
-                    className="absolute bottom-0 right-0 bg-gradient-to-r from-cyan-500 to-magenta-500 text-white p-2 rounded-full cursor-pointer hover:opacity-90 transition-opacity">
+                    className="absolute bottom-0 right-0 bg-gradient-to-r from-cyan-500 to-fuchsia-500 text-white p-2 rounded-full cursor-pointer hover:opacity-90 transition-opacity">
                     <Upload className="w-4 h-4" />
                   </label>
                   <input
@@ -347,7 +347,7 @@ const EditProfileModal = ({ isOpen, onClose }) => {
                   Annuler
                 </button>
                 <button type="submit" disabled={isLoading}
-                  className="flex-1 px-4 py-2.5 bg-gradient-to-r from-cyan-500 to-magenta-500 hover:opacity-90 text-white rounded-lg font-medium transition-all disabled:opacity-60">
+                  className="flex-1 px-4 py-2.5 bg-gradient-to-r from-cyan-500 to-fuchsia-500 hover:opacity-90 text-white rounded-lg font-medium transition-all disabled:opacity-60">
                   {isLoading ? 'Enregistrement...' : 'Enregistrer'}
                 </button>
               </div>

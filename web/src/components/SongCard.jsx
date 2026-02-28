@@ -104,7 +104,7 @@ const SongCard = memo(({ song: initialSong, onPlay, isPlaying, setCurrentSong, c
           {song.cover_url ? (
             <img src={song.cover_url} alt={song.title} className="w-full h-full object-cover" loading="lazy" decoding="async" />
           ) : (
-            <div className="w-full h-full bg-gradient-to-br from-cyan-500 to-magenta-500 flex items-center justify-center">
+            <div className="w-full h-full bg-gradient-to-br from-cyan-500 to-fuchsia-500 flex items-center justify-center">
               <Music className="w-16 h-16 text-white" />
             </div>
           )}
@@ -112,7 +112,7 @@ const SongCard = memo(({ song: initialSong, onPlay, isPlaying, setCurrentSong, c
           {!song.is_archived && (
             <div className="absolute inset-0 bg-black/40 md:bg-transparent md:group-hover:bg-black/50 flex items-center justify-center transition-all duration-200">
               <button onClick={handlePlay}
-                className="p-4 rounded-full bg-gradient-to-r from-cyan-500 to-magenta-500 hover:from-cyan-600 hover:to-magenta-600 transform md:scale-90 md:opacity-0 md:group-hover:scale-100 md:group-hover:opacity-100 active:scale-95 transition-all duration-200 shadow-xl shadow-cyan-500/40"
+                className="p-4 rounded-full bg-gradient-to-r from-cyan-500 to-fuchsia-500 hover:from-cyan-600 hover:to-fuchsia-600 transform md:scale-90 md:opacity-0 md:group-hover:scale-100 md:group-hover:opacity-100 active:scale-95 transition-all duration-200 shadow-xl shadow-cyan-500/40"
                 aria-label="Lancer la lecture">
                 <Play className="w-8 h-8 text-white fill-current" />
               </button>
@@ -210,7 +210,7 @@ const SongCard = memo(({ song: initialSong, onPlay, isPlaying, setCurrentSong, c
                   {currentUser && (
                     <button
                       onClick={e => { e.stopPropagation(); setShowPlaylistModal(true); }}
-                      className="text-gray-400 hover:text-magenta-400 transition-colors p-1 rounded-md hover:bg-magenta-500/10"
+                      className="text-gray-400 hover:text-fuchsia-400 transition-colors p-1 rounded-md hover:bg-fuchsia-500/10"
                       title="Ajouter à une playlist"
                     >
                       <ListMusic className="w-3.5 h-3.5" />

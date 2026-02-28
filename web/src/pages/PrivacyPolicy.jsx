@@ -17,7 +17,7 @@ const PrivacyPolicy = () => {
 
         <main className="flex-1 container mx-auto px-4 py-12 max-w-4xl">
           <div className="mb-12 text-center">
-            <h1 className="text-4xl md:text-5xl font-bold bg-gradient-to-r from-cyan-400 to-magenta-500 bg-clip-text text-transparent mb-4">
+            <h1 className="text-4xl md:text-5xl font-bold bg-gradient-to-r from-cyan-400 to-fuchsia-500 bg-clip-text text-transparent mb-4">
               Politique de Confidentialité
             </h1>
             <p className="text-gray-400">Dernière mise à jour : 19 Février 2026</p>
@@ -37,9 +37,9 @@ const PrivacyPolicy = () => {
               </p>
             </section>
 
-            <section className="bg-gray-900/50 backdrop-blur-sm border border-magenta-500/20 rounded-2xl p-8">
+            <section className="bg-gray-900/50 backdrop-blur-sm border border-fuchsia-500/20 rounded-2xl p-8">
               <div className="flex items-center gap-3 mb-6">
-                <Eye className="w-8 h-8 text-magenta-500" />
+                <Eye className="w-8 h-8 text-fuchsia-500" />
                 <h2 className="text-2xl font-bold text-white">2. Collecte des Données</h2>
               </div>
               <p className="mb-4">Nous collectons les types d'informations suivants :</p>
@@ -66,9 +66,9 @@ const PrivacyPolicy = () => {
               </ul>
             </section>
 
-            <section className="bg-gray-900/50 backdrop-blur-sm border border-magenta-500/20 rounded-2xl p-8">
+            <section className="bg-gray-900/50 backdrop-blur-sm border border-fuchsia-500/20 rounded-2xl p-8">
               <div className="flex items-center gap-3 mb-6">
-                <Lock className="w-8 h-8 text-magenta-500" />
+                <Lock className="w-8 h-8 text-fuchsia-500" />
                 <h2 className="text-2xl font-bold text-white">4. Sécurité et Droits</h2>
               </div>
               <p className="mb-4">
@@ -87,7 +87,7 @@ const PrivacyPolicy = () => {
 
             <div className="text-center pt-8 border-t border-gray-800">
               <p className="text-gray-500 mb-4">Pour toute question concernant cette politique, contactez-nous à :</p>
-              <a href="mailto:eloadxfamily@gmail.com" className="text-cyan-400 hover:text-magenta-500 transition-colors font-semibold text-lg">
+              <a href="mailto:eloadxfamily@gmail.com" className="text-cyan-400 hover:text-fuchsia-500 transition-colors font-semibold text-lg">
                 eloadxfamily@gmail.com
               </a>
             </div>

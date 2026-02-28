@@ -182,7 +182,7 @@ const ArtistStatsPage = () => {
           </Link>
 
           <div className="flex items-center gap-3 mb-8">
-            <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-cyan-500/20 to-magenta-500/20 border border-white/10 flex items-center justify-center">
+            <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-cyan-500/20 to-fuchsia-500/20 border border-white/10 flex items-center justify-center">
               <BarChart2 className="w-5 h-5 text-cyan-400" />
             </div>
             <div>
