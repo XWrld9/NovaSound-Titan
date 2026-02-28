@@ -157,12 +157,12 @@ const EditProfileModal = ({ isOpen, onClose }) => {
     // Validation username
     const uname = formData.username.trim();
     if (uname.length < 3 || uname.length > 30) {
-      setError('Le nom d'utilisateur doit contenir entre 3 et 30 caractères.');
+      setError("Le nom d'utilisateur doit contenir entre 3 et 30 caractères.");
       setIsLoading(false);
       return;
     }
     if (uname.includes(' ')) {
-      setError('Pas d'espaces dans le nom d'utilisateur — utilise des tirets (------ ou --------) pour rester taggable dans le chat global.');
+      setError("Pas d'espaces dans le nom d'utilisateur — utilise des tirets (------ ou --------) pour rester taggable dans le chat global.");
       setIsLoading(false);
       return;
     }
