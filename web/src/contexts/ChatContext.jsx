@@ -60,6 +60,7 @@ export const ChatProvider = ({ children }) => {
   const [hasMore,     setHasMore]    = useState(false);
   const [period,      setPeriod]     = useState('today');
   const [onlineCount, setOnlineCount] = useState(0);
+  const [onlineUsers, setOnlineUsers]   = useState([]);
   const channelRef = useRef(null);
   const oldestRef  = useRef(null);
 
@@ -72,7 +73,7 @@ export const ChatProvider = ({ children }) => {
         .from('chat_messages')
         .select(`
           id, user_id, content, reply_to_id, reply_to_content, reply_to_username,
-          created_at, is_deleted,
+          created_at, is_deleted, is_edited,
           users!chat_messages_user_id_fkey(id, username, avatar_url)
         `)
         .eq('is_deleted', false)
@@ -201,7 +202,7 @@ export const ChatProvider = ({ children }) => {
         .insert(payload)
         .select(`
           id, user_id, content, reply_to_id, reply_to_content, reply_to_username,
-          created_at, is_deleted,
+          created_at, is_deleted, is_edited,
           users!chat_messages_user_id_fkey(id, username, avatar_url)
         `)
         .single();
@@ -303,22 +304,29 @@ export const ChatProvider = ({ children }) => {
   }, [currentUser, messages]);
 
   // ── Modifier (auteur, 20min) ─────────────────────────────────────
+  const messagesRef = useRef(messages);
+  useEffect(() => { messagesRef.current = messages; }, [messages]);
+
   const editChatMessage = useCallback(async (messageId, newContent) => {
     if (!currentUser?.id || !newContent.trim()) return false;
-    const msg = messages.find(m => m.id === messageId);
+    // Utiliser la ref pour éviter les closures obsolètes
+    const msg = messagesRef.current.find(m => m.id === messageId);
     if (!msg || msg.user_id !== currentUser.id) return false;
     if (Date.now() - new Date(msg.created_at).getTime() > 20 * 60 * 1000) return false;
     const { error } = await supabase
       .from('chat_messages')
-      .update({ content: newContent.trim() })
+      .update({ content: newContent.trim(), is_edited: true })
       .eq('id', messageId)
       .eq('user_id', currentUser.id);
-    if (error) return false;
+    if (error) {
+      console.error('[Chat] editChatMessage error:', error);
+      return false;
+    }
     setMessages(prev => prev.map(m =>
       m.id === messageId ? { ...m, content: newContent.trim(), is_edited: true } : m
     ));
     return true;
-  }, [currentUser?.id, messages]);
+  }, [currentUser?.id]);
 
   // ── Toggle réaction ──────────────────────────────────────────────
   const toggleReaction = useCallback(async (messageId, emoji) => {
@@ -405,11 +413,36 @@ export const ChatProvider = ({ children }) => {
         });
       })
       .on('presence', { event: 'sync' }, () => {
-        setOnlineCount(Object.keys(channel.presenceState()).length);
+        const state = channel.presenceState();
+        const users = Object.values(state).flat();
+        setOnlineUsers(users);
+        setOnlineCount(users.length);
+      })
+      .on('presence', { event: 'join' }, () => {
+        const state = channel.presenceState();
+        const users = Object.values(state).flat();
+        setOnlineUsers(users);
+        setOnlineCount(users.length);
+      })
+      .on('presence', { event: 'leave' }, () => {
+        const state = channel.presenceState();
+        const users = Object.values(state).flat();
+        setOnlineUsers(users);
+        setOnlineCount(users.length);
       })
       .subscribe(async (status) => {
         if (status === 'SUBSCRIBED' && currentUser?.id) {
-          await channel.track({ user_id: currentUser.id });
+          const senderName = currentUser.username
+            || currentUser.user_metadata?.username
+            || currentUser.email?.split('@')[0]
+            || 'Utilisateur';
+          await channel.track({
+            user_id:    currentUser.id,
+            username:   senderName,
+            avatar_url: currentUser.avatar_url || currentUser.user_metadata?.avatar_url || null,
+            email:      currentUser.email || null,
+            joined_at:  new Date().toISOString(),
+          });
         }
       });
 
@@ -420,7 +453,7 @@ export const ChatProvider = ({ children }) => {
 
   return (
     <ChatContext.Provider value={{
-      messages, reactions, loading, hasMore, period, onlineCount,
+      messages, reactions, loading, hasMore, period, onlineCount, onlineUsers,
       fetchMessages, changePeriod, loadMore,
       sendChatMessage, deleteChatMessage, editChatMessage, toggleReaction,
       isMentionAll, insertNotification, // Exposer insertNotification

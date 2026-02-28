@@ -252,20 +252,33 @@ const SongPage = () => {
                 className="bg-gray-900/60 border border-cyan-500/20 rounded-2xl overflow-hidden shadow-2xl"
               >
                 {/* Pochette */}
-                <div className="relative aspect-square max-h-[380px] overflow-hidden">
+                <div className="relative aspect-square max-h-[380px] overflow-hidden bg-gray-950">
                   {coverUrl ? (
-                    <img src={coverUrl} alt={song.title} className="w-full h-full object-cover" />
+                    <>
+                      {/* Fond flou pour les covers non-carrées */}
+                      <img
+                        src={coverUrl}
+                        alt=""
+                        aria-hidden="true"
+                        className="absolute inset-0 w-full h-full object-cover scale-110 blur-xl opacity-40 pointer-events-none"
+                      />
+                      <img
+                        src={coverUrl}
+                        alt={song.title}
+                        className="relative w-full h-full object-contain z-10"
+                      />
+                    </>
                   ) : (
                     <div className="w-full h-full bg-gradient-to-br from-cyan-600/30 to-fuchsia-600/30 flex items-center justify-center">
                       <Music className="w-28 h-28 text-cyan-400/30" />
                     </div>
                   )}
-                  <div className="absolute inset-0 bg-gradient-to-t from-gray-900 via-transparent to-transparent" />
+                  <div className="absolute inset-0 bg-gradient-to-t from-gray-900 via-transparent to-transparent z-20 pointer-events-none" />
 
                   {/* Bouton play central */}
                   <button
                     onClick={handlePlay}
-                    className="absolute inset-0 flex items-center justify-center bg-black/20 md:bg-transparent md:opacity-0 md:hover:opacity-100 md:hover:bg-black/40 transition-all"
+                    className="absolute inset-0 flex items-center justify-center bg-black/20 md:bg-transparent md:opacity-0 md:hover:opacity-100 md:hover:bg-black/40 transition-all z-30"
                   >
                     <motion.div
                       whileTap={{ scale: 0.9 }}
@@ -277,7 +290,7 @@ const SongPage = () => {
 
                   {/* Badge genre */}
                   {song.genre && (
-                    <div className="absolute top-3 left-3">
+                    <div className="absolute top-3 left-3 z-30">
                       <span className="px-2.5 py-1 rounded-full text-xs font-semibold bg-black/60 border border-white/10 text-gray-300 flex items-center gap-1.5 backdrop-blur-sm">
                         <Tag className="w-3 h-3" />
                         {song.genre}

@@ -302,10 +302,25 @@ const EditProfileModal = ({ isOpen, onClose }) => {
                 <input type="text" name="username" value={formData.username} onChange={handleInputChange}
                   required placeholder="ton-nom-d-artiste" autoComplete="nickname" maxLength={30}
                   className="w-full px-4 py-2.5 bg-gray-800 border border-cyan-500/30 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-cyan-400 focus:ring-2 focus:ring-cyan-400/20 transition-all" />
-                <p className="text-xs text-gray-500 mt-1 flex items-start gap-1">
-                  <span className="text-amber-400">⚠</span>
-                  <span>Sépare les mots par <strong className="text-cyan-400">------</strong> ou <strong className="text-cyan-400">--------</strong> pour rester taggable @dans-le-chat</span>
-                </p>
+                <div className="mt-2 px-3 py-2 bg-gray-800/60 border border-gray-700/50 rounded-lg">
+                  <p className="text-[11px] text-gray-400 leading-relaxed">
+                    <span className="text-amber-400 font-semibold">Conseil :</span> Remplace les espaces par des tirets pour être taggable dans le chat (<span className="text-cyan-400 font-mono">@ton-pseudo</span>).
+                  </p>
+                  <div className="flex items-center gap-4 mt-1.5">
+                    <div className="flex flex-col items-center gap-0.5">
+                      <code className="text-cyan-400 text-[11px] font-mono tracking-widest bg-gray-900/60 px-2 py-0.5 rounded">&#8212;&#8212;&#8212;</code>
+                      <span className="text-[9px] text-gray-600">tiret court (6)</span>
+                    </div>
+                    <div className="flex flex-col items-center gap-0.5">
+                      <code className="text-fuchsia-400 text-[11px] font-mono tracking-widest bg-gray-900/60 px-2 py-0.5 rounded">&#8212;&#8212;&#8212;&#8212;</code>
+                      <span className="text-[9px] text-gray-600">tiret long (8)</span>
+                    </div>
+                    <div className="flex flex-col items-center gap-0.5">
+                      <code className="text-green-400 text-[11px] font-mono bg-gray-900/60 px-2 py-0.5 rounded">Jean-Dupont</code>
+                      <span className="text-[9px] text-gray-600">recommandé ✓</span>
+                    </div>
+                  </div>
+                </div>
               </div>
 
               {/* Email readonly */}

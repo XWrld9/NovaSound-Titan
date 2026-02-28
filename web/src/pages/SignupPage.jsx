@@ -187,10 +187,25 @@ const SignupPage = () => {
                     placeholder="jean--dupont ou JeanDupont"
                   />
                 </div>
-                <p className="text-xs text-gray-500 mt-1.5 flex items-start gap-1">
-                  <span className="text-amber-400 flex-shrink-0">⚠</span>
-                  <span>Pas d&apos;espaces — sépare les mots par <strong className="text-cyan-400">------</strong> ou <strong className="text-cyan-400">--------</strong> pour rester taggable <span className="text-cyan-400">@dans-le-chat-global</span></span>
-                </p>
+                <div className="mt-2 px-3 py-2 bg-gray-800/60 border border-gray-700/50 rounded-lg">
+                  <p className="text-[11px] text-gray-400 leading-relaxed">
+                    <span className="text-amber-400 font-semibold">Conseil :</span> Pour les noms composés, remplace les espaces par des tirets afin d&apos;être taggable dans le chat (<span className="text-cyan-400 font-mono">@ton-pseudo</span>).
+                  </p>
+                  <div className="flex items-center gap-4 mt-1.5">
+                    <div className="flex flex-col items-center gap-0.5">
+                      <code className="text-cyan-400 text-[11px] font-mono tracking-widest bg-gray-900/60 px-2 py-0.5 rounded">&#8212;&#8212;&#8212;</code>
+                      <span className="text-[9px] text-gray-600">tiret court (6)</span>
+                    </div>
+                    <div className="flex flex-col items-center gap-0.5">
+                      <code className="text-fuchsia-400 text-[11px] font-mono tracking-widest bg-gray-900/60 px-2 py-0.5 rounded">&#8212;&#8212;&#8212;&#8212;</code>
+                      <span className="text-[9px] text-gray-600">tiret long (8)</span>
+                    </div>
+                    <div className="flex flex-col items-center gap-0.5">
+                      <code className="text-green-400 text-[11px] font-mono bg-gray-900/60 px-2 py-0.5 rounded">Jean-Dupont</code>
+                      <span className="text-[9px] text-gray-600">recommandé ✓</span>
+                    </div>
+                  </div>
+                </div>
               </div>
 
               <div>

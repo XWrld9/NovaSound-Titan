@@ -328,28 +328,30 @@ const UserProfilePage = () => {
           {/* Onglets — scroll horizontal sur mobile */}
           <div className="flex gap-1 mb-6 border-b border-gray-800 overflow-x-auto scrollbar-hide">
             {[
-              { id: 'songs',     icon: Music,          label: 'Morceaux',    mobileLabel: 'Sons',     color: 'cyan',   count: userSongs.filter(s => !s.is_archived).length },
-              { id: 'archived',  icon: Archive,        label: 'Archivés',    mobileLabel: 'Archivés', color: 'amber',  count: userSongs.filter(s => s.is_archived).length },
-              { id: 'favorites', icon: Bookmark,       label: 'Favoris',     mobileLabel: 'Favoris',  color: 'purple', count: favoriteSongs.length },
-              { id: 'liked',     icon: Heart,          label: 'Likés',       mobileLabel: 'Likés',    color: 'pink',   count: likedSongs.length },
-              { id: 'comments',  icon: MessageCircle,  label: 'Commentaires',mobileLabel: 'Comms',    color: 'teal',   count: myComments.length },
-              { id: 'followers', icon: Users,          label: 'Abonnés',     mobileLabel: 'Abonnés',  color: 'green',  count: followers.length },
-              { id: 'following', icon: UserPlus,       label: 'Abonnements', mobileLabel: 'Suivis',   color: 'blue',   count: following.length },
-            ].map(({ id, icon: Icon, label, mobileLabel, color, count }) => (
+              { id: 'songs',     icon: Music,          label: 'Morceaux',    mobileLabel: 'Sons',     color: '#22d3ee', bg: 'rgba(34,211,238,0.15)',  count: userSongs.filter(s => !s.is_archived).length },
+              { id: 'archived',  icon: Archive,        label: 'Archivés',    mobileLabel: 'Archivés', color: '#fbbf24', bg: 'rgba(251,191,36,0.15)',  count: userSongs.filter(s => s.is_archived).length },
+              { id: 'favorites', icon: Bookmark,       label: 'Favoris',     mobileLabel: 'Favoris',  color: '#c084fc', bg: 'rgba(192,132,252,0.15)', count: favoriteSongs.length },
+              { id: 'liked',     icon: Heart,          label: 'Likés',       mobileLabel: 'Likés',    color: '#f472b6', bg: 'rgba(244,114,182,0.15)', count: likedSongs.length },
+              { id: 'comments',  icon: MessageCircle,  label: 'Commentaires',mobileLabel: 'Comms',    color: '#2dd4bf', bg: 'rgba(45,212,191,0.15)',  count: myComments.length },
+              { id: 'followers', icon: Users,          label: 'Abonnés',     mobileLabel: 'Abonnés',  color: '#4ade80', bg: 'rgba(74,222,128,0.15)',  count: followers.length },
+              { id: 'following', icon: UserPlus,       label: 'Abonnements', mobileLabel: 'Suivis',   color: '#60a5fa', bg: 'rgba(96,165,250,0.15)',  count: following.length },
+            ].map(({ id, icon: Icon, label, mobileLabel, color, bg, count }) => (
               <button
                 key={id}
                 onClick={() => setActiveTab(id)}
-                className={`flex items-center gap-1.5 px-3 py-2.5 font-semibold whitespace-nowrap transition-colors flex-shrink-0 text-sm ${
-                  activeTab === id
-                    ? `text-${color}-400 border-b-2 border-${color}-400`
-                    : 'text-gray-400 hover:text-white'
+                style={activeTab === id ? { color, borderBottomColor: color } : {}}
+                className={`flex items-center gap-1.5 px-3 py-2.5 font-semibold whitespace-nowrap transition-colors flex-shrink-0 text-sm border-b-2 ${
+                  activeTab === id ? 'border-current' : 'border-transparent text-gray-400 hover:text-white'
                 }`}
               >
                 <Icon className="w-4 h-4" />
                 <span className="hidden sm:inline">{label}</span>
                 <span className="sm:hidden">{mobileLabel}</span>
                 {count > 0 && (
-                  <span className={`text-xs px-1.5 py-0.5 rounded-full font-bold ${activeTab === id ? `bg-${color}-500/20 text-${color}-400` : 'bg-gray-800 text-gray-500'}`}>
+                  <span
+                    style={activeTab === id ? { background: bg, color } : {}}
+                    className={`text-xs px-1.5 py-0.5 rounded-full font-bold ${activeTab === id ? '' : 'bg-gray-800 text-gray-500'}`}
+                  >
                     {count}
                   </span>
                 )}

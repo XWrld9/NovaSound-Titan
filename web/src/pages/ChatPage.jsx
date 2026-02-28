@@ -22,7 +22,7 @@ import { supabase } from '@/lib/supabaseClient';
 import Header from '@/components/Header';
 import {
   Send, Reply, Trash2, User, Globe, ChevronUp,
-  Loader2, X, Smile, Users, Music, AtSign, Edit2, Check, Bell,
+  Loader2, X, Smile, Users, Music, AtSign, Edit2, Check, Bell, Mail,
 } from 'lucide-react';
 
 const ADMIN_EMAIL    = 'eloadxfamily@gmail.com';
@@ -276,12 +276,14 @@ const ChatPage = () => {
   const { isVisible: playerVisible } = usePlayer();
 
   const {
-    messages = [], reactions = {}, loading = false, hasMore = false, period = 'today', onlineCount = 0,
+    messages = [], reactions = {}, loading = false, hasMore = false, period = 'today', onlineCount = 0, onlineUsers = [],
     changePeriod = () => {}, loadMore = () => {},
     sendChatMessage = async () => {}, deleteChatMessage = async () => {}, editChatMessage = async () => false, toggleReaction = async () => {},
   } = chatCtx || {};
 
   const [activeTab,   setActiveTab]   = useState('global');
+  const [showOnlinePanel, setShowOnlinePanel] = useState(false);
+  const isAdmin = currentUserEmail === ADMIN_EMAIL; // Admin visible partout dans ChatPage
   const [text,        setText]        = useState('');
   const [sending,     setSending]     = useState(false);
   const [replyTo,     setReplyTo]     = useState(null);
@@ -311,16 +313,27 @@ const ChatPage = () => {
 
     if (hlId) {
       setHighlightId(hlId);
+      setActiveTab('global');
       changePeriod('all');
-      setTimeout(() => {
-        const el = document.getElementById(`msg-${hlId}`);
-        if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
-        setTimeout(() => setHighlightId(null), 3000);
-      }, 900);
+      // Retry jusqu'à ce que l'élément soit dans le DOM
+      let attempts = 0;
+      const tryScroll = () => {
+        const el = document.getElementById('msg-' + hlId);
+        if (el) {
+          el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          setTimeout(() => setHighlightId(null), 3500);
+        } else if (attempts < 20) {
+          attempts++;
+          setTimeout(tryScroll, 300);
+        } else {
+          setHighlightId(null);
+        }
+      };
+      setTimeout(tryScroll, 500);
     }
 
     if (tagger?.trim()) {
-      const prefill = `@${tagger.trim()} `;
+      const prefill = '@' + tagger.trim() + ' ';
       setText(prefill);
       setTimeout(() => {
         if (inputRef.current) {
@@ -328,7 +341,7 @@ const ChatPage = () => {
           const len = prefill.length;
           inputRef.current.setSelectionRange(len, len);
         }
-      }, 450);
+      }, 600);
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [location.search]);
@@ -537,7 +550,7 @@ const ChatPage = () => {
           }}
         >
           {/* Barre supérieure */}
-          <div className="flex-shrink-0 border-b border-white/[0.06] bg-gray-950/95 backdrop-blur-sm px-4 py-3">
+          <div className="flex-shrink-0 border-b border-white/[0.06] bg-gray-950/95 backdrop-blur-sm px-4 py-3 relative">
             <div className="max-w-3xl mx-auto">
               <div className="flex items-center justify-between mb-3">
                 <div className="flex items-center gap-2.5">
@@ -550,12 +563,72 @@ const ChatPage = () => {
                   </div>
                 </div>
                 {onlineCount > 0 && (
-                  <div className="flex items-center gap-1.5 px-2.5 py-1 bg-green-500/10 border border-green-500/20 rounded-full">
+                  <div
+                    className={`flex items-center gap-1.5 px-2.5 py-1 bg-green-500/10 border border-green-500/20 rounded-full ${isAdmin ? 'cursor-pointer hover:bg-green-500/20 transition-colors' : ''}`}
+                    onClick={() => isAdmin && setShowOnlinePanel(v => !v)}
+                    title={isAdmin ? 'Voir les utilisateurs connectés' : undefined}
+                  >
                     <div className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse" />
                     <Users className="w-3 h-3 text-green-400" />
                     <span className="text-green-400 text-[11px] font-semibold">{onlineCount} en ligne</span>
+                    {isAdmin && <span className="text-green-500 text-[9px] ml-0.5">▼</span>}
                   </div>
                 )}
+                {/* Panel admin — utilisateurs connectés */}
+                <AnimatePresence>
+                  {isAdmin && showOnlinePanel && (
+                    <motion.div
+                      initial={{ opacity: 0, y: -8, scale: 0.96 }}
+                      animate={{ opacity: 1, y: 0, scale: 1 }}
+                      exit={{ opacity: 0, y: -8, scale: 0.96 }}
+                      transition={{ duration: 0.15 }}
+                      className="absolute top-16 right-4 z-50 w-72 bg-gray-900 border border-green-500/30 rounded-2xl shadow-2xl shadow-black/60 overflow-hidden"
+                      onClick={e => e.stopPropagation()}
+                    >
+                      <div className="flex items-center justify-between px-4 py-3 border-b border-white/[0.07]">
+                        <div className="flex items-center gap-2">
+                          <div className="w-2 h-2 rounded-full bg-green-400 animate-pulse" />
+                          <span className="text-white font-bold text-sm">{onlineCount} connecté{onlineCount > 1 ? 's' : ''}</span>
+                        </div>
+                        <button onClick={() => setShowOnlinePanel(false)} className="p-1 text-gray-500 hover:text-white">
+                          <X className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                      <div className="max-h-64 overflow-y-auto py-1">
+                        {onlineUsers.length === 0 ? (
+                          <p className="text-gray-500 text-xs text-center py-4">Aucun utilisateur tracé</p>
+                        ) : (
+                          onlineUsers.map((u, idx) => (
+                            <div key={u.user_id + idx} className="flex items-center gap-3 px-4 py-2.5 hover:bg-white/5 transition-colors">
+                              {u.avatar_url
+                                ? <img src={u.avatar_url} alt="" className="w-8 h-8 rounded-full object-cover border border-green-500/30 flex-shrink-0" />
+                                : <div className="w-8 h-8 rounded-full bg-gray-800 border border-green-500/20 flex items-center justify-center flex-shrink-0">
+                                    <Users className="w-3.5 h-3.5 text-gray-500" />
+                                  </div>
+                              }
+                              <div className="flex-1 min-w-0">
+                                <p className="text-white text-sm font-semibold truncate">{u.username || 'Anonyme'}</p>
+                                {u.email && <p className="text-gray-500 text-[10px] truncate">{u.email}</p>}
+                                {u.joined_at && <p className="text-gray-600 text-[9px]">Connecté {new Date(u.joined_at).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}</p>}
+                              </div>
+                              <a
+                                href={"mailto:" + (u.email || '')}
+                                className="p-1.5 rounded-full bg-cyan-500/10 text-cyan-400 hover:bg-cyan-500/20 transition-colors flex-shrink-0"
+                                title={"Contacter " + (u.username || 'cet utilisateur')}
+                                onClick={e => e.stopPropagation()}
+                              >
+                                <Mail className="w-3.5 h-3.5" />
+                              </a>
+                            </div>
+                          ))
+                        )}
+                      </div>
+                      <div className="px-4 py-2 border-t border-white/[0.06] bg-gray-950/50">
+                        <p className="text-[10px] text-gray-600 text-center">Visible uniquement par l'administrateur</p>
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
               </div>
 
               {/* Onglets */}
