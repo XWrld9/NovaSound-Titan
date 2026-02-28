@@ -14,6 +14,7 @@ import LottieAnimation from '@/components/LottieAnimation';
 import playAnimation from '@/animations/play-animation.json';
 import { useNavigate } from 'react-router-dom';
 import { useToast } from '@/components/ui/Toast';
+import { useGenreTheme } from '@/hooks/useGenreTheme';
 import WaveformVisualizer from '@/components/WaveformVisualizer';
 import SongShareModal from '@/components/SongShareModal';
 import AddToPlaylistModal from '@/components/AddToPlaylistModal';
