@@ -127,10 +127,10 @@ const UserProfilePage = () => {
         .from('song_comments')
         .select('id, content, created_at, likes_count, song_id, songs(id, title, artist, cover_url)')
         .eq('user_id', currentUser.id)
-        .eq('is_deleted', false)
         .order('created_at', { ascending: false })
         .limit(50);
-      setMyComments(data || []);
+      // Filtre côté client si is_deleted n'existe pas en DB
+      setMyComments((data || []).filter(c => c.is_deleted !== true));
     } catch (e) {
       console.error('[UserProfile] fetchMyComments:', e);
     }

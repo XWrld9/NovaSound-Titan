@@ -512,7 +512,9 @@ const ChatPage = () => {
         <div
           className={`flex-1 flex flex-col`}
           style={{
+            /* Mobile : retire la hauteur du BottomNav (56px) + safe-area + player éventuel */
             height: `calc(100dvh - 64px - ${playerVisible ? '80px' : '0px'})`,
+            paddingBottom: 'env(safe-area-inset-bottom, 0px)',
           }}
         >
           {/* Barre supérieure */}
@@ -690,14 +692,20 @@ const ChatPage = () => {
                   <motion.button
                     initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.8 }}
                     onClick={() => { isAtBottom.current = true; bottomRef.current?.scrollIntoView({ behavior: 'smooth' }); setShowScroll(false); }}
-                    className="fixed bottom-32 right-4 md:bottom-28 z-40 w-10 h-10 rounded-full bg-cyan-500 hover:bg-cyan-400 shadow-lg shadow-cyan-500/30 flex items-center justify-center text-white">
+                    className="fixed bottom-[calc(56px+env(safe-area-inset-bottom,0px)+80px)] right-4 md:bottom-28 z-40 w-10 h-10 rounded-full bg-cyan-500 hover:bg-cyan-400 shadow-lg shadow-cyan-500/30 flex items-center justify-center text-white">
                     <ChevronUp className="w-5 h-5 rotate-180" />
                   </motion.button>
                 )}
               </AnimatePresence>
 
               {/* Zone de saisie */}
-              <div className="flex-shrink-0 border-t border-white/[0.06] bg-gray-950/95 backdrop-blur-sm px-4 pt-3 md:py-3 relative">
+              <div
+                className="flex-shrink-0 border-t border-white/[0.06] bg-gray-950/95 backdrop-blur-sm px-4 pt-3 relative chat-input-zone"
+                style={{
+                  paddingBottom: 'calc(56px + env(safe-area-inset-bottom, 8px) + 8px)',
+                }}
+              >
+                <style>{`.chat-input-zone { padding-bottom: calc(56px + env(safe-area-inset-bottom, 8px) + 8px) !important; } @media(min-width:768px){ .chat-input-zone { padding-bottom: 12px !important; } }`}</style>
                 <div className="max-w-3xl mx-auto">
                   {/* Preview réponse */}
                   <AnimatePresence>

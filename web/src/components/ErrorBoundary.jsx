@@ -32,6 +32,10 @@ class ErrorBoundary extends React.Component {
 
   render() {
     if (this.state.hasError) {
+      // Si un fallback est fourni (ex: null pour le GlobalPlayer), l'utiliser directement
+      if (this.props.fallback !== undefined) {
+        return this.props.fallback;
+      }
       return (
         <div className="min-h-screen bg-gray-950 flex items-center justify-center px-4">
           <div className="max-w-md w-full bg-gray-900/50 backdrop-blur-xl border border-cyan-500/30 rounded-2xl p-8 text-center">

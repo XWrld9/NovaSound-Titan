@@ -1,9 +1,10 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import ReactDOM from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { MoreVertical, Archive, ArchiveRestore, Trash2, AlertTriangle, Edit2, Check, X as XIcon } from 'lucide-react';
+import { MoreVertical, Archive, ArchiveRestore, Trash2, AlertTriangle, Edit2, Check, X as XIcon, MessageCircle } from 'lucide-react';
 import { supabase } from '@/lib/supabaseClient';
 import { useAuth } from '@/contexts/AuthContext';
+import CommentSection from '@/components/CommentSection';
 
 const ADMIN_EMAIL = 'eloadxfamily@gmail.com';
 
@@ -143,7 +144,7 @@ const DropdownMenu = ({ anchorRef, open, onClose, isArchived, isAdmin, isOwner, 
     if (!open || !anchorRef.current) return;
     const rect = anchorRef.current.getBoundingClientRect();
     const spaceBelow = window.innerHeight - rect.bottom;
-    const menuH = 110; // hauteur estimée du menu
+    const menuH = 155; // hauteur estimée du menu (4 items)
     const openUp = spaceBelow < menuH + 12;
     setPos({
       top: openUp ? rect.top - menuH - 4 : rect.bottom + 4,
@@ -174,6 +175,24 @@ const DropdownMenu = ({ anchorRef, open, onClose, isArchived, isAdmin, isOwner, 
       }}
       onClick={(e) => e.stopPropagation()}
     >
+      {/* Commentaires */}
+      <button
+        onClick={() => { onAction('comments'); onClose(); }}
+        style={{
+          width: '100%', display: 'flex', alignItems: 'center', gap: 10,
+          padding: '11px 16px', background: 'none', border: 'none',
+          color: '#34d399',
+          fontSize: 13, fontWeight: 600, cursor: 'pointer', textAlign: 'left',
+        }}
+        onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(52,211,153,0.10)'}
+        onMouseLeave={(e) => e.currentTarget.style.background = 'none'}
+      >
+        <MessageCircle style={{ width: 15, height: 15, flexShrink: 0 }} />
+        Commentaires
+      </button>
+
+      <div style={{ height: 1, background: 'rgba(255,255,255,0.08)', margin: '0 10px' }} />
+
       {/* Modifier */}
       <button
         onClick={() => { onAction('edit'); onClose(); }}
@@ -434,7 +453,8 @@ const SongActionsMenu = ({ song, onArchived, onDeleted }) => {
   const { currentUser } = useAuth();
   const [open, setOpen] = useState(false);
   const [confirm, setConfirm] = useState(null);
-  const [showEdit, setShowEdit] = useState(false);
+  const [showEdit,     setShowEdit]     = useState(false);
+  const [showComments, setShowComments] = useState(false);
   const [loading, setLoading] = useState(false);
   const [toast, setToast] = useState(null);
   const btnRef = useRef(null);
@@ -532,7 +552,8 @@ const SongActionsMenu = ({ song, onArchived, onDeleted }) => {
               isAdmin={isAdmin}
               isOwner={isOwner}
               onAction={(action) => {
-                if (action === 'edit') { setShowEdit(true); }
+                if (action === 'edit')     { setShowEdit(true); }
+                else if (action === 'comments') { setShowComments(true); }
                 else { setConfirm(action); }
               }}
             />
@@ -578,6 +599,69 @@ const SongActionsMenu = ({ song, onArchived, onDeleted }) => {
             }}
             onCancel={() => setShowEdit(false)}
           />
+        )}
+      </AnimatePresence>
+
+      {/* Drawer Commentaires */}
+      <AnimatePresence>
+        {showComments && ReactDOM.createPortal(
+          <motion.div
+            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+            style={{
+              position: 'fixed', inset: 0, zIndex: 9990,
+              background: 'rgba(0,0,0,0.75)',
+              backdropFilter: 'blur(6px)', WebkitBackdropFilter: 'blur(6px)',
+              display: 'flex', alignItems: 'flex-end',
+            }}
+            onClick={() => setShowComments(false)}
+          >
+            <motion.div
+              initial={{ y: '100%' }} animate={{ y: 0 }} exit={{ y: '100%' }}
+              transition={{ type: 'spring', damping: 28, stiffness: 280 }}
+              style={{
+                width: '100%', maxWidth: 640, margin: '0 auto',
+                maxHeight: '82vh',
+                background: '#0d1117',
+                borderRadius: '20px 20px 0 0',
+                border: '1px solid rgba(255,255,255,0.1)',
+                display: 'flex', flexDirection: 'column',
+                overflow: 'hidden',
+                paddingBottom: 'env(safe-area-inset-bottom, 0px)',
+              }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              {/* Header du drawer */}
+              <div style={{
+                display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                padding: '16px 20px 12px',
+                borderBottom: '1px solid rgba(255,255,255,0.06)',
+                flexShrink: 0,
+              }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                  <MessageCircle style={{ width: 18, height: 18, color: '#34d399' }} />
+                  <div>
+                    <p style={{ color: '#fff', fontWeight: 700, fontSize: 15, margin: 0 }}>Commentaires</p>
+                    <p style={{ color: 'rgba(156,163,175,1)', fontSize: 12, margin: 0 }}>{song.title}</p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => setShowComments(false)}
+                  style={{
+                    padding: 6, borderRadius: '50%', background: 'rgba(255,255,255,0.08)',
+                    border: 'none', color: 'rgba(156,163,175,1)', cursor: 'pointer',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  }}
+                >
+                  <XIcon style={{ width: 16, height: 16 }} />
+                </button>
+              </div>
+              {/* CommentSection scrollable */}
+              <div style={{ flex: 1, overflowY: 'auto', padding: '0 4px' }}>
+                <CommentSection songId={song.id} />
+              </div>
+            </motion.div>
+          </motion.div>,
+          document.body
         )}
       </AnimatePresence>
 

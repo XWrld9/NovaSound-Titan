@@ -6,15 +6,15 @@
  */
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Home, Compass, TrendingUp, User, Search } from 'lucide-react';
+import { Home, Compass, TrendingUp, User, Search, Globe } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { motion } from 'framer-motion';
 
 const NAV_ITEMS = [
   { to: '/',         icon: Home,      label: 'Accueil'  },
   { to: '/explorer', icon: Compass,   label: 'Explorer' },
+  { to: '/chat',     icon: Globe,     label: 'Chat'     },
   { to: '/search',   icon: Search,    label: 'Chercher' },
-  { to: '/trending', icon: TrendingUp, label: 'Tendances' },
 ];
 
 const BottomNav = () => {

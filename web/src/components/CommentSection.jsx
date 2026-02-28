@@ -283,7 +283,7 @@ const CommentRow = ({ comment, currentUser, songUploaderEmail, onDeleted, onUpda
 };
 
 /* ── CommentSection ─────────────────────────────────────────── */
-const CommentSection = ({ songId, songUploaderEmail }) => {
+const CommentSection = ({ songId, songUploaderEmail, onCommentChange }) => {
   const { currentUser } = useAuth();
   const [comments, setComments] = useState([]);
   const [loading, setLoading]   = useState(true);
@@ -348,6 +348,11 @@ const CommentSection = ({ songId, songUploaderEmail }) => {
   }, [songId, currentUser]);
 
   useEffect(() => { loadComments(); }, [loadComments]);
+
+  // Notifier le parent du nombre de commentaires
+  useEffect(() => {
+    if (onCommentChange) onCommentChange(comments.length);
+  }, [comments.length, onCommentChange]);
 
   /* ── Realtime — nouveaux commentaires d'autres utilisateurs ── */
   useEffect(() => {

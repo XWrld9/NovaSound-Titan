@@ -6,6 +6,7 @@ import { NotificationToast } from '@/components/NotificationBell';
 import { PlayerProvider, usePlayer } from '@/contexts/PlayerContext';
 import { PlaylistProvider } from '@/contexts/PlaylistContext';
 import { ChatProvider } from '@/contexts/ChatContext';
+import { MessageProvider } from '@/contexts/MessageContext';
 import { HelmetProvider } from 'react-helmet-async';
 import { DialogProvider } from '@/components/ui/Dialog';
 import { ToastProvider } from '@/components/ui/Toast';
@@ -39,6 +40,7 @@ const TrendingPage      = lazy(() => import('@/pages/TrendingPage'));
 const PlaylistPage      = lazy(() => import('@/pages/PlaylistPage'));
 const MyPlaylistsPage   = lazy(() => import('@/pages/MyPlaylistsPage'));
 const ChatPage          = lazy(() => import('@/pages/ChatPage'));
+const MessagesPage      = lazy(() => import('@/pages/MessagesPage'));
 const ArtistStatsPage   = lazy(() => import('@/pages/ArtistStatsPage'));
 const SearchPage        = lazy(() => import('@/pages/SearchPage'));
 
@@ -66,6 +68,7 @@ function App() {
             <PlayerProvider>
               <PlaylistProvider>
                 <ChatProvider>
+                  <MessageProvider>
                     <NotificationProvider>
                       <NotificationToast />
                       <Router>
@@ -91,6 +94,7 @@ function App() {
                           <Route path="/profile"         element={<ProtectedRoute><UserProfilePage /></ProtectedRoute>} />
                           <Route path="/playlists"       element={<ProtectedRoute><MyPlaylistsPage /></ProtectedRoute>} />
                           <Route path="/chat" element={<ChatPage />} />
+                          <Route path="/messages" element={<ProtectedRoute><MessagesPage /></ProtectedRoute>} />
                           <Route path="/stats"           element={<ProtectedRoute><ArtistStatsPage /></ProtectedRoute>} />
                           <Route path="/moderation"      element={<ProtectedRoute><ModerationPanel /></ProtectedRoute>} />
                           <Route path="/auth/callback"   element={<AuthCallbackPage />} />
@@ -98,12 +102,15 @@ function App() {
                       </Suspense>
                       </ErrorBoundary>
                       {/* Player global — persiste pendant toute la navigation */}
-                      <GlobalPlayer />
+                      <ErrorBoundary fallback={null}>
+                        <GlobalPlayer />
+                      </ErrorBoundary>
                       {/* Bottom nav mobile — v70 */}
                       <BottomNav />
                       <OnboardingToast />
                     </Router>
                     </NotificationProvider>
+                  </MessageProvider>
                 </ChatProvider>
               </PlaylistProvider>
             </PlayerProvider>

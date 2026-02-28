@@ -1,7 +1,8 @@
 import React, { useState, memo, useEffect } from 'react';
-import { Play, Download, Share2, Music, Headphones, ExternalLink, Plus, Check, MessageCircle, ListMusic } from 'lucide-react';
+import { Play, Download, Share2, Music, Headphones, ExternalLink, Plus, Check, MessageCircle, ListMusic, X as XIcon } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { AnimatePresence, motion } from 'framer-motion';
+import ReactDOM from 'react-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { usePlayer } from '@/contexts/PlayerContext';
 import { supabase } from '@/lib/supabaseClient';
@@ -11,6 +12,7 @@ import ReportButton from './ReportButton';
 import SongShareModal from '@/components/SongShareModal';
 import SongActionsMenu from '@/components/SongActionsMenu';
 import AddToPlaylistModal from '@/components/AddToPlaylistModal';
+import CommentSection from '@/components/CommentSection';
 import { formatPlays } from '@/lib/utils';
 
 const fmtDuration = (s) => {
@@ -29,6 +31,7 @@ const SongCard = memo(({ song: initialSong, onPlay, isPlaying, setCurrentSong, c
   const [queueFlash, setQueueFlash] = useState(false);
   const [commentCount, setCommentCount] = useState(null);
   const [showPlaylistModal, setShowPlaylistModal] = useState(false);
+  const [showComments, setShowComments] = useState(false);
 
   React.useEffect(() => { setSong(initialSong); }, [initialSong]);
 
@@ -182,16 +185,15 @@ const SongCard = memo(({ song: initialSong, onPlay, isPlaying, setCurrentSong, c
           <div className="flex items-center justify-between mt-2.5">
             <div className="flex items-center gap-2">
               <LikeButton songId={song.id} initialLikes={song.likes_count || 0} />
-              {commentCount !== null && commentCount > 0 && (
-                <Link
-                  to={`/song/${song.id}`}
-                  className="flex items-center gap-1 text-gray-500 hover:text-cyan-400 transition-colors"
-                  title={`${commentCount} commentaire${commentCount > 1 ? 's' : ''}`}
-                  onClick={e => e.stopPropagation()}
+              {commentCount !== null && (
+                <button
+                  onClick={e => { e.stopPropagation(); setShowComments(true); }}
+                  className="flex items-center gap-1 text-gray-500 hover:text-emerald-400 transition-colors"
+                  title={commentCount > 0 ? `${commentCount} commentaire${commentCount > 1 ? 's' : ''}` : 'Commenter'}
                 >
                   <MessageCircle className="w-3.5 h-3.5" />
-                  <span className="text-xs">{commentCount}</span>
-                </Link>
+                  {commentCount > 0 && <span className="text-xs">{commentCount}</span>}
+                </button>
               )}
             </div>
             <div className="flex items-center gap-1.5">
@@ -236,6 +238,69 @@ const SongCard = memo(({ song: initialSong, onPlay, isPlaying, setCurrentSong, c
       <AnimatePresence>
         {showShare && <SongShareModal song={song} onClose={() => setShowShare(false)} />}
         {showPlaylistModal && <AddToPlaylistModal song={song} onClose={() => setShowPlaylistModal(false)} />}
+
+        {/* Drawer Commentaires */}
+        <AnimatePresence>
+          {showComments && ReactDOM.createPortal(
+            <motion.div
+              initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+              style={{
+                position: 'fixed', inset: 0, zIndex: 9990,
+                background: 'rgba(0,0,0,0.75)',
+                backdropFilter: 'blur(6px)', WebkitBackdropFilter: 'blur(6px)',
+                display: 'flex', alignItems: 'flex-end',
+              }}
+              onClick={() => setShowComments(false)}
+            >
+              <motion.div
+                initial={{ y: '100%' }} animate={{ y: 0 }} exit={{ y: '100%' }}
+                transition={{ type: 'spring', damping: 28, stiffness: 280 }}
+                style={{
+                  width: '100%', maxWidth: 640, margin: '0 auto',
+                  maxHeight: '82vh',
+                  background: '#0d1117',
+                  borderRadius: '20px 20px 0 0',
+                  border: '1px solid rgba(255,255,255,0.1)',
+                  display: 'flex', flexDirection: 'column',
+                  overflow: 'hidden',
+                  paddingBottom: 'env(safe-area-inset-bottom, 0px)',
+                }}
+                onClick={e => e.stopPropagation()}
+              >
+                {/* Header */}
+                <div style={{
+                  display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                  padding: '16px 20px 12px',
+                  borderBottom: '1px solid rgba(255,255,255,0.06)',
+                  flexShrink: 0,
+                }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                    <MessageCircle style={{ width: 18, height: 18, color: '#34d399' }} />
+                    <div>
+                      <p style={{ color: '#fff', fontWeight: 700, fontSize: 15, margin: 0 }}>Commentaires</p>
+                      <p style={{ color: 'rgba(156,163,175,1)', fontSize: 12, margin: 0 }}>{song.title}</p>
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => setShowComments(false)}
+                    style={{
+                      padding: 6, borderRadius: '50%', background: 'rgba(255,255,255,0.08)',
+                      border: 'none', color: 'rgba(156,163,175,1)', cursor: 'pointer',
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    }}
+                  >
+                    <XIcon style={{ width: 16, height: 16 }} />
+                  </button>
+                </div>
+                {/* Body scrollable */}
+                <div style={{ flex: 1, overflowY: 'auto', padding: '0 4px' }}>
+                  <CommentSection songId={song.id} onCommentChange={(n) => setCommentCount(n)} />
+                </div>
+              </motion.div>
+            </motion.div>,
+            document.body
+          )}
+        </AnimatePresence>
       </AnimatePresence>
     </>
   );
