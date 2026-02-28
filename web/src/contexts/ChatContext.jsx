@@ -315,7 +315,7 @@ export const ChatProvider = ({ children }) => {
       .eq('user_id', currentUser.id);
     if (error) return false;
     setMessages(prev => prev.map(m =>
-      m.id === messageId ? { ...m, content: newContent.trim(), _edited: true } : m
+      m.id === messageId ? { ...m, content: newContent.trim(), is_edited: true } : m
     ));
     return true;
   }, [currentUser?.id, messages]);

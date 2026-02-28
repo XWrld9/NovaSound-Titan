@@ -213,9 +213,14 @@ const ChatMessage = memo(({
             <button onClick={() => setEditing(false)} className="p-1.5 text-gray-600 hover:text-white"><X className="w-3.5 h-3.5" /></button>
           </div>
         ) : (
-          <p className={`text-sm leading-relaxed break-words whitespace-pre-wrap ${msg._pending ? 'text-gray-500 italic' : 'text-gray-200'}`}>
-            {renderContent(msg.content)}{msg._pending ? ' ···' : ''}
-          </p>
+          <div>
+            <p className={`text-sm leading-relaxed break-words whitespace-pre-wrap ${msg._pending ? 'text-gray-500 italic' : 'text-gray-200'}`}>
+              {renderContent(msg.content)}{msg._pending ? ' ···' : ''}
+            </p>
+            {msg.is_edited && (
+              <span className="text-[10px] text-gray-600 italic ml-2">modifié</span>
+            )}
+          </div>
         )}
 
         <ReactionBar msgId={msg.id} reactions={reactions} currentUserId={currentUser?.id} onToggle={onToggleReaction} />

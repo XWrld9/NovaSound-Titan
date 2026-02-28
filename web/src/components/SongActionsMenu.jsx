@@ -175,7 +175,7 @@ const DropdownMenu = ({ anchorRef, open, onClose, isArchived, isAdmin, isOwner, 
       }}
       onClick={(e) => e.stopPropagation()}
     >
-      {/* Commentaires */}
+      {/* Commentaires - visible pour tout le monde */}
       <button
         onClick={() => { onAction('comments'); onClose(); }}
         style={{
@@ -191,61 +191,83 @@ const DropdownMenu = ({ anchorRef, open, onClose, isArchived, isAdmin, isOwner, 
         Commentaires
       </button>
 
-      <div style={{ height: 1, background: 'rgba(255,255,255,0.08)', margin: '0 10px' }} />
+      {/* Séparateur - seulement si propriétaire/admin */}
+      {(isOwner || isAdmin) && (
+        <div style={{ height: 1, background: 'rgba(255,255,255,0.08)', margin: '0 10px' }} />
+      )}
 
-      {/* Modifier */}
-      <button
-        onClick={() => { onAction('edit'); onClose(); }}
-        style={{
-          width: '100%', display: 'flex', alignItems: 'center', gap: 10,
-          padding: '11px 16px', background: 'none', border: 'none',
-          color: '#60a5fa',
-          fontSize: 13, fontWeight: 600, cursor: 'pointer', textAlign: 'left',
-        }}
-        onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(96,165,250,0.10)'}
-        onMouseLeave={(e) => e.currentTarget.style.background = 'none'}
-      >
-        <Edit2 style={{ width: 15, height: 15, flexShrink: 0 }} />
-        Modifier
-      </button>
+      {/* Modifier - seulement si propriétaire/admin */}
+      {(isOwner || isAdmin) && (
+        <button
+          onClick={() => { onAction('edit'); onClose(); }}
+          style={{
+            width: '100%', display: 'flex', alignItems: 'center', gap: 10,
+            padding: '11px 16px', background: 'none', border: 'none',
+            color: '#60a5fa',
+            fontSize: 13, fontWeight: 600, cursor: 'pointer', textAlign: 'left',
+          }}
+          onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(96,165,250,0.10)'}
+          onMouseLeave={(e) => e.currentTarget.style.background = 'none'}
+        >
+          <Edit2 style={{ width: 15, height: 15, flexShrink: 0 }} />
+          Modifier
+        </button>
+      )}
 
-      <div style={{ height: 1, background: 'rgba(255,255,255,0.08)', margin: '0 10px' }} />
+      {/* Séparateur - seulement si propriétaire/admin */}
+      {(isOwner || isAdmin) && (
+        <div style={{ height: 1, background: 'rgba(255,255,255,0.08)', margin: '0 10px' }} />
+      )}
 
-      {/* Archiver / Restaurer */}
-      <button
-        onClick={() => { onAction(isArchived ? 'unarchive' : 'archive'); onClose(); }}
-        style={{
-          width: '100%', display: 'flex', alignItems: 'center', gap: 10,
-          padding: '11px 16px', background: 'none', border: 'none',
-          color: isArchived ? '#22d3ee' : '#f59e0b',
-          fontSize: 13, fontWeight: 600, cursor: 'pointer', textAlign: 'left',
-        }}
-        onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.07)'}
-        onMouseLeave={(e) => e.currentTarget.style.background = 'none'}
-      >
-        {isArchived
-          ? <><ArchiveRestore style={{ width: 15, height: 15, flexShrink: 0 }} />Restaurer</>
-          : <><Archive style={{ width: 15, height: 15, flexShrink: 0 }} />Archiver</>
-        }
-      </button>
+      {/* Archiver / Restaurer - seulement si propriétaire/admin */}
+      {(isOwner || isAdmin) && (
+        <button
+          onClick={() => { onAction(isArchived ? 'unarchive' : 'archive'); onClose(); }}
+          style={{
+            width: '100%', display: 'flex', alignItems: 'center', gap: 10,
+            padding: '11px 16px', background: 'none', border: 'none',
+            color: isArchived ? '#22d3ee' : '#f59e0b',
+            fontSize: 13, fontWeight: 600, cursor: 'pointer', textAlign: 'left',
+          }}
+          onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.07)'}
+          onMouseLeave={(e) => e.currentTarget.style.background = 'none'}
+        >
+          {isArchived ? (
+            <>
+              <ArchiveRestore style={{ width: 15, height: 15, flexShrink: 0 }} />
+              Restaurer
+            </>
+          ) : (
+            <>
+              <Archive style={{ width: 15, height: 15, flexShrink: 0 }} />
+              Archiver
+            </>
+          )}
+        </button>
+      )}
 
-      <div style={{ height: 1, background: 'rgba(255,255,255,0.08)', margin: '0 10px' }} />
+      {/* Séparateur - seulement si propriétaire/admin */}
+      {(isOwner || isAdmin) && (
+        <div style={{ height: 1, background: 'rgba(255,255,255,0.08)', margin: '0 10px' }} />
+      )}
 
-      {/* Supprimer */}
-      <button
-        onClick={() => { onAction('delete'); onClose(); }}
-        style={{
-          width: '100%', display: 'flex', alignItems: 'center', gap: 10,
-          padding: '11px 16px', background: 'none', border: 'none',
-          color: '#f87171', fontSize: 13, fontWeight: 600,
-          cursor: 'pointer', textAlign: 'left',
-        }}
-        onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(239,68,68,0.10)'}
-        onMouseLeave={(e) => e.currentTarget.style.background = 'none'}
-      >
-        <Trash2 style={{ width: 15, height: 15, flexShrink: 0 }} />
-        Supprimer
-      </button>
+      {/* Supprimer - seulement si propriétaire/admin */}
+      {(isOwner || isAdmin) && (
+        <button
+          onClick={() => { onAction('delete'); onClose(); }}
+          style={{
+            width: '100%', display: 'flex', alignItems: 'center', gap: 10,
+            padding: '11px 16px', background: 'none', border: 'none',
+            color: '#f87171', fontSize: 13, fontWeight: 600,
+            cursor: 'pointer', textAlign: 'left',
+          }}
+          onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(239,68,68,0.10)'}
+          onMouseLeave={(e) => e.currentTarget.style.background = 'none'}
+        >
+          <Trash2 style={{ width: 15, height: 15, flexShrink: 0 }} />
+          Supprimer
+        </button>
+      )}
 
       {/* Badge admin */}
       {isAdmin && !isOwner && (
@@ -476,7 +498,8 @@ const SongActionsMenu = ({ song, onArchived, onDeleted }) => {
     };
   }, [open]);
 
-  if (!isOwner && !isAdmin) return null;
+  // Seul le bouton commentaires est visible pour tout le monde
+  // Les autres actions (éditer, archiver, supprimer) sont réservées au propriétaire/admin
 
   const showToast = (msg, color) => {
     setToast({ msg, color });
