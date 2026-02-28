@@ -138,7 +138,7 @@ const uploadWithIOSRetry = async ({ bucket, path, file, token, onProgress }) => 
       return await uploadViaXHR({ bucket, path, file, token, onProgress, attempt });
     } catch (err) {
       if (err.message === '__IOS_ABORT_RETRY__' && attempt < 2) {
-        console.warn(\`[Upload] iOS abort involontaire, retry \${attempt + 1}/2 dans \${1500 * (attempt + 1)}ms\`);
+        console.warn(`[Upload] iOS abort involontaire, retry ${attempt + 1}/2 dans ${1500 * (attempt + 1)}ms`);
         await new Promise(r => setTimeout(r, 1500 * (attempt + 1)));
         continue;
       }
