@@ -30,7 +30,7 @@ const CopyrightInfo = () => {
                 <h2 className="text-2xl font-bold text-white">Avis de Copyright</h2>
               </div>
               <p>
-                Tous les droits sont réservés. Le contenu de cette plateforme, y compris mais sans s'y limiter, le texte, les graphiques, les images, les logos et le code logiciel, est la propriété de NovaSound TITAN LUX ou de ses fournisseurs de contenu et est protégé par les lois internationales sur le droit d'auteur.
+                Tous les droits sont réservés. Le contenu de cette plateforme, y compris mais sans s'y limiter, le texte, les graphiques, les images, les logos et le code logiciel, est la propriété de <strong>© 2026 NovaSound TITAN LUX — ELOADXFAMILY</strong> ou de ses fournisseurs de contenu et est protégé par les lois internationales sur le droit d'auteur.
               </p>
             </section>
 

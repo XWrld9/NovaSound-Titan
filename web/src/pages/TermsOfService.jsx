@@ -55,7 +55,7 @@ const TermsOfService = () => {
                 <h2 className="text-2xl font-bold text-white">3. Propriété Intellectuelle</h2>
               </div>
               <p className="mb-4">
-                Le service et son contenu original (à l'exclusion du contenu fourni par les utilisateurs), ses fonctionnalités et ses fonctionnalités sont et resteront la propriété exclusive de NovaSound TITAN LUX et de ses concédants de licence.
+                Le service et son contenu original (à l'exclusion du contenu fourni par les utilisateurs), ses fonctionnalités et ses fonctionnalités sont et resteront la propriété exclusive de <strong>© 2026 NovaSound TITAN LUX — ELOADXFAMILY</strong> et de ses concédants de licence.
               </p>
               <p>
                 En téléchargeant du contenu (musique, images), vous déclarez posséder les droits nécessaires ou avoir l'autorisation de partager ce contenu. Vous accordez à NovaSound une licence mondiale, non exclusive pour diffuser ce contenu sur la plateforme.

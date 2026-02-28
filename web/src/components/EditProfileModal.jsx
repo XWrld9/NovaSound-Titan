@@ -132,7 +132,10 @@ const EditProfileModal = ({ isOpen, onClose }) => {
   }, [currentUser, isOpen]);
 
   const handleInputChange = (e) => {
-    setFormData(prev => ({ ...prev, [e.target.name]: e.target.value }));
+    let val = e.target.value;
+    // Bloquer les espaces dans le username
+    if (e.target.name === 'username') val = val.replace(/ /g, '');
+    setFormData(prev => ({ ...prev, [e.target.name]: val }));
   };
 
   const handleAvatarChange = (e) => {
@@ -150,6 +153,19 @@ const EditProfileModal = ({ isOpen, onClose }) => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setIsLoading(true); setError(''); setSuccess(''); setUploadProgress('');
+
+    // Validation username
+    const uname = formData.username.trim();
+    if (uname.length < 3 || uname.length > 30) {
+      setError('Le nom d'utilisateur doit contenir entre 3 et 30 caractères.');
+      setIsLoading(false);
+      return;
+    }
+    if (uname.includes(' ')) {
+      setError('Pas d'espaces dans le nom d'utilisateur — utilise des tirets (------ ou --------) pour rester taggable dans le chat global.');
+      setIsLoading(false);
+      return;
+    }
 
     try {
       let avatarUrl = avatarPreview && avatarPreview.startsWith('http') ? avatarPreview : null;
@@ -284,8 +300,12 @@ const EditProfileModal = ({ isOpen, onClose }) => {
                   Nom d'utilisateur
                 </label>
                 <input type="text" name="username" value={formData.username} onChange={handleInputChange}
-                  required placeholder="Ton nom d'artiste..." autoComplete="nickname"
+                  required placeholder="ton-nom-d-artiste" autoComplete="nickname" maxLength={30}
                   className="w-full px-4 py-2.5 bg-gray-800 border border-cyan-500/30 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-cyan-400 focus:ring-2 focus:ring-cyan-400/20 transition-all" />
+                <p className="text-xs text-gray-500 mt-1 flex items-start gap-1">
+                  <span className="text-amber-400">⚠</span>
+                  <span>Sépare les mots par <strong className="text-cyan-400">------</strong> ou <strong className="text-cyan-400">--------</strong> pour rester taggable @dans-le-chat</span>
+                </p>
               </div>
 
               {/* Email readonly */}

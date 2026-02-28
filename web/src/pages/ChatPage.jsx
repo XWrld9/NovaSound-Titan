@@ -181,7 +181,7 @@ const ChatMessage = memo(({
             : <span className="text-xs font-bold text-gray-500 truncate">{user?.username || 'Utilisateur'}</span>
           }
           <span className="text-[10px] text-gray-600 flex-shrink-0">{timeAgo(msg.created_at)}</span>
-          {msg._edited && <span className="text-[9px] text-gray-600 italic">(modifié)</span>}
+          {msg.is_edited && <span className="text-[9px] text-gray-600 italic">(modifié)</span>}
           {isAdmin && !isOwn && <span className="text-[9px] px-1.5 py-0.5 bg-yellow-500/15 text-yellow-400 rounded-full border border-yellow-500/20 flex-shrink-0">ADMIN</span>}
           {isOwn && <span className="text-[9px] px-1.5 py-0.5 bg-cyan-500/10 text-cyan-500 rounded-full border border-cyan-500/20 flex-shrink-0">Moi</span>}
           {hasMentionAll && <span className="text-[9px] px-1.5 py-0.5 bg-yellow-500/20 text-yellow-400 rounded-full border border-yellow-500/30 flex-shrink-0">📢 @tous</span>}
@@ -408,7 +408,7 @@ const ChatPage = () => {
     setText(val);
     const cursor = e.target.selectionStart;
     const before = val.slice(0, cursor);
-    const match  = before.match(/@(\w*)$/);
+    const match  = before.match(/@([\w-]*)$/);
 
     if (match) {
       const q = match[1].toLowerCase();
@@ -441,7 +441,7 @@ const ChatPage = () => {
     const cursor    = inputRef.current?.selectionStart || text.length;
     const before    = text.slice(0, cursor);
     const after     = text.slice(cursor);
-    const newBefore = before.replace(/@(\w*)$/, `@${username} `);
+    const newBefore = before.replace(/@([\w-]*)$/, `@${username} `);
     const newText   = newBefore + after;
     setText(newText);
     setShowMention(false);

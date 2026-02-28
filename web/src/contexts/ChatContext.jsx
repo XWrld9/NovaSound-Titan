@@ -377,7 +377,7 @@ export const ChatProvider = ({ children }) => {
         } else {
           setMessages(prev => prev.map(m =>
             m.id === payload.new.id
-              ? { ...m, content: payload.new.content, _edited: true }
+              ? { ...m, content: payload.new.content, is_edited: payload.new.is_edited ?? true }
               : m
           ));
         }

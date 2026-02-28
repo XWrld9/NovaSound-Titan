@@ -529,7 +529,7 @@ const AudioPlayer = ({ currentSong, playlist = [], onNext, onPrevious, onClose, 
             )}
 
             {/* HEADER */}
-            <div className="relative flex items-center justify-between px-5 pb-2 z-10 flex-shrink-0"
+            <div className="relative flex items-center justify-between px-5 pb-2 z-20 flex-shrink-0 overflow-visible"
               style={{ paddingTop: 'max(20px, env(safe-area-inset-top, 20px))' }}>
               <button onClick={() => { setIsExpanded(false); setIsCoverMode(false); setShowQueue(false); }}
                 className="flex items-center gap-1.5 text-gray-400 hover:text-white transition-colors">
@@ -558,7 +558,7 @@ const AudioPlayer = ({ currentSong, playlist = [], onNext, onPrevious, onClose, 
                 </button>
 
                 {/* Sleep timer */}
-                <div className="relative">
+                <div className="relative z-30">
                   <button
                     onClick={(e) => { e.stopPropagation(); setShowSleepMenu(v => !v); setShowQueue(false); }}
                     className={`p-2 rounded-full border transition-all relative ${sleepTimer !== null ? 'bg-amber-500/20 border-amber-500/50 text-amber-400' : 'bg-black/30 border-white/10 text-gray-400 hover:text-white'}`}
@@ -566,7 +566,7 @@ const AudioPlayer = ({ currentSong, playlist = [], onNext, onPrevious, onClose, 
                   >
                     <Moon className="w-4 h-4" />
                     {sleepTimer !== null && (
-                      <span className="absolute -top-1.5 -right-1.5 text-[9px] font-bold bg-amber-500 text-black rounded-full px-1 min-w-[18px] text-center leading-[18px]">
+                      <span className="absolute -top-1.5 -right-1.5 text-[9px] font-bold bg-amber-500 text-black rounded-full px-1 min-w-[18px] text-center leading-[18px] z-20 pointer-events-none">
                         {fmtSleep(sleepTimer)}
                       </span>
                     )}
@@ -631,7 +631,7 @@ const AudioPlayer = ({ currentSong, playlist = [], onNext, onPrevious, onClose, 
                 initial={{ scale: 0.88, opacity: 0 }}
                 animate={{ scale: 1, opacity: 1 }}
                 transition={{ delay: 0.08, type: 'spring', damping: 22 }}
-                className={`flex-shrink-0 rounded-2xl overflow-hidden shadow-2xl border border-white/10 transition-all duration-500 ${isCoverMode ? 'w-72 h-72 sm:w-80 sm:h-80 md:w-[22rem] md:h-[22rem]' : 'w-60 h-60 sm:w-72 sm:h-72 md:w-80 md:h-80'}`}
+                className={`relative z-0 flex-shrink-0 rounded-2xl overflow-hidden shadow-2xl border border-white/10 transition-all duration-500 ${isCoverMode ? 'w-72 h-72 sm:w-80 sm:h-80 md:w-[22rem] md:h-[22rem]' : 'w-60 h-60 sm:w-72 sm:h-72 md:w-80 md:h-80'}`}
               >
                 {currentSong.cover_url
                   ? <img src={currentSong.cover_url} alt={currentSong.title} className="w-full h-full object-cover" />

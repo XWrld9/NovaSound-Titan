@@ -54,6 +54,19 @@ const SignupPage = () => {
     setError('');
     setSuccess('');
 
+    // Validation du nom d'utilisateur
+    const usernameVal = formData.username.trim();
+    if (usernameVal.includes(' ')) {
+      setError("Pas d'espaces dans le nom d'utilisateur — utilise des tirets (------ ou --------) pour séparer les mots afin de rester taggable @dans-le-chat-global.");
+      submitRef.current = false;
+      return;
+    }
+    if (usernameVal.length < 3 || usernameVal.length > 30) {
+      setError("Le nom d'utilisateur doit contenir entre 3 et 30 caractères.");
+      submitRef.current = false;
+      return;
+    }
+
     if (formData.password !== formData.passwordConfirm) {
       setError('Les mots de passe ne correspondent pas');
       submitRef.current = false;
@@ -163,13 +176,21 @@ const SignupPage = () => {
                     id="username"
                     name="username"
                     value={formData.username}
-                    onChange={handleChange}
+                    onChange={(e) => {
+                      const val = e.target.value.replace(/ /g, '');
+                      setFormData({ ...formData, username: val });
+                    }}
                     required
                     autoComplete="username"
+                    maxLength={30}
                     className="w-full pl-10 pr-4 py-3 bg-gray-900/50 border border-cyan-500/30 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-cyan-400 focus:ring-2 focus:ring-cyan-400/20 transition-all"
-                    placeholder="johndoe"
+                    placeholder="jean--dupont ou JeanDupont"
                   />
                 </div>
+                <p className="text-xs text-gray-500 mt-1.5 flex items-start gap-1">
+                  <span className="text-amber-400 flex-shrink-0">⚠</span>
+                  <span>Pas d&apos;espaces — sépare les mots par <strong className="text-cyan-400">------</strong> ou <strong className="text-cyan-400">--------</strong> pour rester taggable <span className="text-cyan-400">@dans-le-chat-global</span></span>
+                </p>
               </div>
 
               <div>
