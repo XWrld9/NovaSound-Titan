@@ -55,7 +55,7 @@ const savedMuted  = () => { try { return localStorage.getItem(MUTED_KEY) === '1'
 const SPEED_OPTIONS = [0.75, 1, 1.25, 1.5, 2];
 
 // ── Composant principal ───────────────────────────────────────────────────────
-const AudioPlayer = ({ currentSong, playlist = [], onNext, onPrevious, onClose }) => {
+const AudioPlayer = ({ currentSong, playlist = [], onNext, onPrevious, onClose, shouldAutoPlay = false }) => {
   const { currentUser } = useAuth();
   const genreTheme = useGenreTheme(currentSong?.genre);
   const navigate = useNavigate();
@@ -107,6 +107,13 @@ const AudioPlayer = ({ currentSong, playlist = [], onNext, onPrevious, onClose }
   const prevSongIdRef = useRef(null);
   // Ref vers toggleImmersive pour éviter les stale closures dans les useEffect clavier
   const toggleImmersiveRef = useRef(null);
+
+  // ── Sync shouldAutoPlay prop → autoPlayRef ─────────────────────
+  // Permet au PlayerContext de signaler "l'utilisateur veut jouer ce son maintenant"
+  // même lors du tout premier chargement (prevSongIdRef=null → isNewSong=false)
+  useEffect(() => {
+    if (shouldAutoPlay) autoPlayRef.current = true;
+  }, [shouldAutoPlay, currentSong?.id]);
 
   // ── Sleep timer end → pause ─────────────────────────────────────
   useEffect(() => {
@@ -285,7 +292,8 @@ const AudioPlayer = ({ currentSong, playlist = [], onNext, onPrevious, onClose }
   // ── Chargement nouveau son ──────────────────────────────────────
   useEffect(() => {
     if (!audioRef.current || !currentSong?.audio_url) return;
-    const isNewSong = prevSongIdRef.current !== null && prevSongIdRef.current !== currentSong.id;
+    const wasFirstSong = prevSongIdRef.current === null;
+    const isNewSong = !wasFirstSong && prevSongIdRef.current !== currentSong.id;
     prevSongIdRef.current = currentSong.id;
     audioRef.current.src  = currentSong.audio_url;
     audioRef.current.loop = (repeat === 'one');
@@ -294,11 +302,13 @@ const AudioPlayer = ({ currentSong, playlist = [], onNext, onPrevious, onClose }
     setPlayRecorded(false); setCurrentTime(0); setDuration(0);
     if (currentUser) { checkLikeStatus(); checkFollowStatus(); }
     else { setIsLiked(false); setLikeId(null); setIsFollowing(false); setFollowId(null); }
-    if (isNewSong && autoPlayRef.current) {
+    // Lecture automatique si : changement de son (suivant/précédent) OU premier son
+    // et que l'utilisateur a manifesté l'intention de jouer (autoPlayRef=true)
+    if ((isNewSong || wasFirstSong) && autoPlayRef.current) {
       const tryPlay = () => { audioRef.current?.play().then(() => setIsPlaying(true)).catch(() => setIsPlaying(false)); };
       if (audioRef.current.readyState >= 2) tryPlay();
       else audioRef.current.addEventListener('canplay', tryPlay, { once: true });
-    } else if (!isNewSong) { setIsPlaying(false); }
+    } else if (!isNewSong && !wasFirstSong) { setIsPlaying(false); }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentSong?.id]);
 

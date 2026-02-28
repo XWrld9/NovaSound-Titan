@@ -1,6 +1,8 @@
 /**
- * PlayerContext — NovaSound TITAN LUX v75
- * Nouvelles fonctionnalités v75 :
+ * PlayerContext — NovaSound TITAN LUX v300
+ * Fix v300 :
+ *   - shouldAutoPlay  : flag transmis à AudioPlayer pour démarrer la lecture
+ *                       automatiquement dès le premier clic (même 1er son)
  *   - currentPlaylistId  : ID de la playlist Supabase en cours de lecture
  *   - removeFromPlaylist : retire un son de la playlist lecture ET synchro DB playlist profil
  */
@@ -24,6 +26,7 @@ export const PlayerProvider = ({ children }) => {
   const [radioMode,         setRadioMode]          = useState(false);
   const [radioLoading,      setRadioLoading]       = useState(false);
   const [currentPlaylistId, setCurrentPlaylistId]  = useState(null);
+  const [shouldAutoPlay,    setShouldAutoPlay]     = useState(false);
 
   const playlistRef          = useRef([]);
   const currentSongRef       = useRef(null);
@@ -147,6 +150,7 @@ export const PlayerProvider = ({ children }) => {
     setPlaylist(list);
     setCurrentSong(song);
     setIsVisible(true);
+    setShouldAutoPlay(true);
     setCurrentPlaylistId(playlistId || null);
   }, []);
 
@@ -192,11 +196,13 @@ export const PlayerProvider = ({ children }) => {
       setQueue(rest);
       currentSongRef.current = next;
       setCurrentSong(next);
+      setShouldAutoPlay(true);
       return;
     }
     if (songOverride) {
       currentSongRef.current = songOverride;
       setCurrentSong(songOverride);
+      setShouldAutoPlay(true);
       return;
     }
     const pl  = playlistRef.current;
@@ -211,12 +217,13 @@ export const PlayerProvider = ({ children }) => {
         setPlaylist([...pl, radioSong]);
         currentSongRef.current = radioSong;
         setCurrentSong(radioSong);
+        setShouldAutoPlay(true);
         return;
       }
     }
 
     const song = pl[(idx + 1) % pl.length];
-    if (song) { currentSongRef.current = song; setCurrentSong(song); }
+    if (song) { currentSongRef.current = song; setCurrentSong(song); setShouldAutoPlay(true); }
   }, [fetchRadioNext]);
 
   const handlePrevious = useCallback((songOverride) => {
@@ -227,7 +234,7 @@ export const PlayerProvider = ({ children }) => {
       const idx = pl.findIndex(s => s.id === cs.id);
       return pl[(idx - 1 + pl.length) % pl.length];
     })();
-    if (song) { currentSongRef.current = song; setCurrentSong(song); }
+    if (song) { currentSongRef.current = song; setCurrentSong(song); setShouldAutoPlay(true); }
   }, []);
 
   const closePlayer = useCallback(() => {
@@ -238,6 +245,7 @@ export const PlayerProvider = ({ children }) => {
     setQueue([]);
     setRadioMode(false);
     setCurrentPlaylistId(null);
+    setShouldAutoPlay(false);
     playlistRef.current    = [];
     currentSongRef.current = null;
     queueRef.current       = [];
@@ -256,6 +264,7 @@ export const PlayerProvider = ({ children }) => {
       currentSongRef.current = song;
       setCurrentSong(song);
       setIsVisible(true);
+      setShouldAutoPlay(true);
     }
   }, []);
 
@@ -275,7 +284,7 @@ export const PlayerProvider = ({ children }) => {
   return (
     <PlayerContext.Provider value={{
       currentSong, playlist, queue, isVisible, sleepTimer,
-      radioMode, radioLoading, currentPlaylistId,
+      radioMode, radioLoading, currentPlaylistId, shouldAutoPlay,
       playSong, handleNext, handlePrevious, closePlayer,
       addToQueue, removeFromQueue, clearQueue,
       removeFromPlaylist, setCurrentPlaylistId,
