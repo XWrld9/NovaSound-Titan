@@ -232,7 +232,7 @@ const SongPage = () => {
 
           {/* Top nav */}
           <div className="flex items-center justify-between mb-6">
-            <button onClick={handleBack} className="flex items-center gap-2 text-gray-400 hover:text-cyan-400 transition-colors group">
+            <button onClick={()=>navigate(-1)} className="flex items-center gap-2 text-gray-400 hover:text-cyan-400 transition-colors group">
               <ArrowLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" />
               <span className="text-sm">Retour</span>
             </button>
