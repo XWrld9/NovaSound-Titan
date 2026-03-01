@@ -325,8 +325,8 @@ const ExplorerPage = () => {
                 {/* Recherche */}
                 <div className="relative flex-1 md:w-64">
                   <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
-                  <input type="text" placeholder="Rechercher…" value={searchQuery}
-                    onChange={e => setSearchQuery(e.target.value)}
+                  <input id="explorer-search" name="explorer-search" type="text" placeholder="Rechercher…" value={searchQuery}
+                    onChange={e => setSearchQuery(e.target.value)} autoComplete="off"
                     className="w-full pl-9 pr-8 py-2 bg-gray-900 border border-gray-800 rounded-lg text-white placeholder-gray-600 focus:border-cyan-500 focus:outline-none text-sm" />
                   {searchQuery && (
                     <button onClick={() => setSearchQuery('')}

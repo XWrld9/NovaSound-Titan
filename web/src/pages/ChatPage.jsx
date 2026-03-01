@@ -23,6 +23,7 @@ import Header from '@/components/Header';
 import {
   Send, Reply, Trash2, User, Globe, ChevronUp,
   Loader2, X, Smile, Users, Music, AtSign, Edit2, Check, Bell, Mail,
+  Sparkles, AlertTriangle, Zap,
 } from 'lucide-react';
 
 const ADMIN_EMAIL    = 'eloadxfamily@gmail.com';
@@ -203,7 +204,7 @@ const ChatMessage = memo(({
 
         {editing ? (
           <div className="flex items-center gap-2 mt-1" onClick={e => e.stopPropagation()}>
-            <input ref={editRef} value={editText}
+            <input ref={editRef} id={`edit-msg-${msg?.id}`} name="chat-edit" value={editText}
               onChange={e => setEditText(e.target.value.slice(0, 1000))}
               onKeyDown={e => { if (e.key === 'Enter') handleSaveEdit(); if (e.key === 'Escape') setEditing(false); }}
               className="flex-1 bg-gray-800 border border-cyan-500/40 rounded-xl px-3 py-1.5 text-sm text-white focus:outline-none focus:border-cyan-500/70 transition-colors" />
@@ -281,6 +282,9 @@ const ChatPage = () => {
     sendChatMessage = async () => {}, deleteChatMessage = async () => {}, editChatMessage = async () => false, toggleReaction = async () => {},
   } = chatCtx || {};
 
+  const [showClearConfirm, setShowClearConfirm] = useState(false);
+  const [clearing,         setClearing]         = useState(false);
+  const [clearSuccess,     setClearSuccess]      = useState(false);
   const [activeTab,   setActiveTab]   = useState('global');
   const [showOnlinePanel, setShowOnlinePanel] = useState(false);
   const isAdmin = currentUserEmail === ADMIN_EMAIL; // Admin visible partout dans ChatPage
@@ -522,6 +526,31 @@ const ChatPage = () => {
     }
   }, [notifCtx, navigate]);
 
+  // ── Nettoyer tous les messages du chat (ADMIN ONLY) ─────────────────
+  const handleClearChat = useCallback(async () => {
+    if (!isAdmin) return;
+    setClearing(true);
+    try {
+      // Soft-delete tous les messages non supprimés
+      await supabase
+        .from('chat_messages')
+        .update({ is_deleted: true })
+        .eq('is_deleted', false);
+      // Vider l'affichage local avec animation
+      setClearSuccess(true);
+      setTimeout(() => {
+        changePeriod(period); // recharge la période courante (vidée)
+        setClearSuccess(false);
+        setShowClearConfirm(false);
+      }, 2200);
+    } catch (err) {
+      console.error('[Chat] clearChat error:', err);
+      setClearing(false);
+    } finally {
+      setClearing(false);
+    }
+  }, [isAdmin, period, changePeriod]);
+
   const MAX       = 1000;
   const remaining = MAX - text.length;
 
@@ -573,6 +602,17 @@ const ChatPage = () => {
                     <span className="text-green-400 text-[11px] font-semibold">{onlineCount} en ligne</span>
                     {isAdmin && <span className="text-green-500 text-[9px] ml-0.5">▼</span>}
                   </div>
+                )}
+                {/* Bouton nettoyer le chat — ADMIN ONLY */}
+                {isAdmin && (
+                  <button
+                    onClick={() => setShowClearConfirm(true)}
+                    className="flex items-center gap-1.5 px-2.5 py-1 bg-red-500/10 border border-red-500/20 rounded-full hover:bg-red-500/20 transition-colors"
+                    title="Nettoyer le chat (Admin)"
+                  >
+                    <Trash2 className="w-3.5 h-3.5 text-red-400" />
+                    <span className="text-red-400 text-[11px] font-semibold hidden sm:inline">Nettoyer</span>
+                  </button>
                 )}
                 {/* Panel admin — utilisateurs connectés */}
                 <AnimatePresence>
@@ -862,6 +902,8 @@ const ChatPage = () => {
                       <div className="flex-1 relative">
                         <textarea
                           ref={inputRef}
+                          id="chat-input"
+                          name="chat-message"
                           value={text}
                           onChange={handleTextChange}
                           onKeyDown={handleKeyDown}
@@ -896,6 +938,131 @@ const ChatPage = () => {
           )}
         </div>
       </div>
+
+      {/* ══ MODALE NETTOYER LE CHAT — Admin only, grande pompe ══ */}
+      <AnimatePresence>
+        {showClearConfirm && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[200] flex items-center justify-center p-4"
+            style={{ background: 'rgba(0,0,0,0.85)', backdropFilter: 'blur(8px)' }}
+            onClick={() => !clearing && setShowClearConfirm(false)}
+          >
+            <motion.div
+              initial={{ scale: 0.8, y: 30, opacity: 0 }}
+              animate={{ scale: 1, y: 0, opacity: 1 }}
+              exit={{ scale: 0.8, y: 30, opacity: 0 }}
+              transition={{ type: 'spring', stiffness: 300, damping: 25 }}
+              className="relative w-full max-w-sm bg-gradient-to-b from-gray-900 to-gray-950 border border-red-500/30 rounded-3xl overflow-hidden shadow-2xl shadow-red-500/20"
+              onClick={e => e.stopPropagation()}
+            >
+              {/* Glow top */}
+              <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-red-500/60 to-transparent" />
+              <div className="absolute inset-x-0 top-0 h-20 bg-gradient-to-b from-red-500/10 to-transparent pointer-events-none" />
+
+              {!clearSuccess ? (
+                <div className="p-8 text-center">
+                  {/* Icône animée */}
+                  <motion.div
+                    animate={{ rotate: [0, -8, 8, -6, 6, 0], scale: [1, 1.08, 1] }}
+                    transition={{ duration: 0.6, delay: 0.2 }}
+                    className="w-20 h-20 mx-auto mb-5 rounded-2xl bg-gradient-to-br from-red-500/20 to-orange-500/20 border border-red-500/30 flex items-center justify-center"
+                  >
+                    <Trash2 className="w-9 h-9 text-red-400" />
+                  </motion.div>
+
+                  <h2 className="text-white font-black text-xl mb-2">Nettoyer le Chat ?</h2>
+                  <p className="text-gray-400 text-sm leading-relaxed mb-1">
+                    Tous les messages de la période <span className="text-white font-semibold">« {CHAT_PERIODS.find(p => p.key === period)?.label || 'actuelle'} »</span> seront supprimés.
+                  </p>
+                  <p className="text-red-400/80 text-xs mb-7 flex items-center justify-center gap-1">
+                    <AlertTriangle className="w-3.5 h-3.5 flex-shrink-0" />
+                    Cette action est irréversible pour tous les utilisateurs.
+                  </p>
+
+                  <div className="flex gap-3">
+                    <button
+                      onClick={() => setShowClearConfirm(false)}
+                      disabled={clearing}
+                      className="flex-1 py-3 rounded-2xl bg-white/5 hover:bg-white/10 border border-white/10 text-gray-400 hover:text-white font-semibold text-sm transition-all disabled:opacity-50"
+                    >
+                      Annuler
+                    </button>
+                    <button
+                      onClick={handleClearChat}
+                      disabled={clearing}
+                      className="flex-1 py-3 rounded-2xl bg-gradient-to-r from-red-600 to-red-500 hover:from-red-500 hover:to-orange-500 text-white font-black text-sm transition-all shadow-lg shadow-red-500/30 disabled:opacity-50 flex items-center justify-center gap-2"
+                    >
+                      {clearing
+                        ? <><Loader2 className="w-4 h-4 animate-spin" /> Nettoyage…</>
+                        : <><Trash2 className="w-4 h-4" /> Confirmer</>
+                      }
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                /* Animation succès — grande pompe */
+                <div className="p-8 text-center">
+                  <motion.div
+                    initial={{ scale: 0, rotate: -180 }}
+                    animate={{ scale: 1, rotate: 0 }}
+                    transition={{ type: 'spring', stiffness: 250, damping: 18 }}
+                    className="w-24 h-24 mx-auto mb-5 rounded-full bg-gradient-to-br from-cyan-500/30 to-fuchsia-500/30 border border-cyan-500/40 flex items-center justify-center"
+                  >
+                    <Sparkles className="w-11 h-11 text-cyan-400" />
+                  </motion.div>
+
+                  {/* Particules */}
+                  {[...Array(8)].map((_, i) => (
+                    <motion.div
+                      key={i}
+                      className="absolute w-2 h-2 rounded-full"
+                      style={{
+                        background: ['#06b6d4','#a855f7','#f43f5e','#f59e0b','#10b981','#3b82f6','#ec4899','#84cc16'][i],
+                        top: '50%', left: '50%',
+                      }}
+                      initial={{ x: 0, y: 0, scale: 0, opacity: 1 }}
+                      animate={{
+                        x: [0, (Math.cos(i * 45 * Math.PI / 180) * 80)],
+                        y: [0, (Math.sin(i * 45 * Math.PI / 180) * 80)],
+                        scale: [0, 1.5, 0],
+                        opacity: [1, 1, 0],
+                      }}
+                      transition={{ duration: 0.8, delay: 0.1 }}
+                    />
+                  ))}
+
+                  <motion.h2
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.3 }}
+                    className="text-white font-black text-xl mb-2"
+                  >
+                    Chat nettoyé ! ✨
+                  </motion.h2>
+                  <motion.p
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    transition={{ delay: 0.5 }}
+                    className="text-gray-400 text-sm"
+                  >
+                    Tous les messages ont été supprimés avec succès.
+                  </motion.p>
+                  <motion.div
+                    initial={{ scaleX: 0 }}
+                    animate={{ scaleX: 1 }}
+                    transition={{ delay: 0.2, duration: 1.8, ease: 'linear' }}
+                    className="mt-5 h-1 bg-gradient-to-r from-cyan-500 to-fuchsia-500 rounded-full"
+                    style={{ transformOrigin: 'left' }}
+                  />
+                </div>
+              )}
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </>
   );
 };

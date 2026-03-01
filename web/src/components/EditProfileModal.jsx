@@ -329,7 +329,7 @@ const EditProfileModal = ({ isOpen, onClose }) => {
                   <Mail className="w-4 h-4 text-cyan-400" />
                   Email <span className="text-gray-500 text-xs">(non modifiable)</span>
                 </label>
-                <input type="email" value={currentUser?.email || ''} disabled
+                <input id="profile-email" name="email" type="email" value={currentUser?.email || ''} disabled autoComplete="email"
                   className="w-full px-4 py-2.5 bg-gray-800/50 border border-gray-700 rounded-lg text-gray-500 cursor-not-allowed" />
               </div>
 

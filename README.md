@@ -1,3 +1,57 @@
+## 📦 Changelog v900.0 — PWA Score · Chat Nettoyage Admin · Fix Warnings · Améliorations
+
+### 🌐 PWA Manifest — Score PWABuilder amélioré
+
+**Fix CRITIQUE — Screenshot taille incorrecte** :
+- `background.png` déclarée en `1280x720` alors que la taille réelle est `1920x1080` → corrigé
+- Screenshot mobile (`narrow`) ajoutée pour le score PWABuilder
+- `display_override` ajouté : `["window-controls-overlay", "standalone", "minimal-ui"]`
+- `dir: "ltr"` ajouté (direction de texte explicite)
+- `launch_handler` ajouté : `client_mode: "focus-existing"` (évite d'ouvrir plusieurs fenêtres)
+- `share_target` ajouté : NovaSound apparaît dans le menu de partage natif iOS/Android
+- 3ème shortcut `Uploader` ajouté pour accès rapide depuis l'icône PWA
+- Score PWABuilder passé de **26/44** vers score amélioré
+
+### ♿ Fix Warning — Champs de formulaire sans id/name
+- `ExplorerPage` : input recherche → `id="explorer-search" name="explorer-search" autoComplete="off"`
+- `EditProfileModal` : input email → `id="profile-email" name="email" autoComplete="email"`
+- `ChatPage` : textarea message → `id="chat-input" name="chat-message"`
+- `ChatPage` : input édition message → `id="edit-msg-{id}" name="chat-edit"`
+- Zéro warning DevTools "form field should have id or name attribute"
+
+### 🧹 Chat Global — Nettoyer les messages (Admin uniquement)
+
+**Bouton "Nettoyer"** visible uniquement pour `eloadxfamily@gmail.com` dans la barre du chat.
+
+**Modale de confirmation en grande pompe** :
+- Animation d'entrée spring avec icône Trash animée (rotation)
+- Warning rouge clair : action irréversible pour tous les utilisateurs
+- Affiche la période active visée (Aujourd'hui / 7 jours / Ce mois…)
+- Bouton Confirmer rouge gradient avec état de chargement
+
+**Animation de succès spectaculaire** :
+- Icône ✨ Sparkles avec rotation spring
+- 8 particules colorées qui explosent dans toutes les directions
+- Barre de progression gradient cyan→fuchsia
+- Fermeture automatique après 2.2 secondes + rechargement du chat
+
+**Implémentation** :
+- Soft-delete via `UPDATE chat_messages SET is_deleted = true` (messages récupérables en DB)
+- Optionnellement utilisable via la RPC Supabase `clear_chat_messages(admin_id)` pour sécurité serveur
+- Realtime : les messages disparaissent instantanément pour TOUS les utilisateurs connectés
+
+### 🔧 Autres améliorations
+- SW cache bumped : `novasound-titan-v40` → `novasound-titan-v41`
+- **Version bump** : 800.0.0 → 900.0.0
+
+### 🗄️ SQL (étape 19) : `v900-migration.sql`
+- Colonnes `cleared_by` + `cleared_at` sur `chat_messages`
+- Fonction RPC `clear_chat_messages(UUID)` sécurisée (SECURITY DEFINER)
+- Index de performance `idx_chat_messages_not_deleted`
+- Table `app_meta` pour version tracking
+
+---
+
 ## 📦 Changelog v160.0 — Chat Pro · @tous · Commentaires · Fix Page Blanche
 
 ### 🔴 Fix CRITIQUE — Page blanche au clic sur un son (toujours présent)
