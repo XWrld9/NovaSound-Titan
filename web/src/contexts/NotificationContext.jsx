@@ -1,5 +1,5 @@
 /**
- * NotificationContext — NovaSound TITAN LUX v800
+ * NotificationContext — NovaSound TITAN LUX v900
  * © 2026 NovaSound TITAN LUX — ELOADXFAMILY
  *
  * ✅ Subscription push multi-appareils (Android, PC, iOS 16.4+ PWA)
@@ -7,6 +7,7 @@
  * ✅ Navigation depuis push natif vers la bonne page
  * ✅ Badge numérique mis à jour (navigator.setAppBadge)
  * ✅ Marquage automatique comme lu quand clic sur push
+ * 🔧 FIX v900: upsertSubscription attend une session valide avant d'appeler Supabase (corrige le 403)
  */
 import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
 import { supabase } from '@/lib/supabaseClient';
@@ -35,13 +36,43 @@ const writePersistedPush = (uid, v) => {
   try { v ? localStorage.setItem(PUSH_KEY(uid), '1') : localStorage.removeItem(PUSH_KEY(uid)); } catch {}
 };
 
+// ── 🔧 FIX v900: Attendre une session valide avant l'upsert ──────
+// Sans ça, si la session n'est pas encore chargée, auth.uid() = null → 403 Forbidden
+async function getValidSession() {
+  const { data: { session } } = await supabase.auth.getSession();
+  if (session) return session;
+
+  // Fallback : attendre l'événement SIGNED_IN (utile au premier chargement)
+  return new Promise((resolve) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (session) {
+        subscription.unsubscribe();
+        resolve(session);
+      }
+    });
+    // Timeout de sécurité après 5 secondes
+    setTimeout(() => { subscription.unsubscribe(); resolve(null); }, 5000);
+  });
+}
+
 // ── Enregistrer / mettre à jour subscription en base ─────────────
 async function upsertSubscription(userId, sub) {
+  // 🔧 FIX v900: Vérifier la session avant d'envoyer la requête
+  const session = await getValidSession();
+  if (!session) {
+    console.warn('[Push] upsertSubscription annulé : aucune session active (évite le 403)');
+    return;
+  }
+
   const { endpoint, keys } = sub.toJSON ? sub.toJSON() : sub;
-  await supabase.from('push_subscriptions').upsert(
+  const { error } = await supabase.from('push_subscriptions').upsert(
     { user_id: userId, endpoint, p256dh: keys.p256dh, auth: keys.auth },
     { onConflict: 'endpoint' }
   );
+
+  if (error) {
+    console.error('[Push] upsertSubscription error:', error.message, error.details);
+  }
 }
 
 export const NotificationProvider = ({ children }) => {
@@ -107,7 +138,7 @@ export const NotificationProvider = ({ children }) => {
       if (sub) {
         setPushEnabledRaw(true);
         writePersistedPush(userId, true);
-        // Sync silencieux en base (multi-appareil)
+        // Sync silencieux en base (multi-appareil) — session vérifiée dans upsertSubscription
         await upsertSubscription(userId, sub);
       } else {
         setPushEnabledRaw(false);
@@ -136,7 +167,7 @@ export const NotificationProvider = ({ children }) => {
 
     // Écoute Realtime INSERT sur les notifications
     const channel = supabase
-      .channel(`notif_v800:${currentUser.id}`)
+      .channel(`notif_v900:${currentUser.id}`)
       .on('postgres_changes', {
         event: 'INSERT', schema: 'public', table: 'notifications',
         filter: `user_id=eq.${currentUser.id}`,
@@ -148,8 +179,6 @@ export const NotificationProvider = ({ children }) => {
           if ('setAppBadge' in navigator) navigator.setAppBadge?.(next).catch(() => {});
           return next;
         });
-        // Si l'app est en arrière-plan le SW s'en charge via push natif.
-        // Si l'app est au premier plan : toast in-app (géré dans NotificationBell).
       })
       .subscribe();
 
@@ -164,7 +193,7 @@ export const NotificationProvider = ({ children }) => {
       if (document.visibilityState === 'visible') {
         setTimeout(() => {
           syncPushState(currentUser.id);
-          loadNotifications(); // Rafraîchir les notifs au retour
+          loadNotifications();
         }, 700);
       }
     };
@@ -199,7 +228,6 @@ export const NotificationProvider = ({ children }) => {
             return next;
           });
         }
-        // Rafraîchir les notifs après navigation
         setTimeout(loadNotifications, 500);
       }
 
@@ -220,7 +248,6 @@ export const NotificationProvider = ({ children }) => {
     if (!('Notification' in window) || !currentUser?.id) return false;
     setLoading(true);
     try {
-      // iOS Safari : requestPermission doit être déclenché par un geste utilisateur
       const perm = await Notification.requestPermission();
       setPermission(perm);
 
@@ -241,6 +268,8 @@ export const NotificationProvider = ({ children }) => {
         });
       }
 
+      // 🔧 FIX v900: La session est forcément valide ici car l'utilisateur
+      // vient de cliquer → déclenchement par geste → session active garantie
       await upsertSubscription(currentUser.id, sub);
       setPushEnabled(true);
       setLoading(false);
