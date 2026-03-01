@@ -264,7 +264,7 @@ export const ChatProvider = ({ children }) => {
           if (uname.toLowerCase() === senderName.toLowerCase()) continue;
           if (replyTargetName && uname.toLowerCase() === replyTargetName.toLowerCase()) continue; // déjà notifié via reply
           const { data: targetUser } = await supabase
-            .from('users').select('id').ilike('username', uname).single();
+            .from('users').select('id').ilike('username', uname).maybeSingle();
           if (targetUser?.id && targetUser.id !== currentUser.id) {
             await insertNotification({
               userId:     targetUser.id,
