@@ -154,6 +154,11 @@ const SongPage = () => {
     return () => window.removeEventListener('keydown', kh);
   }, [siblings, song, navigate, playSong]);
 
+  const handleBack = () => {
+    if (window.history.length > 1) navigate(-1);
+    else navigate('/');
+  };
+
   const handlePlay = () => { if(song) playSong(song, siblings.length?siblings:[song]); };
   const handlePrevNext = dir => {
     if(!siblings.length||!song) return;
