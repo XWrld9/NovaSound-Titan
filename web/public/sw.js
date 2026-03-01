@@ -65,8 +65,8 @@ self.addEventListener('push', e => {
   const title = p.title || 'NovaSound TITAN LUX';
   const options = {
     body:               p.body   || '',
-    icon:               p.icon   || '/icon-192.png',
-    badge:              '/icon-192.png',
+    icon:               p.icon   || '/notification-icon.png',
+    badge:              '/notification-badge.png',
     tag:                p.tag    || 'novasound-push',
     data:               { url: p.url || '/', notifId: p.notifId || null },
     requireInteraction: false,   // iOS 16.4 exige false
