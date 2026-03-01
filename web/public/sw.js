@@ -1,5 +1,5 @@
 /**
- * sw.js — NovaSound TITAN LUX v1000
+ * sw.js — NovaSound TITAN LUX v3000
  * © 2026 NovaSound TITAN LUX — ELOADXFAMILY
  *
  * ✅ Cache offline
@@ -7,11 +7,17 @@
  * ✅ Clic → ouvre/focus app + navigue vers la bonne page
  * ✅ Badge numérique icône (Android + PC)
  * ✅ Renouvellement automatique subscription expirée
+ * ✅ v3000: badge = icône monochrome dans barre notif Android
+ * ✅ v3000: Periodic Background Sync
+ * ✅ v3000: Background Sync (offline messages)
  */
 
-const CACHE_NAME    = 'novasound-titan-v1500';
-const STATIC_ASSETS = ['/', '/index.html', '/manifest.json', '/favicon.ico',
-  '/favicon.png', '/apple-touch-icon.png', '/icon-192.png', '/icon-512.png'];
+const CACHE_NAME    = 'novasound-titan-v3000';
+const STATIC_ASSETS = [
+  '/', '/index.html', '/manifest.json', '/favicon.ico',
+  '/favicon.png', '/apple-touch-icon.png', '/icon-192.png', '/icon-512.png',
+  '/chat-wallpaper.jpg', '/notification-badge.png',
+];
 
 const VAPID_PUBLIC_KEY = 'BFCdXh1JM5vELnaw7GolQNKPEc-CJRafU2QC3r1lTdyCSSBl5QL6nJfU3HXbnhqm_krsVViGLJ8nf2VpYBjt38o';
 
@@ -21,13 +27,14 @@ function urlBase64ToUint8Array(b64) {
   return Uint8Array.from([...atob(base)].map(c => c.charCodeAt(0)));
 }
 
-// ── Install ──────────────────────────────────────────────────────
 self.addEventListener('install', e => {
-  e.waitUntil(caches.open(CACHE_NAME).then(c => c.addAll(STATIC_ASSETS)));
+  e.waitUntil(
+    caches.open(CACHE_NAME)
+      .then(c => c.addAll(STATIC_ASSETS).catch(() => c.addAll(['/', '/index.html'])))
+  );
   self.skipWaiting();
 });
 
-// ── Activate ─────────────────────────────────────────────────────
 self.addEventListener('activate', e => {
   e.waitUntil(Promise.all([
     caches.keys().then(keys =>
@@ -37,10 +44,9 @@ self.addEventListener('activate', e => {
   ]));
 });
 
-// ── Fetch — Network first, fallback cache ────────────────────────
 self.addEventListener('fetch', e => {
   const url = e.request.url;
-  if (url.includes('supabase.co') || e.request.method !== 'GET') return;
+  if (url.includes('supabase.co') || url.includes('googleapis') || e.request.method !== 'GET') return;
   e.respondWith(
     fetch(e.request)
       .then(res => {
@@ -54,45 +60,42 @@ self.addEventListener('fetch', e => {
   );
 });
 
-// ── PUSH ─────────────────────────────────────────────────────────
 self.addEventListener('push', e => {
   if (!e.data) return;
-
   let p;
   try   { p = e.data.json(); }
   catch { p = { title: 'NovaSound TITAN LUX', body: e.data.text() }; }
 
-  const title = p.title || 'NovaSound TITAN LUX';
+  const title    = p.title || 'NovaSound TITAN LUX';
+  const iconUrl  = p.icon
+    ? (p.icon.startsWith('http') ? p.icon : self.location.origin + p.icon)
+    : self.location.origin + '/icon-192.png';
+  const badgeUrl = self.location.origin + '/notification-badge.png';
+
   const options = {
-    body:               p.body   || '',
-    icon:               (p.icon ? (p.icon.startsWith('http') ? p.icon : self.location.origin + p.icon) : self.location.origin + '/icon-192.png'),
-    badge:              self.location.origin + '/icon-192.png',
-    tag:                p.tag    || 'novasound-push',
+    body:               p.body || '',
+    icon:               iconUrl,
+    badge:              badgeUrl,
+    tag:                p.tag || 'novasound-push',
     data:               { url: p.url || '/', notifId: p.notifId || null },
-    requireInteraction: false,   // iOS 16.4 exige false
+    requireInteraction: false,
     vibrate:            [150, 80, 150],
     actions:            (p.actions || []).slice(0, 2),
-    timestamp:          Date.now(),
+    timestamp:          p.timestamp || Date.now(),
     silent:             false,
+    renotify:           p.renotify || false,
   };
-
   if (p.image) options.image = p.image;
-
-  // Badge numérique (Android + Chrome PC)
   if ('setAppBadge' in self.navigator) self.navigator.setAppBadge().catch(() => {});
-
   e.waitUntil(self.registration.showNotification(title, options));
 });
 
-// ── Clic sur notification ─────────────────────────────────────────
 self.addEventListener('notificationclick', e => {
   e.notification.close();
   const url     = e.notification.data?.url || '/';
   const notifId = e.notification.data?.notifId;
   const fullUrl = self.location.origin + (url.startsWith('/') ? url : '/' + url);
-
   if ('clearAppBadge' in self.navigator) self.navigator.clearAppBadge().catch(() => {});
-
   e.waitUntil(
     clients.matchAll({ type: 'window', includeUncontrolled: true }).then(list => {
       for (const c of list) {
@@ -107,7 +110,6 @@ self.addEventListener('notificationclick', e => {
   );
 });
 
-// ── Notification fermée manuellement ─────────────────────────────
 self.addEventListener('notificationclose', () => {
   self.registration.getNotifications().then(notifs => {
     if (notifs.length === 0 && 'clearAppBadge' in self.navigator)
@@ -115,7 +117,6 @@ self.addEventListener('notificationclose', () => {
   });
 });
 
-// ── Renouvellement automatique subscription expirée ──────────────
 self.addEventListener('pushsubscriptionchange', e => {
   e.waitUntil((async () => {
     try {
@@ -125,8 +126,26 @@ self.addEventListener('pushsubscriptionchange', e => {
       });
       const cls = await clients.matchAll({ includeUncontrolled: true });
       cls.forEach(c => c.postMessage({ type: 'PUSH_SUBSCRIPTION_RENEWED', subscription: newSub.toJSON() }));
-    } catch (err) {
-      console.error('[SW] pushsubscriptionchange failed:', err);
-    }
+    } catch (err) { console.error('[SW] pushsubscriptionchange failed:', err); }
   })());
+});
+
+self.addEventListener('periodicsync', e => {
+  if (e.tag === 'novasound-refresh') {
+    e.waitUntil((async () => {
+      try {
+        const res = await fetch('/', { cache: 'reload' });
+        if (res.ok) { const c = await caches.open(CACHE_NAME); await c.put('/', res); }
+      } catch {}
+    })());
+  }
+});
+
+self.addEventListener('sync', e => {
+  if (e.tag === 'send-pending-messages') {
+    e.waitUntil((async () => {
+      const cls = await clients.matchAll({ includeUncontrolled: true });
+      cls.forEach(c => c.postMessage({ type: 'SYNC_PENDING_MESSAGES' }));
+    })());
+  }
 });

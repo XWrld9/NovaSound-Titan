@@ -585,14 +585,19 @@ const ChatPage = () => {
         <Header />
 
         <div
-          className={`flex-1 flex flex-col overflow-hidden`}
+          className={`flex-1 flex flex-col overflow-hidden relative`}
           style={{
-            /* On laisse la zone input gérer son propre padding en bas */
             height: 'calc(100dvh - 64px)',
+            backgroundImage: 'url(/chat-wallpaper.jpg)',
+            backgroundSize: 'cover',
+            backgroundPosition: 'center',
+            backgroundRepeat: 'no-repeat',
           }}
         >
+          {/* Overlay pour lisibilité du chat */}
+          <div className="absolute inset-0 bg-gray-950/80 backdrop-blur-[2px] pointer-events-none z-0" />
           {/* Barre supérieure */}
-          <div className="flex-shrink-0 border-b border-white/[0.06] bg-gray-950/95 backdrop-blur-sm px-4 py-3 relative">
+          <div className="flex-shrink-0 border-b border-white/[0.06] bg-gray-950/90 backdrop-blur-md px-4 py-3 relative z-10">
             <div className="max-w-3xl mx-auto">
               <div className="flex items-center justify-between mb-3">
                 <div className="flex items-center gap-2.5">
@@ -788,7 +793,7 @@ const ChatPage = () => {
           {/* ─── Chat Global ─────────────────────────────────────── */}
           {activeTab === 'global' && (
             <>
-              <div ref={scrollRef} className="flex-1 overflow-y-auto" style={{ WebkitOverflowScrolling: 'touch' }} onScroll={handleScroll}>
+              <div ref={scrollRef} className="flex-1 overflow-y-auto relative z-10" style={{ WebkitOverflowScrolling: 'touch' }} onScroll={handleScroll}>
                 <div className="max-w-3xl mx-auto py-3 pb-2">
                   {hasMore && (
                     <div className="flex justify-center py-3">
@@ -846,7 +851,7 @@ const ChatPage = () => {
 
               {/* Zone de saisie — grande, confortable sur mobile */}
               <div
-                className="flex-shrink-0 border-t border-white/[0.06] bg-gray-950/98 backdrop-blur-xl px-3 pt-2 relative"
+                className="flex-shrink-0 border-t border-white/[0.06] bg-gray-950/95 backdrop-blur-xl px-3 pt-2 relative z-10"
                 style={{
                   paddingBottom: `calc(${playerVisible ? '72px + ' : ''}56px + env(safe-area-inset-bottom, 8px) + 6px)`,
                 }}

@@ -640,7 +640,7 @@ const AudioPlayer = ({ currentSong, playlist = [], onNext, onPrevious, onClose, 
               </motion.div>
 
               {/* Controles */}
-              <div className="flex flex-col gap-4 w-full max-w-sm">
+              <div className="flex flex-col gap-4 w-full max-w-sm sm:max-w-md md:max-w-sm">
                 {/* Titre + artiste + actions */}
                 <div className="flex items-start justify-between gap-3">
                   <div className="min-w-0 flex-1">
@@ -906,7 +906,7 @@ const AudioPlayer = ({ currentSong, playlist = [], onNext, onPrevious, onClose, 
             initial={{ y: 100, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
             exit={{ y: 100, opacity: 0 }}
-            className="fixed bottom-0 left-0 right-0 z-50 border-t border-white/[0.06] shadow-2xl"
+            className="fixed bottom-0 left-0 right-0 z-50 border-t border-white/[0.06] shadow-2xl shadow-black/60"
             style={{
               backgroundColor: 'rgb(18 18 18 / 0.97)',
               backdropFilter: 'blur(24px)',

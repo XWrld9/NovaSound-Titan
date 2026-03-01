@@ -238,6 +238,33 @@ export const NotificationProvider = ({ children }) => {
         writePersistedPush(currentUser.id, true);
         console.log('[Push] Subscription renewed and saved');
       }
+
+      // Background Sync — messages en attente
+      if (e.data?.type === 'SYNC_PENDING_MESSAGES' && currentUser?.id) {
+        try {
+          const { data: pending } = await supabase
+            .from('pending_messages')
+            .select('*')
+            .eq('user_id', currentUser.id)
+            .eq('is_synced', false)
+            .order('created_at', { ascending: true });
+          if (pending?.length) {
+            for (const msg of pending) {
+              await supabase.from('chat_messages').insert({
+                user_id: msg.user_id,
+                content: msg.content,
+                created_at: msg.created_at,
+              });
+              await supabase.from('pending_messages')
+                .update({ is_synced: true, synced_at: new Date().toISOString() })
+                .eq('id', msg.id);
+            }
+            console.log(`[Sync] ${pending.length} message(s) synchronisé(s)`);
+          }
+        } catch (err) {
+          console.warn('[Sync] pending messages error:', err);
+        }
+      }
     };
     navigator.serviceWorker?.addEventListener('message', handler);
     return () => navigator.serviceWorker?.removeEventListener('message', handler);
@@ -273,6 +300,17 @@ export const NotificationProvider = ({ children }) => {
       await upsertSubscription(currentUser.id, sub);
       setPushEnabled(true);
       setLoading(false);
+
+      // ✅ v3000: Enregistrer le Periodic Background Sync
+      if ('periodicSync' in reg) {
+        try {
+          const status = await navigator.permissions.query({ name: 'periodic-background-sync' });
+          if (status.state === 'granted') {
+            await reg.periodicSync.register('novasound-refresh', { minInterval: 60 * 60 * 1000 });
+          }
+        } catch { /* non-fatal */ }
+      }
+
       return true;
     } catch (err) {
       console.error('[Push] requestPermission error:', err);

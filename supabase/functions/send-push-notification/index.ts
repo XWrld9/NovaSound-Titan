@@ -164,6 +164,7 @@ interface Sub { endpoint: string; p256dh: string; auth: string; }
 interface PushPayload {
   title: string; body: string; icon?: string; badge?: string;
   url?: string; tag?: string; notifId?: string;
+  image?: string; timestamp?: number; renotify?: boolean;
 }
 
 async function sendOnePush(
@@ -241,10 +242,12 @@ Deno.serve(async (req: Request) => {
     title,
     body:    msgBody,
     icon,
-    badge:   "/icon-192.png",
+    badge:   "/notification-badge.png",  // ✅ v3000: icône monochrome pour barre de statut Android
     url,
     tag:     "novasound-" + (notifId || Date.now()),
     notifId,
+    image:   (record.image_url as string) || undefined,
+    timestamp: Date.now(),
   };
 
   const results = await Promise.allSettled(
