@@ -1,5 +1,5 @@
 /**
- * sw.js — NovaSound TITAN LUX v1000
+ * sw.js — NovaSound TITAN LUX v800
  * © 2026 NovaSound TITAN LUX — ELOADXFAMILY
  *
  * ✅ Cache offline
@@ -9,7 +9,7 @@
  * ✅ Renouvellement automatique subscription expirée
  */
 
-const CACHE_NAME    = 'novasound-titan-v1000';
+const CACHE_NAME    = 'novasound-titan-v41';
 const STATIC_ASSETS = ['/', '/index.html', '/manifest.json', '/favicon.ico',
   '/favicon.png', '/apple-touch-icon.png', '/icon-192.png', '/icon-512.png'];
 
@@ -65,8 +65,8 @@ self.addEventListener('push', e => {
   const title = p.title || 'NovaSound TITAN LUX';
   const options = {
     body:               p.body   || '',
-    icon:               (p.icon ? (p.icon.startsWith('http') ? p.icon : self.location.origin + p.icon) : self.location.origin + '/icon-192.png'),
-    badge:              self.location.origin + '/icon-192.png',
+    icon:               p.icon   || '/notification-icon.png',
+    badge:              '/notification-badge.png',
     tag:                p.tag    || 'novasound-push',
     data:               { url: p.url || '/', notifId: p.notifId || null },
     requireInteraction: false,   // iOS 16.4 exige false

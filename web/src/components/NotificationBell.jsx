@@ -281,6 +281,12 @@ const NotifPanel = ({ panelRef, panelPos, onClose, mobile }) => {
 
       {/* Footer push */}
       <div className={`px-4 py-3 border-t border-white/[0.07] flex-shrink-0 ${mobile ? '' : 'bg-gray-900/50'}`}>
+        {/* Message iOS PWA */}
+        {isIOSDevice() && (
+          <p className="text-[10px] text-amber-400/80 text-center mb-2 leading-relaxed">
+            🍎 iOS : les notifications push nécessitent d'<span className="font-bold text-amber-400">installer l'app</span> via Safari → Partager → Sur l'écran d'accueil
+          </p>
+        )}
         {permission === 'denied' ? (
           <p className="text-xs text-amber-400 text-center">Notifications bloquées dans les paramètres du navigateur</p>
         ) : permission !== 'granted' ? (

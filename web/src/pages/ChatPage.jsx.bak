@@ -1,5 +1,5 @@
 /**
- * ChatPage — NovaSound TITAN LUX v1000
+ * ChatPage — NovaSound TITAN LUX v160
  * Chat Public Global — système de messagerie communautaire
  *
  * NOUVEAUTÉS v160 :
@@ -285,7 +285,6 @@ const ChatPage = () => {
   const [showClearConfirm, setShowClearConfirm] = useState(false);
   const [clearing,         setClearing]         = useState(false);
   const [clearSuccess,     setClearSuccess]      = useState(false);
-  const [clearDuration,    setClearDuration]    = useState('all'); // '1h','24h','7d','30d','all'
   const [activeTab,   setActiveTab]   = useState('global');
   const [showOnlinePanel, setShowOnlinePanel] = useState(false);
   const isAdmin = currentUserEmail === ADMIN_EMAIL; // Admin visible partout dans ChatPage
@@ -527,30 +526,20 @@ const ChatPage = () => {
     }
   }, [notifCtx, navigate]);
 
-  // ── Nettoyer les messages du chat (ADMIN ONLY) avec sélection de durée ─
-  const CLEAR_DURATIONS = [
-    { key: '1h',   label: 'Dernière heure',   hours: 1 },
-    { key: '24h',  label: 'Dernières 24h',    hours: 24 },
-    { key: '7d',   label: '7 derniers jours', hours: 24 * 7 },
-    { key: '30d',  label: '30 derniers jours',hours: 24 * 30 },
-    { key: 'all',  label: 'Tout l\'historique', hours: null },
-  ];
-
+  // ── Nettoyer tous les messages du chat (ADMIN ONLY) ─────────────────
   const handleClearChat = useCallback(async () => {
     if (!isAdmin) return;
     setClearing(true);
     try {
-      const durObj = CLEAR_DURATIONS.find(d => d.key === clearDuration);
-      let query = supabase.from('chat_messages').update({ is_deleted: true }).eq('is_deleted', false);
-      if (durObj?.hours) {
-        const since = new Date(Date.now() - durObj.hours * 3_600_000).toISOString();
-        query = query.gte('created_at', since);
-      }
-      const { error } = await query;
-      if (error) throw error;
+      // Soft-delete tous les messages non supprimés
+      await supabase
+        .from('chat_messages')
+        .update({ is_deleted: true })
+        .eq('is_deleted', false);
+      // Vider l'affichage local avec animation
       setClearSuccess(true);
       setTimeout(() => {
-        changePeriod(period);
+        changePeriod(period); // recharge la période courante (vidée)
         setClearSuccess(false);
         setShowClearConfirm(false);
       }, 2200);
@@ -560,7 +549,7 @@ const ChatPage = () => {
     } finally {
       setClearing(false);
     }
-  }, [isAdmin, period, changePeriod, clearDuration]);
+  }, [isAdmin, period, changePeriod]);
 
   const MAX       = 1000;
   const remaining = MAX - text.length;
@@ -985,30 +974,10 @@ const ChatPage = () => {
                   </motion.div>
 
                   <h2 className="text-white font-black text-xl mb-2">Nettoyer le Chat ?</h2>
-                  <p className="text-gray-400 text-sm leading-relaxed mb-3">
-                    Sélectionne la période à supprimer :
+                  <p className="text-gray-400 text-sm leading-relaxed mb-1">
+                    Tous les messages de la période <span className="text-white font-semibold">« {CHAT_PERIODS.find(p => p.key === period)?.label || 'actuelle'} »</span> seront supprimés.
                   </p>
-
-                  {/* Sélecteur de durée */}
-                  <div className="grid grid-cols-1 gap-1.5 mb-4 text-left">
-                    {CLEAR_DURATIONS.map(d => (
-                      <button
-                        key={d.key}
-                        onClick={() => setClearDuration(d.key)}
-                        className={`flex items-center gap-3 px-4 py-2.5 rounded-xl border text-sm font-semibold transition-all ${
-                          clearDuration === d.key
-                            ? 'bg-red-500/20 border-red-500/50 text-red-300'
-                            : 'bg-white/[0.03] border-white/[0.07] text-gray-400 hover:bg-white/[0.07] hover:text-white'
-                        }`}
-                      >
-                        <div className={`w-3 h-3 rounded-full border-2 flex-shrink-0 ${clearDuration === d.key ? 'bg-red-400 border-red-400' : 'border-gray-600'}`} />
-                        {d.label}
-                        {d.key === 'all' && <span className="ml-auto text-[10px] text-red-400/70">⚠ Tout</span>}
-                      </button>
-                    ))}
-                  </div>
-
-                  <p className="text-red-400/80 text-xs mb-5 flex items-center justify-center gap-1">
+                  <p className="text-red-400/80 text-xs mb-7 flex items-center justify-center gap-1">
                     <AlertTriangle className="w-3.5 h-3.5 flex-shrink-0" />
                     Cette action est irréversible pour tous les utilisateurs.
                   </p>
