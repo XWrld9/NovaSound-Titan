@@ -1,0 +1,52 @@
+{
+  "$schema": "http://adaptivecards.io/schemas/adaptive-card.json",
+  "type": "AdaptiveCard",
+  "version": "1.5",
+  "body": [
+    {
+      "type": "ColumnSet",
+      "columns": [
+        {
+          "type": "Column",
+          "width": "auto",
+          "items": [
+            {
+              "type": "Image",
+              "url": "${cover_url}",
+              "size": "Medium",
+              "style": "RoundedCorners"
+            }
+          ]
+        },
+        {
+          "type": "Column",
+          "width": "stretch",
+          "items": [
+            {
+              "type": "TextBlock",
+              "text": "${title}",
+              "weight": "Bolder",
+              "size": "Medium",
+              "wrap": true,
+              "maxLines": 1
+            },
+            {
+              "type": "TextBlock",
+              "text": "${artist}",
+              "isSubtle": true,
+              "wrap": true,
+              "maxLines": 1
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "actions": [
+    {
+      "type": "Action.OpenUrl",
+      "title": "▶ Écouter",
+      "url": "https://nova-sound-titan.vercel.app/#/"
+    }
+  ]
+}

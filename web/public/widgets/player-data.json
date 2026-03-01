@@ -1,0 +1,7 @@
+{
+  "title": "NovaSound",
+  "artist": "Découvre la musique",
+  "cover_url": "/icon-512.png",
+  "is_playing": false,
+  "url": "https://nova-sound-titan.vercel.app/#/"
+}
