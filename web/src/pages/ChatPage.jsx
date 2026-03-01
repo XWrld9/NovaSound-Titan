@@ -1,5 +1,5 @@
 /**
- * ChatPage — NovaSound TITAN LUX v1000
+ * ChatPage — NovaSound TITAN LUX v1500
  * Chat Public Global — système de messagerie communautaire
  *
  * NOUVEAUTÉS v160 :
@@ -541,12 +541,14 @@ const ChatPage = () => {
     setClearing(true);
     try {
       const durObj = CLEAR_DURATIONS.find(d => d.key === clearDuration);
-      let query = supabase.from('chat_messages').update({ is_deleted: true }).eq('is_deleted', false);
-      if (durObj?.hours) {
-        const since = new Date(Date.now() - durObj.hours * 3_600_000).toISOString();
-        query = query.gte('created_at', since);
-      }
-      const { error } = await query;
+      const since = durObj?.hours
+        ? new Date(Date.now() - durObj.hours * 3_600_000).toISOString()
+        : null;
+      // Utilise la RPC SECURITY DEFINER qui bypass RLS proprement
+      const { error } = await supabase.rpc('clear_chat_messages_admin', {
+        admin_user_id: currentUser.id,
+        since_date:    since,
+      });
       if (error) throw error;
       setClearSuccess(true);
       setTimeout(() => {
@@ -560,7 +562,7 @@ const ChatPage = () => {
     } finally {
       setClearing(false);
     }
-  }, [isAdmin, period, changePeriod, clearDuration]);
+  }, [isAdmin, period, changePeriod, clearDuration, currentUser?.id]);
 
   const MAX       = 1000;
   const remaining = MAX - text.length;

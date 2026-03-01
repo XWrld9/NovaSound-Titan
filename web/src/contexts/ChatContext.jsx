@@ -1,5 +1,5 @@
 /**
- * ChatContext — NovaSound TITAN LUX v160
+ * ChatContext — NovaSound TITAN LUX v1500
  * Chat Public Global
  * NOUVEAU v160 :
  *  - @tous / @everyone / @all / @todos / @tutti / @allen → notifie TOUS les utilisateurs
@@ -291,15 +291,23 @@ export const ChatProvider = ({ children }) => {
   const deleteChatMessage = useCallback(async (messageId) => {
     if (!currentUser?.id) return;
     const isAdmin  = currentUser.email === 'eloadxfamily@gmail.com';
-    // Trouver le message dans l'état local pour vérifier l'auteur
     const msg      = messages.find(m => m.id === messageId);
     const isAuthor = msg && msg.user_id === currentUser.id;
-
     if (!isAdmin && !isAuthor) return;
 
-    await supabase.from('chat_messages')
-      .update({ is_deleted: true })
-      .eq('id', messageId);
+    if (isAdmin && !isAuthor) {
+      // Admin supprime le message d'un autre → RPC SECURITY DEFINER
+      await supabase.rpc('delete_chat_message_admin', {
+        admin_user_id: currentUser.id,
+        message_id:    messageId,
+      });
+    } else {
+      // Auteur supprime son propre message → UPDATE direct (RLS OK)
+      await supabase.from('chat_messages')
+        .update({ is_deleted: true })
+        .eq('id', messageId)
+        .eq('user_id', currentUser.id);
+    }
     setMessages(prev => prev.filter(m => m.id !== messageId));
   }, [currentUser, messages]);
 

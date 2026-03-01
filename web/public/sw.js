@@ -9,7 +9,7 @@
  * ✅ Renouvellement automatique subscription expirée
  */
 
-const CACHE_NAME    = 'novasound-titan-v1000';
+const CACHE_NAME    = 'novasound-titan-v1500';
 const STATIC_ASSETS = ['/', '/index.html', '/manifest.json', '/favicon.ico',
   '/favicon.png', '/apple-touch-icon.png', '/icon-192.png', '/icon-512.png'];
 
