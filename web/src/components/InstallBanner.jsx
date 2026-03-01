@@ -81,7 +81,7 @@ const InstallBanner = () => {
                   Installer NovaSound
                 </p>
                 <p className="text-gray-400 text-xs mt-0.5">
-                  Ajoute l'app sur ton écran d'accueil
+                  Pour recevoir les notifications hors de l'app 🔔
                 </p>
               </div>
               <button

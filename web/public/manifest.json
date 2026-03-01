@@ -10,6 +10,9 @@
   "orientation": "portrait-primary",
   "lang": "fr",
   "categories": ["music", "entertainment"],
+  "id": "novasound-titan-lux",
+  "prefer_related_applications": false,
+  "handle_links": "preferred",
   "icons": [
     {
       "src": "/favicon.ico",
@@ -58,6 +61,22 @@
       "type": "image/png",
       "form_factor": "wide",
       "label": "NovaSound TITAN LUX — Accueil"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Chat Global",
+      "short_name": "Chat",
+      "description": "Rejoindre le chat de la communauté",
+      "url": "/#/chat",
+      "icons": [{ "src": "/icon-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Explorer",
+      "short_name": "Explorer",
+      "description": "Découvrir de nouveaux sons",
+      "url": "/#/explorer",
+      "icons": [{ "src": "/icon-192.png", "sizes": "192x192" }]
     }
   ]
 }
