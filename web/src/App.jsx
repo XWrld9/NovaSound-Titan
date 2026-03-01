@@ -45,6 +45,8 @@ const ChatPage          = lazy(() => import('@/pages/ChatPage'));
 const MessagesPage      = lazy(() => import('@/pages/MessagesPage'));
 const ArtistStatsPage   = lazy(() => import('@/pages/ArtistStatsPage'));
 const SearchPage        = lazy(() => import('@/pages/SearchPage'));
+const LiveRoomPage      = lazy(() => import('@/pages/LiveRoomPage'));
+const LeaderboardPage   = lazy(() => import('@/pages/LeaderboardPage'));
 
 /* ── Player global — monté UNE SEULE FOIS, survit à toute navigation ── */
 const GlobalPlayer = () => {
@@ -103,6 +105,9 @@ function App() {
                           <Route path="/stats"           element={<ProtectedRoute><ArtistStatsPage /></ProtectedRoute>} />
                           <Route path="/moderation"      element={<ProtectedRoute><ModerationPanel /></ProtectedRoute>} />
                           <Route path="/auth/callback"   element={<AuthCallbackPage />} />
+                          <Route path="/live"            element={<LiveRoomPage />} />
+                          <Route path="/live/:roomId"    element={<LiveRoomPage />} />
+                          <Route path="/leaderboard"     element={<LeaderboardPage />} />
                         </Routes>
                       </Suspense>
                       </ErrorBoundary>

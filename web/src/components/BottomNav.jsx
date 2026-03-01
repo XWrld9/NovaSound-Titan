@@ -1,20 +1,20 @@
 /**
- * BottomNav — NovaSound TITAN LUX v70
+ * BottomNav — NovaSound TITAN LUX v5000
  * Barre de navigation mobile fixe en bas
  * Visible UNIQUEMENT sur mobile (hidden md:flex)
  * Laisse 80px d'espace pour l'AudioPlayer au-dessus
  */
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Home, Compass, TrendingUp, User, Search, Globe } from 'lucide-react';
+import { Home, Compass, TrendingUp, User, Search, Globe, Radio, Trophy } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { motion } from 'framer-motion';
 
 const NAV_ITEMS = [
-  { to: '/',         icon: Home,      label: 'Accueil'  },
-  { to: '/explorer', icon: Compass,   label: 'Explorer' },
-  { to: '/chat',     icon: Globe,     label: 'Chat'     },
-  { to: '/search',   icon: Search,    label: 'Chercher' },
+  { to: '/',           icon: Home,    label: 'Accueil'  },
+  { to: '/explorer',   icon: Compass, label: 'Explorer' },
+  { to: '/live',       icon: Radio,   label: 'Live', dot: true },
+  { to: '/leaderboard',icon: Trophy,  label: 'Top'      },
 ];
 
 const BottomNav = () => {
@@ -46,7 +46,7 @@ const BottomNav = () => {
         paddingBottom: 'env(safe-area-inset-bottom)',
       }}
     >
-      {allItems.map(({ to, icon: Icon, label }) => {
+      {allItems.map(({ to, icon: Icon, label, dot }) => {
         const active = isActive(to);
         return (
           <Link
@@ -63,9 +63,12 @@ const BottomNav = () => {
             )}
             <motion.div
               whileTap={{ scale: 0.85 }}
-              className={`transition-all duration-200 ${active ? 'text-cyan-400' : 'text-gray-500'}`}
+              className={`relative transition-all duration-200 ${active ? 'text-cyan-400' : 'text-gray-500'}`}
             >
               <Icon className="w-5 h-5" strokeWidth={active ? 2.5 : 1.8} />
+              {dot && (
+                <span className="absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full bg-red-500 animate-pulse border border-gray-950" />
+              )}
             </motion.div>
             <span
               className={`text-[10px] font-medium transition-colors duration-200 ${

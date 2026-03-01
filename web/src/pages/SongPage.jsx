@@ -1,5 +1,5 @@
 /**
- * SongPage — NovaSound TITAN LUX v4000
+ * SongPage — NovaSound TITAN LUX v5000
  * ✨ Hero immersif, waveform animée, navigation ← → clavier,
  *    mode cover plein écran, compteur commentaires live,
  *    bug fix edit commentaire inclus dans CommentSection
@@ -18,6 +18,7 @@ import CommentSection from '@/components/CommentSection';
 import SongActionsMenu from '@/components/SongActionsMenu';
 import AddToPlaylistModal from '@/components/AddToPlaylistModal';
 import MoodVote from '@/components/MoodVote';
+import LyricsPanel from '@/components/LyricsPanel';
 import { formatPlays } from '@/lib/utils';
 import {
   Music, Play, Pause, Headphones, Calendar, ArrowLeft, Share2, User,
@@ -153,11 +154,6 @@ const SongPage = () => {
     window.addEventListener('keydown', kh);
     return () => window.removeEventListener('keydown', kh);
   }, [siblings, song, navigate, playSong]);
-
-  const handleBack = () => {
-    if (window.history.length > 1) navigate(-1);
-    else navigate('/');
-  };
 
   const handlePlay = () => { if(song) playSong(song, siblings.length?siblings:[song]); };
   const handlePrevNext = dir => {
@@ -379,6 +375,11 @@ const SongPage = () => {
                     </div>
                   </div>
                 </div>
+              </motion.div>
+
+              {/* Paroles synchronisées v5000 */}
+              <motion.div initial={{opacity:0,y:8}} animate={{opacity:1,y:0}} transition={{delay:0.12}}>
+                <LyricsPanel song={song} currentTime={0} isExpanded={false} />
               </motion.div>
 
               {/* Commentaires */}

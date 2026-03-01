@@ -74,10 +74,16 @@ const dataUrlToBlob = (dataUrl) => {
    ────────────────────────────────────────────────────────────── */
 const SongShareModal = ({ song, onClose }) => {
   const cardRef = useRef(null);
+  const isMounted = useRef(true); // track unmount pour éviter setState sur composant mort
   const [theme, setTheme] = useState(SHARE_THEMES[0]);
   const [cardImg, setCardImg] = useState(null);
   const [generating, setGenerating] = useState(false);
   const [copied, setCopied] = useState(false);
+
+  useEffect(() => {
+    isMounted.current = true;
+    return () => { isMounted.current = false; };
+  }, []);
 
   // Logo local (data URL) et pochette sans CORS
   const [logoDataUrl, setLogoDataUrl] = useState(null);
@@ -112,24 +118,34 @@ const SongShareModal = ({ song, onClose }) => {
   /* Regénérer la carte dès que logo prêt ou thème change */
   useEffect(() => {
     if (!logoDataUrl) return;
-    const t = setTimeout(generateCard, 200);
+    const t = setTimeout(generateCard, 300); // délai légèrement plus long pour laisser le DOM se stabiliser
     return () => clearTimeout(t);
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [theme, logoDataUrl, coverDataUrl]);
 
   const generateCard = async () => {
-    if (!cardRef.current) return;
+    // Guard strict : le ref doit être monté ET appartenir au document
+    const node = cardRef.current;
+    if (!node || !node.ownerDocument || !node.isConnected) return;
     setGenerating(true);
     try {
-      await waitForImages(cardRef.current);
-      // Double-passe : 1re pour préchauffer le cache, 2e pour capturer
-      await toPng(cardRef.current, { cacheBust: true, pixelRatio: 2 });
-      const dataUrl = await toPng(cardRef.current, { cacheBust: true, pixelRatio: 2 });
-      setCardImg(dataUrl);
+      await waitForImages(node);
+      // Vérifier à nouveau après le chargement des images
+      if (!cardRef.current || !cardRef.current.isConnected) return;
+      // Une seule passe suffit — la double-passe causait le crash sur nœud détaché
+      const dataUrl = await toPng(cardRef.current, {
+        cacheBust: true,
+        pixelRatio: 2,
+        skipFonts: true, // évite les fetches de fonts qui peuvent planter hors-ligne
+      });
+      // Guard final avant de setter l'état
+      if (isMounted.current && cardRef.current && cardRef.current.isConnected) {
+        setCardImg(dataUrl);
+      }
     } catch (e) {
       console.warn('[NovaSound] SongShareModal html-to-image:', e);
     } finally {
-      setGenerating(false);
+      if (isMounted.current) setGenerating(false);
     }
   };
 

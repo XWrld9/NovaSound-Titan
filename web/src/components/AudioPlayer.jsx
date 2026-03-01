@@ -17,6 +17,7 @@ import { useToast } from '@/components/ui/Toast';
 import { useGenreTheme } from '@/hooks/useGenreTheme';
 import WaveformVisualizer from '@/components/WaveformVisualizer';
 import SongShareModal from '@/components/SongShareModal';
+import NowPlayingScreen from '@/components/NowPlayingScreen';
 import AddToPlaylistModal from '@/components/AddToPlaylistModal';
 
 const isIOS = () =>
@@ -90,6 +91,7 @@ const AudioPlayer = ({ currentSong, playlist = [], onNext, onPrevious, onClose, 
   const [isFollowing,    setIsFollowing]    = useState(false);
   const [followId,       setFollowId]       = useState(null);
   const [showShareModal, setShowShareModal] = useState(false);
+  const [showNowPlaying, setShowNowPlaying] = useState(false);
   const [blurBg,         setBlurBg]         = useState('');
   const [showQueue,          setShowQueue]          = useState(false);
   const [showSleepMenu,      setShowSleepMenu]      = useState(false);
@@ -944,7 +946,7 @@ const AudioPlayer = ({ currentSong, playlist = [], onNext, onPrevious, onClose, 
               </div>
               <div className="flex items-center gap-3 px-3 pb-2 pt-0.5">
                 <div className="flex-shrink-0 w-11 h-11 rounded-lg overflow-hidden cursor-pointer active:opacity-70 transition-opacity"
-                  onClick={() => setIsExpanded(true)}>
+                  onClick={() => setShowNowPlaying(true)}>
                   {currentSong.cover_url
                     ? <img src={currentSong.cover_url} alt={currentSong.title} className="w-full h-full object-cover" />
                     : <div className="w-full h-full bg-gradient-to-br from-cyan-500 to-purple-600 flex items-center justify-center"><Music className="w-5 h-5 text-white" /></div>
@@ -1224,6 +1226,24 @@ const AudioPlayer = ({ currentSong, playlist = [], onNext, onPrevious, onClose, 
               </div>
             </motion.div>
           </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* ── NowPlayingScreen v5000 — fullscreen immersif ─────────────── */}
+      <AnimatePresence>
+        {showNowPlaying && (
+          <NowPlayingScreen
+            audioRef={audioRef}
+            onClose={() => setShowNowPlaying(false)}
+            isPlaying={isPlaying}
+            onTogglePlay={() => isPlaying ? audioRef.current?.pause() : audioRef.current?.play()}
+            onNext={onNext}
+            onPrev={onPrevious}
+            shuffle={shuffle}
+            onToggleShuffle={() => setShuffle(s => !s)}
+            repeat={repeat}
+            onToggleRepeat={() => setRepeat(r => r === 'off' ? 'all' : r === 'all' ? 'one' : 'off')}
+          />
         )}
       </AnimatePresence>
     </>
