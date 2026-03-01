@@ -234,7 +234,7 @@ export const ChatProvider = ({ children }) => {
           .from('notifications')
           .select('id')
           .eq('type', 'chat_mention_all')
-          .contains('metadata', JSON.stringify({ senderId: currentUser.id }))
+          .ilike('metadata', `%"senderId":"${currentUser.id}"%`)
           .gte('created_at', fiveMinAgo)
           .limit(1);
         
