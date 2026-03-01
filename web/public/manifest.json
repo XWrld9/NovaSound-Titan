@@ -6,6 +6,9 @@
   "scope": "/",
   "display": "standalone",
   "display_override": ["tabbed", "window-controls-overlay", "standalone", "minimal-ui"],
+  "note_taking": {
+    "new_note_url": "/#/upload"
+  },
   "background_color": "#030712",
   "theme_color": "#06b6d4",
   "orientation": "portrait-primary",
