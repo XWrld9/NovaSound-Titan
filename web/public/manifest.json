@@ -5,7 +5,7 @@
   "start_url": "/#/",
   "scope": "/",
   "display": "standalone",
-  "display_override": ["window-controls-overlay", "standalone", "minimal-ui"],
+  "display_override": ["tabbed", "window-controls-overlay", "standalone", "minimal-ui"],
   "background_color": "#030712",
   "theme_color": "#06b6d4",
   "orientation": "portrait-primary",
@@ -61,8 +61,8 @@
   ],
   "screenshots": [
     {
-      "src": "/background.png",
-      "sizes": "1920x1080",
+      "src": "/icon-512.png",
+      "sizes": "512x512",
       "type": "image/png",
       "form_factor": "wide",
       "label": "NovaSound TITAN LUX — Accueil"
