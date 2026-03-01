@@ -14,6 +14,8 @@ import ScrollToTop from '@/components/ScrollToTop';
 import ErrorBoundary from '@/components/ErrorBoundary';
 import ProtectedRoute from '@/components/ProtectedRoute';
 import LoadingSpinner from '@/components/LoadingSpinner';
+import { OnlineProvider } from '@/contexts/OnlineContext';
+import OfflineBanner from '@/components/OfflineBanner';
 import InstallBanner from '@/components/InstallBanner';
 import AudioPlayer from '@/components/AudioPlayer';
 import OnboardingToast from '@/components/OnboardingToast';
@@ -66,7 +68,7 @@ function App() {
     <HelmetProvider>
       <DialogProvider>
         <ToastProvider>
-          <AuthProvider>
+          <OnlineProvider><AuthProvider>
             <PlayerProvider>
               <PlaylistProvider>
                 <ChatProvider>
@@ -75,6 +77,7 @@ function App() {
                       <NotificationToast />
                       <Router>
                       <ScrollToTop />
+                      <OfflineBanner />
                       <InstallBanner />
                       <ErrorBoundary>
                       <Suspense fallback={<div className="min-h-screen bg-gray-950 flex items-center justify-center"><LoadingSpinner /></div>}>
@@ -116,7 +119,7 @@ function App() {
                 </ChatProvider>
               </PlaylistProvider>
             </PlayerProvider>
-          </AuthProvider>
+          </AuthProvider></OnlineProvider>
         </ToastProvider>
       </DialogProvider>
     </HelmetProvider>

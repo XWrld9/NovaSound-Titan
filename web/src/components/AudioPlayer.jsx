@@ -932,8 +932,8 @@ const AudioPlayer = ({ currentSong, playlist = [], onNext, onPrevious, onClose, 
                 style={{ width: `${progress}%` }} />
             </div>
 
-            {/* MOBILE */}
-            <div className="md:hidden">
+            {/* MOBILE (< sm) */}
+            <div className="sm:hidden">
               <div className="flex items-center justify-between px-3 pt-1 pb-0">
                 <button onClick={() => setIsExpanded(true)} className="text-gray-600 hover:text-gray-400 transition-colors p-1">
                   <Maximize2 className="w-3.5 h-3.5" />
@@ -991,7 +991,52 @@ const AudioPlayer = ({ currentSong, playlist = [], onNext, onPrevious, onClose, 
               </div>
             </div>
 
-            {/* DESKTOP */}
+            {/* TABLET sm → md */}
+            <div className="hidden sm:flex md:hidden items-center gap-3 px-4 py-2.5">
+              {/* Cover */}
+              <div className="relative w-12 h-12 flex-shrink-0 rounded-lg overflow-hidden cursor-pointer"
+                onClick={() => setIsExpanded(true)}>
+                {currentSong.cover_url
+                  ? <img src={currentSong.cover_url} alt={currentSong.title} className="w-full h-full object-cover" />
+                  : <div className="w-full h-full bg-gradient-to-br from-cyan-500 to-purple-600 flex items-center justify-center"><Music className="w-6 h-6 text-white" /></div>
+                }
+              </div>
+              {/* Info + controls */}
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center justify-between mb-1">
+                  <div className="flex items-center gap-1.5 min-w-0 flex-1">
+                    <span className="text-white text-sm font-semibold truncate cursor-pointer" onClick={() => setIsExpanded(true)}>{currentSong.title}</span>
+                    {isPlaying && <LottieAnimation animationData={playAnimation} style={{ width: 16, height: 16 }} loop autoplay className="flex-shrink-0" />}
+                  </div>
+                  <div className="flex items-center gap-0.5 flex-shrink-0 ml-2">
+                    <button onClick={handleLike} className={`p-1.5 transition-all ${isLiked ? 'text-pink-500' : 'text-gray-600 hover:text-pink-400'}`}>
+                      <Heart className={`w-3.5 h-3.5 ${isLiked ? 'fill-current' : ''}`} />
+                    </button>
+                    <button onClick={closePlayer} className="p-1.5 text-gray-600 hover:text-gray-400 transition-colors">
+                      <X className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="text-gray-500 text-xs truncate flex-1">{currentSong.artist}</span>
+                  <div className="flex items-center gap-1 flex-shrink-0">
+                    <button onClick={(e) => { e.stopPropagation(); goPrevious(); }} className="p-1 text-gray-400 hover:text-white transition-colors">
+                      <SkipBack className="w-4 h-4" />
+                    </button>
+                    <button onClick={togglePlay}
+                      className="w-8 h-8 rounded-full flex items-center justify-center text-white transition-all active:scale-90"
+                      style={{ background: `linear-gradient(135deg, ${genreTheme.primary}, ${genreTheme.secondary})` }}>
+                      {isBuffering ? <div className="w-3.5 h-3.5 rounded-full border-2 border-white/30 border-t-white animate-spin" /> : isPlaying ? <Pause className="w-3.5 h-3.5" /> : <Play className="w-3.5 h-3.5 ml-0.5" />}
+                    </button>
+                    <button onClick={(e) => { e.stopPropagation(); goNext(); }} className="p-1 text-gray-400 hover:text-white transition-colors">
+                      <SkipForward className="w-4 h-4" />
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* DESKTOP md+ */}
             <div className="hidden md:grid md:grid-cols-3 items-center px-4 py-3 gap-4">
               {/* Gauche */}
               <div className="flex items-center gap-3 min-w-0">

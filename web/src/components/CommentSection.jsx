@@ -159,11 +159,33 @@ const CommentRow = ({ comment, currentUser, songUploaderEmail, onDeleted, onUpda
   const handleEdit = async () => {
     const trimmed = editVal.trim();
     if (!trimmed || trimmed === comment.content) { setEditing(false); return; }
+    if (!currentUser?.id) { showToast('Connecte-toi pour modifier', '#6366f1'); return; }
     setEditLoading(true);
-    const { error } = await supabase.from('song_comments').update({ content: trimmed, is_edited: true }).eq('id', comment.id);
-    setEditLoading(false);
-    if (!error) { onUpdated(comment.id, trimmed); setEditing(false); showToast('Commentaire modifié ✓', '#22d3ee'); }
-    else showToast('Erreur modification', '#ef4444');
+    try {
+      // IMPORTANT: .eq('user_id', ...) est requis pour que la RLS laisse passer l'UPDATE
+      const { data, error } = await supabase
+        .from('song_comments')
+        .update({ content: trimmed, is_edited: true })
+        .eq('id', comment.id)
+        .eq('user_id', currentUser.id)
+        .select('id, content, is_edited')
+        .single();
+      if (error) throw error;
+      if (!data) throw new Error('no_row'); // RLS a bloqué sans erreur (0 rows)
+      onUpdated(comment.id, trimmed);
+      setEditing(false);
+      showToast('Commentaire modifié ✓', '#22d3ee');
+    } catch (err) {
+      console.error('[handleEdit]', err);
+      showToast(
+        err?.code === 'PGRST116' || err?.message === 'no_row'
+          ? 'Modification refusée (droits insuffisants)'
+          : `Erreur : ${err?.message || 'réessaie'}`,
+        '#ef4444'
+      );
+    } finally {
+      setEditLoading(false);
+    }
   };
 
   const handleDelete = async () => {
