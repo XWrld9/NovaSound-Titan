@@ -115,6 +115,12 @@ const LiveRoomPage = () => {
   const burstId     = useRef(0);
   const hasJoined   = useRef(false);
 
+  // ── Admin check ──────────────────────────────────────────────
+  const ADMIN_EMAIL = 'eloadxfamily@gmail.com';
+  const isAdmin = currentUser?.email === ADMIN_EMAIL ||
+                  currentUser?.user_metadata?.email === ADMIN_EMAIL;
+  const canStopLive = isHost || isAdmin;
+
   // ── Scroll chat to bottom ────────────────────────────────────
   const scrollChat = useCallback(() => {
     setTimeout(() => {
@@ -678,6 +684,17 @@ const LiveRoomPage = () => {
                 {copied ? <Check className="w-3.5 h-3.5 text-green-400" /> : <Copy className="w-3.5 h-3.5" />}
                 {copied ? 'Copié !' : 'Inviter'}
               </button>
+              {/* Bouton Stopper le Live — hôte ET admin */}
+              {canStopLive && (
+                <button
+                  onClick={leaveRoom}
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-red-500/20 hover:bg-red-500/35 border border-red-500/30 text-xs font-bold text-red-400 transition-all"
+                  title={isAdmin && !isHost ? 'Stopper (Admin)' : 'Terminer le live'}
+                >
+                  <X className="w-3.5 h-3.5" />
+                  <span className="hidden sm:inline">{isAdmin && !isHost ? '⚡ Stop Admin' : '⏹ Stopper'}</span>
+                </button>
+              )}
             </div>
           </div>
         </div>

@@ -84,7 +84,7 @@ const SuggestionCard = ({ s, onPlay }) => (
 const SongPage = () => {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { playSong, currentSong, isVisible, audioCurrentTime } = usePlayer();
+  const { playSong, currentSong, isVisible, audioCurrentTime, isPlayingGlobal } = usePlayer();
   const { isAuthenticated } = useAuth();
 
   const [song,          setSong]         = useState(null);
@@ -156,7 +156,16 @@ const SongPage = () => {
     return () => window.removeEventListener('keydown', kh);
   }, [siblings, song, navigate, playSong]);
 
-  const handlePlay = () => { if(song) playSong(song, siblings.length?siblings:[song]); };
+  const isCurrentlyPlaying = isVisible && currentSong?.id === song?.id && isPlayingGlobal;
+  const handlePlay = () => {
+    if (!song) return;
+    if (isVisible && currentSong?.id === song.id) {
+      // Toggle via event (AudioPlayer gère l'audio element)
+      window.dispatchEvent(new CustomEvent('novasound:toggle-play'));
+    } else {
+      playSong(song, siblings.length ? siblings : [song]);
+    }
+  };
   const handlePrevNext = dir => {
     if(!siblings.length||!song) return;
     const idx=siblings.findIndex(s=>s.id===song.id);
@@ -193,7 +202,6 @@ const SongPage = () => {
   const pageUrl  = `${window.location.origin}/#/song/${id}`;
   const ogImage  = coverUrl||`${window.location.origin}/background.png`;
   const color    = vibeColor(song.genre);
-  const isCurrentlyPlaying = isVisible && currentSong?.id===song.id;
   const formattedDate = song.created_at
     ? new Date(song.created_at).toLocaleDateString('fr-FR',{year:'numeric',month:'long',day:'numeric'}) : null;
   const sibIdx = siblings.findIndex(s=>s.id===song.id);

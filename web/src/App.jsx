@@ -49,6 +49,7 @@ const LiveRoomPage      = lazy(() => import('@/pages/LiveRoomPage'));
 const LeaderboardPage   = lazy(() => import('@/pages/LeaderboardPage'));
 const LocalPlayerPage   = lazy(() => import('@/pages/LocalPlayerPage'));
 const AdminPanel        = lazy(() => import('@/pages/AdminPanel'));
+const ResetPasswordPage = lazy(() => import('@/pages/ResetPasswordPage'));
 
 /* ── Player global — monté UNE SEULE FOIS, survit à toute navigation ── */
 const GlobalPlayer = () => {
@@ -75,16 +76,13 @@ const OfflineRedirect = () => {
   const location = useLocation();
 
   useEffect(() => {
-    const ONLINE_ONLY = ['/upload', '/profile', '/messages', '/stats', '/moderation', '/chat', '/live', '/playlists'];
-    const OFFLINE_OK  = ['/local-player', '/login', '/signup', '/privacy', '/terms', '/copyright'];
-    const isOnlineOnlyPage = ONLINE_ONLY.some(p => location.pathname.startsWith(p));
-    const isOfflineOk      = OFFLINE_OK.some(p => location.pathname.startsWith(p));
+    // Pages qui restent accessibles sans connexion
+    const OFFLINE_OK = ['/local-player', '/login', '/signup', '/privacy', '/terms', '/copyright', '/auth'];
+    const isOfflineOk = OFFLINE_OK.some(p => location.pathname.startsWith(p));
 
-    if (!isOnline) {
-      // Rediriger vers le lecteur local depuis les pages online-only ET depuis la page d'accueil
-      if (isOnlineOnlyPage || (!isOfflineOk && (location.pathname === '/' || location.pathname === ''))) {
-        navigate('/local-player', { replace: true });
-      }
+    if (!isOnline && !isOfflineOk) {
+      // Hors-ligne : forcer le lecteur local sur TOUTES les pages sauf les exceptions
+      navigate('/local-player', { replace: true });
     }
   }, [isOnline, location.pathname, navigate]);
 
@@ -137,6 +135,7 @@ function App() {
                           <Route path="/leaderboard"     element={<LeaderboardPage />} />
                           <Route path="/local-player"    element={<LocalPlayerPage />} />
                           <Route path="/admin"           element={<ProtectedRoute><AdminPanel /></ProtectedRoute>} />
+                          <Route path="/reset-password"  element={<ResetPasswordPage />} />
                         </Routes>
                       </Suspense>
                       </ErrorBoundary>

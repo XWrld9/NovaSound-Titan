@@ -2,13 +2,13 @@ import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
 import { motion } from 'framer-motion';
-import { Mail, Lock, Eye, EyeOff, AlertCircle } from 'lucide-react';
+import { Mail, Lock, Eye, EyeOff, AlertCircle, KeyRound } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 
 const LoginPage = () => {
   const navigate = useNavigate();
-  const { login, resendVerification } = useAuth();
+  const { login, resendVerification, sendPasswordReset } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -16,6 +16,22 @@ const LoginPage = () => {
   const [loading, setLoading] = useState(false);
   const [needsVerification, setNeedsVerification] = useState(false);
   const [successMessage, setSuccessMessage] = useState('');
+  const [forgotMode, setForgotMode] = useState(false);
+
+  const handleForgotPassword = async (e) => {
+    e.preventDefault();
+    if (!email.trim()) { setError("Entrez votre email d'abord."); return; }
+    setError('');
+    setLoading(true);
+    const result = await sendPasswordReset(email);
+    setLoading(false);
+    if (result.success) {
+      setSuccessMessage(result.message);
+      setForgotMode(false);
+    } else {
+      setError(result.message);
+    }
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -82,6 +98,45 @@ const LoginPage = () => {
           </div>
 
           <div className="bg-gray-900/50 backdrop-blur-xl border border-cyan-500/30 rounded-2xl p-8 shadow-2xl">
+            {/* ── Forgot Password Mode ── */}
+            {forgotMode ? (
+              <form onSubmit={handleForgotPassword} className="space-y-6">
+                <div className="text-center mb-2">
+                  <div className="w-12 h-12 rounded-2xl bg-cyan-500/15 border border-cyan-500/25 flex items-center justify-center mx-auto mb-3">
+                    <KeyRound className="w-6 h-6 text-cyan-400" />
+                  </div>
+                  <h2 className="text-white font-bold text-lg">Mot de passe oublié</h2>
+                  <p className="text-gray-400 text-sm mt-1">Entrez votre email pour recevoir un lien de réinitialisation.</p>
+                </div>
+                {error && (
+                  <div className="bg-red-500/10 border border-red-500/30 rounded-lg p-4 flex items-start gap-3">
+                    <AlertCircle className="w-5 h-5 text-red-400 flex-shrink-0 mt-0.5" />
+                    <p className="text-red-400 text-sm">{error}</p>
+                  </div>
+                )}
+                <div>
+                  <label htmlFor="reset-email" className="block text-sm font-medium text-gray-300 mb-2">Email</label>
+                  <div className="relative">
+                    <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-cyan-400" />
+                    <input
+                      type="email" id="reset-email" name="email"
+                      value={email} onChange={(e) => setEmail(e.target.value)}
+                      required autoComplete="email" inputMode="email"
+                      className="w-full pl-10 pr-4 py-3 bg-gray-900/50 border border-cyan-500/30 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-cyan-400 focus:ring-2 focus:ring-cyan-400/20 transition-all"
+                      placeholder="your@email.com"
+                    />
+                  </div>
+                </div>
+                <Button type="submit" disabled={loading}
+                  className="w-full bg-gradient-to-r from-cyan-500 to-fuchsia-500 hover:from-cyan-600 hover:to-fuchsia-600 text-white py-3 text-base font-semibold shadow-lg shadow-cyan-500/30">
+                  {loading ? 'Envoi...' : '📧 Envoyer le lien de réinitialisation'}
+                </Button>
+                <button type="button" onClick={() => { setForgotMode(false); setError(''); }}
+                  className="w-full text-sm text-gray-400 hover:text-cyan-400 transition-colors mt-2">
+                  ← Retour à la connexion
+                </button>
+              </form>
+            ) : (
             <form onSubmit={handleSubmit} className="space-y-6" autoComplete="on">
               {successMessage && (
                 <div className="bg-cyan-500/10 border border-cyan-500/30 rounded-lg p-4 flex items-start gap-3">
@@ -155,6 +210,15 @@ const LoginPage = () => {
                     {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                   </button>
                 </div>
+                <div className="flex justify-end mt-1.5">
+                  <button
+                    type="button"
+                    onClick={() => { setForgotMode(true); setError(''); setSuccessMessage(''); }}
+                    className="text-xs text-cyan-500 hover:text-cyan-400 transition-colors"
+                  >
+                    Mot de passe oublié ?
+                  </button>
+                </div>
               </div>
 
               <Button
@@ -165,7 +229,9 @@ const LoginPage = () => {
                 {loading ? 'Connexion...' : 'Se connecter'}
               </Button>
             </form>
+            )} {/* end forgotMode conditional */}
 
+            {!forgotMode && (
             <div className="mt-6 text-center">
               <p className="text-gray-400">
                 Pas encore de compte ?{' '}
@@ -179,6 +245,7 @@ const LoginPage = () => {
                 </p>
               </div>
             </div>
+            )}
           </div>
         </motion.div>
       </div>

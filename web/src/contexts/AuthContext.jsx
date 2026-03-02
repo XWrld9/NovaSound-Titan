@@ -300,6 +300,31 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
+  // ── Send password reset email ────────────────────────────────────────────
+  const sendPasswordReset = async (email) => {
+    try {
+      const redirectTo = window.location.origin + '/#/reset-password';
+      const { error } = await supabase.auth.resetPasswordForEmail(email.trim().toLowerCase(), {
+        redirectTo,
+      });
+      if (error) return { success: false, message: error.message };
+      return { success: true, message: 'Email de réinitialisation envoyé ! Vérifiez votre boîte mail (et vos spams).' };
+    } catch (err) {
+      return { success: false, message: err.message };
+    }
+  };
+
+  // ── Update password (after reset link) ──────────────────────────────────
+  const updatePassword = async (newPassword) => {
+    try {
+      const { error } = await supabase.auth.updateUser({ password: newPassword });
+      if (error) return { success: false, message: error.message };
+      return { success: true, message: 'Mot de passe mis à jour avec succès !' };
+    } catch (err) {
+      return { success: false, message: err.message };
+    }
+  };
+
   // ── Resend verification ──────────────────────────────────────────────────
   const resendVerification = async (email) => {
     try {
@@ -364,6 +389,8 @@ export const AuthProvider = ({ children }) => {
     login,
     logout,
     resendVerification,
+    sendPasswordReset,
+    updatePassword,
     updateProfile,
     updateUser: setCurrentUser,
     clearCorruptedSession,

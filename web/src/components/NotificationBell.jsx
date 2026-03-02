@@ -379,7 +379,7 @@ const NotifPanel = ({ panelRef, panelPos, onClose, mobile }) => {
         ))}
       </div>
 
-      {/* Liste */}
+      {/* Liste groupée par catégorie */}
       <div className="flex-1 overflow-y-auto" style={mobile ? { maxHeight: 300 } : {}}>
         {filtered.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-12 text-center">
@@ -390,7 +390,8 @@ const NotifPanel = ({ panelRef, panelPos, onClose, mobile }) => {
               {tab === 'unread' ? '✓ Tout est lu' : 'Aucune notification'}
             </p>
           </div>
-        ) : (
+        ) : filter !== 'all' ? (
+          // Vue filtrée : affichage plat
           <AnimatePresence initial={false}>
             {filtered.map(notif => (
               <NotifItem
@@ -402,6 +403,50 @@ const NotifPanel = ({ panelRef, panelPos, onClose, mobile }) => {
               />
             ))}
           </AnimatePresence>
+        ) : (
+          // Vue groupée par catégorie
+          (() => {
+            const ORDER = ['like','comment','follow','chat_reply','chat_mention','chat_mention_all','new_song','repost','news'];
+            const groups = {};
+            filtered.forEach(n => {
+              const k = ORDER.includes(n.type) ? n.type : 'other';
+              if (!groups[k]) groups[k] = [];
+              groups[k].push(n);
+            });
+            const sortedKeys = [...ORDER.filter(k => groups[k]), ...Object.keys(groups).filter(k => !ORDER.includes(k) && groups[k])];
+            return sortedKeys.map(key => {
+              const cfg = TYPE_CONFIG[key] || { icon: Bell, color: '#94a3b8', label: 'Autre' };
+              const Icon = cfg.icon;
+              const items = groups[key];
+              return (
+                <div key={key}>
+                  {/* Header catégorie */}
+                  <div className="flex items-center gap-2 px-4 py-1.5 sticky top-0 z-10"
+                    style={{ background: 'rgba(8,12,24,0.96)', borderBottom: `1px solid ${cfg.color}18` }}>
+                    <div className="w-4 h-4 rounded-md flex items-center justify-center"
+                      style={{ background: `${cfg.color}20`, border: `1px solid ${cfg.color}30` }}>
+                      <Icon className="w-2.5 h-2.5" style={{ color: cfg.color }} />
+                    </div>
+                    <span className="text-[10px] font-black uppercase tracking-widest" style={{ color: cfg.color }}>
+                      {cfg.label}
+                    </span>
+                    <span className="ml-auto text-[10px] text-gray-600 font-semibold">{items.length}</span>
+                  </div>
+                  <AnimatePresence initial={false}>
+                    {items.map(notif => (
+                      <NotifItem
+                        key={notif.id}
+                        notif={notif}
+                        onRead={() => markAsRead(notif.id)}
+                        onDelete={() => deleteNotification(notif.id)}
+                        onClick={() => handleClick(notif)}
+                      />
+                    ))}
+                  </AnimatePresence>
+                </div>
+              );
+            });
+          })()
         )}
       </div>
 

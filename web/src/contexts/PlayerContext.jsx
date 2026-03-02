@@ -26,6 +26,8 @@ export const PlayerProvider = ({ children }) => {
   const [currentPlaylistId, setCurrentPlaylistId]  = useState(null);
   const [shouldAutoPlay,    setShouldAutoPlay]     = useState(false);
   const [audioCurrentTime,  setAudioCurrentTime]   = useState(0);
+  // ── État lecture global (synchronisé par AudioPlayer) ──────────
+  const [isPlayingGlobal,   setIsPlayingGlobal]   = useState(false);
 
   const playlistRef          = useRef([]);
   const currentSongRef       = useRef(null);
@@ -273,6 +275,7 @@ export const PlayerProvider = ({ children }) => {
       currentSong, playlist, queue, isVisible, sleepTimer,
       radioMode, radioLoading, currentPlaylistId, shouldAutoPlay,
       audioCurrentTime, setAudioCurrentTime,
+      isPlayingGlobal, setIsPlayingGlobal,
       playSong, handleNext, handlePrevious, closePlayer,
       addToQueue, removeFromQueue, clearQueue,
       removeFromPlaylist, setCurrentPlaylistId,

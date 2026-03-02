@@ -411,6 +411,18 @@ const LocalPlayerPage = () => {
   });
   const [showPlaylists, setShowPlaylists] = useState(false);
   const [activePlaylistIdx, setActivePlaylistIdx] = useState(null);
+  // Quick-select all / deselect all helpers
+  const selectAll = useCallback(() => {
+    setSelectedIds(new Set(songs.map(s => s.id)));
+  }, [songs]);
+  const deselectAll = useCallback(() => setSelectedIds(new Set()), []);
+  const toggleSelect = useCallback((id) => {
+    setSelectedIds(prev => {
+      const n = new Set(prev);
+      n.has(id) ? n.delete(id) : n.add(id);
+      return n;
+    });
+  }, []);
 
   // Révocation blobs au unmount
   useEffect(() => () => {
@@ -464,18 +476,6 @@ const LocalPlayerPage = () => {
     setSelectionMode(false);
   };
 
-  // ── Sélection multiple ────────────────────────────────────────
-  const toggleSelect = (id) => {
-    setSelectedIds(prev => {
-      const next = new Set(prev);
-      next.has(id) ? next.delete(id) : next.add(id);
-      return next;
-    });
-  };
-
-  const selectAll = () => setSelectedIds(new Set(songs.map(s => s.id)));
-  const deselectAll = () => setSelectedIds(new Set());
-
   // ── Playlists locales ─────────────────────────────────────────
   const savePlaylist = (name) => {
     const selected = songs.filter(s => selectedIds.has(s.id));
@@ -509,7 +509,7 @@ const LocalPlayerPage = () => {
     return (
       <div className="min-h-screen bg-[#050510] flex flex-col items-center justify-center px-5"
         style={{ paddingBottom: 'env(safe-area-inset-bottom,12px)' }}>
-        <input ref={inputRef} type="file" accept="audio/*" multiple onChange={onFiles} className="hidden" />
+        <input ref={inputRef} type="file" accept="audio/*,.mp3,.m4a,.wav,.ogg,.flac,.aac,.opus,.webm,.mp4,.3gp,.caf,.aiff" multiple onChange={onFiles} className="hidden" />
 
         <motion.div initial={{ opacity:0, y:24 }} animate={{ opacity:1, y:0 }}
           className="w-full max-w-sm flex flex-col items-center gap-8 text-center">
@@ -583,7 +583,7 @@ const LocalPlayerPage = () => {
   return (
     <div className="min-h-screen bg-[#050510] flex flex-col"
       style={{ paddingBottom:'env(safe-area-inset-bottom,100px)', paddingTop:'env(safe-area-inset-top,0px)' }}>
-      <input ref={inputRef} type="file" accept="audio/*" multiple onChange={onFiles} className="hidden" />
+      <input ref={inputRef} type="file" accept="audio/*,.mp3,.m4a,.wav,.ogg,.flac,.aac,.opus,.webm,.mp4,.3gp,.caf,.aiff" multiple onChange={onFiles} className="hidden" />
 
       <div className="max-w-sm mx-auto w-full px-5 pt-6 flex flex-col gap-4">
 

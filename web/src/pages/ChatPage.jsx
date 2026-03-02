@@ -764,8 +764,8 @@ const ChatPage = () => {
                         <button key={notif.id}
                           className={`w-full flex items-start gap-3 p-4 border rounded-2xl transition-all text-left ${
                             notif.is_read
-                              ? 'bg-gray-900/60 border-white/[0.08] hover:bg-gray-900/80 hover:border-cyan-500/20'
-                              : 'bg-gray-900 border-cyan-500/35 hover:border-cyan-500/60 shadow-md shadow-cyan-500/8'
+                              ? 'bg-[#12121e] border-white/[0.08] hover:bg-[#161626] hover:border-cyan-500/20'
+                              : 'bg-[#0e1428] border-cyan-500/40 hover:border-cyan-500/70 shadow-md shadow-cyan-500/10'
                           }`}
                           onClick={() => handleNotifClick(notif)}>
                           <div className={`w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 text-xl border ${
@@ -785,7 +785,7 @@ const ChatPage = () => {
                               <span className="text-[10px] text-gray-400 flex-shrink-0">{timeAgo(notif.created_at)}</span>
                               {!notif.is_read && <span className="w-2 h-2 rounded-full bg-cyan-400 flex-shrink-0 animate-pulse" />}
                             </div>
-                            <p className="text-sm leading-relaxed break-words line-clamp-2 text-gray-300">
+                            <p className="text-sm leading-relaxed break-words line-clamp-2 text-gray-200">
                               {notif.body}
                             </p>
                             {notif.is_read && (

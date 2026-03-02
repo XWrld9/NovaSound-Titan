@@ -1061,3 +1061,33 @@ MIT License — voir [LICENSE](LICENSE)
 - `.scrollbar-hide` pour masquer la scrollbar sur mobile (tabs profil)
 
 **Version bump** : 40.0.0 → 50.0.0 | SW cache : v8 → v9
+
+---
+
+## 📦 Changelog v9000 — TITAN LUX
+
+### 🔴 Fixes critiques
+
+- **▶ Bouton Écouter synchronisé** — `isPlayingGlobal` dans `PlayerContext` : le bouton reflète l'état réel play/pause sur toutes les pages (SongPage, mini-player, desktop player)
+- **📶 Offline-first** — redirection automatique vers le lecteur local depuis toutes les pages quand hors ligne (iOS, Android, PC)
+- **🍎 iOS MP3** — attribut `accept` étendu avec `.mp3,.m4a,.wav...` : Safari iOS reconnaît maintenant les fichiers MP3 dans le sélecteur de fichiers
+- **🔒 Mot de passe oublié** — flow complet : `LoginPage` (formulaire email) → email Supabase → `ResetPasswordPage` (`/#/reset-password`) → nouveau mot de passe → redirect profil
+- **💬 Chat "Mes messages"** — bulles opaques (`#12121e` / `#0e1428`) + texte `text-gray-200` : lecture confortable
+- **🔔 Notifications groupées** — `NotificationBell` regroupe par catégorie (likes, commentaires, follows, mentions, nouveaux sons) avec headers colorés
+
+### 🆕 Nouvelles fonctionnalités
+
+- **👑 Panneau Admin complet** (`AdminPanel.jsx`) — 5 onglets : Stats, Live Rooms, Utilisateurs, Sons, Chat. Ban/déban, stop live, suppression messages, nettoyage salles inactives
+- **⚡ Stop Live admin** — `eloadxfamily@gmail.com` peut stopper n'importe quelle salle live (bouton "⚡ Stop Admin" dans `LiveRoomPage`)
+- **🌊 NowPlayingScreen** — lecteur wave exclusif aux fichiers locaux, accessible sur PC, mobile et tablette
+
+### 🗄️ SQL
+
+| Étape | Fichier | Description |
+|-------|---------|-------------|
+| 21 | `v9000-migration.sql` | `users.is_banned` + `ban_reason` + `ban_expires_at`, `user_roles` (TEXT ids), fonction `is_admin(TEXT)`, policies RLS avec `auth.uid()::text`, index perf, `cleanup_inactive_rooms()` |
+
+> ⚠️ Ajouter dans Supabase → Authentication → URL Configuration → Redirect URLs :
+> `https://nova-sound-titan.vercel.app/#/reset-password`
+
+**Version bump** : 8.5.0 → 9.0.0 | SW cache : `novasound-titan-v8500` → `novasound-titan-v9000` | manifest : 8500 → 9000

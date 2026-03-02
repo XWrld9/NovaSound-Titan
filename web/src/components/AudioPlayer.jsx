@@ -71,6 +71,7 @@ const AudioPlayer = ({ currentSong, playlist = [], onNext, onPrevious, onClose, 
     sleepTimer, setSleepTimer, clearSleepTimer,
     radioMode, radioLoading, toggleRadio,
     setAudioCurrentTime,
+    setIsPlayingGlobal,
   } = usePlayer();
 
   const [isPlaying,      setIsPlaying]      = useState(false);
@@ -125,10 +126,10 @@ const AudioPlayer = ({ currentSong, playlist = [], onNext, onPrevious, onClose, 
 
   // ── Sleep timer end → pause ─────────────────────────────────────
   useEffect(() => {
-    const handler = () => { audioRef.current?.pause(); setIsPlaying(false); };
+    const handler = () => { audioRef.current?.pause(); setIsPlaying(false); setIsPlayingGlobal(false); };
     window.addEventListener('novasound:sleep-end', handler);
     return () => window.removeEventListener('novasound:sleep-end', handler);
-  }, []);
+  }, [setIsPlayingGlobal]);
 
   // ── Ouvrir NowPlayingScreen depuis n'importe où (ex: LocalPlayerPage) ───
   useEffect(() => {
@@ -138,6 +139,22 @@ const AudioPlayer = ({ currentSong, playlist = [], onNext, onPrevious, onClose, 
     window.addEventListener('novasound:open-nowplaying', handler);
     return () => window.removeEventListener('novasound:open-nowplaying', handler);
   }, [currentSong?.is_local]);
+
+  // ── Toggle play/pause depuis l'extérieur (SongPage, SongCard, etc.) ────
+  useEffect(() => {
+    const handler = () => {
+      if (!audioRef.current) return;
+      if (audioRef.current.paused) {
+        audioRef.current.play().then(() => { setIsPlaying(true); setIsPlayingGlobal(true); }).catch(() => {});
+      } else {
+        audioRef.current.pause();
+        setIsPlaying(false);
+        setIsPlayingGlobal(false);
+      }
+    };
+    window.addEventListener('novasound:toggle-play', handler);
+    return () => window.removeEventListener('novasound:toggle-play', handler);
+  }, [setIsPlayingGlobal]);
 
   // ── Raccourcis clavier — actifs en mode expanded/plein écran ────
   useEffect(() => {
@@ -282,9 +299,9 @@ const AudioPlayer = ({ currentSong, playlist = [], onNext, onPrevious, onClose, 
   useEffect(() => {
     if (!('mediaSession' in navigator)) return;
     const handlers = {
-      play:          () => { audioRef.current?.play(); setIsPlaying(true); autoPlayRef.current = true; },
-      pause:         () => { audioRef.current?.pause(); setIsPlaying(false); },
-      stop:          () => { audioRef.current?.pause(); setIsPlaying(false); },
+      play:          () => { audioRef.current?.play(); setIsPlaying(true); setIsPlayingGlobal(true); autoPlayRef.current = true; },
+      pause:         () => { audioRef.current?.pause(); setIsPlaying(false); setIsPlayingGlobal(false); },
+      stop:          () => { audioRef.current?.pause(); setIsPlaying(false); setIsPlayingGlobal(false); },
       nexttrack:     () => { autoPlayRef.current = true; goNextRef.current?.(); },
       previoustrack: () => { autoPlayRef.current = true; goPreviousRef.current?.(); },
       seekbackward:  (d) => { if (audioRef.current) audioRef.current.currentTime = Math.max(0, audioRef.current.currentTime - (d.seekOffset || 10)); },
@@ -335,11 +352,11 @@ const AudioPlayer = ({ currentSong, playlist = [], onNext, onPrevious, onClose, 
       audioRef.current.play()
         .then(() => { 
           console.log('[AudioPlayer] Lecture démarrée avec succès');
-          setIsPlaying(true); setIsBuffering(false); 
+          setIsPlaying(true); setIsPlayingGlobal(true); setIsBuffering(false); 
         })
         .catch((err) => {
           console.error('[AudioPlayer] Erreur de lecture:', err);
-          if (err.name !== 'AbortError') setIsPlaying(false);
+          if (err.name !== 'AbortError') { setIsPlaying(false); setIsPlayingGlobal(false); }
         });
     } else if (!isNewSong && !wasFirstSong) {
       setIsPlaying(false);
@@ -405,12 +422,14 @@ const AudioPlayer = ({ currentSong, playlist = [], onNext, onPrevious, onClose, 
       audioRef.current.pause();
       autoPlayRef.current = false;
       setIsPlaying(false);
+      setIsPlayingGlobal(false);
     } else {
       audioRef.current.play().then(() => {
         setIsPlaying(true);
+        setIsPlayingGlobal(true);
         recordPlay();
         autoPlayRef.current = true;
-      }).catch(() => setIsPlaying(false));
+      }).catch(() => { setIsPlaying(false); setIsPlayingGlobal(false); });
     }
   };
 
@@ -531,8 +550,8 @@ const AudioPlayer = ({ currentSong, playlist = [], onNext, onPrevious, onClose, 
         onTimeUpdate={handleTimeUpdate}
         onLoadedMetadata={handleLoadedMetadata}
         onEnded={handleEnded}
-        onPlay={() => { setIsPlaying(true); setIsBuffering(false); }}
-        onPause={() => setIsPlaying(false)}
+        onPlay={() => { setIsPlaying(true); setIsPlayingGlobal(true); setIsBuffering(false); }}
+        onPause={() => { setIsPlaying(false); setIsPlayingGlobal(false); }}
         onWaiting={() => setIsBuffering(true)}
         onCanPlay={() => setIsBuffering(false)}
         onPlaying={() => setIsBuffering(false)}
@@ -993,7 +1012,7 @@ const AudioPlayer = ({ currentSong, playlist = [], onNext, onPrevious, onClose, 
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="text-white text-sm font-semibold flex items-center gap-1 overflow-hidden">
-                    <span className="truncate cursor-pointer" onClick={() => setIsExpanded(true)}>{currentSong.title}</span>
+                    <span className="truncate cursor-pointer" onClick={() => currentSong?.is_local ? setShowNowPlaying(true) : setIsExpanded(true)}>{currentSong.title}</span>
                     {isPlaying && <LottieAnimation animationData={playAnimation} style={{ width: 16, height: 16 }} loop autoplay className="flex-shrink-0" />}
                     {currentSong?.id && (
                       <a href={`/#/song/${currentSong.id}`} onClick={e => e.stopPropagation()}
@@ -1002,7 +1021,7 @@ const AudioPlayer = ({ currentSong, playlist = [], onNext, onPrevious, onClose, 
                       </a>
                     )}
                   </div>
-                  <div className="text-gray-500 text-xs truncate cursor-pointer flex items-center gap-1" onClick={() => setIsExpanded(true)}>
+                  <div className="text-gray-500 text-xs truncate cursor-pointer flex items-center gap-1" onClick={() => currentSong?.is_local ? setShowNowPlaying(true) : setIsExpanded(true)}>
                     {currentSong.artist}
                     {sleepTimer !== null && (
                       <span className="text-amber-400 text-[9px] font-bold ml-1">🌙 {fmtSleep(sleepTimer)}</span>
@@ -1036,7 +1055,7 @@ const AudioPlayer = ({ currentSong, playlist = [], onNext, onPrevious, onClose, 
             <div className="hidden sm:flex md:hidden items-center gap-3 px-4 py-2.5">
               {/* Cover */}
               <div className="relative w-12 h-12 flex-shrink-0 rounded-lg overflow-hidden cursor-pointer"
-                onClick={() => setIsExpanded(true)}>
+                onClick={() => currentSong?.is_local ? setShowNowPlaying(true) : setIsExpanded(true)}>
                 {currentSong.cover_url
                   ? <img src={currentSong.cover_url} alt={currentSong.title} className="w-full h-full object-cover" />
                   : <div className="w-full h-full bg-gradient-to-br from-cyan-500 to-purple-600 flex items-center justify-center"><Music className="w-6 h-6 text-white" /></div>
@@ -1046,7 +1065,7 @@ const AudioPlayer = ({ currentSong, playlist = [], onNext, onPrevious, onClose, 
               <div className="flex-1 min-w-0">
                 <div className="flex items-center justify-between mb-1">
                   <div className="flex items-center gap-1.5 min-w-0 flex-1">
-                    <span className="text-white text-sm font-semibold truncate cursor-pointer" onClick={() => setIsExpanded(true)}>{currentSong.title}</span>
+                    <span className="text-white text-sm font-semibold truncate cursor-pointer" onClick={() => currentSong?.is_local ? setShowNowPlaying(true) : setIsExpanded(true)}>{currentSong.title}</span>
                     {isPlaying && <LottieAnimation animationData={playAnimation} style={{ width: 16, height: 16 }} loop autoplay className="flex-shrink-0" />}
                   </div>
                   <div className="flex items-center gap-0.5 flex-shrink-0 ml-2">
@@ -1094,7 +1113,7 @@ const AudioPlayer = ({ currentSong, playlist = [], onNext, onPrevious, onClose, 
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center gap-1.5 overflow-hidden">
                     <span className="text-white text-sm font-semibold truncate cursor-pointer hover:underline"
-                      onClick={() => setIsExpanded(true)} title={currentSong.title}>{currentSong.title}</span>
+                      onClick={() => currentSong?.is_local ? setShowNowPlaying(true) : setIsExpanded(true)} title={currentSong.title}>{currentSong.title}</span>
                     {isPlaying && <LottieAnimation animationData={playAnimation} style={{ width: 18, height: 18 }} loop autoplay className="flex-shrink-0 opacity-80" />}
                     {currentSong?.id && (
                       <a href={`/#/song/${currentSong.id}`} onClick={e => e.stopPropagation()}

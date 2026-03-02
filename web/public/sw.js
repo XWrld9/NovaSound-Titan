@@ -1,14 +1,14 @@
 /**
- * sw.js — NovaSound TITAN LUX v8500
+ * sw.js — NovaSound TITAN LUX v9000
  *
- * Fixes v8000:
- *  - Ne tente JAMAIS de cacher les fichiers audio (m4a, mp3, etc.) depuis Supabase Storage
- *    → résout ERR_CACHE_OPERATION_NOT_SUPPORTED sur iOS / certains Android
- *  - Cache réseau-d'abord pour les assets statiques
- *  - Exclut supabase.co (API + storage) du cache SW
+ * V9000:
+ *  - Offline-first: toute navigation hors-ligne → sert index.html (SPA)
+ *  - Cache agressif du shell (index.html + assets statiques)
+ *  - La SPA redirige vers /local-player via OfflineRedirect (React)
+ *  - Exclut toujours les fichiers audio de Supabase Storage du cache
  */
 
-const CACHE_NAME    = 'novasound-titan-v8500';
+const CACHE_NAME    = 'novasound-titan-v9000';
 const STATIC_ASSETS = [
   '/', '/index.html', '/manifest.json', '/favicon.ico',
   '/favicon.png', '/apple-touch-icon.png', '/icon-192.png', '/icon-512.png',
@@ -69,7 +69,17 @@ self.addEventListener('fetch', e => {
         }
         return res;
       })
-      .catch(() => caches.match(request).then(r => r || new Response('Offline', { status: 503 })))
+      .catch(async () => {
+        // Réseau indisponible — chercher dans le cache
+        const cached = await caches.match(request);
+        if (cached) return cached;
+        // Pour les navigations HTML (SPA), toujours servir index.html
+        if (request.mode === 'navigate' || request.headers.get('accept')?.includes('text/html')) {
+          const indexCache = await caches.match('/index.html') || await caches.match('/');
+          if (indexCache) return indexCache;
+        }
+        return new Response('Offline', { status: 503 });
+      })
   );
 });
 
