@@ -185,6 +185,7 @@ const Header = () => {
               </Link>
               <Link to="/leaderboard" className="text-gray-300 hover:text-amber-400 transition-colors flex items-center gap-2 font-medium">
                 <Trophy className="w-4 h-4" />Top
+              </Link>
 
               {/* Bouton installer PWA — toujours visible sauf si déjà installé */}
               {!alreadyInstalled && (
@@ -415,6 +416,7 @@ const Header = () => {
                   </Link>
                   <Link to="/leaderboard" onClick={closeMenu} className="flex items-center gap-3 px-4 py-3 text-gray-300 hover:bg-amber-500/10 hover:text-amber-400 rounded-lg transition-colors">
                     <Trophy className="w-5 h-5 text-amber-400" />Classement
+                  </Link>
                   {isAuthenticated && (
                     <>
                       <div className="my-2 border-t border-gray-800" />
