@@ -1,3 +1,28 @@
+## 📦 Changelog v8500 — Corrections critiques
+
+### 🔴 Fix CRITIQUE — NotificationToast hors du Router (crash navigation)
+`NotificationToast` utilisait `useNavigate()` mais était rendu **en dehors** du `<Router>` dans `App.jsx` → crash React dès qu'une notification était cliquée. **Fix** : déplacé à l'intérieur du `<Router>`.
+
+### 🔴 Fix CRITIQUE — Route `/admin` manquante
+`AdminPanel` importé dans `App.jsx` mais aucune `<Route path="/admin">` n'existait → panneau admin inaccessible. **Fix** : route ajoutée avec `ProtectedRoute`.
+
+### 🔴 Fix — AdminPanel : requêtes `auth.users` invalides depuis le client
+`supabase.from('auth.users')` et les joins `auth.users!host_id` échouaient silencieusement (schéma auth non accessible côté client). **Fix** : remplacé par `users` (table publique).
+
+### 🔴 Fix SQL — Vue `user_stats` et fonction `get_user_conversations` utilisaient `auth.users`
+Ces objets SQL référençaient `auth.users` dans un contexte inaccessible depuis les clients RLS. **Fix** : recréés pour utiliser uniquement `public.users`.
+
+### 🔧 Lien Admin Panel dans le Header
+Lien "Panneau Admin" (icône Shield 🛡️) ajouté dans le menu desktop et mobile, visible uniquement pour les admins.
+
+### 🔢 Version bump
+`package.json` 8.2.0 → 8.5.0 · manifest v8003 → v8500 · SW cache v8000 → v8500 · X-Client-Info 500.0.0 → 8500.0.0
+
+### 🗄️ SQL (étape 20) : `v8500-migration.sql`
+Migration complète incluant toutes les tables v8200 + corrections v8500.
+
+---
+
 ## 📦 Changelog v900.0 — PWA Score · Chat Nettoyage Admin · Fix Warnings · Améliorations
 
 ### 🌐 PWA Manifest — Score PWABuilder amélioré
@@ -524,6 +549,8 @@ npm run dev
 | 14 | `notifications.sql` | Table `notifications` + RLS + Realtime |
 | 15 | `owner-edit-delete-rls.sql` | Droits propriétaire : modifier/supprimer ses propres sons |
 | 16 | `fix-comments-rls.sql` | Correction RLS commentaires |
+| ... | *(v17 → v19 : chat, v8000-v8200 migrations)* | Voir fichiers SQL dans le dossier |
+| 20 | `v8500-migration.sql` | ⚠️ **v8500** : messagerie privée avancée, sessions audio, cache, corrections auth.users |
 
 > ⚠️ **Exécuter tous les fichiers dans l'ordre.** Chaque script utilise `IF NOT EXISTS` — aucun risque de doublon sur une base déjà peuplée.
 

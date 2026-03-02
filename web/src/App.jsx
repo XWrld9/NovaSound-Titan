@@ -102,8 +102,8 @@ function App() {
                 <ChatProvider>
                   <MessageProvider>
                     <NotificationProvider>
-                      <NotificationToast />
                       <Router>
+                      <NotificationToast />
                       <ScrollToTop />
                       <OfflineRedirect />
                       <OfflineBanner />
@@ -136,6 +136,7 @@ function App() {
                           <Route path="/live/:roomId"    element={<LiveRoomPage />} />
                           <Route path="/leaderboard"     element={<LeaderboardPage />} />
                           <Route path="/local-player"    element={<LocalPlayerPage />} />
+                          <Route path="/admin"           element={<ProtectedRoute><AdminPanel /></ProtectedRoute>} />
                         </Routes>
                       </Suspense>
                       </ErrorBoundary>

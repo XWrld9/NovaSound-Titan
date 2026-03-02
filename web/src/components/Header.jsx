@@ -316,6 +316,11 @@ const Header = () => {
                         <Link to="/stats" className="block px-4 py-2 text-sm text-gray-300 hover:bg-cyan-500/10 hover:text-cyan-400 rounded-lg flex items-center gap-2">
                           <BarChart2 className="w-4 h-4" />Mes stats
                         </Link>
+                        {isAdmin && (
+                          <Link to="/admin" className="block px-4 py-2 text-sm text-red-400 hover:bg-red-500/10 rounded-lg flex items-center gap-2">
+                            <Shield className="w-4 h-4" />Panneau Admin
+                          </Link>
+                        )}
                         <button onClick={handleLogout} className="w-full text-left px-4 py-2 text-sm text-red-400 hover:bg-red-500/10 rounded-lg flex items-center gap-2">
                           <LogOut className="w-4 h-4" />Déconnexion
                         </button>
@@ -460,6 +465,11 @@ const Header = () => {
                       <Link to="/stats" onClick={closeMenu} className="flex items-center gap-3 px-4 py-3 text-gray-300 hover:bg-cyan-500/10 hover:text-cyan-400 rounded-lg transition-colors">
                         <BarChart2 className="w-5 h-5 text-cyan-400" />Mes stats
                       </Link>
+                      {isAdmin && (
+                        <Link to="/admin" onClick={closeMenu} className="flex items-center gap-3 px-4 py-3 text-red-400 hover:bg-red-500/10 rounded-lg transition-colors">
+                          <Shield className="w-5 h-5 text-red-400" />Panneau Admin
+                        </Link>
+                      )}
                       <Link to="/profile" onClick={closeMenu} className="flex items-center gap-3 px-4 py-3 text-gray-300 hover:bg-cyan-500/10 hover:text-cyan-400 rounded-lg transition-colors">
                         <User className="w-5 h-5 text-fuchsia-400" />Mon profil
                       </Link>

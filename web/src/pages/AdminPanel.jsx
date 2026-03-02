@@ -50,7 +50,7 @@ const AdminPanel = () => {
   const loadStats = async () => {
     try {
       const [usersCount, songsCount, liveRoomsCount, messagesCount] = await Promise.all([
-        supabase.from('auth.users').select('id', { count: 'exact' }),
+        supabase.from('users').select('id', { count: 'exact' }),
         supabase.from('songs').select('id', { count: 'exact' }),
         supabase.from('live_rooms').select('id', { count: 'exact' }),
         supabase.from('live_room_messages').select('id', { count: 'exact' })
@@ -73,7 +73,7 @@ const AdminPanel = () => {
         .from('live_rooms')
         .select(`
           *,
-          host:auth.users!host_id(username, email, avatar_url)
+          host:users!host_id(username, avatar_url)
         `)
         .order('created_at', { ascending: false });
 
@@ -86,8 +86,8 @@ const AdminPanel = () => {
   const loadUsers = async () => {
     try {
       const { data } = await supabase
-        .from('auth.users')
-        .select('id, username, email, avatar_url, created_at')
+        .from('users')
+        .select('id, username, avatar_url, created_at')
         .order('created_at', { ascending: false })
         .limit(50);
 

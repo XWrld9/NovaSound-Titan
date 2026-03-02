@@ -1,5 +1,5 @@
 /**
- * sw.js — NovaSound TITAN LUX v8000
+ * sw.js — NovaSound TITAN LUX v8500
  *
  * Fixes v8000:
  *  - Ne tente JAMAIS de cacher les fichiers audio (m4a, mp3, etc.) depuis Supabase Storage
@@ -8,7 +8,7 @@
  *  - Exclut supabase.co (API + storage) du cache SW
  */
 
-const CACHE_NAME    = 'novasound-titan-v8000';
+const CACHE_NAME    = 'novasound-titan-v8500';
 const STATIC_ASSETS = [
   '/', '/index.html', '/manifest.json', '/favicon.ico',
   '/favicon.png', '/apple-touch-icon.png', '/icon-192.png', '/icon-512.png',
