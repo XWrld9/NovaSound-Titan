@@ -106,6 +106,11 @@ const NowPlayingScreen = ({ onClose, isPlaying, onTogglePlay, onNext, onPrev, sh
       setIsLiked(false); setLikeId(null); setHasReposted(false);
       setIsFollowing(false); setFollowId(null); return;
     }
+    // Sons locaux : pas de requêtes Supabase
+    if (currentSong.is_local) {
+      setIsLiked(false); setLikeId(null); setHasReposted(false);
+      setIsFollowing(false); setFollowId(null); return;
+    }
     const sid = currentSong.id, uid = currentSong.uploader_id;
     withRetry(() => supabase.from('likes').select('id').eq('song_id',sid).eq('user_id',currentUser.id).maybeSingle())
       .then(({data}) => { setIsLiked(!!data); setLikeId(data?.id||null); }).catch(()=>{});
@@ -118,7 +123,7 @@ const NowPlayingScreen = ({ onClose, isPlaying, onTogglePlay, onNext, onPrev, sh
   }, [currentUser, currentSong?.id, withRetry]);
 
   useEffect(() => {
-    if (!currentSong) { setLyricsContent(null); return; }
+    if (!currentSong || currentSong.is_local) { setLyricsContent(null); return; }
     supabase.from('song_lyrics').select('content').eq('song_id',currentSong.id).maybeSingle()
       .then(({data}) => setLyricsContent(data?.content||null)).catch(()=>{});
   }, [currentSong?.id]);
@@ -163,6 +168,7 @@ const NowPlayingScreen = ({ onClose, isPlaying, onTogglePlay, onNext, onPrev, sh
   if (!currentSong) return null;
   const upcoming = [...(queue||[]),...(playlist||[])].slice(0,6);
   const showFollowBtn = currentUser && currentSong?.uploader_id && currentSong.uploader_id !== currentUser.id;
+  const isLocal = !!currentSong.is_local;
 
   return (
     <>
@@ -225,11 +231,15 @@ const NowPlayingScreen = ({ onClose, isPlaying, onTogglePlay, onNext, onPrev, sh
               initial={{opacity:0,y:6}} animate={{opacity:1,y:0}} exit={{opacity:0,y:-6}}
               className="text-white text-xl font-black truncate">{currentSong.title}</motion.p>
           </AnimatePresence>
-          <Link to={`/artist/${currentSong.uploader_id}`} onClick={onClose}
-            className="text-gray-400 text-sm hover:text-white transition-colors">{currentSong.artist}</Link>
+          {isLocal
+            ? <p className="text-gray-400 text-sm">{currentSong.artist}</p>
+            : <Link to={`/artist/${currentSong.uploader_id}`} onClick={onClose}
+                className="text-gray-400 text-sm hover:text-white transition-colors">{currentSong.artist}</Link>
+          }
         </div>
 
         {/* ── Actions : Like · Share · Repost · Download · Follow/Paroles ── */}
+        {!isLocal && (
         <div className="flex items-center justify-between mb-4 flex-shrink-0 px-1">
 
           {/* Like */}
@@ -298,6 +308,7 @@ const NowPlayingScreen = ({ onClose, isPlaying, onTogglePlay, onNext, onPrev, sh
             </button>
           )}
         </div>
+        )} {/* end !isLocal */}
 
         {/* Options secondaires */}
         <div className="flex items-center justify-around mb-5 flex-shrink-0">

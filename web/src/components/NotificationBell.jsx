@@ -58,58 +58,82 @@ const ToastItem = ({ toast, onDismiss }) => {
   const cfg = getTypeConfig(toast.type);
   const Icon = cfg.icon;
   const x = useMotionValue(0);
-  const opacity = useTransform(x, [-120, 0, 120], [0, 1, 0]);
+  const opacity = useTransform(x, [-140, 0, 140], [0, 1, 0]);
 
   return (
     <motion.div
       style={{ x, opacity }}
       drag="x"
       dragConstraints={{ left: 0, right: 0 }}
-      dragElastic={0.3}
+      dragElastic={0.25}
       onDragEnd={(_, info) => {
         if (Math.abs(info.offset.x) > 80) onDismiss();
       }}
-      initial={{ opacity: 0, x: 60, scale: 0.92 }}
-      animate={{ opacity: 1, x: 0, scale: 1 }}
-      exit={{ opacity: 0, x: 80, scale: 0.9 }}
-      transition={{ type: 'spring', damping: 22, stiffness: 320 }}
-      className="flex items-start gap-3 p-3.5 rounded-2xl cursor-pointer select-none"
+      initial={{ opacity: 0, y: -16, scale: 0.95 }}
+      animate={{ opacity: 1, y: 0, scale: 1 }}
+      exit={{ opacity: 0, y: -12, scale: 0.93 }}
+      transition={{ type: 'spring', damping: 24, stiffness: 380 }}
+      className="flex items-start gap-3 cursor-pointer select-none overflow-hidden"
       style={{
-        background: 'rgba(10,15,30,0.97)',
-        border: `1px solid ${cfg.color}35`,
-        boxShadow: `0 8px 32px rgba(0,0,0,0.65), 0 0 0 1px ${cfg.color}15`,
+        background: `linear-gradient(135deg, #1a1a2e 0%, #16213e 100%)`,
+        border: `1.5px solid ${cfg.color}60`,
+        borderLeft: `4px solid ${cfg.color}`,
+        borderRadius: 16,
+        padding: '12px 14px 12px 12px',
+        boxShadow: `0 8px 32px rgba(0,0,0,0.8), 0 0 0 1px ${cfg.color}20, 0 4px 16px ${cfg.color}25`,
       }}
       onClick={onDismiss}
     >
-      {/* Avatar + icône type */}
-      <div className="relative flex-shrink-0">
+      {/* Icône type — toujours visible, fond coloré fort */}
+      <div
+        className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0"
+        style={{ background: `${cfg.color}25`, border: `1.5px solid ${cfg.color}50` }}
+      >
         {toast.icon_url
-          ? <img src={toast.icon_url} alt="" className="w-10 h-10 rounded-xl object-cover" style={{ border: `1px solid ${cfg.color}30` }} />
-          : <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ background: cfg.bg, border: `1px solid ${cfg.color}25` }}>
-              <Icon className="w-5 h-5" style={{ color: cfg.color }} />
-            </div>
+          ? <img src={toast.icon_url} alt="" className="w-10 h-10 rounded-xl object-cover" />
+          : <Icon className="w-5 h-5" style={{ color: cfg.color }} />
         }
-        {toast.icon_url && (
-          <div className="absolute -bottom-1 -right-1 w-5 h-5 rounded-lg flex items-center justify-center" style={{ background: cfg.bg, border: `1px solid ${cfg.color}30` }}>
-            <Icon className="w-3 h-3" style={{ color: cfg.color }} />
-          </div>
-        )}
       </div>
 
-      {/* Texte */}
+      {/* Texte — contraste maximum */}
       <div className="flex-1 min-w-0">
+        {/* Label type + heure */}
         <div className="flex items-center gap-2 mb-0.5">
-          <span className="text-[10px] font-bold uppercase tracking-wider" style={{ color: cfg.color }}>{cfg.label}</span>
-          <span className="text-[10px] text-gray-600">{timeAgo(toast.created_at)}</span>
+          <span
+            className="text-[10px] font-black uppercase tracking-widest"
+            style={{ color: cfg.color }}
+          >
+            {cfg.label}
+          </span>
+          <span className="text-[10px] text-gray-400 font-medium">
+            {timeAgo(toast.created_at)}
+          </span>
         </div>
-        <p className="text-sm text-white font-semibold leading-tight truncate">{toast.title}</p>
-        <p className="text-xs text-gray-400 leading-relaxed line-clamp-2 mt-0.5">{toast.body}</p>
+
+        {/* Titre — blanc pur, gras */}
+        <p
+          className="text-sm font-bold leading-snug"
+          style={{ color: '#ffffff', textShadow: '0 1px 4px rgba(0,0,0,0.8)' }}
+        >
+          {toast.title}
+        </p>
+
+        {/* Corps — gris clair lisible */}
+        {toast.body && (
+          <p
+            className="text-xs leading-relaxed mt-0.5 line-clamp-2"
+            style={{ color: '#c9d1d9' }}
+          >
+            {toast.body}
+          </p>
+        )}
       </div>
 
       {/* Dismiss */}
       <button
         onClick={(e) => { e.stopPropagation(); onDismiss(); }}
-        className="flex-shrink-0 p-1 rounded-lg text-gray-600 hover:text-white transition-colors mt-0.5"
+        className="flex-shrink-0 w-6 h-6 flex items-center justify-center rounded-full transition-colors mt-0.5"
+        style={{ background: 'rgba(255,255,255,0.1)', color: '#9ca3af' }}
       >
         <X className="w-3.5 h-3.5" />
       </button>
@@ -142,7 +166,16 @@ export const NotificationToast = () => {
   }, [notifications[0]?.id]);
 
   return ReactDOM.createPortal(
-    <div className="fixed z-[10001] flex flex-col gap-2" style={{ top: 76, right: 12, maxWidth: 360, width: 'calc(100vw - 24px)' }}>
+    <div
+      className="fixed z-[10001] flex flex-col gap-2.5"
+      style={{
+        top: 'calc(env(safe-area-inset-top, 0px) + 64px)',
+        right: 12,
+        left: 12,
+        maxWidth: 380,
+        marginLeft: 'auto',
+      }}
+    >
       <AnimatePresence>
         {toasts.map(t => (
           <ToastItem

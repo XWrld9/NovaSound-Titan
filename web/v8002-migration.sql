@@ -57,3 +57,64 @@ CREATE INDEX IF NOT EXISTS idx_local_play_history     ON local_play_history(user
 
 -- Colonne is_local songs
 ALTER TABLE songs ADD COLUMN IF NOT EXISTS is_local boolean DEFAULT false;
+
+-- ═══════════════════════════════════════════════════════════════════════════
+-- FIX CRITIQUE — RLS notifications
+--
+-- Problème : la politique INSERT par défaut bloque l'envoi de notifications
+--   à d'autres utilisateurs (auth.uid() = user_id → User A ne peut pas
+--   insérer pour User B).
+--
+-- Solution : autoriser tout utilisateur authentifié à insérer une
+--   notification pour N'IMPORTE quel user_id.
+--   La lecture reste privée (chacun voit seulement ses propres notifs).
+-- ═══════════════════════════════════════════════════════════════════════════
+
+-- S'assurer que RLS est activé
+ALTER TABLE notifications ENABLE ROW LEVEL SECURITY;
+
+-- Supprimer toutes les anciennes politiques INSERT restrictives
+DROP POLICY IF EXISTS "notifications_insert"          ON notifications;
+DROP POLICY IF EXISTS "Users can insert notifications" ON notifications;
+DROP POLICY IF EXISTS "notif_insert"                  ON notifications;
+DROP POLICY IF EXISTS "notifications_insert_own"      ON notifications;
+
+-- ✅ Nouvelle politique INSERT : tout utilisateur connecté peut notifier n'importe qui
+CREATE POLICY "notifications_insert_any"
+  ON notifications
+  FOR INSERT
+  WITH CHECK (auth.uid() IS NOT NULL);
+
+-- ✅ SELECT : chacun voit uniquement ses propres notifications
+DROP POLICY IF EXISTS "notifications_select"      ON notifications;
+DROP POLICY IF EXISTS "Users can view own notifs" ON notifications;
+DROP POLICY IF EXISTS "notif_select"              ON notifications;
+
+CREATE POLICY "notifications_select_own"
+  ON notifications
+  FOR SELECT
+  USING (auth.uid()::text = user_id OR auth.uid()::text = user_id::text);
+
+-- ✅ UPDATE : chacun peut marquer ses propres notifs comme lues
+DROP POLICY IF EXISTS "notifications_update"     ON notifications;
+DROP POLICY IF EXISTS "notif_update"             ON notifications;
+
+CREATE POLICY "notifications_update_own"
+  ON notifications
+  FOR UPDATE
+  USING (auth.uid()::text = user_id OR auth.uid()::text = user_id::text);
+
+-- ✅ DELETE : chacun peut supprimer ses propres notifs
+DROP POLICY IF EXISTS "notifications_delete"     ON notifications;
+DROP POLICY IF EXISTS "notif_delete"             ON notifications;
+
+CREATE POLICY "notifications_delete_own"
+  ON notifications
+  FOR DELETE
+  USING (auth.uid()::text = user_id OR auth.uid()::text = user_id::text);
+
+-- Vérification
+SELECT policyname, cmd, qual, with_check
+FROM pg_policies
+WHERE tablename = 'notifications'
+ORDER BY cmd;

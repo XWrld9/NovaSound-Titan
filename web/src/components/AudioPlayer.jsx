@@ -19,7 +19,7 @@ import WaveformVisualizer from '@/components/WaveformVisualizer';
 import SongShareModal from '@/components/SongShareModal';
 import NowPlayingScreen from '@/components/NowPlayingScreen';
 import AddToPlaylistModal from '@/components/AddToPlaylistModal';
-import LocalFilePicker from '@/components/LocalFilePicker';
+
 
 const isIOS = () =>
   /iphone|ipad|ipod/i.test(navigator.userAgent) ||
@@ -697,7 +697,7 @@ const AudioPlayer = ({ currentSong, playlist = [], onNext, onPrevious, onClose, 
                       <Download className="w-5 h-5" />
                     </button>
                     {/* Lecteur local hors-ligne */}
-                    <LocalFilePicker compact={true} />
+                    
                     {/* Ajouter à la file d'attente */}
                     <button onClick={() => addToQueue(currentSong)} className="text-gray-400 hover:text-cyan-400 transition-colors" title="Ajouter à la file d'attente">
                       <ListMusic className="w-4 h-4" />
