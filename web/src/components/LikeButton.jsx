@@ -5,7 +5,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import Lottie from 'lottie-react';
 import heartAnimation from '@/animations/heart-animation.json';
 
-const LikeButton = ({ songId, initialLikes = 0, initialLiked = false }) => {
+const LikeButton = ({ songId, initialLikes = 0, initialLiked = false, compact = false }) => {
   const { currentUser, supabase } = useAuth();
   const [likes, setLikes]       = useState(initialLikes);
   const [isLiked, setIsLiked]   = useState(initialLiked);
@@ -144,15 +144,14 @@ const LikeButton = ({ songId, initialLikes = 0, initialLiked = false }) => {
       <motion.button
         onClick={handleLike}
         disabled={isLoading}
-        className={`flex items-center gap-2 px-4 py-2 rounded-full transition-all ${
-          isLiked
-            ? 'bg-red-500 text-pink-100 hover:bg-red-600'
-            : 'bg-gray-800 text-cyan-400 hover:bg-gray-700 border border-cyan-500/30'
+        className={`flex items-center gap-1.5 rounded-full transition-all ${compact
+          ? `px-2 py-1 text-xs ${isLiked ? 'bg-red-500/20 text-red-400' : 'text-gray-500 hover:text-red-400'}`
+          : `px-4 py-2 ${isLiked ? 'bg-red-500 text-pink-100 hover:bg-red-600' : 'bg-gray-800 text-cyan-400 hover:bg-gray-700 border border-cyan-500/30'}`
         }`}
         whileHover={{ scale: 1.05 }}
         whileTap={{ scale: 0.95 }}
       >
-        <Heart className={`w-5 h-5 ${isLiked ? 'text-pink-100 fill-current' : ''}`} />
+        <Heart className={`${compact ? 'w-3.5 h-3.5' : 'w-5 h-5'} ${isLiked ? 'fill-current text-red-400' : ''}`} />
         <span className="font-medium">{likes}</span>
       </motion.button>
     </div>

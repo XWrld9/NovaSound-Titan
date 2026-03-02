@@ -1,11 +1,12 @@
 /**
- * OfflineBanner — NovaSound TITAN LUX v4000
- * Bannière réseau offline/reconnecté — animée, propre, non-intrusive
+ * OfflineBanner — NovaSound TITAN LUX v8001
+ * Bannière offline avec raccourci vers le lecteur local
  */
 import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { WifiOff, Wifi, RefreshCw } from 'lucide-react';
+import { WifiOff, Wifi, RefreshCw, HardDrive } from 'lucide-react';
 import { useOnline } from '@/contexts/OnlineContext';
+import { Link } from 'react-router-dom';
 
 const OfflineBanner = () => {
   const { isOnline, wasOffline } = useOnline();
@@ -41,7 +42,14 @@ const OfflineBanner = () => {
           ) : (
             <>
               <WifiOff className="w-4 h-4 text-indigo-300 flex-shrink-0" />
-              <span className="text-indigo-200">Hors-ligne — Les messages seront envoyés à la reconnexion</span>
+              <span className="text-indigo-200 truncate">Hors-ligne</span>
+              <Link
+                to="/local-player"
+                className="flex items-center gap-1 bg-white/20 hover:bg-white/30 transition-colors px-2.5 py-0.5 rounded-full text-white text-xs font-bold flex-shrink-0"
+              >
+                <HardDrive className="w-3 h-3" />
+                Lecteur local
+              </Link>
             </>
           )}
         </motion.div>

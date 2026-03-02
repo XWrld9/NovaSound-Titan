@@ -183,14 +183,14 @@ const SongCard = memo(({ song: initialSong, onPlay, isPlaying, setCurrentSong, c
             </div>
           )}
 
-          <div className="flex items-center justify-between mt-2.5">
-            <div className="flex items-center gap-2">
-              <LikeButton songId={song.id} initialLikes={song.likes_count || 0} />
+          <div className="flex items-center justify-between mt-2.5 gap-1.5">
+            <div className="flex items-center gap-1.5 min-w-0 overflow-hidden">
+              <LikeButton songId={song.id} initialLikes={song.likes_count || 0} compact={true} />
               <RepostButton song={song} size="sm" showCount={!!(song.reposts_count > 0)} />
               {commentCount !== null && (
                 <button
                   onClick={e => { e.stopPropagation(); setShowComments(true); }}
-                  className="flex items-center gap-1 text-gray-500 hover:text-emerald-400 transition-colors"
+                  className="flex items-center gap-1 text-gray-500 hover:text-emerald-400 transition-colors flex-shrink-0 p-1"
                   title={commentCount > 0 ? `${commentCount} commentaire${commentCount > 1 ? 's' : ''}` : 'Commenter'}
                 >
                   <MessageCircle className="w-3.5 h-3.5" />
@@ -198,33 +198,27 @@ const SongCard = memo(({ song: initialSong, onPlay, isPlaying, setCurrentSong, c
                 </button>
               )}
             </div>
-            <div className="flex items-center gap-1.5">
+            <div className="flex items-center gap-0.5 flex-shrink-0">
               {!song.is_archived && (
                 <>
                   <FavoriteButton songId={song.id} size="sm" />
-                  {/* ⊕ Ajouter à la file */}
                   <button onClick={handleAddToQueue}
-                    className={`transition-all p-1 rounded-md ${queueFlash ? 'text-cyan-400 bg-cyan-500/15' : 'text-gray-400 hover:text-cyan-400 hover:bg-cyan-500/10'}`}
+                    className={`transition-all p-1 rounded-md ${queueFlash ? 'text-cyan-400 bg-cyan-500/15' : 'text-gray-500 hover:text-cyan-400 hover:bg-cyan-500/10'}`}
                     title="Ajouter à la file d'attente">
-                    {queueFlash ? <Check className="w-3.5 h-3.5" /> : <Plus className="w-3.5 h-3.5" />}
+                    {queueFlash ? <Check className="w-3 h-3" /> : <Plus className="w-3 h-3" />}
                   </button>
-                  {/* 🎵 Ajouter à une playlist */}
                   {currentUser && (
                     <button
                       onClick={e => { e.stopPropagation(); setShowPlaylistModal(true); }}
-                      className="text-gray-400 hover:text-fuchsia-400 transition-colors p-1 rounded-md hover:bg-fuchsia-500/10"
+                      className="text-gray-500 hover:text-fuchsia-400 transition-colors p-1 rounded-md hover:bg-fuchsia-500/10"
                       title="Ajouter à une playlist"
                     >
-                      <ListMusic className="w-3.5 h-3.5" />
+                      <ListMusic className="w-3 h-3" />
                     </button>
                   )}
-                  <button onClick={handleDownload} className="text-gray-400 hover:text-cyan-400 transition-colors p-1" title="Télécharger">
-                    <Download className="w-3.5 h-3.5" />
+                  <button onClick={handleShare} className="text-gray-500 hover:text-white transition-colors p-1" title="Partager">
+                    <Share2 className="w-3 h-3" />
                   </button>
-                  <button onClick={handleShare} className="text-gray-400 hover:text-white transition-colors p-1" title="Partager">
-                    <Share2 className="w-3.5 h-3.5" />
-                  </button>
-                  <ReportButton contentType="song" contentId={song.id} />
                 </>
               )}
               <SongActionsMenu

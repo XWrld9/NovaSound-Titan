@@ -229,13 +229,13 @@ const ChatView = memo(({
                       <div className={`px-3.5 py-2 text-sm leading-relaxed select-text ${
                         isMine
                           ? 'bg-gradient-to-br from-cyan-500 to-cyan-600 text-white rounded-2xl rounded-br-md'
-                          : 'bg-gray-800/90 border border-white/[0.07] text-gray-200 rounded-2xl rounded-bl-md'
+                          : 'bg-gray-600/90 border border-white/[0.15] text-white rounded-2xl rounded-bl-md'
                       } ${msg._pending ? 'opacity-60' : ''}`}>
                         {msg.content}
                       </div>
                       {isLast && (
                         <div className={`flex items-center gap-1 mt-0.5 px-1 ${isMine ? 'justify-end' : 'justify-start'}`}>
-                          <span className="text-[10px] text-gray-700">{fmtTime(msg.created_at)}</span>
+                          <span className="text-[10px] text-gray-400">{fmtTime(msg.created_at)}</span>
                           {isMine && (
                             msg.is_read
                               ? <CheckCheck className="w-3 h-3 text-cyan-400" />

@@ -1,5 +1,5 @@
-import React, { lazy, Suspense } from 'react';
-import { Route, Routes, HashRouter as Router } from 'react-router-dom';
+import React, { lazy, Suspense, useEffect } from 'react';
+import { Route, Routes, HashRouter as Router, useNavigate, useLocation } from 'react-router-dom';
 import { AuthProvider } from '@/contexts/AuthContext';
 import { NotificationProvider } from '@/contexts/NotificationContext';
 import { NotificationToast } from '@/components/NotificationBell';
@@ -66,6 +66,24 @@ const GlobalPlayer = () => {
   );
 };
 
+// ── Redirect hors-ligne → /local-player ──────────────────────────────────────
+import { useOnline } from '@/contexts/OnlineContext';
+const OfflineRedirect = () => {
+  const { isOnline } = useOnline();
+  const navigate = useNavigate();
+  const location = useLocation();
+
+  useEffect(() => {
+    const ONLINE_ONLY = ['/upload', '/profile', '/messages', '/stats', '/moderation', '/chat', '/live'];
+    const isOnlineOnlyPage = ONLINE_ONLY.some(p => location.pathname.startsWith(p));
+    if (!isOnline && isOnlineOnlyPage) {
+      navigate('/local-player', { replace: true });
+    }
+  }, [isOnline, location.pathname, navigate]);
+
+  return null;
+};
+
 function App() {
   return (
     <HelmetProvider>
@@ -80,6 +98,7 @@ function App() {
                       <NotificationToast />
                       <Router>
                       <ScrollToTop />
+                      <OfflineRedirect />
                       <OfflineBanner />
                       <InstallBanner />
                       <ErrorBoundary>
