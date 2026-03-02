@@ -33,8 +33,9 @@ const AdminPanel = () => {
     if (!currentUser) { setLoading(false); return; }
     const isAdminEmail = currentUser.email === ADMIN_EMAIL || currentUser.user_metadata?.email === ADMIN_EMAIL;
     if (isAdminEmail) { setIsAdmin(true); setLoading(false); return; }
-    supabase.from('user_roles').select('role').eq('user_id', currentUser.id).eq('role', 'admin').eq('is_active', true).single()
-      .then(({ data }) => { if (data) setIsAdmin(true); }).finally(() => setLoading(false));
+    // Vérification secondaire via user_roles (si pas admin email)
+    supabase.from('user_roles').select('role').eq('user_id', currentUser.id).eq('role', 'admin').eq('is_active', true).maybeSingle()
+      .then(({ data }) => { if (data) setIsAdmin(true); }).catch(() => {}).finally(() => setLoading(false));
   }, [currentUser]);
 
   const loadStats = useCallback(async () => {

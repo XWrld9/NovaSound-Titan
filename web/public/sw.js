@@ -8,7 +8,7 @@
  *  - Exclut toujours les fichiers audio de Supabase Storage du cache
  */
 
-const CACHE_NAME    = 'novasound-titan-v9000';
+const CACHE_NAME    = 'novasound-titan-v2000';
 const STATIC_ASSETS = [
   '/', '/index.html', '/manifest.json', '/favicon.ico',
   '/favicon.png', '/apple-touch-icon.png', '/icon-192.png', '/icon-512.png',

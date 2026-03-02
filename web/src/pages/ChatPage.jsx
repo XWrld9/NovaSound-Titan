@@ -764,8 +764,8 @@ const ChatPage = () => {
                         <button key={notif.id}
                           className={`w-full flex items-start gap-3 p-4 border rounded-2xl transition-all text-left ${
                             notif.is_read
-                              ? 'bg-[#12121e] border-white/[0.08] hover:bg-[#161626] hover:border-cyan-500/20'
-                              : 'bg-[#0e1428] border-cyan-500/40 hover:border-cyan-500/70 shadow-md shadow-cyan-500/10'
+                              ? 'bg-[#1e1e35] border-white/[0.12] hover:bg-[#252540] hover:border-cyan-500/30'
+                              : 'bg-[#1a2744] border-cyan-500/50 hover:border-cyan-400/80 shadow-lg shadow-cyan-500/15'
                           }`}
                           onClick={() => handleNotifClick(notif)}>
                           <div className={`w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 text-xl border ${
@@ -779,13 +779,13 @@ const ChatPage = () => {
                           </div>
                           <div className="flex-1 min-w-0">
                             <div className="flex items-center gap-2 mb-1">
-                              <span className="text-sm font-bold text-white truncate">
+                              <span className="text-sm font-bold text-white truncate drop-shadow-sm">
                                 {notif.title}
                               </span>
                               <span className="text-[10px] text-gray-400 flex-shrink-0">{timeAgo(notif.created_at)}</span>
                               {!notif.is_read && <span className="w-2 h-2 rounded-full bg-cyan-400 flex-shrink-0 animate-pulse" />}
                             </div>
-                            <p className="text-sm leading-relaxed break-words line-clamp-2 text-gray-200">
+                            <p className="text-sm leading-relaxed break-words line-clamp-2 text-gray-100">
                               {notif.body}
                             </p>
                             {notif.is_read && (

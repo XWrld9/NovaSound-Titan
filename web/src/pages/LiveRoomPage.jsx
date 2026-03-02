@@ -626,6 +626,34 @@ const LiveRoomPage = () => {
                         <Headphones className="w-4 h-4" />
                         {(r.participants_count || 0) >= MAX_PARTICIPANTS ? 'Salle pleine' : 'Rejoindre'}
                       </button>
+                      {/* Boutons admin dans le lobby */}
+                      {isAdmin && (
+                        <div className="flex gap-2">
+                          <button
+                            onClick={async () => {
+                              try {
+                                await supabase.from('live_rooms').update({ is_active: false, participants_count: 0 }).eq('id', r.id);
+                                fetchRooms();
+                              } catch {}
+                            }}
+                            className="flex-1 py-1.5 rounded-xl bg-amber-500/15 border border-amber-500/25 text-amber-400 text-xs font-bold hover:bg-amber-500/25 transition-all flex items-center justify-center gap-1"
+                          >
+                            ⚡ Stopper
+                          </button>
+                          <button
+                            onClick={async () => {
+                              if (!window.confirm(`Supprimer la salle "${r.name}" ?`)) return;
+                              try {
+                                await supabase.from('live_rooms').delete().eq('id', r.id);
+                                fetchRooms();
+                              } catch {}
+                            }}
+                            className="flex-1 py-1.5 rounded-xl bg-red-500/15 border border-red-500/25 text-red-400 text-xs font-bold hover:bg-red-500/25 transition-all flex items-center justify-center gap-1"
+                          >
+                            🗑 Supprimer
+                          </button>
+                        </div>
+                      )}
                     </motion.div>
                   ))}
                 </div>

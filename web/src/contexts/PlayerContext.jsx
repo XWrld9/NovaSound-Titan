@@ -26,6 +26,7 @@ export const PlayerProvider = ({ children }) => {
   const [currentPlaylistId, setCurrentPlaylistId]  = useState(null);
   const [shouldAutoPlay,    setShouldAutoPlay]     = useState(false);
   const [audioCurrentTime,  setAudioCurrentTime]   = useState(0);
+  const [audioDuration,     setAudioDuration]      = useState(0);
   // ── État lecture global (synchronisé par AudioPlayer) ──────────
   const [isPlayingGlobal,   setIsPlayingGlobal]   = useState(false);
 
@@ -131,6 +132,16 @@ export const PlayerProvider = ({ children }) => {
 
   // ── Réinitialiser shouldAutoPlay après usage par AudioPlayer ────
   const resetAutoPlay = useCallback(() => setShouldAutoPlay(false), []);
+
+  // ── seekTo : déclenche un seek dans AudioPlayer ─────────────────
+  const seekTo = useCallback((time) => {
+    window.dispatchEvent(new CustomEvent('novasound:seek-to', { detail: { time } }));
+  }, []);
+
+  // ── togglePlayPause depuis l'extérieur ──────────────────────────
+  const togglePlayPause = useCallback(() => {
+    window.dispatchEvent(new CustomEvent('novasound:toggle-play'));
+  }, []);
 
   // ── playSong ────────────────────────────────────────────────────
   const playSong = useCallback((song, songList = [], playlistId = null) => {
@@ -275,7 +286,9 @@ export const PlayerProvider = ({ children }) => {
       currentSong, playlist, queue, isVisible, sleepTimer,
       radioMode, radioLoading, currentPlaylistId, shouldAutoPlay,
       audioCurrentTime, setAudioCurrentTime,
+      audioDuration, setAudioDuration,
       isPlayingGlobal, setIsPlayingGlobal,
+      seekTo, togglePlayPause,
       playSong, handleNext, handlePrevious, closePlayer,
       addToQueue, removeFromQueue, clearQueue,
       removeFromPlaylist, setCurrentPlaylistId,

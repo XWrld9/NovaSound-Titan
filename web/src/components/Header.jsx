@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Search, Upload, User, LogOut, Menu, X, Globe, Newspaper, Music, Download, Share, Bell, TrendingUp, ListMusic, BarChart2, Radio, Trophy, Shield } from 'lucide-react';
+import { Search, Upload, User, LogOut, Menu, X, Globe, Newspaper, Music, Download, Share, Bell, TrendingUp, ListMusic, BarChart2, Radio, Trophy, Shield, Users } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 
 import { supabase } from '@/lib/supabaseClient';
@@ -198,6 +198,9 @@ const Header = () => {
               </Link>
               <Link to="/explorer" className="text-gray-300 hover:text-cyan-400 transition-colors flex items-center gap-2 font-medium">
                 <Globe className="w-4 h-4" />Explorer
+              </Link>
+              <Link to="/artists" className="text-gray-300 hover:text-fuchsia-400 transition-colors flex items-center gap-2 font-medium">
+                <Users className="w-4 h-4" />Artistes
               </Link>
               <Link to="/trending" className="text-gray-300 hover:text-cyan-400 transition-colors flex items-center gap-2 font-medium">
                 <TrendingUp className="w-4 h-4" />Tendances
@@ -434,6 +437,9 @@ const Header = () => {
                   </Link>
                   <Link to="/explorer" onClick={closeMenu} className="flex items-center gap-3 px-4 py-3 text-gray-300 hover:bg-cyan-500/10 hover:text-cyan-400 rounded-lg transition-colors">
                     <Globe className="w-5 h-5 text-cyan-400" />Explorer
+                  </Link>
+                  <Link to="/artists" onClick={closeMenu} className="flex items-center gap-3 px-4 py-3 text-gray-300 hover:bg-fuchsia-500/10 hover:text-fuchsia-400 rounded-lg transition-colors">
+                    <Users className="w-5 h-5 text-fuchsia-400" />Artistes
                   </Link>
                   <Link to="/trending" onClick={closeMenu} className="flex items-center gap-3 px-4 py-3 text-gray-300 hover:bg-cyan-500/10 hover:text-cyan-400 rounded-lg transition-colors">
                     <TrendingUp className="w-5 h-5 text-cyan-400" />Tendances

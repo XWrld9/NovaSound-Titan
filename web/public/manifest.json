@@ -1,5 +1,5 @@
 {
-  "name": "NovaSound TITAN LUX v8500",
+  "name": "NovaSound TITAN LUX v2000",
   "short_name": "NovaSound",
   "description": "Plateforme musicale nouvelle g\u00e9n\u00e9ration \u2014 d\u00e9couvre, \u00e9coute et partage.",
   "start_url": "/#/",
@@ -40,9 +40,11 @@
   ],
   "scope_extensions": [
     {
+      "type": "origin",
       "origin": "https://nova-sound-titan.vercel.app"
     },
     {
+      "type": "origin",
       "origin": "https://tleuzlyfelrnykpbwhkc.supabase.co"
     }
   ],
@@ -267,5 +269,5 @@
       "update": 86400
     }
   ],
-  "version": "9000"
+  "version": "2000"
 }

@@ -391,18 +391,40 @@ const NotifPanel = ({ panelRef, panelPos, onClose, mobile }) => {
             </p>
           </div>
         ) : filter !== 'all' ? (
-          // Vue filtrée : affichage plat
-          <AnimatePresence initial={false}>
-            {filtered.map(notif => (
-              <NotifItem
-                key={notif.id}
-                notif={notif}
-                onRead={() => markAsRead(notif.id)}
-                onDelete={() => deleteNotification(notif.id)}
-                onClick={() => handleClick(notif)}
-              />
-            ))}
-          </AnimatePresence>
+          // Vue filtrée par type : groupée avec header coloré
+          (() => {
+            const cfg = getTypeConfig(filter);
+            const Icon = cfg.icon;
+            return (
+              <div>
+                <div className="flex items-center gap-2 px-4 py-2 sticky top-0 z-10"
+                  style={{ background: 'rgba(8,12,24,0.96)', borderBottom: `1px solid ${cfg.color}30` }}>
+                  <div className="w-5 h-5 rounded-lg flex items-center justify-center"
+                    style={{ background: `${cfg.color}25`, border: `1px solid ${cfg.color}40` }}>
+                    <Icon className="w-3 h-3" style={{ color: cfg.color }} />
+                  </div>
+                  <span className="text-xs font-black uppercase tracking-widest" style={{ color: cfg.color }}>
+                    {cfg.label}
+                  </span>
+                  <span className="ml-auto text-[10px] font-bold px-1.5 py-0.5 rounded-full"
+                    style={{ background: `${cfg.color}20`, color: cfg.color }}>
+                    {filtered.length}
+                  </span>
+                </div>
+                <AnimatePresence initial={false}>
+                  {filtered.map(notif => (
+                    <NotifItem
+                      key={notif.id}
+                      notif={notif}
+                      onRead={() => markAsRead(notif.id)}
+                      onDelete={() => deleteNotification(notif.id)}
+                      onClick={() => handleClick(notif)}
+                    />
+                  ))}
+                </AnimatePresence>
+              </div>
+            );
+          })()
         ) : (
           // Vue groupée par catégorie
           (() => {

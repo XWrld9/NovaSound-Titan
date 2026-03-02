@@ -1,0 +1,3 @@
+-- v2000: fixes frontend uniquement (LocalPlayerPage, AudioPlayer, PlayerContext)
+-- Aucune modification de schéma DB requise pour la v2000
+-- Exécuter v1000-migration.sql si pas encore fait

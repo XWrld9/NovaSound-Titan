@@ -1,49 +1,54 @@
--- ═══════════════════════════════════════════════════════════════════
+-- ═══════════════════════════════════════════════════════════════════════════
 -- NovaSound TITAN LUX — Migration v1000
--- © 2026 NovaSound TITAN LUX — ELOADXFAMILY
---
--- Corrections :
---   1. RLS push_subscriptions — politique unique ALL (fix upsert 403)
---   2. RLS chat_messages UPDATE — suppression politique corrompue
---   3. GRANT UPDATE sur chat_messages pour authenticated
--- ═══════════════════════════════════════════════════════════════════
+-- FIX CRITIQUE : Récursion infinie RLS user_roles → 500 Internal Server Error
+-- is_admin() lisait user_roles → policy appelait is_admin() → boucle → 500
+-- ═══════════════════════════════════════════════════════════════════════════
 
--- ── 1. push_subscriptions : repartir sur une politique unique ──────
-DROP POLICY IF EXISTS push_all      ON push_subscriptions;
-DROP POLICY IF EXISTS push_insert   ON push_subscriptions;
-DROP POLICY IF EXISTS push_update   ON push_subscriptions;
-DROP POLICY IF EXISTS push_select   ON push_subscriptions;
-DROP POLICY IF EXISTS push_delete   ON push_subscriptions;
-DROP POLICY IF EXISTS push_upsert   ON push_subscriptions;
+-- ── 1. Drop toutes les versions de is_admin ───────────────────────────────────
+DROP FUNCTION IF EXISTS public.is_admin(UUID);
+DROP FUNCTION IF EXISTS public.is_admin(TEXT);
 
--- USING(true) = Supabase peut lire les lignes existantes pour résoudre
--- le ON CONFLICT endpoint ; WITH CHECK protège en écriture
-CREATE POLICY push_all ON push_subscriptions
-FOR ALL
-USING (true)
-WITH CHECK ((auth.uid())::text = user_id);
+-- ── 2. is_admin(TEXT) sans référence à user_roles ────────────────────────────
+CREATE OR REPLACE FUNCTION public.is_admin(p_user_id TEXT)
+RETURNS BOOLEAN LANGUAGE sql STABLE SECURITY DEFINER AS $$
+  SELECT EXISTS (
+    SELECT 1 FROM public.users WHERE id = p_user_id AND email = 'eloadxfamily@gmail.com'
+  );
+$$;
+GRANT EXECUTE ON FUNCTION public.is_admin(TEXT) TO authenticated, anon;
 
--- S'assurer que le rôle authenticated a bien les droits
-GRANT SELECT, INSERT, UPDATE, DELETE ON push_subscriptions TO authenticated;
+-- ── 3. Policies user_roles : auth.email() (JWT, zéro récursion) ──────────────
+ALTER TABLE public.user_roles ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "user_roles_read_own"              ON public.user_roles;
+DROP POLICY IF EXISTS "user_roles_admin_all"             ON public.user_roles;
+DROP POLICY IF EXISTS "user_roles_read_all"              ON public.user_roles;
+DROP POLICY IF EXISTS "user_roles_authenticated_read"    ON public.user_roles;
 
--- ── 2. chat_messages : supprimer politique UPDATE corrompue ────────
--- chat_messages_delete_own référençait auth.users → permission denied
-DROP POLICY IF EXISTS chat_messages_delete_own ON chat_messages;
-DROP POLICY IF EXISTS chat_admin_update        ON chat_messages;
-DROP POLICY IF EXISTS chat_messages_update_own ON chat_messages;
-DROP POLICY IF EXISTS chat_update_own          ON chat_messages;
+CREATE POLICY "user_roles_read_own" ON public.user_roles
+  FOR SELECT USING (user_id = auth.uid()::text);
 
--- Politique UPDATE propre : seul l'auteur peut modifier son message
-CREATE POLICY chat_update_own ON chat_messages
-FOR UPDATE
-USING  ((auth.uid())::text = user_id)
-WITH CHECK ((auth.uid())::text = user_id);
+CREATE POLICY "user_roles_admin_all" ON public.user_roles
+  FOR ALL USING (auth.email() = 'eloadxfamily@gmail.com');
 
--- S'assurer que authenticated peut faire UPDATE
-GRANT UPDATE ON chat_messages TO authenticated;
+CREATE POLICY "user_roles_authenticated_read" ON public.user_roles
+  FOR SELECT USING (auth.role() = 'authenticated');
 
--- ── 3. Vérification finale ─────────────────────────────────────────
--- Lance ces SELECT pour confirmer que tout est propre :
---
--- SELECT policyname, cmd, qual, with_check FROM pg_policies WHERE tablename = 'push_subscriptions';
--- SELECT policyname, cmd, qual, with_check FROM pg_policies WHERE tablename = 'chat_messages';
+-- ── 4. admin_update_users : auth.email() ────────────────────────────────────
+DROP POLICY IF EXISTS "admin_update_users" ON public.users;
+CREATE POLICY "admin_update_users" ON public.users
+  FOR UPDATE USING (auth.uid()::text = id OR auth.email() = 'eloadxfamily@gmail.com');
+
+-- ── 5. Version ───────────────────────────────────────────────────────────────
+DO $$
+BEGIN
+  IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema='public' AND table_name='app_meta') THEN
+    BEGIN
+      INSERT INTO public.app_meta (key,value) VALUES ('version','1000')
+      ON CONFLICT (key) DO UPDATE SET value='1000';
+    EXCEPTION WHEN others THEN NULL;
+    END;
+  END IF;
+END; $$;
+
+-- ✅ Récursion RLS éliminée — is_admin(TEXT) ne touche plus user_roles
+-- ✅ auth.email() = lecture JWT directe, pas de table lookup, pas de RLS

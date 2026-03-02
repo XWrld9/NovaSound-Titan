@@ -71,6 +71,7 @@ const AudioPlayer = ({ currentSong, playlist = [], onNext, onPrevious, onClose, 
     sleepTimer, setSleepTimer, clearSleepTimer,
     radioMode, radioLoading, toggleRadio,
     setAudioCurrentTime,
+    setAudioDuration,
     setIsPlayingGlobal,
   } = usePlayer();
 
@@ -155,6 +156,18 @@ const AudioPlayer = ({ currentSong, playlist = [], onNext, onPrevious, onClose, 
     window.addEventListener('novasound:toggle-play', handler);
     return () => window.removeEventListener('novasound:toggle-play', handler);
   }, [setIsPlayingGlobal]);
+
+  // ── seek-to depuis l'extérieur (LocalPlayerPage, etc.) ─────────
+  useEffect(() => {
+    const handler = (e) => {
+      if (!audioRef.current || typeof e.detail?.time !== 'number') return;
+      audioRef.current.currentTime = e.detail.time;
+      setCurrentTime(e.detail.time);
+      setAudioCurrentTime(e.detail.time);
+    };
+    window.addEventListener('novasound:seek-to', handler);
+    return () => window.removeEventListener('novasound:seek-to', handler);
+  }, [setAudioCurrentTime]);
 
   // ── Raccourcis clavier — actifs en mode expanded/plein écran ────
   useEffect(() => {
@@ -440,7 +453,7 @@ const AudioPlayer = ({ currentSong, playlist = [], onNext, onPrevious, onClose, 
     if (!playRecorded && audioRef.current.currentTime > 10) recordPlay();
   };
 
-  const handleLoadedMetadata = () => { if (audioRef.current) setDuration(audioRef.current.duration); };
+  const handleLoadedMetadata = () => { if (audioRef.current) { setDuration(audioRef.current.duration); setAudioDuration(audioRef.current.duration); } };
   const handleSeek = (value) => { if (audioRef.current) { audioRef.current.currentTime = value[0]; setCurrentTime(value[0]); } };
   const handleVolumeChange = (value) => { setVolume(value[0]); if (value[0] === 0) setIsMuted(true); else if (isMuted) setIsMuted(false); };
   const toggleMute = (e) => { e?.stopPropagation(); if (!isMuted) { setPrevVolume(volume); setIsMuted(true); } else { setIsMuted(false); if (volume === 0) setVolume(prevVolume || 70); } };
