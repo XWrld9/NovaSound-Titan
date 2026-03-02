@@ -91,8 +91,22 @@ const parseBasicTags = async (file) => {
 
 // ── Convertit un File audio en objet "song" jouable par PlayerContext ────────
 const fileToSong = async (file) => {
+  // Validation du type de fichier - iPhone nécessite une approche plus permissive
+  const audioTypes = ['audio/mp3', 'audio/mpeg', 'audio/wav', 'audio/flac', 'audio/aac', 'audio/ogg', 'audio/m4a', 'audio/mp4'];
+  const extension = file.name.toLowerCase().split('.').pop();
+  const supportedExtensions = ['mp3', 'wav', 'flac', 'aac', 'ogg', 'm4a', 'mp4'];
+  
+  // iPhone ne détecte parfois pas correctement le MIME type, on se fie à l'extension
+  if (!audioTypes.some(type => file.type.includes(type)) && !supportedExtensions.includes(extension)) {
+    throw new Error(`Format non supporté: ${file.type || file.name}`);
+  }
+
   const objectUrl = URL.createObjectURL(file);
   const rawName   = file.name.replace(/\.[^.]+$/, '').replace(/[-_]/g, ' ');
+
+  console.log('[LocalFilePicker] Traitement du fichier:', file.name, 'Type:', file.type, 'Extension:', extension, 'Taille:', file.size);
+  console.log('[LocalFilePicker] User Agent:', navigator.userAgent);
+  console.log('[LocalFilePicker] Est iOS:', /iphone|ipad|ipod/i.test(navigator.userAgent));
 
   const tags = await parseBasicTags(file);
 
@@ -158,6 +172,9 @@ const LocalFilePicker = ({ compact = false }) => {
       playSong(songs[0], songs.slice(1));
       if (songs.length > 1) setShowDrawer(true);
     } catch (err) {
+      console.log('[LocalFilePicker] Traitement du fichier:', e.target.files[0].name, 'Type:', e.target.files[0].type, 'Extension:', e.target.files[0].name.split('.').pop(), 'Taille:', e.target.files[0].size);
+      console.log('[LocalFilePicker] User Agent:', navigator.userAgent);
+      console.log('[LocalFilePicker] Est iOS:', /iphone|ipad|ipod/i.test(navigator.userAgent));
       console.error('[LocalFilePicker]', err);
       setError('Impossible de lire ce fichier. Essaie un autre format.');
     } finally {

@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Search, Upload, User, LogOut, Menu, X, Globe, Newspaper, Music, Download, Share, Bell, TrendingUp, ListMusic, BarChart2, Radio, Trophy } from 'lucide-react';
+import { Search, Upload, User, LogOut, Menu, X, Globe, Newspaper, Music, Download, Share, Bell, TrendingUp, ListMusic, BarChart2, Radio, Trophy, Shield } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 
 import { supabase } from '@/lib/supabaseClient';
@@ -24,6 +24,7 @@ const isStandalone = () =>
 
 const Header = () => {
   const { currentUser, isAuthenticated, logout } = useAuth();
+  const [isAdmin, setIsAdmin] = useState(false);
 
   const navigate = useNavigate();
   const { canInstall, install } = usePWAInstall();
@@ -38,6 +39,31 @@ const Header = () => {
   const alreadyInstalled = isStandalone();
   const ios = isIOS();
   const android = typeof navigator !== 'undefined' && /android/i.test(navigator.userAgent);
+
+  useEffect(() => {
+    checkAdminAccess();
+  }, [currentUser]);
+
+  const checkAdminAccess = async () => {
+    if (!currentUser) return;
+    
+    try {
+      const { data: roleData } = await supabase
+        .from('user_roles')
+        .select('role')
+        .eq('user_id', currentUser.id)
+        .eq('role', 'admin')
+        .eq('is_active', true)
+        .single();
+
+      // Vérification hardcodée pour eloadxfamily@gmail.com
+      if (currentUser.email === 'eloadxfamily@gmail.com' || roleData) {
+        setIsAdmin(true);
+      }
+    } catch (err) {
+      console.error('Erreur vérification admin:', err);
+    }
+  };
 
   const handleInstallClick = () => {
     if (ios) { setShowIOSTooltip(v => !v); return; }

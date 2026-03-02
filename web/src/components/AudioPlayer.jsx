@@ -3,7 +3,7 @@ import {
   Play, Pause, SkipBack, SkipForward, Volume2, VolumeX, Volume1,
   Shuffle, Repeat, Music, ChevronDown, Heart, Download, Share2,
   UserPlus, UserCheck, ExternalLink, X, Maximize2, Minimize2,
-  ListMusic, Moon, Trash2, Gauge, Radio, Plus, Calendar, FolderOpen,
+  ListMusic, Moon, Trash2, Gauge, Radio, Plus, Calendar,
 } from 'lucide-react';
 import { Slider } from '@/components/ui/slider';
 import { supabase } from '@/lib/supabaseClient';
@@ -309,6 +309,9 @@ const AudioPlayer = ({ currentSong, playlist = [], onNext, onPrevious, onClose, 
     const isNewSong = !wasFirstSong && prevSongIdRef.current !== currentSong.id;
     prevSongIdRef.current = currentSong.id;
 
+    console.log('[AudioPlayer] Chargement audio:', currentSong.title, 'URL:', currentSong.audio_url?.substring(0, 50) + '...');
+    console.log('[AudioPlayer] is_local:', currentSong.is_local);
+
     audioRef.current.src          = currentSong.audio_url;
     audioRef.current.loop         = (repeat === 'one');
     audioRef.current.playbackRate = playbackSpeed;
@@ -319,9 +322,14 @@ const AudioPlayer = ({ currentSong, playlist = [], onNext, onPrevious, onClose, 
     else { setIsLiked(false); setLikeId(null); setIsFollowing(false); setFollowId(null); }
 
     if ((isNewSong || wasFirstSong) && autoPlayRef.current) {
+      console.log('[AudioPlayer] Tentative de lecture automatique...');
       audioRef.current.play()
-        .then(() => { setIsPlaying(true); setIsBuffering(false); })
+        .then(() => { 
+          console.log('[AudioPlayer] Lecture démarrée avec succès');
+          setIsPlaying(true); setIsBuffering(false); 
+        })
         .catch((err) => {
+          console.error('[AudioPlayer] Erreur de lecture:', err);
           if (err.name !== 'AbortError') setIsPlaying(false);
         });
     } else if (!isNewSong && !wasFirstSong) {
@@ -696,16 +704,8 @@ const AudioPlayer = ({ currentSong, playlist = [], onNext, onPrevious, onClose, 
                     <button onClick={handleDownload} className="text-gray-400 hover:text-cyan-400 transition-colors">
                       <Download className="w-5 h-5" />
                     </button>
-                    {/* Ouvrir lecteur local — visible uniquement pour les fichiers locaux */}
-                    {currentSong?.is_local && (
-                      <button
-                        onClick={() => navigate('/local-player')}
-                        className="text-gray-400 hover:text-cyan-400 transition-colors"
-                        title="Gérer les fichiers locaux"
-                      >
-                        <FolderOpen className="w-4 h-4" />
-                      </button>
-                    )}
+                    {/* Lecteur local hors-ligne */}
+                    
                     {/* Ajouter à la file d'attente */}
                     <button onClick={() => addToQueue(currentSong)} className="text-gray-400 hover:text-cyan-400 transition-colors" title="Ajouter à la file d'attente">
                       <ListMusic className="w-4 h-4" />

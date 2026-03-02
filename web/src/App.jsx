@@ -48,6 +48,7 @@ const SearchPage        = lazy(() => import('@/pages/SearchPage'));
 const LiveRoomPage      = lazy(() => import('@/pages/LiveRoomPage'));
 const LeaderboardPage   = lazy(() => import('@/pages/LeaderboardPage'));
 const LocalPlayerPage   = lazy(() => import('@/pages/LocalPlayerPage'));
+const AdminPanel        = lazy(() => import('@/pages/AdminPanel'));
 
 /* ── Player global — monté UNE SEULE FOIS, survit à toute navigation ── */
 const GlobalPlayer = () => {
