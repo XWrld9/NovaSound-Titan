@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button';
 import { motion, AnimatePresence } from 'framer-motion';
 import usePWAInstall from '@/hooks/usePWAInstall';
 import NotificationBell from '@/components/NotificationBell';
+import AndroidInstallGuide from '@/components/AndroidInstallGuide';
 
 // Détecte iOS
 const isIOS = () =>
@@ -32,21 +33,23 @@ const Header = () => {
   const [isSearching, setIsSearching]           = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [showIOSTooltip, setShowIOSTooltip]     = useState(false);
+  const [showAndroidGuide, setShowAndroidGuide] = useState(false);
 
   const alreadyInstalled = isStandalone();
   const ios = isIOS();
+  const android = typeof navigator !== 'undefined' && /android/i.test(navigator.userAgent);
 
   const handleInstallClick = () => {
     if (ios) { setShowIOSTooltip(v => !v); return; }
+    if (android) { setShowAndroidGuide(true); return; }
     if (canInstall) { install(); return; }
-    // Fallback : guide si le prompt n'est pas encore dispo
     setShowIOSTooltip(v => !v);
   };
 
   const handleMobileInstallClick = () => {
     if (ios) { setShowIOSTooltip(v => !v); closeMenu(); return; }
+    if (android) { setShowAndroidGuide(true); closeMenu(); return; }
     if (canInstall) { install(); closeMenu(); return; }
-    // Fallback Android : affiche le guide si beforeinstallprompt pas encore disponible
     setShowIOSTooltip(v => !v);
   };
 
@@ -506,6 +509,13 @@ const Header = () => {
               </div>
             </motion.div>
           </>
+        )}
+      </AnimatePresence>
+
+      {/* ── Android Install Guide Modal ── */}
+      <AnimatePresence>
+        {showAndroidGuide && (
+          <AndroidInstallGuide onClose={() => setShowAndroidGuide(false)} />
         )}
       </AnimatePresence>
     </>

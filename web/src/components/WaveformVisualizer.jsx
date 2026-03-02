@@ -1,9 +1,19 @@
 /**
- * WaveformVisualizer — NovaSound TITAN LUX v30
- * Visualiseur de waveform animé dans le mini-player et le player expanded.
- * Utilise des barres CSS animées (pas de Web Audio API = zéro overhead).
+ * WaveformVisualizer — NovaSound TITAN LUX v6000
+ * REWRITE : aucune injection de @keyframes dynamiques.
+ * L'ancienne version injectait N @keyframes via <style> à chaque render,
+ * corrompant le rendu et faisant planter l'audio + les boutons.
+ * Solution : un seul @keyframes global "novaWave" + CSS custom properties par barre.
  */
-import React, { useMemo } from 'react';
+import React, { useMemo, useEffect } from 'react';
+
+// Inject the keyframe ONCE globally — pas dans le render
+if (typeof document !== 'undefined' && !document.getElementById('nova-wave-style')) {
+  const s = document.createElement('style');
+  s.id = 'nova-wave-style';
+  s.textContent = '@keyframes novaWave { from { height: var(--bar-min,20%) } to { height: var(--bar-max,80%) } }';
+  document.head.appendChild(s);
+}
 
 const WaveformVisualizer = ({
   isPlaying = false,
@@ -15,11 +25,11 @@ const WaveformVisualizer = ({
   const bars = useMemo(() => {
     return Array.from({ length: barCount }, (_, i) => {
       const seed = (i * 13 + 7) % 100;
-      const minH = 20 + seed * 0.3;
-      const maxH = 50 + seed * 0.5;
-      const duration = 0.4 + (seed * 0.007);
-      const delay = (i * 0.02) % 0.5;
-      return { minH, maxH, duration, delay };
+      const minH = 15 + Math.round(seed * 0.3);
+      const maxH = 50 + Math.round(seed * 0.5);
+      const dur  = (0.5 + (i % 5) * 0.18).toFixed(2);
+      const del  = ((i * 37) % 500 / 1000).toFixed(3);
+      return { minH, maxH, dur, del };
     });
   }, [barCount]);
 
@@ -36,23 +46,17 @@ const WaveformVisualizer = ({
             flex: 1,
             borderRadius: 2,
             backgroundColor: color,
-            opacity: isPlaying ? 0.85 : 0.35,
-            height: isPlaying ? `${bar.maxH}%` : `${bar.minH}%`,
-            transition: isPlaying
-              ? `height ${bar.duration}s ease-in-out ${bar.delay}s, opacity 0.3s`
-              : 'height 0.4s ease-out, opacity 0.3s',
-            animationName: isPlaying ? `waveBar_${i}` : 'none',
-            animationDuration: `${bar.duration}s`,
-            animationTimingFunction: 'ease-in-out',
-            animationDelay: `${bar.delay}s`,
-            animationIterationCount: 'infinite',
-            animationDirection: 'alternate',
+            opacity: isPlaying ? 0.85 : 0.28,
+            height: `${bar.minH}%`,
+            '--bar-min': `${bar.minH}%`,
+            '--bar-max': `${bar.maxH}%`,
+            transition: isPlaying ? 'opacity 0.3s' : 'height 0.5s ease-out, opacity 0.3s',
+            animation: isPlaying
+              ? `novaWave ${bar.dur}s ease-in-out ${bar.del}s infinite alternate`
+              : 'none',
           }}
         />
       ))}
-      <style>{bars.map((bar, i) =>
-        `@keyframes waveBar_${i} { 0% { height: ${bar.minH}%; } 100% { height: ${bar.maxH}%; } }`
-      ).join('\n')}</style>
     </div>
   );
 };

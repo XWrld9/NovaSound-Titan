@@ -31,8 +31,8 @@
     }
   ],
   "scope_extensions": [
-    { "origin": "https://nova-sound-titan.vercel.app" },
-    { "origin": "https://*.vercel.app" }
+    { "type": "origin", "origin": "https://nova-sound-titan.vercel.app" },
+    { "type": "origin", "origin": "https://*.vercel.app" }
   ],
   "file_handlers": [
     {
@@ -111,11 +111,18 @@
   ],
   "share_target": {
     "action": "/#/upload",
-    "method": "GET",
+    "method": "POST",
+    "enctype": "multipart/form-data",
     "params": {
       "title": "title",
       "text": "text",
-      "url": "url"
+      "url": "url",
+      "files": [
+        {
+          "name": "audio",
+          "accept": ["audio/mpeg", "audio/wav", "audio/ogg", "audio/flac", "audio/aac", "audio/mp4"]
+        }
+      ]
     }
   },
   "launch_handler": {
