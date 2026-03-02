@@ -1,23 +1,22 @@
 /**
- * sw.js — NovaSound TITAN LUX v3000
- * © 2026 NovaSound TITAN LUX — ELOADXFAMILY
+ * sw.js — NovaSound TITAN LUX v8000
  *
- * ✅ Cache offline
- * ✅ Web Push natif Android / PC / iOS 16.4+ PWA
- * ✅ Clic → ouvre/focus app + navigue vers la bonne page
- * ✅ Badge numérique icône (Android + PC)
- * ✅ Renouvellement automatique subscription expirée
- * ✅ v3000: badge = icône monochrome dans barre notif Android
- * ✅ v3000: Periodic Background Sync
- * ✅ v3000: Background Sync (offline messages)
+ * Fixes v8000:
+ *  - Ne tente JAMAIS de cacher les fichiers audio (m4a, mp3, etc.) depuis Supabase Storage
+ *    → résout ERR_CACHE_OPERATION_NOT_SUPPORTED sur iOS / certains Android
+ *  - Cache réseau-d'abord pour les assets statiques
+ *  - Exclut supabase.co (API + storage) du cache SW
  */
 
-const CACHE_NAME    = 'novasound-titan-v3000';
+const CACHE_NAME    = 'novasound-titan-v8000';
 const STATIC_ASSETS = [
   '/', '/index.html', '/manifest.json', '/favicon.ico',
   '/favicon.png', '/apple-touch-icon.png', '/icon-192.png', '/icon-512.png',
-  '/chat-wallpaper.jpg', '/notification-badge.png',
+  '/notification-badge.png',
 ];
+
+// Extensions et MIME audio — jamais mis en cache par le SW
+const AUDIO_EXTENSIONS = /\.(mp3|m4a|wav|ogg|flac|aac|opus|webm)(\?|$)/i;
 
 const VAPID_PUBLIC_KEY = 'BFCdXh1JM5vELnaw7GolQNKPEc-CJRafU2QC3r1lTdyCSSBl5QL6nJfU3HXbnhqm_krsVViGLJ8nf2VpYBjt38o';
 
@@ -45,21 +44,36 @@ self.addEventListener('activate', e => {
 });
 
 self.addEventListener('fetch', e => {
-  const url = e.request.url;
-  if (url.includes('supabase.co') || url.includes('googleapis') || e.request.method !== 'GET') return;
+  const { request } = e;
+  const url = request.url;
+
+  // ── Toujours ignorer (passer au réseau sans mise en cache) ──────
+  // 1. Supabase (API, Auth, Storage, Realtime)
+  if (url.includes('supabase.co')) return;
+  // 2. Fichiers audio — ERR_CACHE_OPERATION_NOT_SUPPORTED sur certains appareils
+  if (AUDIO_EXTENSIONS.test(url)) return;
+  // 3. Méthodes non-GET
+  if (request.method !== 'GET') return;
+  // 4. Extensions Google / analytics
+  if (url.includes('googleapis') || url.includes('gstatic') || url.includes('analytics')) return;
+
   e.respondWith(
-    fetch(e.request)
+    fetch(request)
       .then(res => {
-        if (res.ok) {
+        // Ne cacher que les réponses valides (200 OK, type basique ou cors)
+        if (res.ok && (res.type === 'basic' || res.type === 'cors')) {
           const clone = res.clone();
-          caches.open(CACHE_NAME).then(c => c.put(e.request, clone));
+          caches.open(CACHE_NAME).then(c => {
+            try { c.put(request, clone); } catch (_) { /* ignore quota/opaque errors */ }
+          });
         }
         return res;
       })
-      .catch(() => caches.match(e.request))
+      .catch(() => caches.match(request).then(r => r || new Response('Offline', { status: 503 })))
   );
 });
 
+// ── Web Push ────────────────────────────────────────────────────────────────
 self.addEventListener('push', e => {
   if (!e.data) return;
   let p;
@@ -98,54 +112,36 @@ self.addEventListener('notificationclick', e => {
   if ('clearAppBadge' in self.navigator) self.navigator.clearAppBadge().catch(() => {});
   e.waitUntil(
     clients.matchAll({ type: 'window', includeUncontrolled: true }).then(list => {
-      for (const c of list) {
-        if (c.url.startsWith(self.location.origin) && 'focus' in c) {
-          c.focus();
-          c.postMessage({ type: 'PUSH_NAVIGATE', url, notifId });
+      for (const client of list) {
+        if (new URL(client.url).origin === self.location.origin) {
+          client.focus();
+          client.postMessage({ type: 'NAVIGATE', url, notifId });
           return;
         }
       }
-      if (clients.openWindow) return clients.openWindow(fullUrl);
+      return clients.openWindow(fullUrl);
     })
   );
 });
 
-self.addEventListener('notificationclose', () => {
-  self.registration.getNotifications().then(notifs => {
-    if (notifs.length === 0 && 'clearAppBadge' in self.navigator)
-      self.navigator.clearAppBadge().catch(() => {});
-  });
-});
-
-self.addEventListener('pushsubscriptionchange', e => {
-  e.waitUntil((async () => {
-    try {
-      const newSub = await self.registration.pushManager.subscribe({
-        userVisibleOnly: true,
-        applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY),
-      });
-      const cls = await clients.matchAll({ includeUncontrolled: true });
-      cls.forEach(c => c.postMessage({ type: 'PUSH_SUBSCRIPTION_RENEWED', subscription: newSub.toJSON() }));
-    } catch (err) { console.error('[SW] pushsubscriptionchange failed:', err); }
-  })());
-});
-
-self.addEventListener('periodicsync', e => {
-  if (e.tag === 'novasound-refresh') {
-    e.waitUntil((async () => {
-      try {
-        const res = await fetch('/', { cache: 'reload' });
-        if (res.ok) { const c = await caches.open(CACHE_NAME); await c.put('/', res); }
-      } catch {}
-    })());
+// ── Background Sync ─────────────────────────────────────────────────────────
+self.addEventListener('sync', e => {
+  if (e.tag === 'bg-sync-messages') {
+    e.waitUntil(
+      self.clients.matchAll().then(clients =>
+        clients.forEach(c => c.postMessage({ type: 'BG_SYNC_MESSAGES' }))
+      )
+    );
   }
 });
 
-self.addEventListener('sync', e => {
-  if (e.tag === 'send-pending-messages') {
-    e.waitUntil((async () => {
-      const cls = await clients.matchAll({ includeUncontrolled: true });
-      cls.forEach(c => c.postMessage({ type: 'SYNC_PENDING_MESSAGES' }));
-    })());
+// ── Periodic Background Sync ─────────────────────────────────────────────────
+self.addEventListener('periodicsync', e => {
+  if (e.tag === 'novasound-refresh') {
+    e.waitUntil(
+      self.clients.matchAll().then(clients =>
+        clients.forEach(c => c.postMessage({ type: 'PERIODIC_REFRESH' }))
+      )
+    );
   }
 });

@@ -6,15 +6,16 @@
  */
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Home, Compass, TrendingUp, User, Search, Globe, Radio, Trophy } from 'lucide-react';
+import { Home, Compass, TrendingUp, User, Search, Globe, Radio, Trophy, HardDrive } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { motion } from 'framer-motion';
 
 const NAV_ITEMS = [
-  { to: '/',           icon: Home,    label: 'Accueil'  },
-  { to: '/explorer',   icon: Compass, label: 'Explorer' },
-  { to: '/live',       icon: Radio,   label: 'Live', dot: true },
-  { to: '/leaderboard',icon: Trophy,  label: 'Top'      },
+  { to: '/',             icon: Home,      label: 'Accueil'  },
+  { to: '/explorer',     icon: Compass,   label: 'Explorer' },
+  { to: '/local-player', icon: HardDrive, label: 'Local'    },
+  { to: '/live',         icon: Radio,     label: 'Live', dot: true },
+  { to: '/leaderboard',  icon: Trophy,    label: 'Top'      },
 ];
 
 const BottomNav = () => {

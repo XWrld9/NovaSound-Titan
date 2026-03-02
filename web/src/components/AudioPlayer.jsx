@@ -19,6 +19,7 @@ import WaveformVisualizer from '@/components/WaveformVisualizer';
 import SongShareModal from '@/components/SongShareModal';
 import NowPlayingScreen from '@/components/NowPlayingScreen';
 import AddToPlaylistModal from '@/components/AddToPlaylistModal';
+import LocalFilePicker from '@/components/LocalFilePicker';
 
 const isIOS = () =>
   /iphone|ipad|ipod/i.test(navigator.userAgent) ||
@@ -329,13 +330,20 @@ const AudioPlayer = ({ currentSong, playlist = [], onNext, onPrevious, onClose, 
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentSong?.id]);
 
+  const retryFetch = async (fn, retries = 2) => {
+    for (let i = 0; i <= retries; i++) {
+      try { return await fn(); }
+      catch (err) { if (i === retries) throw err; await new Promise(r => setTimeout(r, 600 * (i + 1))); }
+    }
+  };
+
   const checkLikeStatus = async () => {
-    try { const { data } = await supabase.from('likes').select('id').eq('user_id', currentUser.id).eq('song_id', currentSong.id).maybeSingle(); setIsLiked(!!data); setLikeId(data?.id || null); } catch {}
+    try { const { data } = await retryFetch(() => supabase.from('likes').select('id').eq('user_id', currentUser.id).eq('song_id', currentSong.id).maybeSingle()); setIsLiked(!!data); setLikeId(data?.id || null); } catch {}
   };
   const checkFollowStatus = async () => {
     const uid = currentSong?.uploader_id;
     if (!uid || uid === currentUser?.id) return;
-    try { const { data } = await supabase.from('follows').select('id').eq('follower_id', currentUser.id).eq('following_id', uid).maybeSingle(); setIsFollowing(!!data); setFollowId(data?.id || null); } catch {}
+    try { const { data } = await retryFetch(() => supabase.from('follows').select('id').eq('follower_id', currentUser.id).eq('following_id', uid).maybeSingle()); setIsFollowing(!!data); setFollowId(data?.id || null); } catch {}
   };
 
   const handleLike = async (e) => {
@@ -688,6 +696,8 @@ const AudioPlayer = ({ currentSong, playlist = [], onNext, onPrevious, onClose, 
                     <button onClick={handleDownload} className="text-gray-400 hover:text-cyan-400 transition-colors">
                       <Download className="w-5 h-5" />
                     </button>
+                    {/* Lecteur local hors-ligne */}
+                    <LocalFilePicker compact={true} />
                     {/* Ajouter à la file d'attente */}
                     <button onClick={() => addToQueue(currentSong)} className="text-gray-400 hover:text-cyan-400 transition-colors" title="Ajouter à la file d'attente">
                       <ListMusic className="w-4 h-4" />

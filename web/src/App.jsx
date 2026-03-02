@@ -47,6 +47,7 @@ const ArtistStatsPage   = lazy(() => import('@/pages/ArtistStatsPage'));
 const SearchPage        = lazy(() => import('@/pages/SearchPage'));
 const LiveRoomPage      = lazy(() => import('@/pages/LiveRoomPage'));
 const LeaderboardPage   = lazy(() => import('@/pages/LeaderboardPage'));
+const LocalPlayerPage   = lazy(() => import('@/pages/LocalPlayerPage'));
 
 /* ── Player global — monté UNE SEULE FOIS, survit à toute navigation ── */
 const GlobalPlayer = () => {
@@ -108,6 +109,7 @@ function App() {
                           <Route path="/live"            element={<LiveRoomPage />} />
                           <Route path="/live/:roomId"    element={<LiveRoomPage />} />
                           <Route path="/leaderboard"     element={<LeaderboardPage />} />
+                          <Route path="/local-player"    element={<LocalPlayerPage />} />
                         </Routes>
                       </Suspense>
                       </ErrorBoundary>
