@@ -397,7 +397,7 @@ const UserProfilePage = () => {
                         <SongCard
                           song={song}
                           currentSong={currentSong}
-                          onPlay={(song) => globalPlaySong(song)}
+                          onPlay={(s) => globalPlaySong(s, userSongs.filter(x => !x.is_archived))}
                           onArchived={handleSongArchived}
                           onDeleted={handleSongDeleted}
                         />
@@ -436,7 +436,7 @@ const UserProfilePage = () => {
                           <SongCard
                             song={song}
                             currentSong={currentSong}
-                            onPlay={(song) => globalPlaySong(song)}
+                            onPlay={(s) => globalPlaySong(s, userSongs)}
                             onArchived={handleSongArchived}
                             onDeleted={handleSongDeleted}
                           />
@@ -461,7 +461,7 @@ const UserProfilePage = () => {
                         <SongCard
                           song={song}
                           currentSong={currentSong}
-                          onPlay={(song) => globalPlaySong(song)}
+                          onPlay={(s) => globalPlaySong(s, favoriteSongs)}
                           onDeleted={(id) => setFavoriteSongs(prev => prev.filter(s => s.id !== id))}
                         />
                       </motion.div>
@@ -484,7 +484,7 @@ const UserProfilePage = () => {
                         <SongCard
                           song={song}
                           currentSong={currentSong}
-                          onPlay={(song) => globalPlaySong(song)}
+                          onPlay={(s) => globalPlaySong(s, likedSongs)}
                           onDeleted={(id) => setLikedSongs(prev => prev.filter(s => s.id !== id))}
                         />
                       </motion.div>

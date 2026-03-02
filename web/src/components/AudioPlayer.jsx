@@ -130,6 +130,15 @@ const AudioPlayer = ({ currentSong, playlist = [], onNext, onPrevious, onClose, 
     return () => window.removeEventListener('novasound:sleep-end', handler);
   }, []);
 
+  // ── Ouvrir NowPlayingScreen depuis n'importe où (ex: LocalPlayerPage) ───
+  useEffect(() => {
+    const handler = () => {
+      if (currentSong?.is_local) setShowNowPlaying(true);
+    };
+    window.addEventListener('novasound:open-nowplaying', handler);
+    return () => window.removeEventListener('novasound:open-nowplaying', handler);
+  }, [currentSong?.is_local]);
+
   // ── Raccourcis clavier — actifs en mode expanded/plein écran ────
   useEffect(() => {
     const onKey = (e) => {
@@ -967,7 +976,7 @@ const AudioPlayer = ({ currentSong, playlist = [], onNext, onPrevious, onClose, 
             {/* MOBILE (< sm) */}
             <div className="sm:hidden">
               <div className="flex items-center justify-between px-3 pt-1 pb-0">
-                <button onClick={() => setIsExpanded(true)} className="text-gray-600 hover:text-gray-400 transition-colors p-1">
+                <button onClick={() => currentSong?.is_local ? setShowNowPlaying(true) : setIsExpanded(true)} className="text-gray-600 hover:text-gray-400 transition-colors p-1">
                   <Maximize2 className="w-3.5 h-3.5" />
                 </button>
                 <button onClick={closePlayer} className="text-gray-600 hover:text-gray-400 transition-colors p-1">
@@ -976,7 +985,7 @@ const AudioPlayer = ({ currentSong, playlist = [], onNext, onPrevious, onClose, 
               </div>
               <div className="flex items-center gap-3 px-3 pb-2 pt-0.5">
                 <div className="flex-shrink-0 w-11 h-11 rounded-lg overflow-hidden cursor-pointer active:opacity-70 transition-opacity"
-                  onClick={() => setShowNowPlaying(true)}>
+                  onClick={() => currentSong?.is_local ? setShowNowPlaying(true) : setIsExpanded(true)}>
                   {currentSong.cover_url
                     ? <img src={currentSong.cover_url} alt={currentSong.title} className="w-full h-full object-cover" />
                     : <div className="w-full h-full bg-gradient-to-br from-cyan-500 to-purple-600 flex items-center justify-center"><Music className="w-5 h-5 text-white" /></div>
@@ -1073,13 +1082,13 @@ const AudioPlayer = ({ currentSong, playlist = [], onNext, onPrevious, onClose, 
               {/* Gauche */}
               <div className="flex items-center gap-3 min-w-0">
                 <div className="relative w-14 h-14 flex-shrink-0 rounded-lg overflow-hidden shadow-lg cursor-pointer group"
-                  onClick={() => setIsExpanded(true)}>
+                  onClick={() => currentSong?.is_local ? setShowNowPlaying(true) : setIsExpanded(true)}>
                   {currentSong.cover_url
                     ? <img src={currentSong.cover_url} alt={currentSong.title} className="w-full h-full object-cover" />
                     : <div className="w-full h-full bg-gradient-to-br from-cyan-500 to-purple-600 flex items-center justify-center"><Music className="w-7 h-7 text-white" /></div>
                   }
                   <div className="absolute inset-0 bg-black/50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                    <Maximize2 className="w-4 h-4 text-white" />
+                    {currentSong?.is_local ? <Music className="w-4 h-4 text-white" /> : <Maximize2 className="w-4 h-4 text-white" />}
                   </div>
                 </div>
                 <div className="min-w-0 flex-1">
@@ -1265,6 +1274,7 @@ const AudioPlayer = ({ currentSong, playlist = [], onNext, onPrevious, onClose, 
           <NowPlayingScreen
             onClose={() => setShowNowPlaying(false)}
             isPlaying={isPlaying}
+            isBuffering={isBuffering}
             onTogglePlay={togglePlay}
             onNext={() => { autoPlayRef.current = true; goNextRef.current?.(); }}
             onPrev={() => { autoPlayRef.current = true; goPreviousRef.current?.(); }}
@@ -1272,6 +1282,13 @@ const AudioPlayer = ({ currentSong, playlist = [], onNext, onPrevious, onClose, 
             onToggleShuffle={() => setShuffle(s => !s)}
             repeat={repeat}
             onToggleRepeat={() => setRepeat(r => r === 'off' ? 'all' : r === 'all' ? 'one' : 'off')}
+            currentTime={currentTime}
+            duration={duration || currentSong?.duration_s || 0}
+            onSeek={(val) => { if (audioRef.current) { audioRef.current.currentTime = val; setCurrentTime(val); } }}
+            volume={volume}
+            isMuted={isMuted}
+            onVolumeChange={(val) => setVolume(val)}
+            onToggleMute={() => toggleMute()}
           />
         )}
       </AnimatePresence>

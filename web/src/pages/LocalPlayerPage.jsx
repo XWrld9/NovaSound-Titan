@@ -686,22 +686,23 @@ const LocalPlayerPage = () => {
 
         {/* Indicateur son en cours */}
         {currentSong?.is_local && (
-          <div className="flex items-center gap-3 p-3 rounded-2xl border border-cyan-500/20"
-            style={{ background:'rgba(6,182,212,0.06)' }}>
+          <div className="flex items-center gap-3 p-3 rounded-2xl border border-cyan-500/20 cursor-pointer hover:border-cyan-400/40 transition-all"
+            style={{ background:'rgba(6,182,212,0.06)' }}
+            onClick={() => window.dispatchEvent(new CustomEvent('novasound:open-nowplaying'))}>
             <div className="w-10 h-10 rounded-xl overflow-hidden flex-shrink-0">
               <img src={currentSong.cover_url} alt={currentSong.title} className="w-full h-full object-cover" />
             </div>
             <div className="flex-1 min-w-0">
               <p className="text-white text-sm font-bold truncate">{currentSong.title}</p>
-              <p className="text-cyan-400 text-[11px]">En lecture · swipe ↑ pour le plein écran</p>
+              <p className="text-cyan-400 text-[11px]">En lecture · cliquer pour ouvrir le player</p>
             </div>
-            <div className="flex gap-1 items-center">
+            <div className="flex gap-1 items-center flex-shrink-0">
               <button
-                onClick={() => { setShareSong(currentSong); setShowShareModal(true); }}
+                onClick={e => { e.stopPropagation(); setShareSong(currentSong); setShowShareModal(true); }}
                 className="p-1.5 rounded-full text-gray-600 hover:text-white transition-colors">
                 <Share2 className="w-3.5 h-3.5" />
               </button>
-              <div className="flex gap-px items-end h-4 flex-shrink-0">
+              <div className="flex gap-px items-end h-4">
                 {[1,2,3,4].map(i=>(
                   <div key={i} className="w-0.5 rounded-full bg-cyan-400"
                     style={{ height:`${4+i*3}px`, animation:`novaWave ${0.4+i*0.12}s ease-in-out infinite alternate`, animationDelay:`${i*0.08}s` }}
@@ -747,7 +748,7 @@ const LocalPlayerPage = () => {
       {/* VLC Panel */}
       <AnimatePresence>
         {showVLC && (
-          <VLCPanel audioRef={null} onClose={() => setShowVLC(false)} />
+          <VLCPanel audioRef={audioRef} onClose={() => setShowVLC(false)} />
         )}
       </AnimatePresence>
 

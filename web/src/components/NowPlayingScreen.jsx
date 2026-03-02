@@ -1,12 +1,12 @@
 /**
- * NowPlayingScreen — NovaSound TITAN LUX v8000
+ * NowPlayingScreen — NovaSound TITAN LUX v8600
  *
- * v8000 :
- *  - Icône Heart réduite (w-5) pour laisser place aux autres options
- *  - Rangée d'actions complète : Like · Share · Repost · Download · Follow
- *  - Chaque action a son propre état + logique Supabase + retry
- *  - SongShareModal intégré
- *  - Gestion ERR_CONNECTION_CLOSED via retry silencieux
+ * v8600 :
+ *  - Player exclusif pour fichiers locaux (is_local=true) ET disponible sur PC
+ *  - Barre de seek complète avec currentTime / duration
+ *  - Contrôle du volume avec slider
+ *  - Animation de vague canvas (IdleWave)
+ *  - Actions réseau (Like, Share, Repost, Follow) masquées pour fichiers locaux
  */
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -18,8 +18,14 @@ import {
   X, Heart, SkipBack, SkipForward, Play, Pause,
   List, Mic2, ChevronDown, Shuffle, Repeat, Music,
   Share2, Repeat2, Download, UserPlus, UserCheck,
+  Volume2, VolumeX, Volume1,
 } from 'lucide-react';
 import SongShareModal from '@/components/SongShareModal';
+
+const fmtTime = (s) => {
+  if (!s || isNaN(s) || s < 0) return '0:00';
+  return `${Math.floor(s / 60)}:${String(Math.floor(s % 60)).padStart(2, '0')}`;
+};
 
 const IdleWave = ({ isPlaying, color }) => {
   const canvasRef = useRef(null);
@@ -30,7 +36,7 @@ const IdleWave = ({ isPlaying, color }) => {
     const ctx = canvas.getContext('2d');
     const resize = () => {
       const dpr = window.devicePixelRatio || 1;
-      canvas.width = canvas.offsetWidth * dpr;
+      canvas.width  = canvas.offsetWidth  * dpr;
       canvas.height = canvas.offsetHeight * dpr;
       ctx.scale(dpr, dpr);
     };
@@ -64,35 +70,118 @@ const IdleWave = ({ isPlaying, color }) => {
   return <canvas ref={canvasRef} className="absolute inset-0 w-full h-full opacity-70 pointer-events-none" />;
 };
 
+// Barre de seek custom (compatible mobile et PC)
+const SeekBar = ({ currentTime, duration, onSeek, color }) => {
+  const trackRef  = useRef(null);
+  const [dragging, setDragging] = useState(false);
+  const [dragPct,  setDragPct]  = useState(0);
+
+  const getPct = (clientX) => {
+    if (!trackRef.current) return 0;
+    const { left, width } = trackRef.current.getBoundingClientRect();
+    return Math.max(0, Math.min(1, (clientX - left) / width));
+  };
+
+  const startDrag = useCallback((clientX) => {
+    setDragging(true);
+    setDragPct(getPct(clientX));
+  }, []);
+
+  const moveDrag = useCallback((clientX) => {
+    if (!dragging) return;
+    setDragPct(getPct(clientX));
+  }, [dragging]);
+
+  const endDrag = useCallback((clientX) => {
+    if (!dragging) return;
+    setDragging(false);
+    const pct = getPct(clientX);
+    setDragPct(pct);
+    if (onSeek && duration > 0) onSeek(pct * duration);
+  }, [dragging, onSeek, duration]);
+
+  useEffect(() => {
+    if (!dragging) return;
+    const mm = (e) => moveDrag(e.clientX);
+    const mu = (e) => endDrag(e.clientX);
+    const tm = (e) => moveDrag(e.touches[0].clientX);
+    const tu = (e) => endDrag(e.changedTouches[0].clientX);
+    window.addEventListener('mousemove', mm);
+    window.addEventListener('mouseup',   mu);
+    window.addEventListener('touchmove', tm, { passive: true });
+    window.addEventListener('touchend',  tu);
+    return () => {
+      window.removeEventListener('mousemove', mm);
+      window.removeEventListener('mouseup',   mu);
+      window.removeEventListener('touchmove', tm);
+      window.removeEventListener('touchend',  tu);
+    };
+  }, [dragging, moveDrag, endDrag]);
+
+  const pct = dragging ? dragPct : (duration > 0 ? currentTime / duration : 0);
+  const displayed = pct * (duration || 0);
+
+  return (
+    <div className="w-full select-none">
+      <div
+        ref={trackRef}
+        className="relative w-full h-1.5 rounded-full cursor-pointer group"
+        style={{ background: 'rgba(255,255,255,0.12)' }}
+        onMouseDown={(e) => { e.preventDefault(); startDrag(e.clientX); }}
+        onTouchStart={(e) => startDrag(e.touches[0].clientX)}
+        onClick={(e) => { if (!dragging && onSeek && duration > 0) onSeek(getPct(e.clientX) * duration); }}
+      >
+        <div className="absolute left-0 top-0 h-full rounded-full"
+          style={{ width: `${pct * 100}%`, background: color }} />
+        <div className="absolute top-1/2 w-4 h-4 rounded-full bg-white shadow-lg opacity-0 group-hover:opacity-100 transition-opacity"
+          style={{ left: `${pct * 100}%`, transform: 'translate(-50%, -50%)', boxShadow: `0 0 8px ${color}` }} />
+      </div>
+      <div className="flex justify-between text-[10px] text-gray-500 mt-1.5 tabular-nums">
+        <span>{fmtTime(displayed)}</span>
+        <span>{duration > 0 ? `-${fmtTime(duration - displayed)}` : '--:--'}</span>
+      </div>
+    </div>
+  );
+};
+
 const GENRE_COLORS = {
   'Rap':'#a855f7','Trap':'#ef4444','R&B':'#ec4899','Afrobeats':'#f59e0b',
   'Hip-Hop':'#8b5cf6','Électronique':'#06b6d4','Gospel':'#10b981',
   'Drill':'#ef4444','Pop':'#06b6d4','Zouk':'#f43f5e','Afropop':'#f59e0b','Soul':'#ec4899',
 };
 
-const NowPlayingScreen = ({ onClose, isPlaying, onTogglePlay, onNext, onPrev, shuffle, onToggleShuffle, repeat, onToggleRepeat }) => {
+const NowPlayingScreen = ({
+  onClose,
+  isPlaying, isBuffering = false,
+  onTogglePlay, onNext, onPrev,
+  shuffle, onToggleShuffle,
+  repeat,  onToggleRepeat,
+  currentTime = 0, duration = 0,
+  onSeek,
+  volume = 70, isMuted = false,
+  onVolumeChange, onToggleMute,
+}) => {
   const { currentUser } = useAuth();
   const { currentSong, playlist, queue } = usePlayer();
 
-  const [showLyrics, setShowLyrics]     = useState(false);
-  const [showQueue,  setShowQueue]      = useState(false);
-  const [showShare,  setShowShare]      = useState(false);
+  const [showQueue,  setShowQueue]  = useState(false);
+  const [showShare,  setShowShare]  = useState(false);
+  const [showVolume, setShowVolume] = useState(false);
+  const [showLyrics, setShowLyrics] = useState(false);
   const [lyricsContent, setLyricsContent] = useState(null);
 
-  const [isLiked,     setIsLiked]      = useState(false);
-  const [likeId,      setLikeId]       = useState(null);
-  const [likeBurst,   setLikeBurst]    = useState(false);
-  const [likeLoading, setLikeLoading]  = useState(false);
-
-  const [hasReposted,    setHasReposted]   = useState(false);
-  const [repostBurst,    setRepostBurst]   = useState(false);
-  const [repostLoading,  setRepostLoading] = useState(false);
-
+  const [isLiked,    setIsLiked]    = useState(false);
+  const [likeId,     setLikeId]     = useState(null);
+  const [likeBurst,  setLikeBurst]  = useState(false);
+  const [likeLoading,setLikeLoading]= useState(false);
+  const [hasReposted,   setHasReposted]   = useState(false);
+  const [repostBurst,   setRepostBurst]   = useState(false);
+  const [repostLoading, setRepostLoading] = useState(false);
   const [isFollowing,   setIsFollowing]   = useState(false);
   const [followId,      setFollowId]      = useState(null);
   const [followLoading, setFollowLoading] = useState(false);
 
-  const color = GENRE_COLORS[currentSong?.genre] || '#22d3ee';
+  const color = (currentSong?.genre && GENRE_COLORS[currentSong.genre]) || '#22d3ee';
 
   const withRetry = useCallback(async (fn, retries = 2) => {
     for (let i = 0; i <= retries; i++) {
@@ -102,12 +191,7 @@ const NowPlayingScreen = ({ onClose, isPlaying, onTogglePlay, onNext, onPrev, sh
   }, []);
 
   useEffect(() => {
-    if (!currentUser || !currentSong) {
-      setIsLiked(false); setLikeId(null); setHasReposted(false);
-      setIsFollowing(false); setFollowId(null); return;
-    }
-    // Sons locaux : pas de requêtes Supabase
-    if (currentSong.is_local) {
+    if (!currentUser || !currentSong || currentSong.is_local) {
       setIsLiked(false); setLikeId(null); setHasReposted(false);
       setIsFollowing(false); setFollowId(null); return;
     }
@@ -161,14 +245,18 @@ const NowPlayingScreen = ({ onClose, isPlaying, onTogglePlay, onNext, onPrev, sh
   const handleDownload = () => {
     if (!currentSong?.audio_url) return;
     const a = document.createElement('a');
-    a.href = currentSong.audio_url; a.download = (currentSong.title||'audio')+'.m4a'; a.target='_blank';
+    a.href = currentSong.audio_url;
+    a.download = (currentSong.title||'audio') + (currentSong.is_local ? '' : '.m4a');
+    a.target = '_blank';
     document.body.appendChild(a); a.click(); document.body.removeChild(a);
   };
 
   if (!currentSong) return null;
+
   const upcoming = [...(queue||[]),...(playlist||[])].slice(0,6);
   const showFollowBtn = currentUser && currentSong?.uploader_id && currentSong.uploader_id !== currentUser.id;
   const isLocal = !!currentSong.is_local;
+  const VolumeIcon = (isMuted || volume === 0) ? VolumeX : volume < 40 ? Volume1 : Volume2;
 
   return (
     <>
@@ -185,16 +273,18 @@ const NowPlayingScreen = ({ onClose, isPlaying, onTogglePlay, onNext, onPrev, sh
       <div className="absolute inset-0 bg-gradient-to-b from-black/50 via-transparent to-black/85 pointer-events-none" />
       <IdleWave isPlaying={isPlaying} color={color} />
 
-      <div className="relative flex flex-col h-full max-w-sm mx-auto w-full px-6"
-        style={{ paddingTop:'env(safe-area-inset-top, 16px)' }}>
+      <div className="relative flex flex-col h-full max-w-sm mx-auto w-full px-6 overflow-y-auto"
+        style={{ paddingTop:'env(safe-area-inset-top, 16px)', paddingBottom:'env(safe-area-inset-bottom, 24px)' }}>
 
         {/* Top bar */}
-        <div className="flex items-center justify-between pt-5 pb-4 flex-shrink-0">
+        <div className="flex items-center justify-between pt-5 pb-3 flex-shrink-0">
           <button onClick={onClose} className="p-2 rounded-full bg-white/10 hover:bg-white/20 text-white transition-all active:scale-90">
             <ChevronDown className="w-5 h-5" />
           </button>
           <div className="text-center">
-            <p className="text-xs text-gray-400 uppercase tracking-widest font-medium">En lecture</p>
+            <p className="text-xs text-gray-400 uppercase tracking-widest font-medium">
+              {isLocal ? '📁 Lecture locale' : 'En lecture'}
+            </p>
             {currentSong.genre && <p className="text-[11px] font-bold mt-0.5" style={{color}}>{currentSong.genre}</p>}
           </div>
           <button onClick={()=>{setShowQueue(!showQueue);setShowLyrics(false);}}
@@ -204,14 +294,14 @@ const NowPlayingScreen = ({ onClose, isPlaying, onTogglePlay, onNext, onPrev, sh
         </div>
 
         {/* Pochette */}
-        <div className="flex-1 flex items-center justify-center py-2 min-h-0">
+        <div className="flex-shrink-0 flex items-center justify-center py-2">
           <AnimatePresence mode="wait">
             <motion.div key={currentSong.id}
               initial={{ scale:0.82, opacity:0 }}
-              animate={{ scale:isPlaying?[1,1.025,1]:0.96, opacity:1 }}
+              animate={{ scale: isPlaying ? [1,1.025,1] : 0.96, opacity:1 }}
               exit={{ scale:0.82, opacity:0 }}
               transition={{ duration:isPlaying?2.5:0.4, repeat:isPlaying?Infinity:0, ease:'easeInOut' }}
-              className="w-full max-w-[260px] aspect-square rounded-3xl overflow-hidden"
+              className="w-full max-w-[240px] aspect-square rounded-3xl overflow-hidden"
               style={{ boxShadow:`0 0 80px ${color}45, 0 24px 60px rgba(0,0,0,0.8)` }}
             >
               {currentSong.cover_url
@@ -225,102 +315,96 @@ const NowPlayingScreen = ({ onClose, isPlaying, onTogglePlay, onNext, onPrev, sh
         </div>
 
         {/* Titre + artiste */}
-        <div className="mb-3 flex-shrink-0">
+        <div className="mb-4 flex-shrink-0">
           <AnimatePresence mode="wait">
             <motion.p key={currentSong.title}
               initial={{opacity:0,y:6}} animate={{opacity:1,y:0}} exit={{opacity:0,y:-6}}
               className="text-white text-xl font-black truncate">{currentSong.title}</motion.p>
           </AnimatePresence>
           {isLocal
-            ? <p className="text-gray-400 text-sm">{currentSong.artist}</p>
+            ? <p className="text-gray-400 text-sm mt-0.5">{currentSong.artist}</p>
             : <Link to={`/artist/${currentSong.uploader_id}`} onClick={onClose}
-                className="text-gray-400 text-sm hover:text-white transition-colors">{currentSong.artist}</Link>
+                className="text-gray-400 text-sm hover:text-white transition-colors mt-0.5 block">{currentSong.artist}</Link>
           }
         </div>
 
-        {/* ── Actions : Like · Share · Repost · Download · Follow/Paroles ── */}
-        {!isLocal && (
-        <div className="flex items-center justify-between mb-4 flex-shrink-0 px-1">
-
-          {/* Like */}
-          <motion.button onClick={toggleLike} whileTap={{scale:0.85}}
-            disabled={likeLoading||!currentUser}
-            className="relative flex flex-col items-center gap-0.5 disabled:opacity-40" title="Like">
-            <AnimatePresence>
-              {likeBurst && (
-                <motion.span key="lb" initial={{scale:0.5,opacity:1}} animate={{scale:2.4,opacity:0}}
-                  exit={{opacity:0}} transition={{duration:0.6}}
-                  className="absolute inset-0 rounded-full bg-red-400/20 pointer-events-none" />
-              )}
-            </AnimatePresence>
-            <Heart className={`w-5 h-5 transition-all ${isLiked?'fill-current text-red-500 drop-shadow-[0_0_6px_rgba(239,68,68,0.8)]':'text-gray-500 hover:text-gray-300'}`} />
-            <span className="text-[9px] text-gray-500">Like</span>
-          </motion.button>
-
-          {/* Share */}
-          <motion.button onClick={()=>setShowShare(true)} whileTap={{scale:0.85}}
-            className="flex flex-col items-center gap-0.5" title="Partager">
-            <Share2 className="w-5 h-5 text-gray-500 hover:text-cyan-400 transition-colors" />
-            <span className="text-[9px] text-gray-500">Partager</span>
-          </motion.button>
-
-          {/* Repost */}
-          <motion.button onClick={toggleRepost} whileTap={{scale:0.85}}
-            disabled={repostLoading||!currentUser}
-            className="relative flex flex-col items-center gap-0.5 disabled:opacity-40" title="Repost">
-            <AnimatePresence>
-              {repostBurst && (
-                <motion.span key="rb" initial={{scale:0.5,opacity:1}} animate={{scale:2.2,opacity:0}}
-                  exit={{opacity:0}} transition={{duration:0.5}}
-                  className="absolute inset-0 rounded-full bg-green-400/20 pointer-events-none" />
-              )}
-            </AnimatePresence>
-            <motion.div animate={repostBurst?{rotate:[0,-20,20,0]}:{rotate:0}} transition={{duration:0.4}}>
-              <Repeat2 className={`w-5 h-5 transition-colors ${hasReposted?'text-green-400':'text-gray-500 hover:text-green-400'}`} />
-            </motion.div>
-            <span className="text-[9px] text-gray-500">Repost</span>
-          </motion.button>
-
-          {/* Download */}
-          <motion.button onClick={handleDownload} whileTap={{scale:0.85}}
-            className="flex flex-col items-center gap-0.5" title="Télécharger">
-            <Download className="w-5 h-5 text-gray-500 hover:text-cyan-400 transition-colors" />
-            <span className="text-[9px] text-gray-500">Sauver</span>
-          </motion.button>
-
-          {/* Follow ou Paroles */}
-          {showFollowBtn ? (
-            <motion.button onClick={toggleFollow} whileTap={{scale:0.85}} disabled={followLoading}
-              className="flex flex-col items-center gap-0.5 disabled:opacity-40"
-              title={isFollowing?'Se désabonner':"S'abonner"}>
-              {isFollowing
-                ? <UserCheck className="w-5 h-5 text-cyan-400" />
-                : <UserPlus  className="w-5 h-5 text-gray-500 hover:text-cyan-400 transition-colors" />}
-              <span className="text-[9px] text-gray-500">{isFollowing?'Abonné':'Suivre'}</span>
-            </motion.button>
-          ) : (
-            <button onClick={()=>{setShowLyrics(!showLyrics);setShowQueue(false);}} disabled={!lyricsContent}
-              className={`flex flex-col items-center gap-0.5 transition-all active:scale-90 ${
-                showLyrics?'text-fuchsia-400':lyricsContent?'text-gray-400 hover:text-white':'text-gray-700 cursor-not-allowed opacity-40'}`}
-              title="Paroles">
-              <Mic2 className="w-5 h-5" />
-              <span className="text-[9px]">Paroles</span>
-            </button>
-          )}
+        {/* ── SEEK BAR ── */}
+        <div className="mb-5 flex-shrink-0">
+          <SeekBar currentTime={currentTime} duration={duration} onSeek={onSeek} color={color} />
         </div>
-        )} {/* end !isLocal */}
+
+        {/* Actions (online only) */}
+        {!isLocal && (
+          <div className="flex items-center justify-between mb-4 flex-shrink-0 px-1">
+            <motion.button onClick={toggleLike} whileTap={{scale:0.85}}
+              disabled={likeLoading||!currentUser}
+              className="relative flex flex-col items-center gap-0.5 disabled:opacity-40">
+              <AnimatePresence>
+                {likeBurst && <motion.span key="lb" initial={{scale:0.5,opacity:1}} animate={{scale:2.4,opacity:0}} exit={{opacity:0}} transition={{duration:0.6}}
+                  className="absolute inset-0 rounded-full bg-red-400/20 pointer-events-none" />}
+              </AnimatePresence>
+              <Heart className={`w-5 h-5 ${isLiked?'fill-current text-red-500':' text-gray-500 hover:text-gray-300'}`} />
+              <span className="text-[9px] text-gray-500">Like</span>
+            </motion.button>
+
+            <motion.button onClick={()=>setShowShare(true)} whileTap={{scale:0.85}} className="flex flex-col items-center gap-0.5">
+              <Share2 className="w-5 h-5 text-gray-500 hover:text-cyan-400 transition-colors" />
+              <span className="text-[9px] text-gray-500">Partager</span>
+            </motion.button>
+
+            <motion.button onClick={toggleRepost} whileTap={{scale:0.85}}
+              disabled={repostLoading||!currentUser}
+              className="relative flex flex-col items-center gap-0.5 disabled:opacity-40">
+              <AnimatePresence>
+                {repostBurst && <motion.span key="rb" initial={{scale:0.5,opacity:1}} animate={{scale:2.2,opacity:0}} exit={{opacity:0}} transition={{duration:0.5}}
+                  className="absolute inset-0 rounded-full bg-green-400/20 pointer-events-none" />}
+              </AnimatePresence>
+              <Repeat2 className={`w-5 h-5 transition-colors ${hasReposted?'text-green-400':'text-gray-500 hover:text-green-400'}`} />
+              <span className="text-[9px] text-gray-500">Repost</span>
+            </motion.button>
+
+            <motion.button onClick={handleDownload} whileTap={{scale:0.85}} className="flex flex-col items-center gap-0.5">
+              <Download className="w-5 h-5 text-gray-500 hover:text-cyan-400 transition-colors" />
+              <span className="text-[9px] text-gray-500">Sauver</span>
+            </motion.button>
+
+            {showFollowBtn ? (
+              <motion.button onClick={toggleFollow} whileTap={{scale:0.85}} disabled={followLoading} className="flex flex-col items-center gap-0.5 disabled:opacity-40">
+                {isFollowing ? <UserCheck className="w-5 h-5 text-cyan-400" /> : <UserPlus className="w-5 h-5 text-gray-500 hover:text-cyan-400 transition-colors" />}
+                <span className="text-[9px] text-gray-500">{isFollowing?'Abonné':'Suivre'}</span>
+              </motion.button>
+            ) : (
+              <button onClick={()=>{setShowLyrics(!showLyrics);setShowQueue(false);}} disabled={!lyricsContent}
+                className={`flex flex-col items-center gap-0.5 transition-all active:scale-90 ${showLyrics?'text-fuchsia-400':lyricsContent?'text-gray-400 hover:text-white':'text-gray-700 cursor-not-allowed opacity-40'}`}>
+                <Mic2 className="w-5 h-5" />
+                <span className="text-[9px]">Paroles</span>
+              </button>
+            )}
+          </div>
+        )}
+
+        {/* Actions locales */}
+        {isLocal && (
+          <div className="flex items-center justify-center gap-8 mb-4 flex-shrink-0">
+            <motion.button onClick={handleDownload} whileTap={{scale:0.85}} className="flex flex-col items-center gap-0.5">
+              <Download className="w-5 h-5 text-gray-500 hover:text-cyan-400 transition-colors" />
+              <span className="text-[9px] text-gray-500">Exporter</span>
+            </motion.button>
+          </div>
+        )}
 
         {/* Options secondaires */}
-        <div className="flex items-center justify-around mb-5 flex-shrink-0">
+        <div className="flex items-center justify-around mb-4 flex-shrink-0">
           <button onClick={onToggleShuffle}
             className={`flex flex-col items-center gap-1 text-xs transition-all active:scale-90 ${shuffle?'text-cyan-400':'text-gray-600 hover:text-gray-400'}`}>
             <Shuffle className="w-5 h-5" /><span>Aléat.</span>
           </button>
-          <button onClick={()=>{setShowLyrics(!showLyrics);setShowQueue(false);}} disabled={!lyricsContent}
-            className={`flex flex-col items-center gap-1 text-xs transition-all active:scale-90 ${
-              showLyrics?'text-fuchsia-400':lyricsContent?'text-gray-400 hover:text-white':'text-gray-700 cursor-not-allowed opacity-40'}`}>
-            <Mic2 className="w-5 h-5" /><span>Paroles</span>
+
+          <button onClick={()=>setShowVolume(v=>!v)}
+            className={`flex flex-col items-center gap-1 text-xs transition-all active:scale-90 ${showVolume?'text-cyan-400':'text-gray-600 hover:text-gray-400'}`}>
+            <VolumeIcon className="w-5 h-5" /><span>Volume</span>
           </button>
+
           <button onClick={onToggleRepeat}
             className={`flex flex-col items-center gap-1 text-xs transition-all active:scale-90 relative ${repeat!=='off'?'text-cyan-400':'text-gray-600 hover:text-gray-400'}`}>
             <Repeat className="w-5 h-5" />
@@ -329,22 +413,48 @@ const NowPlayingScreen = ({ onClose, isPlaying, onTogglePlay, onNext, onPrev, sh
           </button>
         </div>
 
+        {/* Volume slider */}
+        <AnimatePresence>
+          {showVolume && (
+            <motion.div initial={{opacity:0,height:0}} animate={{opacity:1,height:'auto'}} exit={{opacity:0,height:0}}
+              className="mb-4 flex-shrink-0 overflow-hidden">
+              <div className="flex items-center gap-3 bg-white/[0.05] rounded-2xl px-4 py-3 border border-white/[0.06]">
+                <button onClick={onToggleMute} className="text-gray-400 hover:text-white transition-colors flex-shrink-0">
+                  <VolumeIcon className="w-4 h-4" />
+                </button>
+                <input
+                  type="range" min={0} max={100} step={1} value={isMuted ? 0 : volume}
+                  onChange={e => onVolumeChange?.(Number(e.target.value))}
+                  className="flex-1 h-1.5 rounded-full appearance-none cursor-pointer"
+                  style={{ accentColor: color }}
+                />
+                <span className="text-xs text-gray-500 w-8 text-right tabular-nums">{isMuted ? 0 : volume}%</span>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
         {/* Contrôles transport */}
-        <div className="flex items-center justify-between mb-6 flex-shrink-0">
+        <div className="flex items-center justify-between mb-5 flex-shrink-0">
           <motion.button whileTap={{scale:0.85}} onClick={onPrev} className="p-3 text-gray-300 hover:text-white transition-colors">
             <SkipBack className="w-9 h-9 fill-current" />
           </motion.button>
           <motion.button whileTap={{scale:0.9}} onClick={onTogglePlay}
             className="w-20 h-20 rounded-full flex items-center justify-center shadow-2xl"
             style={{ background:`linear-gradient(135deg,${color},#a855f7)`, boxShadow:`0 0 50px ${color}50` }}>
-            {isPlaying ? <Pause className="w-9 h-9 text-white fill-current" /> : <Play className="w-9 h-9 text-white fill-current ml-1" />}
+            {isBuffering
+              ? <div className="w-8 h-8 rounded-full border-2 border-white/30 border-t-white animate-spin" />
+              : isPlaying
+                ? <Pause className="w-9 h-9 text-white fill-current" />
+                : <Play  className="w-9 h-9 text-white fill-current ml-1" />
+            }
           </motion.button>
           <motion.button whileTap={{scale:0.85}} onClick={onNext} className="p-3 text-gray-300 hover:text-white transition-colors">
             <SkipForward className="w-9 h-9 fill-current" />
           </motion.button>
         </div>
 
-        {/* Queue */}
+        {/* File d'attente */}
         <AnimatePresence>
           {showQueue && (
             <motion.div initial={{height:0,opacity:0}} animate={{height:'auto',opacity:1}} exit={{height:0,opacity:0}}
@@ -371,7 +481,8 @@ const NowPlayingScreen = ({ onClose, isPlaying, onTogglePlay, onNext, onPrev, sh
             </motion.div>
           )}
         </AnimatePresence>
-        <div className="pb-8 flex-shrink-0" />
+
+        <div className="pb-4 flex-shrink-0" />
       </div>
 
       {/* Paroles overlay */}
@@ -384,8 +495,7 @@ const NowPlayingScreen = ({ onClose, isPlaying, onTogglePlay, onNext, onPrev, sh
                 <Mic2 className="w-4 h-4 text-fuchsia-400" />
                 <span className="text-sm font-bold text-white">Paroles</span>
               </div>
-              <button onClick={()=>setShowLyrics(false)}
-                className="p-1.5 rounded-full bg-white/10 text-gray-400 hover:text-white transition-colors">
+              <button onClick={()=>setShowLyrics(false)} className="p-1.5 rounded-full bg-white/10 text-gray-400 hover:text-white">
                 <X className="w-4 h-4" />
               </button>
             </div>

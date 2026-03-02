@@ -23,9 +23,11 @@ const fmtDuration = (s) => {
   return `${minutes}:${String(seconds).padStart(2, '0')}`;
 };
 
-const SongCard = memo(({ song: initialSong, onPlay, isPlaying, setCurrentSong, currentSong, onArchived, onDeleted }) => {
+const SongCard = memo(({ song: initialSong, onPlay, isPlaying: isPlayingProp, setCurrentSong, currentSong: currentSongProp, onArchived, onDeleted }) => {
   const { currentUser } = useAuth();
-  const { addToQueue } = usePlayer();
+  const { addToQueue, currentSong: playerCurrentSong, isVisible: playerVisible } = usePlayer();
+  // Priorité au PlayerContext pour la synchronisation universelle
+  const isPlaying = playerVisible && playerCurrentSong?.id === initialSong?.id;
   const [song, setSong] = useState(initialSong);
   const [isHovered, setIsHovered] = useState(false);
   const [showShare, setShowShare] = useState(false);
