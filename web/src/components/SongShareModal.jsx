@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
 import { toPng } from 'html-to-image';
+import { WifiOff, Share2, Download, X } from 'lucide-react';
 
 /* ──────────────────────────────────────────────────────────────
    LOGO  — chargé en data URL depuis /icon-192.png (local = zéro CORS)
@@ -73,6 +74,61 @@ const dataUrlToBlob = (dataUrl) => {
           onClose ()
    ────────────────────────────────────────────────────────────── */
 const SongShareModal = ({ song, onClose }) => {
+  // ── Fichier local : rediriger vers le modal de partage local ──────
+  // Les fichiers locaux ne peuvent pas être partagés via URL/réseaux sociaux
+  if (song?.is_local) {
+    const handleLocalShare = async () => {
+      if (!navigator.share) return;
+      const shareData = { title: song.title, text: `🎵 ${song.title} — ${song.artist}` };
+      if (song._file && navigator.canShare?.({ files: [song._file] })) {
+        shareData.files = [song._file];
+      }
+      try { await navigator.share(shareData); } catch {}
+    };
+    return (
+      <motion.div
+        initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+        className="fixed inset-0 z-[200] flex items-end justify-center bg-black/70 backdrop-blur-sm"
+        style={{ zIndex: 9999 }}
+        onClick={e => e.target === e.currentTarget && onClose()}
+      >
+        <motion.div
+          initial={{ y: 60 }} animate={{ y: 0 }} exit={{ y: 60 }}
+          className="w-full max-w-sm bg-[#0d0d1a] border border-white/10 rounded-t-3xl p-5"
+          style={{ paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 20px)' }}
+        >
+          <div className="flex items-center gap-3 mb-4">
+            {song.cover_url && <img src={song.cover_url} alt="" className="w-12 h-12 rounded-xl object-cover" />}
+            <div className="flex-1 min-w-0">
+              <p className="text-white font-bold text-sm truncate">{song.title}</p>
+              <p className="text-gray-500 text-xs truncate">{song.artist}</p>
+            </div>
+            <button onClick={onClose} className="p-1 text-gray-600 hover:text-white">
+              <X className="w-4 h-4" />
+            </button>
+          </div>
+          <div className="bg-amber-500/10 border border-amber-500/20 rounded-xl p-3 mb-4 flex items-start gap-2">
+            <WifiOff className="w-3.5 h-3.5 text-amber-400 flex-shrink-0 mt-0.5" />
+            <p className="text-amber-300 text-[11px] leading-relaxed">
+              Hors-ligne : le partage sur les réseaux sociaux n'est pas disponible. Tu peux partager le fichier directement.
+            </p>
+          </div>
+          {navigator.share && (
+            <button onClick={handleLocalShare}
+              className="w-full flex items-center justify-center gap-2 py-3 rounded-xl text-white text-sm font-bold mb-2 transition-all"
+              style={{ background: 'linear-gradient(135deg,#0e7490,#7c3aed)' }}>
+              <Share2 className="w-4 h-4" /> Partager via… (Bluetooth / AirDrop)
+            </button>
+          )}
+          <button onClick={() => { const a = document.createElement('a'); a.href = song.audio_url; a.download = song._file?.name || song.title + '.mp3'; a.click(); }}
+            className="w-full flex items-center justify-center gap-2 py-3 rounded-xl text-gray-300 text-sm font-semibold bg-white/[0.06] hover:bg-white/[0.1] transition-all">
+            <Download className="w-4 h-4" /> Télécharger le fichier
+          </button>
+        </motion.div>
+      </motion.div>
+    );
+  }
+
   const cardRef = useRef(null);
   const isMounted = useRef(true); // track unmount pour éviter setState sur composant mort
   const [theme, setTheme] = useState(SHARE_THEMES[0]);

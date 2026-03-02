@@ -74,10 +74,16 @@ const OfflineRedirect = () => {
   const location = useLocation();
 
   useEffect(() => {
-    const ONLINE_ONLY = ['/upload', '/profile', '/messages', '/stats', '/moderation', '/chat', '/live'];
+    const ONLINE_ONLY = ['/upload', '/profile', '/messages', '/stats', '/moderation', '/chat', '/live', '/playlists'];
+    const OFFLINE_OK  = ['/local-player', '/login', '/signup', '/privacy', '/terms', '/copyright'];
     const isOnlineOnlyPage = ONLINE_ONLY.some(p => location.pathname.startsWith(p));
-    if (!isOnline && isOnlineOnlyPage) {
-      navigate('/local-player', { replace: true });
+    const isOfflineOk      = OFFLINE_OK.some(p => location.pathname.startsWith(p));
+
+    if (!isOnline) {
+      // Rediriger vers le lecteur local depuis les pages online-only ET depuis la page d'accueil
+      if (isOnlineOnlyPage || (!isOfflineOk && (location.pathname === '/' || location.pathname === ''))) {
+        navigate('/local-player', { replace: true });
+      }
     }
   }, [isOnline, location.pathname, navigate]);
 

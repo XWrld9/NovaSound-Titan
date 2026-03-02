@@ -91,49 +91,30 @@ const parseBasicTags = async (file) => {
 
 // ── Convertit un File audio en objet "song" jouable par PlayerContext ────────
 const fileToSong = async (file) => {
-  // Validation du type de fichier
-  const audioTypes = ['audio/mp3', 'audio/mpeg', 'audio/wav', 'audio/flac', 'audio/aac', 'audio/ogg', 'audio/m4a', 'audio/mp4'];
-  if (!audioTypes.some(type => file.type.includes(type)) && !file.name.match(/\.(mp3|wav|flac|aac|ogg|m4a|mp4)$/i)) {
-    throw new Error(`Format non supporté: ${file.type || file.name}`);
-  }
-
-  // Validation de la taille (max 100MB)
-  if (file.size > 100 * 1024 * 1024) {
-    throw new Error(`Fichier trop volumineux: ${Math.round(file.size / 1024 / 1024)}MB (max 100MB)`);
-  }
-
   const objectUrl = URL.createObjectURL(file);
   const rawName   = file.name.replace(/\.[^.]+$/, '').replace(/[-_]/g, ' ');
 
-  console.log('[LocalFilePicker] Traitement du fichier:', file.name, 'Type:', file.type, 'Taille:', file.size);
+  const tags = await parseBasicTags(file);
 
-  try {
-    const tags = await parseBasicTags(file);
+  const title  = tags.title  || rawName;
+  const artist = tags.artist || 'Fichier local';
+  const album  = tags.album  || '';
 
-    const title  = tags.title  || rawName;
-    const artist = tags.artist || 'Fichier local';
-    const album  = tags.album  || '';
+  const cover = tags.cover || makeFallbackCover(title, artist);
 
-    const cover = tags.cover || makeFallbackCover(title, artist);
-
-    return {
-      id:          'local::' + objectUrl,   // ID unique, préfixe "local::" pour distinguer
-      title,
-      artist,
-      album,
-      audio_url:   objectUrl,
-      cover_url:   cover,
-      genre:       null,
-      uploader_id: null,
-      is_local:    true,                    // flag pour désactiver les features Supabase
-      _objectUrl:  objectUrl,              // pour révoquer plus tard
-      _coverIsBlob: !!tags.cover,
-    };
-  } catch (err) {
-    // Révoquer l'URL object en cas d'erreur
-    URL.revokeObjectURL(objectUrl);
-    throw err;
-  }
+  return {
+    id:          'local::' + objectUrl,   // ID unique, préfixe "local::" pour distinguer
+    title,
+    artist,
+    album,
+    audio_url:   objectUrl,
+    cover_url:   cover,
+    genre:       null,
+    uploader_id: null,
+    is_local:    true,                    // flag pour désactiver les features Supabase
+    _objectUrl:  objectUrl,              // pour révoquer plus tard
+    _coverIsBlob: !!tags.cover,
+  };
 };
 
 // ══════════════════════════════════════════════════════════════════════════════
@@ -166,9 +147,7 @@ const LocalFilePicker = ({ compact = false }) => {
     setLoading(true);
     setError(null);
     try {
-      console.log('[LocalFilePicker] Fichiers sélectionnés:', files.map(f => f.name + ' (' + f.size + ' bytes)'));
       const songs = await Promise.all(files.map(fileToSong));
-      console.log('[LocalFilePicker] Songs créés:', songs.map(s => ({ title: s.title, audio_url: s.audio_url?.substring(0, 50) + '...' })));
       setLocalQueue(prev => {
         // Dédupliquer par nom de fichier
         const existing = new Set(prev.map(s => s.title + s.artist));
@@ -176,22 +155,11 @@ const LocalFilePicker = ({ compact = false }) => {
         return [...prev, ...fresh];
       });
       // Jouer le premier immédiatement, les autres en playlist
-      console.log('[LocalFilePicker] Lecture de:', songs[0].title);
       playSong(songs[0], songs.slice(1));
       if (songs.length > 1) setShowDrawer(true);
     } catch (err) {
       console.error('[LocalFilePicker]', err);
-      let errorMessage = 'Impossible de lire ce fichier. Essaie un autre format.';
-      
-      if (err.message.includes('Format non supporté')) {
-        errorMessage = 'Format audio non supporté. Utilise MP3, WAV, FLAC, AAC, OGG ou M4A.';
-      } else if (err.message.includes('trop volumineux')) {
-        errorMessage = err.message;
-      } else if (err.message.includes('quota')) {
-        errorMessage = 'Espace de stockage insuffisant. Essayez avec un fichier plus petit.';
-      }
-      
-      setError(errorMessage);
+      setError('Impossible de lire ce fichier. Essaie un autre format.');
     } finally {
       setLoading(false);
       // Reset l'input pour permettre de re-sélectionner les mêmes fichiers

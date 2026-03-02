@@ -229,7 +229,7 @@ const ChatView = memo(({
                       <div className={`px-3.5 py-2 text-sm leading-relaxed select-text ${
                         isMine
                           ? 'bg-gradient-to-br from-cyan-500 to-cyan-600 text-white rounded-2xl rounded-br-md'
-                          : 'bg-gray-600/90 border border-white/[0.15] text-white rounded-2xl rounded-bl-md'
+                          : 'bg-[#1e2030] border border-white/[0.12] text-gray-100 rounded-2xl rounded-bl-md'
                       } ${msg._pending ? 'opacity-60' : ''}`}>
                         {msg.content}
                       </div>

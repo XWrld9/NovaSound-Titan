@@ -1,7 +1,6 @@
 import React from 'react';
 import { AlertTriangle, RefreshCw, Home } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Link } from 'react-router-dom';
 
 class ErrorBoundary extends React.Component {
   constructor(props) {
@@ -14,25 +13,30 @@ class ErrorBoundary extends React.Component {
   }
 
   componentDidCatch(error, errorInfo) {
-    this.setState({
-      error: error,
-      errorInfo: errorInfo
-    });
-    
-    // Log l'erreur pour le debug
+    this.setState({ error, errorInfo });
     console.error('ErrorBoundary caught an error:', error, errorInfo);
-    
-    // Optionnel: envoyer à un service de monitoring
-    // reportError(error, errorInfo);
   }
 
   handleReset = () => {
     this.setState({ hasError: false, error: null, errorInfo: null });
+    // Si erreur persistante, recharger la page
+    if ((window.__ebResets || 0) >= 1) {
+      window.location.reload();
+    } else {
+      window.__ebResets = (window.__ebResets || 0) + 1;
+      setTimeout(() => { window.__ebResets = 0; }, 5000);
+    }
+  };
+
+  handleGoHome = () => {
+    this.setState({ hasError: false, error: null, errorInfo: null });
+    // Compatible HashRouter
+    window.location.hash = '#/';
+    setTimeout(() => window.location.reload(), 50);
   };
 
   render() {
     if (this.state.hasError) {
-      // Si un fallback est fourni (ex: null pour le GlobalPlayer), l'utiliser directement
       if (this.props.fallback !== undefined) {
         return this.props.fallback;
       }
@@ -42,13 +46,13 @@ class ErrorBoundary extends React.Component {
             <div className="w-16 h-16 bg-red-500/20 rounded-full flex items-center justify-center mx-auto mb-6">
               <AlertTriangle className="w-8 h-8 text-red-400" />
             </div>
-            
+
             <h1 className="text-2xl font-bold text-white mb-4">
               Oups, une erreur est survenue
             </h1>
-            
+
             <p className="text-gray-400 mb-6">
-              Nous sommes désolés, quelque chose s'est mal passé. 
+              Nous sommes désolés, quelque chose s'est mal passé.
               Nos équipes ont été notifiées et travaillent à résoudre le problème.
             </p>
 
@@ -71,17 +75,24 @@ class ErrorBoundary extends React.Component {
             )}
 
             <div className="flex flex-col sm:flex-row gap-3 justify-center">
-              <Button onClick={this.handleReset} className="bg-cyan-500 hover:bg-cyan-600">
+              <Button
+                onClick={this.handleReset}
+                className="bg-cyan-500 hover:bg-cyan-600 cursor-pointer"
+                type="button"
+              >
                 <RefreshCw className="w-4 h-4 mr-2" />
                 Réessayer
               </Button>
-              
-              <Link to="/">
-                <Button variant="outline" className="border-gray-600 text-gray-300 hover:bg-gray-800">
-                  <Home className="w-4 h-4 mr-2" />
-                  Accueil
-                </Button>
-              </Link>
+
+              <Button
+                variant="outline"
+                onClick={this.handleGoHome}
+                className="border-gray-600 text-gray-300 hover:bg-gray-800 cursor-pointer"
+                type="button"
+              >
+                <Home className="w-4 h-4 mr-2" />
+                Accueil
+              </Button>
             </div>
 
             <div className="mt-6 text-xs text-gray-500">

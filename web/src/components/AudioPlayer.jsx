@@ -3,7 +3,7 @@ import {
   Play, Pause, SkipBack, SkipForward, Volume2, VolumeX, Volume1,
   Shuffle, Repeat, Music, ChevronDown, Heart, Download, Share2,
   UserPlus, UserCheck, ExternalLink, X, Maximize2, Minimize2,
-  ListMusic, Moon, Trash2, Gauge, Radio, Plus, Calendar,
+  ListMusic, Moon, Trash2, Gauge, Radio, Plus, Calendar, FolderOpen,
 } from 'lucide-react';
 import { Slider } from '@/components/ui/slider';
 import { supabase } from '@/lib/supabaseClient';
@@ -309,9 +309,6 @@ const AudioPlayer = ({ currentSong, playlist = [], onNext, onPrevious, onClose, 
     const isNewSong = !wasFirstSong && prevSongIdRef.current !== currentSong.id;
     prevSongIdRef.current = currentSong.id;
 
-    console.log('[AudioPlayer] Chargement audio:', currentSong.title, 'URL:', currentSong.audio_url?.substring(0, 50) + '...');
-    console.log('[AudioPlayer] is_local:', currentSong.is_local);
-
     audioRef.current.src          = currentSong.audio_url;
     audioRef.current.loop         = (repeat === 'one');
     audioRef.current.playbackRate = playbackSpeed;
@@ -322,14 +319,9 @@ const AudioPlayer = ({ currentSong, playlist = [], onNext, onPrevious, onClose, 
     else { setIsLiked(false); setLikeId(null); setIsFollowing(false); setFollowId(null); }
 
     if ((isNewSong || wasFirstSong) && autoPlayRef.current) {
-      console.log('[AudioPlayer] Tentative de lecture automatique...');
       audioRef.current.play()
-        .then(() => { 
-          console.log('[AudioPlayer] Lecture démarrée avec succès');
-          setIsPlaying(true); setIsBuffering(false); 
-        })
+        .then(() => { setIsPlaying(true); setIsBuffering(false); })
         .catch((err) => {
-          console.error('[AudioPlayer] Erreur de lecture:', err);
           if (err.name !== 'AbortError') setIsPlaying(false);
         });
     } else if (!isNewSong && !wasFirstSong) {
@@ -522,18 +514,11 @@ const AudioPlayer = ({ currentSong, playlist = [], onNext, onPrevious, onClose, 
         onTimeUpdate={handleTimeUpdate}
         onLoadedMetadata={handleLoadedMetadata}
         onEnded={handleEnded}
-        onPlay={() => { console.log('[AudioPlayer] onPlay'); setIsPlaying(true); setIsBuffering(false); }}
-        onPause={() => { console.log('[AudioPlayer] onPause'); setIsPlaying(false); }}
-        onWaiting={() => { console.log('[AudioPlayer] onWaiting'); setIsBuffering(true); }}
-        onCanPlay={() => { console.log('[AudioPlayer] onCanPlay'); setIsBuffering(false); }}
-        onPlaying={() => { console.log('[AudioPlayer] onPlaying'); setIsBuffering(false); }}
-        onError={(e) => { console.error('[AudioPlayer] onError:', e.target.error); }}
-        onLoadStart={() => { console.log('[AudioPlayer] onLoadStart'); }}
-        onCanPlayThrough={() => { console.log('[AudioPlayer] onCanPlayThrough'); }}
-        onStalled={() => { console.log('[AudioPlayer] onStalled'); }}
-        onSuspend={() => { console.log('[AudioPlayer] onSuspend'); }}
-        onAbort={() => { console.log('[AudioPlayer] onAbort'); }}
-        onEmptied={() => { console.log('[AudioPlayer] onEmptied'); }}
+        onPlay={() => { setIsPlaying(true); setIsBuffering(false); }}
+        onPause={() => setIsPlaying(false)}
+        onWaiting={() => setIsBuffering(true)}
+        onCanPlay={() => setIsBuffering(false)}
+        onPlaying={() => setIsBuffering(false)}
         loop={repeat === 'one'}
         playsInline
         webkit-playsinline="true"
@@ -711,8 +696,16 @@ const AudioPlayer = ({ currentSong, playlist = [], onNext, onPrevious, onClose, 
                     <button onClick={handleDownload} className="text-gray-400 hover:text-cyan-400 transition-colors">
                       <Download className="w-5 h-5" />
                     </button>
-                    {/* Lecteur local hors-ligne */}
-                    
+                    {/* Ouvrir lecteur local — visible uniquement pour les fichiers locaux */}
+                    {currentSong?.is_local && (
+                      <button
+                        onClick={() => navigate('/local-player')}
+                        className="text-gray-400 hover:text-cyan-400 transition-colors"
+                        title="Gérer les fichiers locaux"
+                      >
+                        <FolderOpen className="w-4 h-4" />
+                      </button>
+                    )}
                     {/* Ajouter à la file d'attente */}
                     <button onClick={() => addToQueue(currentSong)} className="text-gray-400 hover:text-cyan-400 transition-colors" title="Ajouter à la file d'attente">
                       <ListMusic className="w-4 h-4" />

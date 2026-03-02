@@ -90,7 +90,7 @@ const SongCard = memo(({ song: initialSong, onPlay, isPlaying, setCurrentSong, c
     <>
       <div
         className={`bg-gray-900/80 border rounded-xl transition-all group relative ${song.is_archived ? 'border-amber-500/40 opacity-70' : 'border-cyan-500/30 hover:border-cyan-400'}`}
-        style={{ overflow: 'visible' }}
+        style={{ overflow: 'hidden' }}
         onMouseEnter={() => setIsHovered(true)}
         onMouseLeave={() => setIsHovered(false)}
       >
@@ -183,7 +183,7 @@ const SongCard = memo(({ song: initialSong, onPlay, isPlaying, setCurrentSong, c
             </div>
           )}
 
-          <div className="flex items-center justify-between mt-2.5 gap-1.5">
+          <div className="flex items-center justify-between mt-2.5 gap-1 overflow-hidden">
             <div className="flex items-center gap-1.5 min-w-0 overflow-hidden">
               <LikeButton songId={song.id} initialLikes={song.likes_count || 0} compact={true} />
               <RepostButton song={song} size="sm" showCount={!!(song.reposts_count > 0)} />
@@ -198,7 +198,7 @@ const SongCard = memo(({ song: initialSong, onPlay, isPlaying, setCurrentSong, c
                 </button>
               )}
             </div>
-            <div className="flex items-center gap-0.5 flex-shrink-0">
+            <div className="flex items-center gap-px flex-shrink-0">
               {!song.is_archived && (
                 <>
                   <FavoriteButton songId={song.id} size="sm" />
