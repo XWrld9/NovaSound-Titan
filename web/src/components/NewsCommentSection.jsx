@@ -6,6 +6,7 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { supabase } from '@/lib/supabaseClient';
 import { useAuth } from '@/contexts/AuthContext';
+import { notifyUser, notifyAll } from '@/lib/notifUtils';
 import {
   MessageCircle, Send, Heart, Trash2, Edit2, Check,
   X, Loader2, User, ChevronDown, ChevronUp,
@@ -188,16 +189,27 @@ const NewsCommentSection = ({ newsId, newsAuthorId }) => {
       setComments(prev => prev.find(c => c.id === data.id) ? prev : [...prev, data]);
       setExpanded(true);
       if (newsAuthorId && newsAuthorId !== currentUser.id) {
-        const senderName = currentUser.username || currentUser.user_metadata?.username || currentUser.email?.split('@')[0] || 'Quelqu_un';
-        supabase.from('notifications').insert({
-          user_id: newsAuthorId,
-          type: 'comment',
-          title: senderName + ' a commente ta publication',
-          body: content.slice(0, 120),
-          icon_url: currentUser.avatar_url || currentUser.user_metadata?.avatar_url || null,
-          url: '#/news',
-          is_read: false,
+        const senderName = currentUser.username || currentUser.user_metadata?.username || currentUser.email?.split('@')[0] || 'Quelqu\'un';
+
+        // 1. Notifier l'auteur de l'actualité
+        notifyUser(supabase, newsAuthorId, {
+          type:     'comment',
+          title:    `💬 ${senderName} a commenté ton actualité`,
+          body:     content.slice(0, 120),
+          url:      '/news',
+          icon_url: currentUser.avatar_url || currentUser.user_metadata?.avatar_url || '/icon-192.png',
+          metadata: { senderId: currentUser.id, senderName },
         }).catch(() => {});
+
+        // 2. Notifier TOUS les autres utilisateurs
+        notifyAll(supabase, {
+          type:     'news',
+          title:    `📰 ${senderName} a commenté une actualité`,
+          body:     content.slice(0, 120),
+          url:      '/news',
+          icon_url: '/icon-192.png',
+          metadata: { senderId: currentUser.id, senderName },
+        }, [currentUser.id, newsAuthorId]).catch(() => {});
       }
     } catch { setText(content); }
     setSending(false);

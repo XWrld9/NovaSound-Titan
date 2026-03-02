@@ -24,14 +24,15 @@ import { useAuth } from '@/contexts/AuthContext';
 
 // ── Config par type ──────────────────────────────────────────────────
 const TYPE_CONFIG = {
-  like:             { icon: Heart,          color: '#f43f5e', bg: 'rgba(244,63,94,0.15)',  label: 'Like'      },
-  comment:          { icon: MessageCircle,  color: '#06b6d4', bg: 'rgba(6,182,212,0.15)',  label: 'Commentaire' },
-  follow:           { icon: UserPlus,       color: '#a855f7', bg: 'rgba(168,85,247,0.15)', label: 'Abonné'    },
-  new_song:         { icon: Music,          color: '#10b981', bg: 'rgba(16,185,129,0.15)', label: 'Nouveau son' },
-  news:             { icon: Newspaper,      color: '#f59e0b', bg: 'rgba(245,158,11,0.15)', label: 'Actualité' },
-  chat_reply:       { icon: Reply,          color: '#e879f9', bg: 'rgba(232,121,249,0.15)',label: 'Réponse'   },
-  chat_mention:     { icon: AtSign,         color: '#67e8f9', bg: 'rgba(103,232,249,0.15)',label: 'Mention'   },
-  chat_mention_all: { icon: Zap,            color: '#fbbf24', bg: 'rgba(251,191,36,0.15)', label: '@tous'     },
+  like:             { icon: Heart,          color: '#f43f5e', bg: 'rgba(244,63,94,0.15)',  label: 'Like'       },
+  comment:          { icon: MessageCircle,  color: '#06b6d4', bg: 'rgba(6,182,212,0.15)',  label: 'Commentaire'},
+  follow:           { icon: UserPlus,       color: '#a855f7', bg: 'rgba(168,85,247,0.15)', label: 'Abonné'     },
+  new_song:         { icon: Music,          color: '#10b981', bg: 'rgba(16,185,129,0.15)', label: 'Nouveau son'},
+  repost:           { icon: Reply,          color: '#34d399', bg: 'rgba(52,211,153,0.15)', label: 'Repartage'  },
+  news:             { icon: Newspaper,      color: '#f59e0b', bg: 'rgba(245,158,11,0.15)', label: 'Actualité'  },
+  chat_reply:       { icon: Reply,          color: '#e879f9', bg: 'rgba(232,121,249,0.15)',label: 'Réponse'    },
+  chat_mention:     { icon: AtSign,         color: '#67e8f9', bg: 'rgba(103,232,249,0.15)',label: 'Mention'    },
+  chat_mention_all: { icon: Zap,            color: '#fbbf24', bg: 'rgba(251,191,36,0.15)', label: '@tous'      },
 };
 
 const getTypeConfig = (type) => TYPE_CONFIG[type] || {

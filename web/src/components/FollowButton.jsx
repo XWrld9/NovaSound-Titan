@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { UserPlus, UserMinus, Loader2 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useAuth } from '@/contexts/AuthContext';
+import { notifyUser } from '@/lib/notifUtils';
 
 const FollowButton = ({ userId, initialFollowers = 0, onFollowChange }) => {
   const { currentUser, supabase } = useAuth();
@@ -69,6 +70,16 @@ const FollowButton = ({ userId, initialFollowers = 0, onFollowChange }) => {
           .from('follows')
           .insert({ follower_id: currentUser.id, following_id: userId });
         if (error) throw error;
+
+        // Notifier l'utilisateur suivi (non-bloquant)
+        notifyUser(supabase, userId, {
+          type:     'follow',
+          title:    `👤 ${currentUser.username || 'Quelqu\'un'} te suit`,
+          body:     `${currentUser.username || 'Quelqu\'un'} vient de s'abonner à ton profil`,
+          url:      `/artist/${currentUser.id}`,
+          icon_url: currentUser.avatar_url || '/icon-192.png',
+          metadata: { senderId: currentUser.id, senderName: currentUser.username },
+        }).catch(() => {});
       }
 
       // Resync depuis la DB (source de vérité)

@@ -8,6 +8,7 @@ import {
 } from 'lucide-react';
 import { supabase } from '@/lib/supabaseClient';
 import { useAuth } from '@/contexts/AuthContext';
+import { notifyOwner, notifyAll } from '@/lib/notifUtils';
 import { useChat } from '@/contexts/ChatContext'; // Importer useChat pour accéder à insertNotification
 import { Link } from 'react-router-dom';
 
@@ -321,66 +322,37 @@ const CommentSection = ({ songId, songUploaderEmail, onCommentChange }) => {
     setTimeout(() => setToast(null), 3000);
   };
 
-  /* ── Envoi des notifications pour les commentaires (utilise le système existant) ── */
+  /* ── Envoi des notifications commentaires ─────────────────────────────
+   * v8002 : notifyOwner → propriétaire du son
+   *         notifyAll   → TOUS les utilisateurs (sauf auteur du commentaire)
+   * ─────────────────────────────────────────────────────────────────── */
   const sendCommentNotifications = useCallback(async (commentData, songData) => {
     if (!currentUser || !commentData || !songData) return;
 
-    try {
-      // Récupérer la fonction insertNotification du ChatContext
-      // Note: insertNotification est définie dans ChatContext, nous allons l'utiliser directement
-      const { insertNotification } = chatCtx || {};
+    const senderName = currentUser.username || 'Quelqu\'un';
+    const preview    = `"${(commentData.content || '').slice(0, 100)}"`;
 
-      // 1. Notification à l'auteur de la chanson (si ce n'est pas lui-même)
-      if (songData.uploader_id && songData.uploader_id !== currentUser.id && insertNotification) {
-        await insertNotification({
-          userId: songData.uploader_id,
-          type: 'comment',
-          title: 'Nouveau commentaire',
-          body: `${currentUser.username || 'Quelqu\'un'} a commenté ta chanson "${songData.title || ''}"`,
-          url: `/song/${songData.id}#comment-${commentData.id}`,
-          senderId: currentUser.id,
-          senderName: currentUser.username,
-          msgId: commentData.id,
-        });
-      }
+    // 1. Notifier le propriétaire du son
+    const ownerId = await notifyOwner(supabase, songData.id, currentUser.id, {
+      type:     'comment',
+      title:    `💬 ${senderName} a commenté ton son`,
+      body:     `${senderName} : ${preview}`,
+      url:      `/song/${songData.id}#comment-${commentData.id}`,
+      icon_url: currentUser.avatar_url || '/icon-192.png',
+      metadata: { senderId: currentUser.id, senderName, refId: commentData.id },
+    });
 
-      // 2. Notification globale aux autres utilisateurs actifs
-      if (insertNotification) {
-        // Récupérer les utilisateurs actifs (limité pour éviter la surcharge)
-        const { data: activeUsers } = await supabase
-          .from('users')
-          .select('id')
-          .neq('id', currentUser.id) // Pas de notification à soi-même
-          .neq('id', songData.uploader_id || '') // Pas de notification à l'auteur (déjà notifié)
-          .gte('last_seen', new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString()) // Actifs depuis 7 jours
-          .limit(50); // Limiter à 50 utilisateurs
+    // 2. Notifier TOUS les autres utilisateurs
+    notifyAll(supabase, {
+      type:     'comment',
+      title:    `💬 ${senderName} a commenté "${songData.title}"`,
+      body:     `${senderName} : ${preview}`,
+      url:      `/song/${songData.id}`,
+      icon_url: currentUser.avatar_url || '/icon-192.png',
+      metadata: { senderId: currentUser.id, senderName, refId: commentData.id },
+    }, [currentUser.id, ownerId].filter(Boolean)).catch(() => {});
 
-        if (activeUsers && activeUsers.length > 0) {
-          // Envoyer les notifications en lot
-          const notificationPromises = activeUsers.map(user =>
-            insertNotification({
-              userId: user.id,
-              type: 'comment',
-              title: 'Nouveau commentaire',
-              body: `${currentUser.username || 'Quelqu\'un'} a commenté "${songData.title || ''}"`,
-              url: `/song/${songData.id}#comment-${commentData.id}`,
-              senderId: currentUser.id,
-              senderName: currentUser.username,
-              msgId: commentData.id,
-            })
-          );
-
-          // Exécuter en parallèle mais ne pas attendre (non bloquant)
-          Promise.allSettled(notificationPromises).catch(error => {
-            console.error('[CommentSection] Erreur envoi notifications globales:', error);
-          });
-        }
-      }
-    } catch (error) {
-      console.error('[CommentSection] Erreur envoi notifications:', error);
-      // Ne pas bloquer l'expérience utilisateur si les notifications échouent
-    }
-  }, [currentUser, chatCtx]);
+  }, [currentUser]);
 
   /* ── Chargement : 2 requêtes séparées pour éviter le join manquant ── */
   const loadComments = useCallback(async () => {

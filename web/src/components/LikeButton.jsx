@@ -4,6 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '@/contexts/AuthContext';
 import Lottie from 'lottie-react';
 import heartAnimation from '@/animations/heart-animation.json';
+import { notifyOwner } from '@/lib/notifUtils';
 
 const LikeButton = ({ songId, initialLikes = 0, initialLiked = false, compact = false }) => {
   const { currentUser, supabase } = useAuth();
@@ -108,6 +109,16 @@ const LikeButton = ({ songId, initialLikes = 0, initialLiked = false, compact = 
           .from('likes')
           .insert({ user_id: currentUser.id, song_id: songId });
         if (error) throw error;
+
+        // Notifier le propriétaire du son (non-bloquant)
+        notifyOwner(supabase, songId, currentUser.id, {
+          type:     'like',
+          title:    `❤️ ${currentUser.username || 'Quelqu\'un'} a aimé ton son`,
+          body:     `${currentUser.username || 'Quelqu\'un'} a liké ton morceau`,
+          url:      `/song/${songId}`,
+          icon_url: currentUser.avatar_url || '/icon-192.png',
+          metadata: { senderId: currentUser.id, senderName: currentUser.username },
+        }).catch(() => {});
       }
       // Le Realtime déclenchera loadLikesData() automatiquement
     } catch (error) {

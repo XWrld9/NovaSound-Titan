@@ -8,6 +8,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Repeat2 } from 'lucide-react';
 import { supabase } from '@/lib/supabaseClient';
 import { useAuth } from '@/contexts/AuthContext';
+import { notifyOwner } from '@/lib/notifUtils';
 
 const RepostButton = ({ song, size = 'md', showCount = true, onRepost = null }) => {
   const { currentUser } = useAuth();
@@ -61,6 +62,16 @@ const RepostButton = ({ song, size = 'md', showCount = true, onRepost = null }) 
         setBurst(true);
         setTimeout(() => setBurst(false), 600);
         onRepost?.(true);
+
+        // Notifier le propriétaire du son (non-bloquant)
+        notifyOwner(supabase, song.id, currentUser.id, {
+          type:     'repost',
+          title:    `🔁 ${currentUser.username || 'Quelqu\'un'} a repartagé ton son`,
+          body:     `${currentUser.username || 'Quelqu\'un'} a repartagé "${song.title}"`,
+          url:      `/song/${song.id}`,
+          icon_url: currentUser.avatar_url || '/icon-192.png',
+          metadata: { senderId: currentUser.id, senderName: currentUser.username, songId: song.id },
+        }).catch(() => {});
       }
     } catch (err) {
       console.error('RepostButton:', err);
