@@ -69,6 +69,7 @@ const AudioPlayer = ({ currentSong, playlist = [], onNext, onPrevious, onClose, 
     queue, addToQueue, removeFromQueue, clearQueue,
     sleepTimer, setSleepTimer, clearSleepTimer,
     radioMode, radioLoading, toggleRadio,
+    setAudioCurrentTime,
   } = usePlayer();
 
   const [isPlaying,      setIsPlaying]      = useState(false);
@@ -381,6 +382,7 @@ const AudioPlayer = ({ currentSong, playlist = [], onNext, onPrevious, onClose, 
   const handleTimeUpdate = () => {
     if (!audioRef.current) return;
     setCurrentTime(audioRef.current.currentTime);
+    setAudioCurrentTime(audioRef.current.currentTime);
     if (!playRecorded && audioRef.current.currentTime > 10) recordPlay();
   };
 

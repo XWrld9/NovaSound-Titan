@@ -3,7 +3,7 @@ import { Helmet } from 'react-helmet-async';
 import { usePlayer } from '@/contexts/PlayerContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
-import { Music, Upload, Heart, Edit3, LogOut, Users, UserPlus, Archive, Bookmark, ListMusic, BarChart2, MessageCircle, ExternalLink } from 'lucide-react';
+import { Music, Upload, Heart, Edit3, LogOut, Users, UserPlus, Archive, Bookmark, ListMusic, BarChart2, MessageCircle, ExternalLink, Trophy } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { supabase } from '@/lib/supabaseClient';
 import Header from '@/components/Header';
@@ -29,11 +29,13 @@ const UserProfilePage = () => {
   const [bioExpanded, setBioExpanded] = useState(false);
   const [myComments, setMyComments] = useState([]);
   const [loadingComments, setLoadingComments] = useState(false);
+  const [achievements, setAchievements] = useState([]);
 
   // Charger le profil et les données en une seule fois
   useEffect(() => {
     if (currentUser) {
       fetchUserData();
+      fetchAchievements();
     }
   }, [currentUser]);
 
@@ -111,6 +113,18 @@ const UserProfilePage = () => {
       console.error('[UserProfile] fetchUserData error:', error);
       setLoading(false);
     }
+  };
+
+  const fetchAchievements = async () => {
+    if (!currentUser?.id) return;
+    try {
+      const { data } = await supabase
+        .from('user_achievements')
+        .select('achievement, unlocked_at, achievement_definitions:achievement(label,icon,rarity,points)')
+        .eq('user_id', currentUser.id)
+        .order('unlocked_at', { ascending: false });
+      setAchievements(data || []);
+    } catch {}
   };
 
   const handleLogout = async () => {
@@ -335,6 +349,7 @@ const UserProfilePage = () => {
               { id: 'comments',  icon: MessageCircle,  label: 'Commentaires',mobileLabel: 'Comms',    color: '#2dd4bf', bg: 'rgba(45,212,191,0.15)',  count: myComments.length },
               { id: 'followers', icon: Users,          label: 'Abonnés',     mobileLabel: 'Abonnés',  color: '#4ade80', bg: 'rgba(74,222,128,0.15)',  count: followers.length },
               { id: 'following', icon: UserPlus,       label: 'Abonnements', mobileLabel: 'Suivis',   color: '#60a5fa', bg: 'rgba(96,165,250,0.15)',  count: following.length },
+              { id: 'achievements', icon: Trophy,      label: 'Badges',      mobileLabel: 'Badges',   color: '#f59e0b', bg: 'rgba(245,158,11,0.15)',  count: achievements.length },
             ].map(({ id, icon: Icon, label, mobileLabel, color, bg, count }) => (
               <button
                 key={id}
@@ -642,6 +657,54 @@ const UserProfilePage = () => {
                         Les artistes que tu suis apparaîtront ici
                       </p>
                     </div>
+                  )}
+                </div>
+              )}
+
+              {/* Onglet Achievements v5000 */}
+              {activeTab === 'achievements' && (
+                <div>
+                  {achievements.length === 0 ? (
+                    <div className="text-center py-16 bg-gray-900/30 border border-gray-800 rounded-2xl">
+                      <span className="text-4xl block mb-3">🏆</span>
+                      <p className="text-gray-500">Aucun badge encore.</p>
+                      <p className="text-gray-600 text-sm mt-1">Upload des sons, écoute de la musique et interagis pour débloquer tes trophées !</p>
+                    </div>
+                  ) : (
+                    <>
+                      <div className="flex items-center justify-between mb-4">
+                        <p className="text-sm text-gray-400">{achievements.length} badge{achievements.length > 1 ? 's' : ''} débloqué{achievements.length > 1 ? 's' : ''}</p>
+                        <p className="text-sm font-bold text-fuchsia-400">
+                          {achievements.reduce((s, a) => s + (a.achievement_definitions?.points || 0), 0)} XP total
+                        </p>
+                      </div>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        {achievements.map((a) => {
+                          const def = a.achievement_definitions;
+                          const rarityColor = {
+                            common: 'border-gray-700 bg-gray-800/50',
+                            rare: 'border-cyan-500/40 bg-cyan-500/5',
+                            epic: 'border-fuchsia-500/40 bg-fuchsia-500/5',
+                            legendary: 'border-amber-500/40 bg-amber-500/8',
+                          }[def?.rarity || 'common'];
+                          return (
+                            <div key={a.achievement}
+                              className={`flex items-center gap-3 rounded-xl border px-4 py-3 ${rarityColor}`}
+                            >
+                              <span className="text-2xl flex-shrink-0">{def?.icon || '🎵'}</span>
+                              <div className="flex-1 min-w-0">
+                                <p className="text-white text-sm font-semibold">{def?.label || a.achievement}</p>
+                                <p className="text-gray-500 text-xs">{def?.description || ''}</p>
+                              </div>
+                              <div className="text-right flex-shrink-0">
+                                <p className="text-fuchsia-400 text-sm font-bold">+{def?.points || 0} XP</p>
+                                <p className="text-gray-600 text-[10px] capitalize">{def?.rarity || 'common'}</p>
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </>
                   )}
                 </div>
               )}

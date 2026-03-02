@@ -13,6 +13,7 @@ import SongShareModal from '@/components/SongShareModal';
 import SongActionsMenu from '@/components/SongActionsMenu';
 import AddToPlaylistModal from '@/components/AddToPlaylistModal';
 import CommentSection from '@/components/CommentSection';
+import RepostButton from '@/components/RepostButton';
 import { formatPlays } from '@/lib/utils';
 
 const fmtDuration = (s) => {
@@ -185,6 +186,7 @@ const SongCard = memo(({ song: initialSong, onPlay, isPlaying, setCurrentSong, c
           <div className="flex items-center justify-between mt-2.5">
             <div className="flex items-center gap-2">
               <LikeButton songId={song.id} initialLikes={song.likes_count || 0} />
+              <RepostButton song={song} size="sm" showCount={!!(song.reposts_count > 0)} />
               {commentCount !== null && (
                 <button
                   onClick={e => { e.stopPropagation(); setShowComments(true); }}

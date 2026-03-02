@@ -25,6 +25,7 @@ export const PlayerProvider = ({ children }) => {
   const [radioLoading,      setRadioLoading]       = useState(false);
   const [currentPlaylistId, setCurrentPlaylistId]  = useState(null);
   const [shouldAutoPlay,    setShouldAutoPlay]     = useState(false);
+  const [audioCurrentTime,  setAudioCurrentTime]   = useState(0);
 
   const playlistRef          = useRef([]);
   const currentSongRef       = useRef(null);
@@ -271,6 +272,7 @@ export const PlayerProvider = ({ children }) => {
     <PlayerContext.Provider value={{
       currentSong, playlist, queue, isVisible, sleepTimer,
       radioMode, radioLoading, currentPlaylistId, shouldAutoPlay,
+      audioCurrentTime, setAudioCurrentTime,
       playSong, handleNext, handlePrevious, closePlayer,
       addToQueue, removeFromQueue, clearQueue,
       removeFromPlaylist, setCurrentPlaylistId,

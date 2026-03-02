@@ -154,7 +154,7 @@ const LeaderboardPage = () => {
     const [artistsRes, songsRes, listenersRes] = await Promise.allSettled([
       supabase
         .from('users')
-        .select('id,username,avatar_url,followers_count,total_plays')
+        .select('id,username,avatar_url,followers_count,total_plays,total_likes,xp_points')
         .order('total_plays', { ascending: false })
         .limit(20),
       supabase
@@ -165,7 +165,7 @@ const LeaderboardPage = () => {
         .limit(20),
       supabase
         .from('user_streaks')
-        .select('user_id,current_streak,longest_streak,total_days,users:user_id(id,username,avatar_url)')
+        .select('user_id,current_streak,longest_streak,total_days')
         .order('total_days', { ascending: false })
         .limit(20),
     ]);
@@ -173,13 +173,22 @@ const LeaderboardPage = () => {
     if (artistsRes.status === 'fulfilled') setTopArtists(artistsRes.value.data || []);
     if (songsRes.status === 'fulfilled')   setTopSongs(songsRes.value.data || []);
     if (listenersRes.status === 'fulfilled') {
-      const rows = (listenersRes.value.data || []).map(r => ({
-        ...r.users,
-        total_days: r.total_days,
-        current_streak: r.current_streak,
-        longest_streak: r.longest_streak,
-      }));
-      setTopListeners(rows);
+      const streaks = listenersRes.value.data || [];
+      if (streaks.length > 0) {
+        const userIds = streaks.map(r => r.user_id);
+        const { data: usersData } = await supabase
+          .from('users')
+          .select('id,username,avatar_url')
+          .in('id', userIds);
+        const byId = new Map((usersData || []).map(u => [u.id, u]));
+        const rows = streaks.map(r => ({
+          ...(byId.get(r.user_id) || { id: r.user_id, username: 'Anonyme', avatar_url: null }),
+          total_days: r.total_days,
+          current_streak: r.current_streak,
+          longest_streak: r.longest_streak,
+        })).filter(r => r.username);
+        setTopListeners(rows);
+      }
     }
     setLoading(false);
   }, []);

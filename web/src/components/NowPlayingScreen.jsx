@@ -118,7 +118,7 @@ const NowPlayingScreen = ({
   onToggleRepeat,
 }) => {
   const { currentUser } = useAuth();
-  const { currentSong, playlist, queue } = usePlayer();
+  const { currentSong, playlist, queue, audioCurrentTime } = usePlayer();
 
   const [showLyrics, setShowLyrics]     = useState(false);
   const [isLiked, setIsLiked]           = useState(false);
@@ -339,7 +339,7 @@ const NowPlayingScreen = ({
         <div className="pb-8 flex-shrink-0" />
       </div>
 
-      {/* Paroles overlay */}
+      {/* Paroles overlay — LyricsPanel v5000 avec sync LRC */}
       <AnimatePresence>
         {showLyrics && lyricsContent && (
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 20 }}

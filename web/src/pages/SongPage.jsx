@@ -14,6 +14,7 @@ import Footer from '@/components/Footer';
 import LikeButton from '@/components/LikeButton';
 import FavoriteButton from '@/components/FavoriteButton';
 import SongShareModal from '@/components/SongShareModal';
+import RepostButton from '@/components/RepostButton';
 import CommentSection from '@/components/CommentSection';
 import SongActionsMenu from '@/components/SongActionsMenu';
 import AddToPlaylistModal from '@/components/AddToPlaylistModal';
@@ -83,7 +84,7 @@ const SuggestionCard = ({ s, onPlay }) => (
 const SongPage = () => {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { playSong, currentSong, isVisible } = usePlayer();
+  const { playSong, currentSong, isVisible, audioCurrentTime } = usePlayer();
   const { isAuthenticated } = useAuth();
 
   const [song,          setSong]         = useState(null);
@@ -357,6 +358,7 @@ const SongPage = () => {
 
                         <LikeButton songId={song.id} initialLikes={song.likes_count||0} />
                         <FavoriteButton songId={song.id} showLabel={true} />
+                        <RepostButton song={song} size="md" showCount={true} />
 
                         {isAuthenticated && (
                           <button onClick={()=>setShowPlaylist(true)}
@@ -379,7 +381,7 @@ const SongPage = () => {
 
               {/* Paroles synchronisées v5000 */}
               <motion.div initial={{opacity:0,y:8}} animate={{opacity:1,y:0}} transition={{delay:0.12}}>
-                <LyricsPanel song={song} currentTime={0} isExpanded={false} />
+                <LyricsPanel song={song} currentTime={currentSong?.id === song?.id ? audioCurrentTime : 0} isExpanded={false} />
               </motion.div>
 
               {/* Commentaires */}

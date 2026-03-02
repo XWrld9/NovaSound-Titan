@@ -210,10 +210,26 @@ const ArtistProfilePage = () => {
   const [showShare,  setShowShare]  = useState(false);
   const [activeTab,  setActiveTab]  = useState('songs'); // 'songs' | 'about' | 'followers'
   const [songView,   setSongView]   = useState('grid');  // 'grid' | 'list'
+  const [achievements, setAchievements] = useState([]);
 
   const [bioExpanded, setBioExpanded] = useState(false);
   const { playSong: globalPlaySong, currentSong } = usePlayer();
   const playSong = (song) => globalPlaySong(song, songs.filter(s => !s.is_archived));
+
+  useEffect(() => {
+    if (id) { fetchArtistData(); fetchFollowers(); fetchAchievements(); }
+  }, [id]);
+
+  const fetchAchievements = async () => {
+    try {
+      const { data } = await supabase
+        .from('user_achievements')
+        .select('achievement, unlocked_at, achievement_definitions:achievement(label,icon,rarity,points)')
+        .eq('user_id', id)
+        .order('unlocked_at', { ascending: false });
+      setAchievements(data || []);
+    } catch {}
+  };
 
   useEffect(() => {
     if (id) { fetchArtistData(); fetchFollowers(); }
@@ -510,6 +526,41 @@ const ArtistProfilePage = () => {
                   <div className="bg-gray-900/60 border border-white/8 rounded-2xl p-5">
                     <ArtistStatsCard songs={songs} followersCount={followers.length} />
                   </div>
+
+                  {/* Achievements v5000 */}
+                  {achievements.length > 0 && (
+                    <div className="bg-gray-900/60 border border-white/8 rounded-2xl p-5">
+                      <h3 className="text-sm font-bold text-gray-400 uppercase tracking-wider mb-4 flex items-center gap-2">
+                        <span>🏆</span> Badges & Trophées
+                        <span className="ml-auto text-xs text-fuchsia-400 font-semibold">
+                          {achievements.reduce((s, a) => s + (a.achievement_definitions?.points || 0), 0)} XP
+                        </span>
+                      </h3>
+                      <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                        {achievements.map((a) => {
+                          const def = a.achievement_definitions;
+                          const rarityColor = {
+                            common: 'border-gray-700 bg-gray-800/40',
+                            rare: 'border-cyan-500/40 bg-cyan-500/5',
+                            epic: 'border-fuchsia-500/40 bg-fuchsia-500/5',
+                            legendary: 'border-amber-500/40 bg-amber-500/8',
+                          }[def?.rarity || 'common'] || 'border-gray-700 bg-gray-800/40';
+                          return (
+                            <div key={a.achievement}
+                              className={`flex items-center gap-2 rounded-xl border px-3 py-2.5 ${rarityColor}`}
+                              title={def?.description || ''}
+                            >
+                              <span className="text-lg flex-shrink-0">{def?.icon || '🎵'}</span>
+                              <div className="min-w-0">
+                                <p className="text-white text-xs font-semibold truncate">{def?.label || a.achievement}</p>
+                                <p className="text-gray-500 text-[10px] capitalize">{def?.rarity || 'common'} · {def?.points || 0} XP</p>
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
 
                   {/* Bio */}
                   {artist.bio ? (

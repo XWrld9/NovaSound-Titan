@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Search, Upload, User, LogOut, Menu, X, Globe, Newspaper, Music, Download, Share, Bell, TrendingUp, ListMusic, BarChart2 } from 'lucide-react';
+import { Search, Upload, User, LogOut, Menu, X, Globe, Newspaper, Music, Download, Share, Bell, TrendingUp, ListMusic, BarChart2, Radio, Trophy } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 
 import { supabase } from '@/lib/supabaseClient';
@@ -179,6 +179,12 @@ const Header = () => {
               <Link to="/chat" className="text-gray-300 hover:text-cyan-400 transition-colors flex items-center gap-2 font-medium">
                 <Globe className="w-4 h-4" /><span>Chat</span>
               </Link>
+              <Link to="/live" className="text-gray-300 hover:text-red-400 transition-colors flex items-center gap-2 font-medium relative">
+                <Radio className="w-4 h-4" />Live
+                <span className="absolute -top-1 -right-2 w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse" />
+              </Link>
+              <Link to="/leaderboard" className="text-gray-300 hover:text-amber-400 transition-colors flex items-center gap-2 font-medium">
+                <Trophy className="w-4 h-4" />Top
 
               {/* Bouton installer PWA — toujours visible sauf si déjà installé */}
               {!alreadyInstalled && (
@@ -403,6 +409,12 @@ const Header = () => {
                   <Link to="/chat" onClick={closeMenu} className="flex items-center gap-3 px-4 py-3 text-gray-300 hover:bg-cyan-500/10 hover:text-cyan-400 rounded-lg transition-colors">
                     <Globe className="w-5 h-5 text-cyan-400" />Chat Global
                   </Link>
+                  <Link to="/live" onClick={closeMenu} className="flex items-center gap-3 px-4 py-3 text-gray-300 hover:bg-red-500/10 hover:text-red-400 rounded-lg transition-colors">
+                    <Radio className="w-5 h-5 text-red-400" />Live Rooms
+                    <span className="ml-auto w-2 h-2 rounded-full bg-red-500 animate-pulse" />
+                  </Link>
+                  <Link to="/leaderboard" onClick={closeMenu} className="flex items-center gap-3 px-4 py-3 text-gray-300 hover:bg-amber-500/10 hover:text-amber-400 rounded-lg transition-colors">
+                    <Trophy className="w-5 h-5 text-amber-400" />Classement
                   {isAuthenticated && (
                     <>
                       <div className="my-2 border-t border-gray-800" />
