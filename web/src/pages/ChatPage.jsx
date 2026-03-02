@@ -764,8 +764,8 @@ const ChatPage = () => {
                         <button key={notif.id}
                           className={`w-full flex items-start gap-3 p-4 border rounded-2xl transition-all text-left ${
                             notif.is_read
-                              ? 'bg-gray-900/60 border-white/[0.08] hover:bg-gray-900/80 hover:border-cyan-500/20'
-                              : 'bg-gray-900 border-cyan-500/35 hover:border-cyan-500/60 shadow-md shadow-cyan-500/8'
+                              ? 'bg-gray-900/80 border-white/[0.12] hover:bg-gray-900/90 hover:border-cyan-500/30'
+                              : 'bg-gray-900/90 border-cyan-500/40 hover:border-cyan-500/60 shadow-md shadow-cyan-500/12'
                           }`}
                           onClick={() => handleNotifClick(notif)}>
                           <div className={`w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 text-xl border ${
@@ -779,17 +779,17 @@ const ChatPage = () => {
                           </div>
                           <div className="flex-1 min-w-0">
                             <div className="flex items-center gap-2 mb-1">
-                              <span className="text-sm font-bold text-white truncate">
+                              <span className="text-sm font-bold text-white/95 truncate">
                                 {notif.title}
                               </span>
                               <span className="text-[10px] text-gray-400 flex-shrink-0">{timeAgo(notif.created_at)}</span>
                               {!notif.is_read && <span className="w-2 h-2 rounded-full bg-cyan-400 flex-shrink-0 animate-pulse" />}
                             </div>
-                            <p className="text-sm leading-relaxed break-words line-clamp-2 text-gray-300">
+                            <p className="text-sm leading-relaxed break-words line-clamp-2 text-white/90">
                               {notif.body}
                             </p>
                             {notif.is_read && (
-                              <span className="text-[10px] text-gray-500 mt-0.5 inline-flex items-center gap-1">
+                              <span className="text-[10px] text-white/50 mt-0.5 inline-flex items-center gap-1">
                                 <Check className="w-2.5 h-2.5" /> Lu
                               </span>
                             )}
