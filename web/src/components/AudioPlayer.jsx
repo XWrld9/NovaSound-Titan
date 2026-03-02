@@ -309,6 +309,9 @@ const AudioPlayer = ({ currentSong, playlist = [], onNext, onPrevious, onClose, 
     const isNewSong = !wasFirstSong && prevSongIdRef.current !== currentSong.id;
     prevSongIdRef.current = currentSong.id;
 
+    console.log('[AudioPlayer] Chargement audio:', currentSong.title, 'URL:', currentSong.audio_url?.substring(0, 50) + '...');
+    console.log('[AudioPlayer] is_local:', currentSong.is_local);
+
     audioRef.current.src          = currentSong.audio_url;
     audioRef.current.loop         = (repeat === 'one');
     audioRef.current.playbackRate = playbackSpeed;
@@ -319,9 +322,14 @@ const AudioPlayer = ({ currentSong, playlist = [], onNext, onPrevious, onClose, 
     else { setIsLiked(false); setLikeId(null); setIsFollowing(false); setFollowId(null); }
 
     if ((isNewSong || wasFirstSong) && autoPlayRef.current) {
+      console.log('[AudioPlayer] Tentative de lecture automatique...');
       audioRef.current.play()
-        .then(() => { setIsPlaying(true); setIsBuffering(false); })
+        .then(() => { 
+          console.log('[AudioPlayer] Lecture démarrée avec succès');
+          setIsPlaying(true); setIsBuffering(false); 
+        })
         .catch((err) => {
+          console.error('[AudioPlayer] Erreur de lecture:', err);
           if (err.name !== 'AbortError') setIsPlaying(false);
         });
     } else if (!isNewSong && !wasFirstSong) {
@@ -514,11 +522,18 @@ const AudioPlayer = ({ currentSong, playlist = [], onNext, onPrevious, onClose, 
         onTimeUpdate={handleTimeUpdate}
         onLoadedMetadata={handleLoadedMetadata}
         onEnded={handleEnded}
-        onPlay={() => { setIsPlaying(true); setIsBuffering(false); }}
-        onPause={() => setIsPlaying(false)}
-        onWaiting={() => setIsBuffering(true)}
-        onCanPlay={() => setIsBuffering(false)}
-        onPlaying={() => setIsBuffering(false)}
+        onPlay={() => { console.log('[AudioPlayer] onPlay'); setIsPlaying(true); setIsBuffering(false); }}
+        onPause={() => { console.log('[AudioPlayer] onPause'); setIsPlaying(false); }}
+        onWaiting={() => { console.log('[AudioPlayer] onWaiting'); setIsBuffering(true); }}
+        onCanPlay={() => { console.log('[AudioPlayer] onCanPlay'); setIsBuffering(false); }}
+        onPlaying={() => { console.log('[AudioPlayer] onPlaying'); setIsBuffering(false); }}
+        onError={(e) => { console.error('[AudioPlayer] onError:', e.target.error); }}
+        onLoadStart={() => { console.log('[AudioPlayer] onLoadStart'); }}
+        onCanPlayThrough={() => { console.log('[AudioPlayer] onCanPlayThrough'); }}
+        onStalled={() => { console.log('[AudioPlayer] onStalled'); }}
+        onSuspend={() => { console.log('[AudioPlayer] onSuspend'); }}
+        onAbort={() => { console.log('[AudioPlayer] onAbort'); }}
+        onEmptied={() => { console.log('[AudioPlayer] onEmptied'); }}
         loop={repeat === 'one'}
         playsInline
         webkit-playsinline="true"
