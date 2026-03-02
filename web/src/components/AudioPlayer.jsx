@@ -296,26 +296,36 @@ const AudioPlayer = ({ currentSong, playlist = [], onNext, onPrevious, onClose, 
     try { navigator.mediaSession.setPositionState({ duration, playbackRate: audioRef.current?.playbackRate || 1, position: Math.min(currentTime, duration) }); } catch {}
   }, [currentTime, duration]);
 
-  // ── Chargement nouveau son ──────────────────────────────────────
+  // ── Chargement nouveau son — ANDROID AUTOPLAY FIX v7000 ────────────────
+  // Sur Android Chrome, play() dans un listener canplay (async) est bloqué
+  // par l'autoplay policy (hors contexte user-gesture).
+  // Fix : appel SYNCHRONE de play() juste après load() pendant qu'on est
+  // encore dans le contexte du geste. Le navigateur met la lecture en queue
+  // et démarre dès que les données audio arrivent.
   useEffect(() => {
     if (!audioRef.current || !currentSong?.audio_url) return;
     const wasFirstSong = prevSongIdRef.current === null;
     const isNewSong = !wasFirstSong && prevSongIdRef.current !== currentSong.id;
     prevSongIdRef.current = currentSong.id;
-    audioRef.current.src  = currentSong.audio_url;
-    audioRef.current.loop = (repeat === 'one');
+
+    audioRef.current.src          = currentSong.audio_url;
+    audioRef.current.loop         = (repeat === 'one');
     audioRef.current.playbackRate = playbackSpeed;
     audioRef.current.load();
+
     setPlayRecorded(false); setCurrentTime(0); setDuration(0); setIsBuffering(false);
     if (currentUser) { checkLikeStatus(); checkFollowStatus(); }
     else { setIsLiked(false); setLikeId(null); setIsFollowing(false); setFollowId(null); }
-    // Lecture automatique si : changement de son (suivant/précédent) OU premier son
-    // et que l'utilisateur a manifesté l'intention de jouer (autoPlayRef=true)
+
     if ((isNewSong || wasFirstSong) && autoPlayRef.current) {
-      const tryPlay = () => { audioRef.current?.play().then(() => setIsPlaying(true)).catch(() => setIsPlaying(false)); };
-      if (audioRef.current.readyState >= 2) tryPlay();
-      else audioRef.current.addEventListener('canplay', tryPlay, { once: true });
-    } else if (!isNewSong && !wasFirstSong) { setIsPlaying(false); }
+      audioRef.current.play()
+        .then(() => { setIsPlaying(true); setIsBuffering(false); })
+        .catch((err) => {
+          if (err.name !== 'AbortError') setIsPlaying(false);
+        });
+    } else if (!isNewSong && !wasFirstSong) {
+      setIsPlaying(false);
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentSong?.id]);
 
@@ -1231,16 +1241,15 @@ const AudioPlayer = ({ currentSong, playlist = [], onNext, onPrevious, onClose, 
         )}
       </AnimatePresence>
 
-      {/* ── NowPlayingScreen v5000 — fullscreen immersif ─────────────── */}
+      {/* ── NowPlayingScreen v7000 — fullscreen immersif ─────────────── */}
       <AnimatePresence>
         {showNowPlaying && (
           <NowPlayingScreen
-            audioRef={audioRef}
             onClose={() => setShowNowPlaying(false)}
             isPlaying={isPlaying}
-            onTogglePlay={() => isPlaying ? audioRef.current?.pause() : audioRef.current?.play()}
-            onNext={onNext}
-            onPrev={onPrevious}
+            onTogglePlay={togglePlay}
+            onNext={() => { autoPlayRef.current = true; goNextRef.current?.(); }}
+            onPrev={() => { autoPlayRef.current = true; goPreviousRef.current?.(); }}
             shuffle={shuffle}
             onToggleShuffle={() => setShuffle(s => !s)}
             repeat={repeat}

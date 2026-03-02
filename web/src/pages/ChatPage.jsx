@@ -737,7 +737,7 @@ const ChatPage = () => {
             </div>
           </div>
 
-          {/* ─── Onglet Mes messages ─────────────────────────────── */}
+          {/* ─── Onglet Mes messages v7000 ─────────────────────── */}
           {activeTab === 'messages' && (
             <div className="flex-1 overflow-y-auto">
               <div className="max-w-3xl mx-auto py-4 px-4">
@@ -747,9 +747,11 @@ const ChatPage = () => {
                   </div>
                 ) : myMessages.length === 0 ? (
                   <div className="flex flex-col items-center justify-center py-20 text-center">
-                    <Bell className="w-14 h-14 text-gray-800 mb-4" />
-                    <p className="text-gray-500 font-semibold">Aucun message reçu</p>
-                    <p className="text-gray-700 text-sm mt-1">Les réponses et mentions dans le chat apparaîtront ici</p>
+                    <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-fuchsia-500/20 to-pink-500/20 border border-fuchsia-500/20 flex items-center justify-center mb-4">
+                      <Bell className="w-8 h-8 text-fuchsia-400" />
+                    </div>
+                    <p className="text-gray-300 font-semibold text-lg">Aucun message reçu</p>
+                    <p className="text-gray-500 text-sm mt-2 max-w-xs">Les réponses et mentions dans le chat apparaîtront ici dès que quelqu'un te répond.</p>
                   </div>
                 ) : (
                   <div className="space-y-2">
@@ -762,28 +764,37 @@ const ChatPage = () => {
                         <button key={notif.id}
                           className={`w-full flex items-start gap-3 p-4 border rounded-2xl transition-all text-left ${
                             notif.is_read
-                              ? 'bg-gray-900/30 border-white/[0.04] hover:border-cyan-500/10'
-                              : 'bg-gray-900/70 border-cyan-500/20 hover:border-cyan-500/40 shadow-sm shadow-cyan-500/5'
+                              ? 'bg-gray-900/60 border-white/[0.08] hover:bg-gray-900/80 hover:border-cyan-500/20'
+                              : 'bg-gray-900 border-cyan-500/35 hover:border-cyan-500/60 shadow-md shadow-cyan-500/8'
                           }`}
                           onClick={() => handleNotifClick(notif)}>
-                          <div className={`w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 text-base ${
-                            isMentionAll ? 'bg-yellow-500/15' : isReply ? 'bg-cyan-500/15' : 'bg-fuchsia-500/15'
+                          <div className={`w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 text-xl border ${
+                            isMentionAll
+                              ? 'bg-yellow-500/15 border-yellow-500/25'
+                              : isReply
+                              ? 'bg-cyan-500/15 border-cyan-500/25'
+                              : 'bg-fuchsia-500/15 border-fuchsia-500/25'
                           }`}>
                             {isMentionAll ? '📢' : isReply ? '💬' : '@'}
                           </div>
                           <div className="flex-1 min-w-0">
-                            <div className="flex items-center gap-2 mb-0.5">
-                              <span className={`text-sm font-bold truncate ${notif.is_read ? 'text-gray-400' : 'text-white'}`}>
+                            <div className="flex items-center gap-2 mb-1">
+                              <span className="text-sm font-bold text-white truncate">
                                 {notif.title}
                               </span>
-                              <span className="text-[10px] text-gray-600 flex-shrink-0">{timeAgo(notif.created_at)}</span>
-                              {!notif.is_read && <span className="w-1.5 h-1.5 rounded-full bg-cyan-400 flex-shrink-0" />}
+                              <span className="text-[10px] text-gray-400 flex-shrink-0">{timeAgo(notif.created_at)}</span>
+                              {!notif.is_read && <span className="w-2 h-2 rounded-full bg-cyan-400 flex-shrink-0 animate-pulse" />}
                             </div>
-                            <p className={`text-xs leading-relaxed break-words line-clamp-2 ${notif.is_read ? 'text-gray-600' : 'text-gray-400'}`}>
+                            <p className="text-sm leading-relaxed break-words line-clamp-2 text-gray-300">
                               {notif.body}
                             </p>
+                            {notif.is_read && (
+                              <span className="text-[10px] text-gray-500 mt-0.5 inline-flex items-center gap-1">
+                                <Check className="w-2.5 h-2.5" /> Lu
+                              </span>
+                            )}
                           </div>
-                          <Reply className="w-4 h-4 text-gray-600 flex-shrink-0 mt-1" />
+                          <Reply className="w-4 h-4 text-gray-500 flex-shrink-0 mt-1" />
                         </button>
                       );
                     })}
@@ -815,9 +826,11 @@ const ChatPage = () => {
                   )}
                   {!loading && messages.length === 0 && (
                     <div className="flex flex-col items-center justify-center py-20 text-center px-6">
-                      <Music className="w-14 h-14 text-gray-800 mb-4" />
-                      <p className="text-gray-500 font-semibold">Aucun message pour cette période</p>
-                      <p className="text-gray-700 text-sm mt-1">Sois le premier à écrire !</p>
+                      <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-cyan-500/15 to-fuchsia-500/15 border border-cyan-500/15 flex items-center justify-center mb-4">
+                        <Music className="w-8 h-8 text-cyan-400/60" />
+                      </div>
+                      <p className="text-gray-300 font-semibold">Aucun message pour cette période</p>
+                      <p className="text-gray-500 text-sm mt-1.5">Sois le premier à écrire ! 🎵</p>
                     </div>
                   )}
                   <div className="space-y-0.5">

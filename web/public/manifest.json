@@ -1,11 +1,16 @@
 {
-  "name": "NovaSound TITAN LUX",
+  "name": "NovaSound TITAN LUX v7000",
   "short_name": "NovaSound",
-  "description": "Plateforme musicale nouvelle génération — découvre, écoute et partage.",
+  "description": "Plateforme musicale nouvelle g\u00e9n\u00e9ration \u2014 d\u00e9couvre, \u00e9coute et partage.",
   "start_url": "/#/",
   "scope": "/",
   "display": "standalone",
-  "display_override": ["tabbed", "window-controls-overlay", "standalone", "minimal-ui"],
+  "display_override": [
+    "tabbed",
+    "window-controls-overlay",
+    "standalone",
+    "minimal-ui"
+  ],
   "note_taking": {
     "new_note_url": "/#/upload"
   },
@@ -14,7 +19,10 @@
   "orientation": "portrait-primary",
   "lang": "fr",
   "dir": "ltr",
-  "categories": ["music", "entertainment"],
+  "categories": [
+    "music",
+    "entertainment"
+  ],
   "id": "novasound-titan-lux",
   "prefer_related_applications": false,
   "handle_links": "preferred",
@@ -31,19 +39,37 @@
     }
   ],
   "scope_extensions": [
-    { "type": "origin", "origin": "https://nova-sound-titan.vercel.app" },
-    { "type": "origin", "origin": "https://*.vercel.app" }
+    {
+      "type": "origin",
+      "origin": "https://nova-sound-titan.vercel.app"
+    },
+    {
+      "type": "origin",
+      "origin": "https://*.vercel.app"
+    }
   ],
   "file_handlers": [
     {
       "action": "/#/upload",
       "accept": {
-        "audio/mpeg": [".mp3"],
-        "audio/wav": [".wav"],
-        "audio/ogg": [".ogg"],
-        "audio/flac": [".flac"],
-        "audio/aac": [".aac"],
-        "audio/mp4": [".m4a"]
+        "audio/mpeg": [
+          ".mp3"
+        ],
+        "audio/wav": [
+          ".wav"
+        ],
+        "audio/ogg": [
+          ".ogg"
+        ],
+        "audio/flac": [
+          ".flac"
+        ],
+        "audio/aac": [
+          ".aac"
+        ],
+        "audio/mp4": [
+          ".m4a"
+        ]
       }
     }
   ],
@@ -54,14 +80,51 @@
     }
   ],
   "icons": [
-    { "src": "/favicon.ico",           "sizes": "48x48",   "type": "image/x-icon" },
-    { "src": "/favicon.png",           "sizes": "32x32",   "type": "image/png" },
-    { "src": "/apple-touch-icon.png",  "sizes": "180x180", "type": "image/png" },
-    { "src": "/notification-badge.png","sizes": "96x96",   "type": "image/png", "purpose": "monochrome" },
-    { "src": "/icon-192.png",          "sizes": "192x192", "type": "image/png", "purpose": "any" },
-    { "src": "/icon-192.png",          "sizes": "192x192", "type": "image/png", "purpose": "maskable" },
-    { "src": "/icon-512.png",          "sizes": "512x512", "type": "image/png", "purpose": "any" },
-    { "src": "/icon-512.png",          "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+    {
+      "src": "/favicon.ico",
+      "sizes": "48x48",
+      "type": "image/x-icon"
+    },
+    {
+      "src": "/favicon.png",
+      "sizes": "32x32",
+      "type": "image/png"
+    },
+    {
+      "src": "/apple-touch-icon.png",
+      "sizes": "180x180",
+      "type": "image/png"
+    },
+    {
+      "src": "/notification-badge.png",
+      "sizes": "96x96",
+      "type": "image/png",
+      "purpose": "monochrome"
+    },
+    {
+      "src": "/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    {
+      "src": "/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
   ],
   "screenshots": [
     {
@@ -69,44 +132,68 @@
       "sizes": "512x512",
       "type": "image/png",
       "form_factor": "wide",
-      "label": "NovaSound TITAN LUX — Accueil"
+      "label": "NovaSound TITAN LUX \u2014 Accueil"
     },
     {
       "src": "/icon-512.png",
       "sizes": "512x512",
       "type": "image/png",
       "form_factor": "narrow",
-      "label": "NovaSound TITAN LUX — Mobile"
+      "label": "NovaSound TITAN LUX \u2014 Mobile"
     }
   ],
   "shortcuts": [
     {
       "name": "Chat Global",
       "short_name": "Chat",
-      "description": "Rejoindre le chat de la communauté",
+      "description": "Rejoindre le chat de la communaut\u00e9",
       "url": "/#/chat",
-      "icons": [{ "src": "/icon-192.png", "sizes": "192x192", "type": "image/png" }]
+      "icons": [
+        {
+          "src": "/icon-192.png",
+          "sizes": "192x192",
+          "type": "image/png"
+        }
+      ]
     },
     {
       "name": "Explorer",
       "short_name": "Explorer",
-      "description": "Découvrir de nouveaux sons",
+      "description": "D\u00e9couvrir de nouveaux sons",
       "url": "/#/explorer",
-      "icons": [{ "src": "/icon-192.png", "sizes": "192x192", "type": "image/png" }]
+      "icons": [
+        {
+          "src": "/icon-192.png",
+          "sizes": "192x192",
+          "type": "image/png"
+        }
+      ]
     },
     {
       "name": "Uploader",
       "short_name": "Upload",
       "description": "Publier un nouveau son",
       "url": "/#/upload",
-      "icons": [{ "src": "/icon-192.png", "sizes": "192x192", "type": "image/png" }]
+      "icons": [
+        {
+          "src": "/icon-192.png",
+          "sizes": "192x192",
+          "type": "image/png"
+        }
+      ]
     },
     {
       "name": "Live Rooms",
       "short_name": "Live",
-      "description": "Rejoindre une salle d'écoute live",
+      "description": "Rejoindre une salle d'\u00e9coute live",
       "url": "/#/live",
-      "icons": [{ "src": "/icon-192.png", "sizes": "192x192", "type": "image/png" }]
+      "icons": [
+        {
+          "src": "/icon-192.png",
+          "sizes": "192x192",
+          "type": "image/png"
+        }
+      ]
     }
   ],
   "share_target": {
@@ -120,7 +207,14 @@
       "files": [
         {
           "name": "audio",
-          "accept": ["audio/mpeg", "audio/wav", "audio/ogg", "audio/flac", "audio/aac", "audio/mp4"]
+          "accept": [
+            "audio/mpeg",
+            "audio/wav",
+            "audio/ogg",
+            "audio/flac",
+            "audio/aac",
+            "audio/mp4"
+          ]
         }
       ]
     }
@@ -135,16 +229,28 @@
     {
       "name": "NovaSound Player",
       "short_name": "Player",
-      "description": "Contrôle la lecture musicale",
+      "description": "Contr\u00f4le la lecture musicale",
       "tag": "novasound-player",
       "template": "player-widget",
       "ms_ac_template": "/widgets/player.json",
       "data": "/widgets/player-data.json",
       "type": "application/json",
-      "screenshots": [{ "src": "/icon-512.png", "sizes": "512x512", "label": "NovaSound Player widget" }],
-      "icons": [{ "src": "/icon-192.png", "sizes": "192x192" }],
+      "screenshots": [
+        {
+          "src": "/icon-512.png",
+          "sizes": "512x512",
+          "label": "NovaSound Player widget"
+        }
+      ],
+      "icons": [
+        {
+          "src": "/icon-192.png",
+          "sizes": "192x192"
+        }
+      ],
       "auth": true,
       "update": 86400
     }
-  ]
+  ],
+  "version": "7000"
 }

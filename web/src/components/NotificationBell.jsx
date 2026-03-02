@@ -1,24 +1,41 @@
-import React, { useState, useRef, useEffect } from 'react';
+/**
+ * NotificationBell — NovaSound TITAN LUX v7000
+ *
+ * REFONTE COMPLÈTE :
+ * - Toast in-app redesigné : plus grand, plus lisible, animations fluides
+ * - Panel bureau : filtres avancés, groupes par type, animations pro
+ * - Panel mobile : sheet bottom qui slide du bas
+ * - Badge animé avec pulse sur nouvelles notifs
+ * - Types enrichis avec couleurs et icônes distinctives
+ * - Swipe-to-dismiss sur les toasts mobile
+ * - Son/vibration natif sur nouvelle notif (si permission OK)
+ */
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import ReactDOM from 'react-dom';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence, useMotionValue, useTransform } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import {
   Bell, BellOff, Check, CheckCheck, Trash2, X,
-  Heart, MessageCircle, UserPlus, Music, Newspaper, Reply, AtSign
+  Heart, MessageCircle, UserPlus, Music, Newspaper,
+  Reply, AtSign, Zap, Radio, Trophy, Volume2, Settings
 } from 'lucide-react';
 import { useNotifications } from '@/contexts/NotificationContext';
 import { useAuth } from '@/contexts/AuthContext';
 
-/* ── Icônes par type ── */
-const TYPE_ICON = {
-  like:              <Heart        className="w-3.5 h-3.5 text-pink-400 fill-current" />,
-  comment:           <MessageCircle className="w-3.5 h-3.5 text-cyan-400" />,
-  follow:            <UserPlus     className="w-3.5 h-3.5 text-purple-400" />,
-  new_song:          <Music        className="w-3.5 h-3.5 text-green-400" />,
-  news:              <Newspaper    className="w-3.5 h-3.5 text-amber-400" />,
-  chat_reply:        <Reply        className="w-3.5 h-3.5 text-fuchsia-400" />,
-  chat_mention:      <AtSign       className="w-3.5 h-3.5 text-cyan-300" />,
-  chat_mention_all:  <AtSign       className="w-3.5 h-3.5 text-yellow-400" />,
+// ── Config par type ──────────────────────────────────────────────────
+const TYPE_CONFIG = {
+  like:             { icon: Heart,          color: '#f43f5e', bg: 'rgba(244,63,94,0.15)',  label: 'Like'      },
+  comment:          { icon: MessageCircle,  color: '#06b6d4', bg: 'rgba(6,182,212,0.15)',  label: 'Commentaire' },
+  follow:           { icon: UserPlus,       color: '#a855f7', bg: 'rgba(168,85,247,0.15)', label: 'Abonné'    },
+  new_song:         { icon: Music,          color: '#10b981', bg: 'rgba(16,185,129,0.15)', label: 'Nouveau son' },
+  news:             { icon: Newspaper,      color: '#f59e0b', bg: 'rgba(245,158,11,0.15)', label: 'Actualité' },
+  chat_reply:       { icon: Reply,          color: '#e879f9', bg: 'rgba(232,121,249,0.15)',label: 'Réponse'   },
+  chat_mention:     { icon: AtSign,         color: '#67e8f9', bg: 'rgba(103,232,249,0.15)',label: 'Mention'   },
+  chat_mention_all: { icon: Zap,            color: '#fbbf24', bg: 'rgba(251,191,36,0.15)', label: '@tous'     },
+};
+
+const getTypeConfig = (type) => TYPE_CONFIG[type] || {
+  icon: Bell, color: '#94a3b8', bg: 'rgba(148,163,184,0.15)', label: 'Notification'
 };
 
 const timeAgo = (dateStr) => {
@@ -30,80 +47,108 @@ const timeAgo = (dateStr) => {
   return new Date(dateStr).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' });
 };
 
-/* ── Toast in-app (quand l'app est au premier plan) ── */
-// Détecte iOS pour éviter les toasts "new_song" qui déclenchent des comportements inattendus
 const isIOSDevice = () =>
   typeof navigator !== 'undefined' &&
   (/iphone|ipad|ipod/i.test(navigator.userAgent) ||
     (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1));
 
+// ── Toast individuel avec swipe-to-dismiss ───────────────────────────
+const ToastItem = ({ toast, onDismiss }) => {
+  const cfg = getTypeConfig(toast.type);
+  const Icon = cfg.icon;
+  const x = useMotionValue(0);
+  const opacity = useTransform(x, [-120, 0, 120], [0, 1, 0]);
+
+  return (
+    <motion.div
+      style={{ x, opacity }}
+      drag="x"
+      dragConstraints={{ left: 0, right: 0 }}
+      dragElastic={0.3}
+      onDragEnd={(_, info) => {
+        if (Math.abs(info.offset.x) > 80) onDismiss();
+      }}
+      initial={{ opacity: 0, x: 60, scale: 0.92 }}
+      animate={{ opacity: 1, x: 0, scale: 1 }}
+      exit={{ opacity: 0, x: 80, scale: 0.9 }}
+      transition={{ type: 'spring', damping: 22, stiffness: 320 }}
+      className="flex items-start gap-3 p-3.5 rounded-2xl cursor-pointer select-none"
+      style={{
+        background: 'rgba(10,15,30,0.97)',
+        border: `1px solid ${cfg.color}35`,
+        boxShadow: `0 8px 32px rgba(0,0,0,0.65), 0 0 0 1px ${cfg.color}15`,
+      }}
+      onClick={onDismiss}
+    >
+      {/* Avatar + icône type */}
+      <div className="relative flex-shrink-0">
+        {toast.icon_url
+          ? <img src={toast.icon_url} alt="" className="w-10 h-10 rounded-xl object-cover" style={{ border: `1px solid ${cfg.color}30` }} />
+          : <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ background: cfg.bg, border: `1px solid ${cfg.color}25` }}>
+              <Icon className="w-5 h-5" style={{ color: cfg.color }} />
+            </div>
+        }
+        {toast.icon_url && (
+          <div className="absolute -bottom-1 -right-1 w-5 h-5 rounded-lg flex items-center justify-center" style={{ background: cfg.bg, border: `1px solid ${cfg.color}30` }}>
+            <Icon className="w-3 h-3" style={{ color: cfg.color }} />
+          </div>
+        )}
+      </div>
+
+      {/* Texte */}
+      <div className="flex-1 min-w-0">
+        <div className="flex items-center gap-2 mb-0.5">
+          <span className="text-[10px] font-bold uppercase tracking-wider" style={{ color: cfg.color }}>{cfg.label}</span>
+          <span className="text-[10px] text-gray-600">{timeAgo(toast.created_at)}</span>
+        </div>
+        <p className="text-sm text-white font-semibold leading-tight truncate">{toast.title}</p>
+        <p className="text-xs text-gray-400 leading-relaxed line-clamp-2 mt-0.5">{toast.body}</p>
+      </div>
+
+      {/* Dismiss */}
+      <button
+        onClick={(e) => { e.stopPropagation(); onDismiss(); }}
+        className="flex-shrink-0 p-1 rounded-lg text-gray-600 hover:text-white transition-colors mt-0.5"
+      >
+        <X className="w-3.5 h-3.5" />
+      </button>
+    </motion.div>
+  );
+};
+
+// ── Toast container ──────────────────────────────────────────────────
 export const NotificationToast = () => {
   const { notifications } = useNotifications();
   const [toasts, setToasts] = useState([]);
-  const prevCountRef = useRef(0);
   const shownIds = useRef(new Set());
   const ios = useRef(isIOSDevice());
 
   useEffect(() => {
     if (!notifications.length) return;
     const latest = notifications[0];
-    // Sur iOS : ne pas afficher les toasts "new_song" (l'install banner + ce toast
-    // peuvent déclencher des comportements indésirables sur Safari iOS)
     if (ios.current && latest?.type === 'new_song') return;
-    // N'afficher que les nouvelles notifs non lues jamais affichées
     if (latest && !latest.is_read && !shownIds.current.has(latest.id)) {
       shownIds.current.add(latest.id);
-      const id = Date.now();
-      setToasts(prev => [{ ...latest, _toastId: id }, ...prev].slice(0, 3));
-      setTimeout(() => setToasts(prev => prev.filter(t => t._toastId !== id)), 5000);
+      const toastId = Date.now();
+      setToasts(prev => [{ ...latest, _toastId: toastId }, ...prev].slice(0, 4));
+      setTimeout(() => setToasts(prev => prev.filter(t => t._toastId !== toastId)), 5500);
+
+      // Vibration douce sur mobile si notif importante
+      if ('vibrate' in navigator && ['like','follow','chat_reply'].includes(latest.type)) {
+        navigator.vibrate?.(40);
+      }
     }
   }, [notifications[0]?.id]);
 
   return ReactDOM.createPortal(
-    <div style={{ position: 'fixed', top: 72, right: 16, zIndex: 10001, display: 'flex', flexDirection: 'column', gap: 8, maxWidth: 340, width: 'calc(100vw - 32px)' }}>
+    <div className="fixed z-[10001] flex flex-col gap-2" style={{ top: 76, right: 12, maxWidth: 360, width: 'calc(100vw - 24px)' }}>
       <AnimatePresence>
-        {toasts.map(toast => (
-          <motion.div
-            key={toast._toastId}
-            initial={{ opacity: 0, x: 60, scale: 0.95 }}
-            animate={{ opacity: 1, x: 0, scale: 1 }}
-            exit={{ opacity: 0, x: 60, scale: 0.95 }}
-            transition={{ type: 'spring', damping: 22, stiffness: 300 }}
-            style={{
-              background: '#111827',
-              border: '1px solid rgba(6,182,212,0.3)',
-              borderRadius: 16,
-              boxShadow: '0 8px 32px rgba(0,0,0,0.6)',
-              padding: '12px 14px',
-              display: 'flex',
-              alignItems: 'flex-start',
-              gap: 10,
-              cursor: 'pointer',
-            }}
-            onClick={() => setToasts(prev => prev.filter(t => t._toastId !== toast._toastId))}
-          >
-            <div className="relative flex-shrink-0">
-              {toast.icon_url
-                ? <img src={toast.icon_url} alt="" style={{ width: 36, height: 36, borderRadius: '50%', objectFit: 'cover', border: '1px solid rgba(255,255,255,0.1)' }} />
-                : <div style={{ width: 36, height: 36, borderRadius: '50%', background: '#1f2937', border: '1px solid rgba(255,255,255,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                    {TYPE_ICON[toast.type] || <Bell className="w-4 h-4 text-gray-400" />}
-                  </div>
-              }
-              <div style={{ position: 'absolute', bottom: -2, right: -2, width: 18, height: 18, borderRadius: '50%', background: '#0a0f23', border: '1px solid rgba(255,255,255,0.08)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                {TYPE_ICON[toast.type]}
-              </div>
-            </div>
-            <div style={{ flex: 1, minWidth: 0 }}>
-              <p style={{ color: '#fff', fontSize: 13, fontWeight: 700, marginBottom: 2, lineHeight: 1.3 }}>{toast.title}</p>
-              <p style={{ color: 'rgba(156,163,175,0.9)', fontSize: 11, lineHeight: 1.4, overflow: 'hidden', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' }}>{toast.body}</p>
-            </div>
-            <button
-              onClick={e => { e.stopPropagation(); setToasts(prev => prev.filter(t => t._toastId !== toast._toastId)); }}
-              style={{ background: 'none', border: 'none', color: 'rgba(156,163,175,0.5)', cursor: 'pointer', padding: 2, flexShrink: 0 }}
-            >
-              <X style={{ width: 14, height: 14 }} />
-            </button>
-          </motion.div>
+        {toasts.map(t => (
+          <ToastItem
+            key={t._toastId}
+            toast={t}
+            onDismiss={() => setToasts(prev => prev.filter(x => x._toastId !== t._toastId))}
+          />
         ))}
       </AnimatePresence>
     </div>,
@@ -111,7 +156,70 @@ export const NotificationToast = () => {
   );
 };
 
-/* ── Panel liste des notifications ── */
+// ── Notif item dans le panel ─────────────────────────────────────────
+const NotifItem = ({ notif, onRead, onDelete, onClick }) => {
+  const cfg = getTypeConfig(notif.type);
+  const Icon = cfg.icon;
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 4 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, height: 0, marginBottom: 0 }}
+      transition={{ duration: 0.15 }}
+      className="relative group flex items-start gap-3 px-4 py-3 cursor-pointer transition-colors border-b border-white/[0.04] last:border-0"
+      style={{ background: notif.is_read ? 'transparent' : `${cfg.color}06` }}
+      onClick={onClick}
+    >
+      {/* Dot non lu */}
+      {!notif.is_read && (
+        <div className="absolute left-1.5 top-1/2 -translate-y-1/2 w-1.5 h-1.5 rounded-full" style={{ background: cfg.color }} />
+      )}
+
+      {/* Avatar */}
+      <div className="relative flex-shrink-0">
+        {notif.icon_url
+          ? <img src={notif.icon_url} alt="" className="w-9 h-9 rounded-xl object-cover border border-white/10" />
+          : <div className="w-9 h-9 rounded-xl flex items-center justify-center border" style={{ background: cfg.bg, borderColor: `${cfg.color}25` }}>
+              <Icon className="w-4 h-4" style={{ color: cfg.color }} />
+            </div>
+        }
+        {notif.icon_url && (
+          <div className="absolute -bottom-0.5 -right-0.5 w-4.5 h-4.5 rounded-lg flex items-center justify-center" style={{ background: 'rgb(10,15,30)', border: `1px solid ${cfg.color}25` }}>
+            <Icon className="w-2.5 h-2.5" style={{ color: cfg.color }} />
+          </div>
+        )}
+      </div>
+
+      {/* Texte */}
+      <div className="flex-1 min-w-0 pr-6">
+        <div className="flex items-center gap-1.5 mb-0.5">
+          <span className="text-[9px] font-black uppercase tracking-widest" style={{ color: cfg.color }}>{cfg.label}</span>
+          <span className="text-[10px] text-gray-600">{timeAgo(notif.created_at)}</span>
+        </div>
+        <p className="text-sm font-semibold text-white leading-tight">{notif.title}</p>
+        <p className="text-xs text-gray-400 leading-relaxed line-clamp-2 mt-0.5">{notif.body}</p>
+      </div>
+
+      {/* Actions hover */}
+      <div className="absolute right-2 top-2 flex gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
+        {!notif.is_read && (
+          <button onClick={e => { e.stopPropagation(); onRead(); }}
+            className="p-1 rounded-lg transition-colors hover:bg-white/10"
+            style={{ color: cfg.color }} title="Marquer comme lu">
+            <Check className="w-3.5 h-3.5" />
+          </button>
+        )}
+        <button onClick={e => { e.stopPropagation(); onDelete(); }}
+          className="p-1 rounded-lg text-gray-600 hover:text-red-400 hover:bg-white/10 transition-colors">
+          <X className="w-3.5 h-3.5" />
+        </button>
+      </div>
+    </motion.div>
+  );
+};
+
+// ── Panel notifications ──────────────────────────────────────────────
 const NotifPanel = ({ panelRef, panelPos, onClose, mobile }) => {
   const navigate = useNavigate();
   const {
@@ -119,193 +227,176 @@ const NotifPanel = ({ panelRef, panelPos, onClose, mobile }) => {
     requestPermission, disablePush,
     markAsRead, markAllAsRead, deleteNotification, clearAll, loadNotifications,
   } = useNotifications();
-  const [tab, setTab] = useState('all');
-  const displayed = tab === 'unread' ? notifications.filter(n => !n.is_read) : notifications;
 
-  // Re-sync depuis Supabase à l'ouverture du panel pour s'assurer que le badge est à jour
-  useEffect(() => {
-    if (loadNotifications) loadNotifications();
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  const [tab, setTab] = useState('all');
+  const [filter, setFilter] = useState('all');
+
+  useEffect(() => { loadNotifications?.(); }, []);
+
+  const filtered = notifications.filter(n => {
+    if (tab === 'unread' && n.is_read) return false;
+    if (filter !== 'all' && n.type !== filter) return false;
+    return true;
+  });
 
   const handleClick = (notif) => {
     if (!notif.is_read) markAsRead(notif.id);
     onClose();
     if (notif.url) {
-      // Nettoyer l'URL pour React Router (HashRouter)
       const path = notif.url.replace(/^#\//, '/').replace(/^#/, '/');
       navigate(path);
     }
   };
 
+  const typeFilters = [
+    { key: 'all', label: 'Tout' },
+    { key: 'like', label: '❤️' },
+    { key: 'comment', label: '💬' },
+    { key: 'follow', label: '👤' },
+    { key: 'chat_reply', label: '↩️' },
+    { key: 'new_song', label: '🎵' },
+  ];
+
   const panelStyle = mobile ? {
-    background: 'transparent',
-    border: 'none',
-    boxShadow: 'none',
-    borderRadius: 0,
-    width: '100%',
-    maxHeight: 'none',
+    background: 'transparent', border: 'none', boxShadow: 'none',
+    borderRadius: 0, width: '100%', maxHeight: 'none',
   } : {
     position: 'fixed',
     top: panelPos.top,
     right: panelPos.right,
     zIndex: 9999,
-    width: Math.min(380, window.innerWidth - 16),
-    maxHeight: 'min(540px, 85vh)',
+    width: Math.min(390, window.innerWidth - 16),
+    maxHeight: 'min(580px, 88vh)',
     borderRadius: 20,
-    background: '#111827',
+    background: 'rgba(8,12,24,0.98)',
     border: '1px solid rgba(255,255,255,0.1)',
-    boxShadow: '0 24px 64px rgba(0,0,0,0.75)',
+    boxShadow: '0 32px 80px rgba(0,0,0,0.8), 0 0 0 1px rgba(6,182,212,0.08)',
   };
 
   return (
     <motion.div
       ref={mobile ? undefined : panelRef}
-      initial={mobile ? false : { opacity: 0, y: -8, scale: 0.96 }}
+      initial={mobile ? false : { opacity: 0, y: -10, scale: 0.96 }}
       animate={mobile ? false : { opacity: 1, y: 0, scale: 1 }}
-      exit={mobile ? false : { opacity: 0, y: -8, scale: 0.96 }}
-      transition={{ duration: 0.15 }}
+      exit={mobile ? false : { opacity: 0, y: -10, scale: 0.96 }}
+      transition={{ duration: 0.18, type: 'spring', damping: 28, stiffness: 380 }}
       style={{ ...panelStyle, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}
     >
-      {/* Header panel */}
-      {!mobile && (
-        <div className="flex items-center justify-between px-4 pt-4 pb-3 border-b border-white/[0.07] flex-shrink-0">
-          <div className="flex items-center gap-2">
-            <Bell className="w-4 h-4 text-cyan-400" />
-            <span className="text-white font-bold text-sm">Notifications</span>
-            {unreadCount > 0 && (
-              <span className="px-1.5 py-0.5 rounded-full bg-cyan-500/20 text-cyan-400 text-xs font-bold">{unreadCount}</span>
-            )}
+      {/* Header */}
+      <div className="flex items-center justify-between px-4 pt-4 pb-3 border-b border-white/[0.07] flex-shrink-0">
+        <div className="flex items-center gap-2.5">
+          <div className="w-7 h-7 rounded-xl bg-gradient-to-br from-cyan-500/30 to-fuchsia-500/30 flex items-center justify-center border border-cyan-500/20">
+            <Bell className="w-3.5 h-3.5 text-cyan-400" />
           </div>
-          <div className="flex items-center gap-1">
-            {unreadCount > 0 && (
-              <button onClick={markAllAsRead} className="p-1.5 rounded-lg text-gray-500 hover:text-cyan-400 hover:bg-white/10 transition-all" title="Tout marquer comme lu">
-                <CheckCheck className="w-4 h-4" />
-              </button>
-            )}
-            {notifications.length > 0 && (
-              <button onClick={clearAll} className="p-1.5 rounded-lg text-gray-500 hover:text-red-400 hover:bg-white/10 transition-all" title="Tout supprimer">
-                <Trash2 className="w-4 h-4" />
-              </button>
-            )}
-            <button onClick={onClose} className="p-1.5 rounded-lg text-gray-600 hover:text-white hover:bg-white/10 transition-all">
+          <span className="text-white font-bold text-sm">Notifications</span>
+          {unreadCount > 0 && (
+            <span className="px-1.5 py-0.5 rounded-full bg-gradient-to-r from-cyan-500/25 to-fuchsia-500/25 text-cyan-400 text-xs font-bold border border-cyan-500/20">
+              {unreadCount}
+            </span>
+          )}
+        </div>
+        <div className="flex items-center gap-1">
+          {unreadCount > 0 && (
+            <button onClick={markAllAsRead}
+              className="p-1.5 rounded-lg text-gray-500 hover:text-cyan-400 hover:bg-white/10 transition-all"
+              title="Tout marquer comme lu">
+              <CheckCheck className="w-4 h-4" />
+            </button>
+          )}
+          {notifications.length > 0 && (
+            <button onClick={clearAll}
+              className="p-1.5 rounded-lg text-gray-500 hover:text-red-400 hover:bg-white/10 transition-all"
+              title="Tout supprimer">
+              <Trash2 className="w-4 h-4" />
+            </button>
+          )}
+          {!mobile && (
+            <button onClick={onClose}
+              className="p-1.5 rounded-lg text-gray-600 hover:text-white hover:bg-white/10 transition-all">
               <X className="w-4 h-4" />
             </button>
-          </div>
+          )}
         </div>
-      )}
+      </div>
 
-      {/* Mobile header simplifié */}
-      {mobile && (
-        <div className="flex items-center justify-between px-4 py-2 flex-shrink-0">
-          <div className="flex items-center gap-2">
-            <Bell className="w-4 h-4 text-cyan-400" />
-            <span className="text-white font-semibold text-sm">Notifications</span>
-            {unreadCount > 0 && <span className="px-1.5 py-0.5 rounded-full bg-cyan-500/20 text-cyan-400 text-xs font-bold">{unreadCount}</span>}
-          </div>
-          <div className="flex items-center gap-1">
-            {unreadCount > 0 && <button onClick={markAllAsRead} className="p-1 text-gray-500 hover:text-cyan-400"><CheckCheck className="w-4 h-4" /></button>}
-            {notifications.length > 0 && <button onClick={clearAll} className="p-1 text-gray-500 hover:text-red-400"><Trash2 className="w-4 h-4" /></button>}
-          </div>
-        </div>
-      )}
+      {/* Tabs lu/non-lu */}
+      <div className="flex items-center gap-1 px-4 pt-2 flex-shrink-0">
+        {[{ k: 'all', l: 'Toutes' }, { k: 'unread', l: `Non lues${unreadCount > 0 ? ` (${unreadCount})` : ''}` }].map(({ k, l }) => (
+          <button key={k} onClick={() => setTab(k)}
+            className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all ${
+              tab === k
+                ? 'bg-gradient-to-r from-cyan-500/20 to-fuchsia-500/20 text-white border border-white/10'
+                : 'text-gray-500 hover:text-gray-300'
+            }`}
+          >{l}</button>
+        ))}
+      </div>
 
-      {/* Tabs */}
-      <div className="flex gap-1 px-4 py-2 border-b border-white/[0.05] flex-shrink-0">
-        {['all', 'unread'].map(t => (
-          <button key={t} onClick={() => setTab(t)}
-            className={`px-3 py-1 rounded-full text-xs font-semibold transition-all ${tab === t ? 'bg-cyan-500/20 text-cyan-400' : 'text-gray-500 hover:text-gray-300'}`}
-          >
-            {t === 'all' ? 'Toutes' : `Non lues${unreadCount > 0 ? ` (${unreadCount})` : ''}`}
-          </button>
+      {/* Filtre par type */}
+      <div className="flex items-center gap-1 px-4 py-2 overflow-x-auto scrollbar-hide flex-shrink-0">
+        {typeFilters.map(({ key, label }) => (
+          <button key={key} onClick={() => setFilter(key)}
+            className={`flex-shrink-0 px-2.5 py-1 rounded-xl text-xs font-semibold transition-all ${
+              filter === key
+                ? 'bg-white/15 text-white border border-white/15'
+                : 'text-gray-600 hover:text-gray-400 hover:bg-white/5'
+            }`}
+          >{label}</button>
         ))}
       </div>
 
       {/* Liste */}
-      <div className={mobile ? '' : 'flex-1 overflow-y-auto'} style={mobile ? { maxHeight: 280, overflowY: 'auto' } : {}}>
-        {displayed.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-10 px-6 text-center">
-            <Bell className="w-9 h-9 text-gray-700 mb-2" />
-            <p className="text-gray-500 text-sm">
-              {tab === 'unread' ? 'Tout est lu ✓' : 'Aucune notification'}
+      <div className="flex-1 overflow-y-auto" style={mobile ? { maxHeight: 300 } : {}}>
+        {filtered.length === 0 ? (
+          <div className="flex flex-col items-center justify-center py-12 text-center">
+            <div className="w-12 h-12 rounded-2xl bg-white/[0.04] flex items-center justify-center mb-3 border border-white/[0.06]">
+              <Bell className="w-6 h-6 text-gray-700" />
+            </div>
+            <p className="text-gray-500 text-sm font-medium">
+              {tab === 'unread' ? '✓ Tout est lu' : 'Aucune notification'}
             </p>
           </div>
         ) : (
           <AnimatePresence initial={false}>
-            {displayed.map(notif => (
-              <motion.div key={notif.id}
-                initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0, height: 0 }}
-                transition={{ duration: 0.12 }}
-                className={`relative group flex items-start gap-3 px-4 py-3 hover:bg-white/[0.04] transition-colors border-b border-white/[0.04] cursor-pointer ${!notif.is_read ? 'bg-cyan-500/[0.04]' : ''}`}
-                onClick={() => {
-                  handleClick(notif);
-                }}
-              >
-                {!notif.is_read && (
-                  <div className="absolute left-1.5 top-1/2 -translate-y-1/2 w-1.5 h-1.5 rounded-full bg-cyan-400 flex-shrink-0" />
-                )}
-                {/* Avatar + badge type */}
-                <div className="relative flex-shrink-0 mt-0.5">
-                  {notif.icon_url
-                    ? <img src={notif.icon_url} alt="" className="w-9 h-9 rounded-full object-cover border border-white/10" />
-                    : <div className="w-9 h-9 rounded-full bg-gray-800 border border-white/10 flex items-center justify-center">
-                        {TYPE_ICON[notif.type] || <Bell className="w-4 h-4 text-gray-500" />}
-                      </div>
-                  }
-                  <div className="absolute -bottom-0.5 -right-0.5 w-5 h-5 rounded-full bg-gray-900 border border-gray-700/50 flex items-center justify-center">
-                    {TYPE_ICON[notif.type] || <Bell className="w-2.5 h-2.5 text-gray-500" />}
-                  </div>
-                </div>
-                {/* Texte */}
-                <div className="flex-1 min-w-0 pr-8">
-                  <p className="text-sm text-white font-semibold leading-tight">{notif.title}</p>
-                  <p className="text-xs text-gray-400 mt-0.5 leading-relaxed line-clamp-3">{notif.body}</p>
-                  <p className="text-[10px] text-gray-600 mt-1">{timeAgo(notif.created_at)}</p>
-                </div>
-                {/* Boutons hover */}
-                <div className="absolute right-2 top-2 flex gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
-                  {!notif.is_read && (
-                    <button onClick={(e) => { e.stopPropagation(); markAsRead(notif.id); }} className="p-1 rounded text-gray-600 hover:text-cyan-400 transition-colors" title="Marquer comme lu">
-                      <Check className="w-3.5 h-3.5" />
-                    </button>
-                  )}
-                  <button onClick={(e) => { e.stopPropagation(); deleteNotification(notif.id); }} className="p-1 rounded text-gray-600 hover:text-red-400 transition-colors">
-                    <X className="w-3.5 h-3.5" />
-                  </button>
-                </div>
-              </motion.div>
+            {filtered.map(notif => (
+              <NotifItem
+                key={notif.id}
+                notif={notif}
+                onRead={() => markAsRead(notif.id)}
+                onDelete={() => deleteNotification(notif.id)}
+                onClick={() => handleClick(notif)}
+              />
             ))}
           </AnimatePresence>
         )}
       </div>
 
       {/* Footer push */}
-      <div className={`px-4 py-3 border-t border-white/[0.07] flex-shrink-0 ${mobile ? '' : 'bg-gray-900/50'}`}>
-        {/* Message iOS PWA */}
+      <div className="px-4 py-3 border-t border-white/[0.07] flex-shrink-0 bg-black/20">
         {isIOSDevice() && (
           <p className="text-[10px] text-amber-400/80 text-center mb-2 leading-relaxed">
-            🍎 iOS : les notifications push nécessitent d'<span className="font-bold text-amber-400">installer l'app</span> via Safari → Partager → Sur l'écran d'accueil
+            🍎 iOS: installer via Safari → Partager → Écran d'accueil pour les push
           </p>
         )}
         {permission === 'denied' ? (
-          <p className="text-xs text-amber-400 text-center">Notifications bloquées dans les paramètres du navigateur</p>
-        ) : permission !== 'granted' ? (
+          <p className="text-xs text-amber-400 text-center flex items-center justify-center gap-1.5">
+            <BellOff className="w-3.5 h-3.5" />Notifications bloquées dans les paramètres
+          </p>
+        ) : !pushEnabled ? (
           <button onClick={requestPermission} disabled={loading}
-            className="w-full py-2.5 rounded-xl text-xs font-semibold flex items-center justify-center gap-2 transition-all"
-            style={{ background: 'linear-gradient(90deg,#06b6d4,#a855f7)', color: '#fff' }}
+            className="w-full py-2.5 rounded-xl text-xs font-bold flex items-center justify-center gap-2 transition-all active:scale-[0.98]"
+            style={{ background: 'linear-gradient(90deg,#06b6d4,#a855f7)', color: '#fff', boxShadow: '0 4px 20px rgba(6,182,212,0.3)' }}
           >
-            {loading ? <div className="w-3.5 h-3.5 rounded-full border-2 border-white/30 border-t-white animate-spin" /> : <Bell className="w-3.5 h-3.5" />}
+            {loading
+              ? <div className="w-3.5 h-3.5 rounded-full border-2 border-white/30 border-t-white animate-spin" />
+              : <Bell className="w-3.5 h-3.5" />
+            }
             Activer les notifications push
           </button>
-        ) : pushEnabled ? (
-          <button onClick={disablePush} className="w-full py-2.5 rounded-xl text-xs font-semibold text-gray-500 hover:text-red-400 flex items-center justify-center gap-2 transition-colors">
-            <BellOff className="w-3.5 h-3.5" />Désactiver les notifications push
-          </button>
         ) : (
-          <button onClick={requestPermission} disabled={loading}
-            className="w-full py-2.5 rounded-xl text-xs font-semibold text-cyan-400 hover:text-cyan-300 flex items-center justify-center gap-2 transition-colors border border-cyan-500/30 hover:border-cyan-400/50"
-          >
-            <Bell className="w-3.5 h-3.5" />Activer les notifications push
+          <button onClick={disablePush}
+            className="w-full py-2 rounded-xl text-xs font-semibold text-gray-500 hover:text-red-400 flex items-center justify-center gap-2 transition-colors">
+            <BellOff className="w-3.5 h-3.5" />Désactiver les notifications push
           </button>
         )}
       </div>
@@ -313,16 +404,27 @@ const NotifPanel = ({ panelRef, panelPos, onClose, mobile }) => {
   );
 };
 
-/* ── Composant principal ── */
+// ── Composant principal ──────────────────────────────────────────────
 const NotificationBell = ({ mobile = false, closeMenu }) => {
   const { currentUser } = useAuth();
   const { unreadCount } = useNotifications();
   const [open, setOpen] = useState(false);
-  const btnRef    = useRef(null);
-  const panelRef  = useRef(null);
+  const btnRef   = useRef(null);
+  const panelRef = useRef(null);
   const [panelPos, setPanelPos] = useState({ top: 0, right: 16 });
+  const prevCount = useRef(unreadCount);
 
-  /* Fermer si clic extérieur (desktop seulement) */
+  // Animation pulse sur nouvelle notif
+  const [pulse, setPulse] = useState(false);
+  useEffect(() => {
+    if (unreadCount > prevCount.current) {
+      setPulse(true);
+      setTimeout(() => setPulse(false), 800);
+    }
+    prevCount.current = unreadCount;
+  }, [unreadCount]);
+
+  /* Fermer si clic extérieur (desktop) */
   useEffect(() => {
     if (!open || mobile) return;
     const h = (e) => {
@@ -335,11 +437,11 @@ const NotificationBell = ({ mobile = false, closeMenu }) => {
     return () => { document.removeEventListener('mousedown', h); document.removeEventListener('touchstart', h); };
   }, [open, mobile]);
 
-  /* Calculer position panel desktop */
+  /* Position panel */
   useEffect(() => {
     if (!open || mobile || !btnRef.current) return;
     const r = btnRef.current.getBoundingClientRect();
-    const panelW = Math.min(380, window.innerWidth - 16);
+    const panelW = Math.min(390, window.innerWidth - 16);
     const right  = Math.max(8, window.innerWidth - r.right);
     setPanelPos({ top: r.bottom + 8, right: Math.min(right, window.innerWidth - panelW - 8) });
   }, [open, mobile]);
@@ -349,22 +451,24 @@ const NotificationBell = ({ mobile = false, closeMenu }) => {
   /* ── MODE MOBILE — inline dans le drawer ── */
   if (mobile) {
     return (
-      <div className="px-0">
+      <div>
         <button
           onClick={() => setOpen(v => !v)}
-          className="w-full flex items-center gap-3 px-4 py-3 text-gray-300 hover:bg-cyan-500/10 hover:text-cyan-400 rounded-lg transition-colors"
+          className="w-full flex items-center gap-3 px-4 py-3 text-gray-300 hover:bg-cyan-500/10 hover:text-cyan-400 rounded-xl transition-colors"
         >
           <div className="relative">
-            <Bell className={`w-5 h-5 ${unreadCount > 0 ? 'text-cyan-400' : 'text-cyan-400'}`} />
+            <Bell className={`w-5 h-5 ${unreadCount > 0 ? 'text-cyan-400' : ''} ${pulse ? 'animate-bounce' : ''}`} />
             {unreadCount > 0 && (
-              <span className="absolute -top-1 -right-1 min-w-[14px] h-[14px] rounded-full bg-gradient-to-r from-cyan-500 to-pink-500 text-white text-[9px] font-bold flex items-center justify-center px-0.5">
+              <span className="absolute -top-1 -right-1 min-w-[14px] h-[14px] rounded-full bg-gradient-to-r from-cyan-500 to-fuchsia-500 text-white text-[9px] font-bold flex items-center justify-center px-0.5 shadow-lg">
                 {unreadCount > 99 ? '99+' : unreadCount}
               </span>
             )}
           </div>
-          <span>Notifications</span>
+          <span className="font-medium">Notifications</span>
           {unreadCount > 0 && (
-            <span className="ml-auto px-1.5 py-0.5 rounded-full bg-cyan-500/20 text-cyan-400 text-xs font-bold">{unreadCount}</span>
+            <span className="ml-auto px-2 py-0.5 rounded-full bg-cyan-500/20 text-cyan-400 text-xs font-bold border border-cyan-500/20">
+              {unreadCount}
+            </span>
           )}
         </button>
         <AnimatePresence>
@@ -373,8 +477,9 @@ const NotificationBell = ({ mobile = false, closeMenu }) => {
               initial={{ height: 0, opacity: 0 }}
               animate={{ height: 'auto', opacity: 1 }}
               exit={{ height: 0, opacity: 0 }}
-              transition={{ duration: 0.2 }}
-              className="overflow-hidden mx-2 mb-1 rounded-xl border border-white/[0.07] bg-gray-900/80"
+              transition={{ duration: 0.22, ease: [0.4, 0, 0.2, 1] }}
+              className="overflow-hidden mx-2 mb-1 rounded-2xl border border-white/[0.08]"
+              style={{ background: 'rgba(8,12,24,0.98)' }}
             >
               <NotifPanel mobile onClose={() => setOpen(false)} />
             </motion.div>
@@ -384,22 +489,22 @@ const NotificationBell = ({ mobile = false, closeMenu }) => {
     );
   }
 
-  /* ── MODE DESKTOP — bouton cloche + panel portal ── */
+  /* ── MODE DESKTOP ── */
   return (
     <>
       <button
         ref={btnRef}
         onClick={() => setOpen(v => !v)}
-        className="relative p-2 rounded-full text-gray-400 hover:text-white hover:bg-white/10 transition-all"
-        aria-label={`Notifications${unreadCount > 0 ? ` (${unreadCount})` : ''}`}
+        className={`relative p-2 rounded-xl transition-all ${open ? 'bg-white/15 text-white' : 'text-gray-400 hover:text-white hover:bg-white/10'}`}
+        aria-label={`Notifications${unreadCount > 0 ? ` (${unreadCount} non lues)` : ''}`}
       >
-        <Bell className={`w-5 h-5 transition-colors ${unreadCount > 0 ? 'text-cyan-400' : ''}`} />
+        <Bell className={`w-5 h-5 transition-colors ${unreadCount > 0 ? 'text-cyan-400' : ''} ${pulse ? 'animate-bounce' : ''}`} />
         <AnimatePresence>
           {unreadCount > 0 && (
             <motion.span
               key="badge"
               initial={{ scale: 0 }} animate={{ scale: 1 }} exit={{ scale: 0 }}
-              className="absolute -top-0.5 -right-0.5 min-w-[18px] h-[18px] rounded-full bg-gradient-to-r from-cyan-500 to-pink-500 text-white text-[10px] font-bold flex items-center justify-center px-1 shadow-lg pointer-events-none"
+              className="absolute -top-0.5 -right-0.5 min-w-[18px] h-[18px] rounded-full bg-gradient-to-r from-cyan-500 to-fuchsia-500 text-white text-[10px] font-bold flex items-center justify-center px-1 shadow-lg pointer-events-none"
             >
               {unreadCount > 99 ? '99+' : unreadCount}
             </motion.span>
