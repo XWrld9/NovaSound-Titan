@@ -1002,14 +1002,11 @@ const LocalPlayerPage = () => {
         <button onClick={clearAll}
           className="text-xs text-gray-700 hover:text-red-400 transition-colors flex items-center justify-center gap-1.5 py-2">
           <Trash2 className="w-3.5 h-3.5" /> Vider la playlist locale
-      </>)}
         </button>
 
-      </div>
-
       </>)}
 
-      </>)}
+
 
       {/* Save Playlist Modal */}
       <AnimatePresence>
