@@ -737,10 +737,21 @@ const ChatPage = () => {
             </div>
           </div>
 
-          {/* ─── Onglet Mes messages v7000 ─────────────────────── */}
+          {/* ─── Onglet Mes messages ─────────────────────── */}
           {activeTab === 'messages' && (
-            <div className="flex-1 overflow-y-auto">
+            /* bg-gray-950 solide : bloque le wallpaper derrière */
+            <div className="flex-1 overflow-y-auto bg-gray-950 relative z-10">
               <div className="max-w-3xl mx-auto py-4 px-4">
+
+                {/* En-tête */}
+                <div className="flex items-center gap-2 mb-4 pb-3 border-b border-white/[0.06]">
+                  <Bell className="w-4 h-4 text-fuchsia-400" />
+                  <span className="text-sm font-semibold text-gray-300">Mes notifications de chat</span>
+                  {myMessages.length > 0 && (
+                    <span className="ml-auto text-xs text-gray-600">{myMessages.length} message{myMessages.length > 1 ? 's' : ''}</span>
+                  )}
+                </div>
+
                 {loadingMsg ? (
                   <div className="flex items-center justify-center py-20">
                     <Loader2 className="w-7 h-7 text-cyan-400 animate-spin" />
@@ -761,22 +772,29 @@ const ChatPage = () => {
                       const isMentionAll = notif.type === 'chat_mention_all';
                       const isReply      = notif.type === 'chat_reply';
                       return (
-                        <button key={notif.id}
-                          className={`w-full flex items-start gap-3 p-4 border rounded-2xl transition-all text-left ${
+                        <motion.button
+                          key={notif.id}
+                          initial={{ opacity: 0, y: 6 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          transition={{ duration: 0.15 }}
+                          className={`w-full flex items-start gap-3 p-4 rounded-2xl transition-all text-left border ${
                             notif.is_read
-                              ? 'bg-[#1e1e35] border-white/[0.12] hover:bg-[#252540] hover:border-cyan-500/30'
-                              : 'bg-[#1a2744] border-cyan-500/50 hover:border-cyan-400/80 shadow-lg shadow-cyan-500/15'
+                              ? 'bg-gray-900 border-gray-800 hover:bg-gray-800/80 hover:border-cyan-500/30'
+                              : 'bg-gray-900 border-cyan-500/50 hover:border-cyan-400/80 shadow-lg shadow-cyan-500/10'
                           }`}
                           onClick={() => handleNotifClick(notif)}>
+
+                          {/* Icône type */}
                           <div className={`w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 text-xl border ${
                             isMentionAll
-                              ? 'bg-yellow-500/15 border-yellow-500/25'
+                              ? 'bg-yellow-500/20 border-yellow-500/30'
                               : isReply
-                              ? 'bg-cyan-500/15 border-cyan-500/25'
-                              : 'bg-fuchsia-500/15 border-fuchsia-500/25'
+                              ? 'bg-cyan-500/20 border-cyan-500/30'
+                              : 'bg-fuchsia-500/20 border-fuchsia-500/30'
                           }`}>
                             {isMentionAll ? '📢' : isReply ? '💬' : '@'}
                           </div>
+
                           <div className="flex-1 min-w-0">
                             <div className="flex items-start justify-between gap-2 mb-1">
                               <span className="text-sm font-bold text-white break-words leading-tight flex-1">
@@ -784,20 +802,31 @@ const ChatPage = () => {
                               </span>
                               <div className="flex items-center gap-1.5 flex-shrink-0">
                                 {!notif.is_read && <span className="w-2 h-2 rounded-full bg-cyan-400 animate-pulse" />}
-                                <span className="text-[10px] text-gray-400">{timeAgo(notif.created_at)}</span>
+                                <span className="text-[11px] text-gray-400">{timeAgo(notif.created_at)}</span>
                               </div>
                             </div>
-                            <p className="text-sm leading-relaxed break-words text-gray-100">
+                            <p className="text-sm leading-relaxed break-words text-gray-200">
                               {notif.body}
                             </p>
-                            {notif.is_read && (
-                              <span className="text-[10px] text-gray-500 mt-1 inline-flex items-center gap-1">
-                                <Check className="w-2.5 h-2.5" /> Lu
+                            <div className="flex items-center gap-2 mt-1.5">
+                              <span className={`text-[10px] px-2 py-0.5 rounded-full font-semibold border ${
+                                isMentionAll
+                                  ? 'bg-yellow-500/15 border-yellow-500/25 text-yellow-400'
+                                  : isReply
+                                  ? 'bg-cyan-500/15 border-cyan-500/25 text-cyan-400'
+                                  : 'bg-fuchsia-500/15 border-fuchsia-500/25 text-fuchsia-400'
+                              }`}>
+                                {isMentionAll ? '@tous' : isReply ? 'réponse' : 'mention'}
                               </span>
-                            )}
+                              {notif.is_read && (
+                                <span className="text-[10px] text-gray-600 inline-flex items-center gap-1">
+                                  <Check className="w-2.5 h-2.5" /> Lu
+                                </span>
+                              )}
+                            </div>
                           </div>
-                          <Reply className="w-4 h-4 text-gray-500 flex-shrink-0 mt-1" />
-                        </button>
+                          <Reply className="w-4 h-4 text-gray-600 group-hover:text-cyan-400 flex-shrink-0 mt-1 transition-colors" />
+                        </motion.button>
                       );
                     })}
                   </div>
@@ -805,7 +834,6 @@ const ChatPage = () => {
               </div>
             </div>
           )}
-
           {/* ─── Chat Global ─────────────────────────────────────── */}
           {activeTab === 'global' && (
             <>
