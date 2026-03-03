@@ -38,16 +38,6 @@
       "url": "https://nova-sound-titan.vercel.app/manifest.json"
     }
   ],
-  "scope_extensions": [
-    {
-      "origin": "https://nova-sound-titan.vercel.app",
-      "type": "origin"
-    },
-    {
-      "origin": "https://tleuzlyfelrnykpbwhkc.supabase.co",
-      "type": "origin"
-    }
-  ],
   "file_handlers": [
     {
       "action": "/#/local-player",
