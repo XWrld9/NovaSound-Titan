@@ -109,6 +109,7 @@ const LiveRoomPage = () => {
   const [creatingRoom, setCreatingRoom] = useState(false);
   const [channelStatus, setChannelStatus] = useState('idle'); // idle | connecting | connected | error
   const [joinError, setJoinError]       = useState(null);
+  const [confirmModal, setConfirmModal] = useState(null); // { message, roomName, onConfirm }
 
   const chatRef     = useRef(null);
   const chanRef     = useRef(null);
@@ -631,22 +632,38 @@ const LiveRoomPage = () => {
                         <div className="flex gap-2">
                           <button
                             onClick={async () => {
-                              try {
-                                await supabase.from('live_rooms').update({ is_active: false, participants_count: 0 }).eq('id', r.id);
+                              const { error } = await supabase
+                                .from('live_rooms')
+                                .update({ is_active: false, participants_count: 0 })
+                                .eq('id', r.id);
+                              if (error) {
+                                console.error('Stopper error:', error);
+                                alert('Erreur: ' + error.message);
+                              } else {
                                 fetchRooms();
-                              } catch {}
+                              }
                             }}
                             className="flex-1 py-1.5 rounded-xl bg-amber-500/15 border border-amber-500/25 text-amber-400 text-xs font-bold hover:bg-amber-500/25 transition-all flex items-center justify-center gap-1"
                           >
                             ⚡ Stopper
                           </button>
                           <button
-                            onClick={async () => {
-                              if (!window.confirm(`Supprimer la salle "${r.name}" ?`)) return;
-                              try {
-                                await supabase.from('live_rooms').delete().eq('id', r.id);
-                                fetchRooms();
-                              } catch {}
+                            onClick={() => {
+                              setConfirmModal({
+                                roomName: r.name,
+                                onConfirm: async () => {
+                                  const { error } = await supabase
+                                    .from('live_rooms')
+                                    .delete()
+                                    .eq('id', r.id);
+                                  if (error) {
+                                    console.error('Delete error:', error);
+                                    alert('Erreur: ' + error.message);
+                                  } else {
+                                    fetchRooms();
+                                  }
+                                }
+                              });
                             }}
                             className="flex-1 py-1.5 rounded-xl bg-red-500/15 border border-red-500/25 text-red-400 text-xs font-bold hover:bg-red-500/25 transition-all flex items-center justify-center gap-1"
                           >
@@ -662,6 +679,77 @@ const LiveRoomPage = () => {
 
           </main>
         </div>
+
+        {/* ── Modal confirmation suppression ── */}
+        <AnimatePresence>
+          {confirmModal && (
+            <>
+              <motion.div
+                initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+                className="fixed inset-0 bg-black/70 backdrop-blur-sm z-[9999]"
+                onClick={() => setConfirmModal(null)}
+              />
+              <motion.div
+                initial={{ opacity: 0, scale: 0.88, y: 20 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.88, y: 20 }}
+                transition={{ type: 'spring', damping: 22, stiffness: 320 }}
+                className="fixed inset-0 flex items-center justify-center z-[10000] px-5 pointer-events-none"
+              >
+                <div
+                  className="pointer-events-auto w-full max-w-sm rounded-2xl border border-red-500/30 p-6 shadow-2xl"
+                  style={{
+                    background: 'linear-gradient(135deg, #1a0a0e 0%, #1a0f14 50%, #0d0d1a 100%)',
+                    boxShadow: '0 0 40px rgba(239,68,68,0.15), 0 20px 60px rgba(0,0,0,0.6)',
+                    borderLeft: '4px solid rgba(239,68,68,0.8)',
+                  }}
+                >
+                  {/* Icône */}
+                  <div className="flex items-center gap-3 mb-4">
+                    <div className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0"
+                      style={{ background: 'rgba(239,68,68,0.15)', border: '1px solid rgba(239,68,68,0.3)' }}>
+                      <span className="text-lg">🗑</span>
+                    </div>
+                    <div>
+                      <p className="text-white font-bold text-base leading-tight">Supprimer la salle ?</p>
+                      <p className="text-red-400/80 text-xs mt-0.5">Cette action est irréversible</p>
+                    </div>
+                  </div>
+
+                  {/* Nom de la salle */}
+                  <div className="mb-5 px-4 py-3 rounded-xl" style={{ background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.15)' }}>
+                    <p className="text-gray-300 text-sm">
+                      Tu vas supprimer définitivement la salle{' '}
+                      <span className="text-white font-semibold">"{confirmModal.roomName}"</span>
+                    </p>
+                  </div>
+
+                  {/* Boutons */}
+                  <div className="flex gap-3">
+                    <button
+                      onClick={() => setConfirmModal(null)}
+                      className="flex-1 py-2.5 rounded-xl text-gray-300 text-sm font-semibold transition-all hover:bg-white/5"
+                      style={{ border: '1px solid rgba(255,255,255,0.12)' }}
+                    >
+                      Annuler
+                    </button>
+                    <button
+                      onClick={() => { confirmModal.onConfirm(); setConfirmModal(null); }}
+                      className="flex-1 py-2.5 rounded-xl text-white text-sm font-bold transition-all"
+                      style={{
+                        background: 'linear-gradient(135deg, #dc2626, #991b1b)',
+                        border: '1px solid rgba(239,68,68,0.4)',
+                        boxShadow: '0 0 16px rgba(239,68,68,0.25)',
+                      }}
+                    >
+                      Supprimer
+                    </button>
+                  </div>
+                </div>
+              </motion.div>
+            </>
+          )}
+        </AnimatePresence>
       </>
     );
   }
