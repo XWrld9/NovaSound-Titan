@@ -974,6 +974,7 @@ const LocalPlayerPage = () => {
 
       </div>)}
       {activeSection === 'files' && (
+      <>
         {/* ══ LISTE ════════════════════════════════════════════════ */}
         <div className="bg-white/[0.04] rounded-2xl border border-white/[0.06] overflow-hidden">
           <div className="flex items-center justify-between px-4 py-3 border-b border-white/[0.05]">
@@ -1001,7 +1002,7 @@ const LocalPlayerPage = () => {
         <button onClick={clearAll}
           className="text-xs text-gray-700 hover:text-red-400 transition-colors flex items-center justify-center gap-1.5 py-2">
           <Trash2 className="w-3.5 h-3.5" /> Vider la playlist locale
-      )}
+      </>)}
         </button>
 
       </div>
