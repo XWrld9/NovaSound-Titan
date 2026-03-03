@@ -40,10 +40,12 @@
   ],
   "scope_extensions": [
     {
-      "origin": "https://nova-sound-titan.vercel.app"
+      "origin": "https://nova-sound-titan.vercel.app",
+      "type": "origin"
     },
     {
-      "origin": "https://tleuzlyfelrnykpbwhkc.supabase.co"
+      "origin": "https://tleuzlyfelrnykpbwhkc.supabase.co",
+      "type": "origin"
     }
   ],
   "file_handlers": [
