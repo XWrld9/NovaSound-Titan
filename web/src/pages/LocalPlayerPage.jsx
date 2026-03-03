@@ -16,9 +16,10 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
   FolderOpen, HardDrive, WifiOff, ListMusic, Trash2, Plus, Check,
   Play, Pause, SkipBack, SkipForward, Shuffle, Repeat, Volume2, VolumeX,
-  Sliders, Share2, Download, X, ChevronDown, ChevronRight,
+  Sliders, Share2, Download, X, ChevronDown, ChevronRight, ArrowLeft, Home,
   Music, Save, Edit3, CheckSquare, Square, Folder, ChevronUp,
 } from 'lucide-react';
+import { useNavigate, Link } from 'react-router-dom';
 import { usePlayer } from '@/contexts/PlayerContext';
 
 // ── Extensions audio acceptées côté client ──────────────────────────────────
@@ -371,6 +372,9 @@ const LocalPlayerPage = () => {
     repeat, cycleRepeat,
   } = usePlayer();
 
+  const navigate = useNavigate();
+  const [activeSection, setActiveSection] = useState('player'); // 'player' | 'playlists' | 'files'
+
   const [songs,         setSongs]         = useState([]);
   const [loading,       setLoading]       = useState(false);
   const [added,         setAdded]         = useState(false);
@@ -616,8 +620,15 @@ const LocalPlayerPage = () => {
   // ── Empty state ───────────────────────────────────────────────────────
   if (!songs.length) {
     return (
-      <div className="min-h-screen bg-[#050510] flex flex-col items-center justify-center px-5"
+      <div className="min-h-screen bg-[#050510] flex flex-col"
         style={{ paddingBottom: 'env(safe-area-inset-bottom,12px)' }}>
+      {/* Nav bar */}
+      <div className="sticky top-0 z-30 flex items-center gap-3 px-4 py-3 bg-[#050510]/95 backdrop-blur-md border-b border-white/[0.06]" style={{ paddingTop: 'calc(env(safe-area-inset-top, 0px) + 12px)' }}>
+        <button onClick={() => navigate(-1)} className="w-9 h-9 rounded-xl bg-white/[0.07] hover:bg-white/[0.12] text-gray-400 hover:text-white transition-all flex items-center justify-center flex-shrink-0" aria-label="Retour"><ArrowLeft className="w-5 h-5" /></button>
+        <div className="flex-1 min-w-0"><p className="text-white font-black text-base leading-none">Lecteur Local</p><p className="text-gray-600 text-[10px] mt-0.5">100% hors-ligne</p></div>
+        <Link to="/" className="w-9 h-9 rounded-xl bg-white/[0.07] hover:bg-cyan-500/20 text-gray-400 hover:text-cyan-400 transition-all flex items-center justify-center flex-shrink-0" aria-label="Accueil"><Home className="w-4 h-4" /></Link>
+      </div>
+        <div className="flex-1 flex items-center justify-center px-5">
         {/* accept="*" → TOUS les fichiers visibles dans le picker (Xender, OTG, SD...) */}
         <input ref={inputRef}   type="file" id="local-file-input"    name="local-file-input"    accept="*/*" multiple onChange={onFiles}        className="hidden" />
       <input ref={reimportRef} type="file" id="local-reimport-input" name="local-reimport-input" accept="*/*" multiple onChange={onReimportFiles} className="hidden" />
@@ -700,6 +711,7 @@ const LocalPlayerPage = () => {
             ))}
           </div>
         </motion.div>
+        </div>
       </div>
     );
   }
@@ -715,13 +727,43 @@ const LocalPlayerPage = () => {
 
   return (
     <div className="min-h-screen bg-[#050510] flex flex-col"
-      style={{ paddingBottom:'env(safe-area-inset-bottom,120px)', paddingTop:'env(safe-area-inset-top,0px)' }}>
+      style={{ paddingBottom:'env(safe-area-inset-bottom,120px)' }}>
+      {/* Nav bar */}
+      <div className="sticky top-0 z-30 flex items-center gap-3 px-4 py-3 bg-[#050510]/95 backdrop-blur-md border-b border-white/[0.06]" style={{ paddingTop: 'calc(env(safe-area-inset-top, 0px) + 12px)' }}>
+        <button onClick={() => navigate(-1)} className="w-9 h-9 rounded-xl bg-white/[0.07] hover:bg-white/[0.12] text-gray-400 hover:text-white transition-all flex items-center justify-center flex-shrink-0" aria-label="Retour"><ArrowLeft className="w-5 h-5" /></button>
+        <div className="flex-1 min-w-0"><p className="text-white font-black text-base leading-none">Lecteur Local</p><p className="text-gray-600 text-[10px] mt-0.5">100% hors-ligne</p></div>
+        <Link to="/" className="w-9 h-9 rounded-xl bg-white/[0.07] hover:bg-cyan-500/20 text-gray-400 hover:text-cyan-400 transition-all flex items-center justify-center flex-shrink-0" aria-label="Accueil"><Home className="w-4 h-4" /></Link>
+      </div>
+      {/* Section tabs */}
+      <div className="flex items-center gap-1 px-4 py-2.5 border-b border-white/[0.05]">
+        {[
+          { key: 'player',    label: 'Lecteur',   icon: '\uD83C\uDFB5' },
+          { key: 'playlists', label: 'Playlists', icon: '\uD83D\uDCC2', count: savedPlaylists.length },
+          { key: 'files',     label: 'Fichiers',  icon: '\uD83C\uDFB6', count: songs.length },
+        ].map(({ key, label, icon, count }) => (
+          <button key={key} onClick={() => setActiveSection(key)}
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold transition-all border flex-1 justify-center ${
+              activeSection === key
+                ? 'bg-gradient-to-r from-cyan-500/25 to-purple-600/25 text-white border-cyan-500/40'
+                : 'bg-white/[0.04] text-gray-500 border-white/[0.07] hover:text-gray-300'
+            }`}>
+            <span>{icon}</span><span>{label}</span>
+            {count !== undefined && count > 0 && (
+              <span className={`text-[9px] px-1.5 py-0.5 rounded-full font-bold ${
+                activeSection === key ? 'bg-cyan-500/30 text-cyan-300' : 'bg-white/10 text-gray-600'
+              }`}>{count}</span>
+            )}
+          </button>
+        ))}
+      </div>
       {/* accept="*" = TOUS les fichiers visibles depuis n'importe quel dossier */}
       <input ref={inputRef}   type="file" id="local-file-input"    name="local-file-input"    accept="*/*" multiple onChange={onFiles}        className="hidden" />
       <input ref={reimportRef} type="file" id="local-reimport-input" name="local-reimport-input" accept="*/*" multiple onChange={onReimportFiles} className="hidden" />
 
       <div className="max-w-sm mx-auto w-full px-4 pt-5 flex flex-col gap-3">
 
+      {activeSection === 'player' && (
+      <div className="w-full">
         {/* ══ LECTEUR LOCAL EMBARQUÉ ══════════════════════════════ */}
         {isLocalPlaying && activeSong && (
           <motion.div
@@ -930,6 +972,8 @@ const LocalPlayerPage = () => {
           )}
         </AnimatePresence>
 
+      </div>)}
+      {activeSection === 'files' && (
         {/* ══ LISTE ════════════════════════════════════════════════ */}
         <div className="bg-white/[0.04] rounded-2xl border border-white/[0.06] overflow-hidden">
           <div className="flex items-center justify-between px-4 py-3 border-b border-white/[0.05]">
@@ -957,9 +1001,14 @@ const LocalPlayerPage = () => {
         <button onClick={clearAll}
           className="text-xs text-gray-700 hover:text-red-400 transition-colors flex items-center justify-center gap-1.5 py-2">
           <Trash2 className="w-3.5 h-3.5" /> Vider la playlist locale
+      )}
         </button>
 
       </div>
+
+      </>)}
+
+      </>)}
 
       {/* Save Playlist Modal */}
       <AnimatePresence>
