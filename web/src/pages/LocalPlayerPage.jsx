@@ -2,7 +2,7 @@
  * LocalPlayerPage — NovaSound TITAN LUX v2000
  *
  * v2000 FIXES COMPLETS :
- * ✅ accept="*/*" → tous les fichiers sont cliquables (Xender, OTG, SD, stockage tiers)
+ * ✅ accept="*" → tous les fichiers sont cliquables (Xender, OTG, SD, stockage tiers)
  *    + filtre d'extension côté client → seuls les audios sont chargés
  * ✅ Lecteur local embarqué avec BARRE DE SEEK complète, draggable, tactile
  * ✅ Contrôles play/pause/prev/next directement dans la page
