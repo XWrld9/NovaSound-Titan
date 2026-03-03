@@ -99,6 +99,13 @@ const OfflineRedirect = () => {
   return null;
 };
 
+/* ── BottomNav masqué sur /local-player (interface standalone) ────────────── */
+const BottomNavConditional = () => {
+  const location = useLocation();
+  if (location.pathname === '/local-player') return null;
+  return <BottomNav />;
+};
+
 function App() {
   return (
     <HelmetProvider>
@@ -154,8 +161,8 @@ function App() {
                       <ErrorBoundary fallback={null}>
                         <GlobalPlayer />
                       </ErrorBoundary>
-                      {/* Bottom nav mobile — v70 */}
-                      <BottomNav />
+                      {/* Bottom nav mobile — masqué sur /local-player (lecteur standalone) */}
+                      <BottomNavConditional />
                       <OnboardingToast />
                     </Router>
                     </NotificationProvider>

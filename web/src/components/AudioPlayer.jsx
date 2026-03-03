@@ -58,6 +58,29 @@ const savedMuted  = () => { try { return localStorage.getItem(MUTED_KEY) === '1'
 const SPEED_OPTIONS = [0.75, 1, 1.25, 1.5, 2];
 
 // ── Composant principal ───────────────────────────────────────────────────────
+// ── Android / iOS audio unlock ────────────────────────────────────────────────
+// Sur Android Chrome, le contexte audio doit être déverrouillé par un geste.
+// On crée un AudioContext silencieux au premier toucher pour autoriser play().
+let _audioUnlocked = false;
+const _unlockAudio = () => {
+  if (_audioUnlocked) return;
+  try {
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    const buf = ctx.createBuffer(1, 1, 22050);
+    const src = ctx.createBufferSource();
+    src.buffer = buf;
+    src.connect(ctx.destination);
+    src.start(0);
+    ctx.resume().then(() => { _audioUnlocked = true; }).catch(() => {});
+  } catch (_) {}
+  _audioUnlocked = true;
+};
+if (typeof window !== 'undefined') {
+  window.addEventListener('touchstart',  _unlockAudio, { passive: true, once: false });
+  window.addEventListener('touchend',    _unlockAudio, { passive: true, once: false });
+  window.addEventListener('click',       _unlockAudio, { once: false });
+}
+
 const AudioPlayer = ({ currentSong, playlist = [], onNext, onPrevious, onClose, shouldAutoPlay = false, resetAutoPlay }) => {
   const { currentUser } = useAuth();
   const genreTheme = useGenreTheme(currentSong?.genre);
@@ -336,43 +359,66 @@ const AudioPlayer = ({ currentSong, playlist = [], onNext, onPrevious, onClose, 
     try { navigator.mediaSession.setPositionState({ duration, playbackRate: audioRef.current?.playbackRate || 1, position: Math.min(currentTime, duration) }); } catch {}
   }, [currentTime, duration]);
 
-  // ── Chargement nouveau son — ANDROID AUTOPLAY FIX v7000 ────────────────
-  // Sur Android Chrome, play() dans un listener canplay (async) est bloqué
-  // par l'autoplay policy (hors contexte user-gesture).
-  // Fix : appel SYNCHRONE de play() juste après load() pendant qu'on est
-  // encore dans le contexte du geste. Le navigateur met la lecture en queue
-  // et démarre dès que les données audio arrivent.
+  // ── Chargement nouveau son — ANDROID/iOS AUTOPLAY FIX v13000 ──────────────
+  // Stratégie multi-couches pour garantir la lecture sur Android Chrome + iOS :
+  // 1. AudioContext déverrouillé globalement dès le premier geste (_unlockAudio)
+  // 2. play() appelé SYNCHRONEMENT juste après src + load() (contexte geste)
+  // 3. Si AbortError (src changé): retry sur canplaythrough
+  // 4. Si NotAllowedError (politique autoplay): attendre un geste puis rejouer
   useEffect(() => {
     if (!audioRef.current || !currentSong?.audio_url) return;
     const wasFirstSong = prevSongIdRef.current === null;
     const isNewSong = !wasFirstSong && prevSongIdRef.current !== currentSong.id;
     prevSongIdRef.current = currentSong.id;
 
-    console.log('[AudioPlayer] Chargement audio:', currentSong.title, 'URL:', currentSong.audio_url?.substring(0, 50) + '...');
-    console.log('[AudioPlayer] is_local:', currentSong.is_local);
-
-    audioRef.current.src          = currentSong.audio_url;
-    audioRef.current.loop         = (repeat === 'one');
-    audioRef.current.playbackRate = playbackSpeed;
-    audioRef.current.load();
+    const audio = audioRef.current;
+    audio.src          = currentSong.audio_url;
+    audio.loop         = (repeat === 'one');
+    audio.playbackRate = playbackSpeed;
 
     setPlayRecorded(false); setCurrentTime(0); setDuration(0); setIsBuffering(false);
     if (currentUser) { checkLikeStatus(); checkFollowStatus(); }
     else { setIsLiked(false); setLikeId(null); setIsFollowing(false); setFollowId(null); }
 
     if ((isNewSong || wasFirstSong) && autoPlayRef.current) {
-      console.log('[AudioPlayer] Tentative de lecture automatique...');
-      audioRef.current.play()
-        .then(() => { 
-          console.log('[AudioPlayer] Lecture démarrée avec succès');
-          setIsPlaying(true); setIsPlayingGlobal(true); setIsBuffering(false); 
-        })
-        .catch((err) => {
-          console.error('[AudioPlayer] Erreur de lecture:', err);
-          if (err.name !== 'AbortError') { setIsPlaying(false); setIsPlayingGlobal(false); }
-        });
+      setIsBuffering(true);
+      const attemptPlay = () => {
+        _unlockAudio();
+        audio.play()
+          .then(() => { setIsPlaying(true); setIsPlayingGlobal(true); setIsBuffering(false); })
+          .catch((err) => {
+            if (err.name === 'AbortError') {
+              // Source changée pendant load() → retry sur canplaythrough
+              const onReady = () => {
+                audio.removeEventListener('canplaythrough', onReady);
+                _unlockAudio();
+                audio.play()
+                  .then(() => { setIsPlaying(true); setIsPlayingGlobal(true); setIsBuffering(false); })
+                  .catch(() => { setIsPlaying(false); setIsPlayingGlobal(false); setIsBuffering(false); });
+              };
+              audio.addEventListener('canplaythrough', onReady, { once: true });
+            } else if (err.name === 'NotAllowedError') {
+              // Autoplay bloqué → afficher bouton play, puis relancer au prochain geste
+              setIsPlaying(false); setIsPlayingGlobal(false); setIsBuffering(false);
+              const onInteract = () => {
+                document.removeEventListener('touchstart', onInteract);
+                document.removeEventListener('click', onInteract);
+                audio.play().then(() => { setIsPlaying(true); setIsPlayingGlobal(true); }).catch(() => {});
+              };
+              document.addEventListener('touchstart', onInteract, { once: true, passive: true });
+              document.addEventListener('click', onInteract, { once: true });
+            } else {
+              setIsPlaying(false); setIsPlayingGlobal(false); setIsBuffering(false);
+            }
+          });
+      };
+      audio.load();
+      attemptPlay();
     } else if (!isNewSong && !wasFirstSong) {
+      audio.load();
       setIsPlaying(false);
+    } else {
+      audio.load();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentSong?.id]);
@@ -584,6 +630,7 @@ const AudioPlayer = ({ currentSong, playlist = [], onNext, onPrevious, onClose, 
         onError={() => { setIsBuffering(false); setIsPlaying(false); setIsPlayingGlobal(false); }}
         loop={repeat === 'one'}
         playsInline
+        preload="auto"
         webkit-playsinline="true"
         x-webkit-airplay="allow"
         style={{ display: 'none' }}
