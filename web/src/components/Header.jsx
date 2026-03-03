@@ -155,6 +155,9 @@ const Header = () => {
                   onChange={(e) => setSearchQuery(e.target.value)}
                   onFocus={() => searchQuery && setShowResults(true)}
                   onBlur={() => setTimeout(() => setShowResults(false), 200)}
+                  id="site-search"
+                  name="q"
+                  autoComplete="off"
                   className="w-full pl-11 pr-5 py-3 bg-gray-900/80 border border-cyan-500/30 rounded-2xl text-white placeholder-gray-500 focus:outline-none focus:border-fuchsia-500/70 focus:ring-2 focus:ring-fuchsia-500/20 focus:bg-gray-900 transition-all text-sm shadow-inner shadow-black/30"
                 />
               </div>

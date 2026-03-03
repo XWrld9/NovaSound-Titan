@@ -26,7 +26,7 @@ const ArtistsPage = () => {
       // Récupère tous les artistes (uploader_id) + leurs infos + leurs sons
       const { data: songs } = await supabase
         .from('songs')
-        .select('id, title, artist, cover_url, plays_count, created_at, uploader_id, uploader:users!uploader_id(id, username, avatar_url)')
+        .select('id, title, artist, cover_url, audio_url, plays_count, created_at, uploader_id, uploader:users!uploader_id(id, username, avatar_url)')
         .eq('is_archived', false)
         .order('created_at', { ascending: false })
         .limit(500);
@@ -112,25 +112,31 @@ const ArtistsPage = () => {
           </div>
 
           {/* Barre recherche + tri */}
-          <div className="flex flex-col sm:flex-row gap-3 mb-6">
-            <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
+          <div className="flex flex-col gap-2 mb-6">
+            <div className="relative w-full">
+              <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500 pointer-events-none" />
               <input
                 type="text"
                 value={search}
                 onChange={e => setSearch(e.target.value)}
                 placeholder="Rechercher un artiste…"
-                className="w-full pl-10 pr-4 py-2.5 bg-white/[0.06] border border-white/[0.1] rounded-xl text-white text-sm placeholder-gray-600 focus:outline-none focus:border-fuchsia-500/50"
+                className="w-full pl-11 pr-4 py-3 bg-white/[0.06] border border-white/[0.1] rounded-2xl text-white text-sm placeholder-gray-600 focus:outline-none focus:border-fuchsia-500/50 focus:bg-white/[0.08] transition-all"
               />
+              {search && (
+                <button onClick={() => setSearch('')}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 rounded-full bg-white/10 flex items-center justify-center text-gray-400 hover:text-white transition-colors">
+                  <span className="text-xs leading-none">✕</span>
+                </button>
+              )}
             </div>
-            <div className="flex gap-1">
+            <div className="flex gap-1.5">
               {[
                 { k: 'songs', l: '# Sons' },
                 { k: 'plays', l: '▶ Écoutes' },
                 { k: 'alpha', l: 'A→Z' },
               ].map(({ k, l }) => (
                 <button key={k} onClick={() => setSort(k)}
-                  className={`px-3 py-2 rounded-xl text-xs font-bold transition-all ${
+                  className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all ${
                     sort === k
                       ? 'bg-fuchsia-500/20 text-fuchsia-300 border border-fuchsia-500/30'
                       : 'bg-white/[0.05] text-gray-500 border border-white/[0.08] hover:text-gray-300'

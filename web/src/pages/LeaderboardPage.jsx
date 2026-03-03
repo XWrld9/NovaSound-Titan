@@ -1,13 +1,16 @@
 /**
- * LeaderboardPage — NovaSound TITAN LUX v5000
- * Classement communautaire gamifié :
- * - Top artistes (écoutes, followers, likes)
- * - Top auditeurs (streaks, heures d'écoute, commentaires)
- * - Top sons de la semaine
- * - Badges & niveaux
- * - Animations podium
+ * LeaderboardPage — NovaSound TITAN LUX v10000
+ * Fixes:
+ *  - audio_url inclus dans le SELECT songs → lecture fonctionnelle
+ *  - myRank calculé dynamiquement (artistes + auditeurs)
+ *  - Podium gracieux avec 1, 2 ou 3 entrées
+ *  - Realtime subscription sur songs/users
+ *  - Labels de score corrects (écoutes, jours)
+ *  - Filtre période pour les sons (24h / 7j / 30j / all-time)
+ *  - Bouton refresh manuel
+ *  - "Ma position" affiche le rang réel
  */
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { Helmet } from 'react-helmet-async';
 import { motion, AnimatePresence } from 'framer-motion';
 import { supabase } from '@/lib/supabaseClient';
@@ -18,51 +21,49 @@ import Footer from '@/components/Footer';
 import { Link } from 'react-router-dom';
 import { formatPlays } from '@/lib/utils';
 import {
-  Trophy, Flame, Crown, Star, Zap, Music, Users, Heart,
-  Headphones, TrendingUp, Award, ChevronRight, Play
+  Trophy, Crown, Music, Headphones,
+  Award, ChevronRight, Play, RefreshCw, Calendar, Flame, Clock, Zap
 } from 'lucide-react';
 
-// ── Badges par niveau ──────────────────────────────────────────────
+// ── Badges ──────────────────────────────────────────────────────────
 const BADGES = [
-  { min: 0,      label: 'Auditeur',    color: '#6b7280', icon: '🎧', bg: 'from-gray-600 to-gray-700' },
-  { min: 100,    label: 'Mélomane',    color: '#06b6d4', icon: '🎵', bg: 'from-cyan-500 to-blue-600' },
-  { min: 500,    label: 'Passionné',   color: '#8b5cf6', icon: '🔥', bg: 'from-purple-500 to-violet-600' },
-  { min: 2000,   label: 'Légende',     color: '#f59e0b', icon: '👑', bg: 'from-amber-400 to-orange-500' },
-  { min: 10000,  label: 'TITAN',       color: '#ec4899', icon: '⚡', bg: 'from-pink-500 to-fuchsia-600' },
+  { min: 0,      label: 'Auditeur',  color: '#6b7280', icon: '🎧', bg: 'from-gray-600 to-gray-700' },
+  { min: 100,    label: 'Mélomane',  color: '#06b6d4', icon: '🎵', bg: 'from-cyan-500 to-blue-600' },
+  { min: 500,    label: 'Passionné', color: '#8b5cf6', icon: '🔥', bg: 'from-purple-500 to-violet-600' },
+  { min: 2000,   label: 'Légende',   color: '#f59e0b', icon: '👑', bg: 'from-amber-400 to-orange-500' },
+  { min: 10000,  label: 'TITAN',     color: '#ec4899', icon: '⚡', bg: 'from-pink-500 to-fuchsia-600' },
 ];
-
 const getBadge = (score) => {
-  let badge = BADGES[0];
-  for (const b of BADGES) { if (score >= b.min) badge = b; }
-  return badge;
+  let b = BADGES[0];
+  for (const x of BADGES) { if (score >= x.min) b = x; }
+  return b;
 };
 
-// ── Podium ─────────────────────────────────────────────────────────
-const PodiumBar = ({ user, rank, score, label }) => {
+// ── Podium ────────────────────────────────────────────────────────────
+const PodiumBar = ({ user, rank, score }) => {
   const heights = { 1: 'h-28 md:h-36', 2: 'h-20 md:h-28', 3: 'h-14 md:h-20' };
-  const badge = getBadge(score);
-  const order = rank === 1 ? 'order-2' : rank === 2 ? 'order-1' : 'order-3';
-  const medals = { 1: '🥇', 2: '🥈', 3: '🥉' };
-
+  const orders  = { 1: 'order-2', 2: 'order-1', 3: 'order-3' };
+  const medals  = { 1: '🥇', 2: '🥈', 3: '🥉' };
+  const badge   = getBadge(score);
+  const name    = user.username || user.title || user.artist || '?';
   return (
     <motion.div
-      initial={{ opacity: 0, y: 30 }}
-      animate={{ opacity: 1, y: 0 }}
+      initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }}
       transition={{ delay: rank * 0.12, type: 'spring', stiffness: 200 }}
-      className={`flex flex-col items-center gap-2 ${order}`}
+      className={`flex flex-col items-center gap-2 ${orders[rank]}`}
     >
       <div className="relative">
         <div className="w-14 h-14 md:w-16 md:h-16 rounded-full overflow-hidden border-2 border-white/20 shadow-xl">
-          {user.avatar_url
-            ? <img src={user.avatar_url} className="w-full h-full object-cover" />
+          {user.avatar_url || user.cover_url
+            ? <img src={user.avatar_url || user.cover_url} className="w-full h-full object-cover" alt={name} />
             : <div className={`w-full h-full bg-gradient-to-br ${badge.bg} flex items-center justify-center text-white font-bold text-lg`}>
-                {(user.username || '?').slice(0, 2).toUpperCase()}
+                {name[0].toUpperCase()}
               </div>
           }
         </div>
         <span className="absolute -top-2 -right-2 text-lg">{medals[rank]}</span>
       </div>
-      <p className="text-white text-xs font-bold text-center truncate max-w-[80px]">{user.username}</p>
+      <p className="text-white text-xs font-bold text-center truncate max-w-[80px]">{name}</p>
       <p className="text-xs font-semibold" style={{ color: badge.color }}>{badge.icon} {badge.label}</p>
       <div className={`w-16 md:w-20 ${heights[rank]} rounded-t-xl bg-gradient-to-t ${badge.bg} opacity-70 flex items-end justify-center pb-2`}>
         <span className="text-white text-xs font-black">{formatPlays(score)}</span>
@@ -71,66 +72,61 @@ const PodiumBar = ({ user, rank, score, label }) => {
   );
 };
 
-// ── Ligne classement ───────────────────────────────────────────────
-const RankRow = ({ item, rank, scoreKey, labelKey = 'username', linkPrefix = '/artist', secondLabel = null, onPlay = null }) => {
-  const badge = getBadge(item[scoreKey] || 0);
+// ── Ligne classement ──────────────────────────────────────────────────
+const RankRow = ({ item, rank, scoreKey, scoreLabel, labelKey, secondLabel, linkPrefix, onPlay, isMe }) => {
+  const badge  = getBadge(item[scoreKey] || 0);
   const isTop3 = rank <= 3;
-
+  const name   = item[labelKey] || '?';
   return (
     <motion.div
-      initial={{ opacity: 0, x: -12 }}
-      animate={{ opacity: 1, x: 0 }}
-      transition={{ delay: rank * 0.04 }}
-      className={`flex items-center gap-4 p-3 rounded-xl transition-all group ${
-        isTop3
-          ? 'bg-gradient-to-r from-white/5 to-transparent border border-white/10'
-          : 'hover:bg-gray-800/60'
+      initial={{ opacity: 0, x: -12 }} animate={{ opacity: 1, x: 0 }}
+      transition={{ delay: Math.min(rank * 0.03, 0.6) }}
+      className={`flex items-center gap-3 p-3 rounded-xl transition-all group ${
+        isMe
+          ? 'bg-gradient-to-r from-cyan-500/15 to-fuchsia-500/10 border border-cyan-500/30'
+          : isTop3
+            ? 'bg-gradient-to-r from-white/5 to-transparent border border-white/10'
+            : 'hover:bg-gray-800/60 border border-transparent'
       }`}
     >
-      {/* Rang */}
       <div className="w-8 text-center flex-shrink-0">
         {rank === 1 ? <span className="text-xl">🥇</span>
         : rank === 2 ? <span className="text-xl">🥈</span>
         : rank === 3 ? <span className="text-xl">🥉</span>
-        : <span className="text-sm font-bold text-gray-500 tabular-nums">{rank}</span>
+        : <span className={`text-sm font-bold tabular-nums ${isMe ? 'text-cyan-400' : 'text-gray-500'}`}>{rank}</span>
         }
       </div>
-
-      {/* Avatar */}
-      <div className="w-10 h-10 rounded-full overflow-hidden bg-gray-800 flex-shrink-0">
+      <div className="w-10 h-10 rounded-xl overflow-hidden bg-gray-800 flex-shrink-0">
         {item.avatar_url || item.cover_url
-          ? <img src={item.avatar_url || item.cover_url} className="w-full h-full object-cover" />
+          ? <img src={item.avatar_url || item.cover_url} className="w-full h-full object-cover" alt="" />
           : <div className={`w-full h-full bg-gradient-to-br ${badge.bg} flex items-center justify-center text-white text-sm font-bold`}>
-              {(item[labelKey] || '?').slice(0, 2).toUpperCase()}
+              {name[0].toUpperCase()}
             </div>
         }
       </div>
-
-      {/* Infos */}
       <div className="flex-1 min-w-0">
-        <Link to={`${linkPrefix}/${item.id}`} className="text-white font-semibold text-sm hover:text-cyan-400 transition-colors truncate block">
-          {item[labelKey]}
-        </Link>
-        {secondLabel && (
-          <p className="text-gray-500 text-xs truncate">{item[secondLabel]}</p>
+        {linkPrefix
+          ? <Link to={`${linkPrefix}/${item.id}`} className={`font-semibold text-sm hover:text-cyan-400 transition-colors truncate block ${isMe ? 'text-cyan-300' : 'text-white'}`}>
+              {name}
+              {isMe && <span className="ml-1.5 text-[10px] bg-cyan-500/20 text-cyan-400 px-1.5 py-0.5 rounded-full font-bold">Toi</span>}
+            </Link>
+          : <p className={`font-semibold text-sm truncate ${isMe ? 'text-cyan-300' : 'text-white'}`}>
+              {name}
+              {isMe && <span className="ml-1.5 text-[10px] bg-cyan-500/20 text-cyan-400 px-1.5 py-0.5 rounded-full font-bold">Toi</span>}
+            </p>
+        }
+        {secondLabel != null && (
+          <p className="text-gray-500 text-xs truncate">{typeof secondLabel === 'string' ? item[secondLabel] : secondLabel}</p>
         )}
       </div>
-
-      {/* Badge */}
-      <span className="text-xs font-medium flex-shrink-0 hidden sm:block" style={{ color: badge.color }}>
-        {badge.icon}
-      </span>
-
-      {/* Score */}
+      <span className="text-xs hidden sm:block flex-shrink-0" style={{ color: badge.color }}>{badge.icon}</span>
       <div className="text-right flex-shrink-0">
-        <p className="text-white text-sm font-bold tabular-nums">{formatPlays(item[scoreKey] || 0)}</p>
+        <p className={`text-sm font-bold tabular-nums ${isMe ? 'text-cyan-400' : 'text-white'}`}>{formatPlays(item[scoreKey] || 0)}</p>
+        {scoreLabel && <p className="text-[10px] text-gray-600">{scoreLabel}</p>}
       </div>
-
       {onPlay && (
-        <button
-          onClick={() => onPlay(item)}
-          className="p-1.5 rounded-full bg-white/10 hover:bg-cyan-500/20 text-gray-500 hover:text-cyan-400 opacity-0 group-hover:opacity-100 transition-all flex-shrink-0"
-        >
+        <button onClick={() => onPlay(item)}
+          className="p-1.5 rounded-full bg-white/10 hover:bg-cyan-500/20 text-gray-500 hover:text-cyan-400 opacity-0 group-hover:opacity-100 transition-all flex-shrink-0">
           <Play className="w-3.5 h-3.5 fill-current" />
         </button>
       )}
@@ -138,74 +134,114 @@ const RankRow = ({ item, rank, scoreKey, labelKey = 'username', linkPrefix = '/a
   );
 };
 
+const SONG_PERIODS = [
+  { id: 'trending_24h', label: '24 h',    Icon: Clock },
+  { id: 'trending_7d',  label: '7 jours', Icon: Flame },
+  { id: 'trending_30d', label: '30 j',    Icon: Calendar },
+  { id: 'all',          label: 'Tout',    Icon: Trophy },
+];
+
 // ══════════════════════════════════════════════════════════════════
 const LeaderboardPage = () => {
   const { currentUser } = useAuth();
-  const { playSong } = usePlayer();
-  const [tab, setTab]                     = useState('artists');
-  const [topArtists, setTopArtists]       = useState([]);
-  const [topListeners, setTopListeners]   = useState([]);
-  const [topSongs, setTopSongs]           = useState([]);
-  const [myRank, setMyRank]               = useState(null);
-  const [loading, setLoading]             = useState(true);
+  const { playSong }    = usePlayer();
 
-  const fetchAll = useCallback(async () => {
-    setLoading(true);
-    const [artistsRes, songsRes, listenersRes] = await Promise.allSettled([
-      supabase
-        .from('users')
+  const [tab, setTab]               = useState('artists');
+  const [songPeriod, setSongPeriod] = useState('trending_7d');
+  const [topArtists, setTopArtists] = useState([]);
+  const [topListeners, setTopListeners] = useState([]);
+  const [topSongs, setTopSongs]     = useState([]);
+  const [loading, setLoading]       = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  const [myArtistRank, setMyArtistRank] = useState(null);
+  const [myListenerRank, setMyListenerRank] = useState(null);
+
+  const fetchArtistsAndListeners = useCallback(async (isRefresh = false) => {
+    if (isRefresh) setRefreshing(true); else setLoading(true);
+    const [ar, lr] = await Promise.allSettled([
+      supabase.from('users')
         .select('id,username,avatar_url,followers_count,total_plays,total_likes,xp_points')
-        .order('total_plays', { ascending: false })
-        .limit(20),
-      supabase
-        .from('songs')
-        .select('id,title,artist,cover_url,plays_count,likes_count,uploader_id')
-        .eq('is_archived', false)
-        .order('plays_count', { ascending: false })
-        .limit(20),
-      supabase
-        .from('user_streaks')
+        .order('total_plays', { ascending: false }).limit(20),
+      supabase.from('user_streaks')
         .select('user_id,current_streak,longest_streak,total_days')
-        .order('total_days', { ascending: false })
-        .limit(20),
+        .order('total_days', { ascending: false }).limit(20),
     ]);
 
-    if (artistsRes.status === 'fulfilled') setTopArtists(artistsRes.value.data || []);
-    if (songsRes.status === 'fulfilled')   setTopSongs(songsRes.value.data || []);
-    if (listenersRes.status === 'fulfilled') {
-      const streaks = listenersRes.value.data || [];
-      if (streaks.length > 0) {
-        const userIds = streaks.map(r => r.user_id);
-        const { data: usersData } = await supabase
-          .from('users')
-          .select('id,username,avatar_url')
-          .in('id', userIds);
-        const byId = new Map((usersData || []).map(u => [u.id, u]));
-        const rows = streaks.map(r => ({
-          ...(byId.get(r.user_id) || { id: r.user_id, username: 'Anonyme', avatar_url: null }),
-          total_days: r.total_days,
-          current_streak: r.current_streak,
-          longest_streak: r.longest_streak,
-        })).filter(r => r.username);
-        setTopListeners(rows);
+    if (ar.status === 'fulfilled') {
+      const list = ar.value.data || [];
+      setTopArtists(list);
+      if (currentUser?.id) {
+        const idx = list.findIndex(u => u.id === currentUser.id);
+        setMyArtistRank(idx >= 0 ? idx + 1 : null);
       }
     }
+    if (lr.status === 'fulfilled') {
+      const streaks = lr.value.data || [];
+      if (streaks.length > 0) {
+        const ids = streaks.map(r => r.user_id);
+        const { data: ud } = await supabase.from('users').select('id,username,avatar_url').in('id', ids);
+        const byId = new Map((ud || []).map(u => [u.id, u]));
+        const rows = streaks
+          .map(r => ({
+            ...(byId.get(r.user_id) || { id: r.user_id, username: 'Anonyme', avatar_url: null }),
+            total_days: r.total_days,
+            current_streak: r.current_streak,
+          }))
+          .filter(r => r.username && r.username !== 'Anonyme');
+        setTopListeners(rows);
+        if (currentUser?.id) {
+          const idx = rows.findIndex(u => u.id === currentUser.id);
+          setMyListenerRank(idx >= 0 ? idx + 1 : null);
+        }
+      }
+    }
+    if (isRefresh) setRefreshing(false); else setLoading(false);
+  }, [currentUser?.id]);
+
+  const fetchSongs = useCallback(async (period) => {
+    setLoading(true);
+    let data = [];
+    if (period === 'all') {
+      const { data: d } = await supabase.from('songs')
+        .select('id,title,artist,cover_url,audio_url,plays_count,likes_count,uploader_id')
+        .eq('is_archived', false).order('plays_count', { ascending: false }).limit(20);
+      data = d || [];
+    } else {
+      const { data: d } = await supabase.from(period).select('*').limit(20);
+      data = d || [];
+    }
+    setTopSongs(data);
     setLoading(false);
   }, []);
 
-  useEffect(() => { fetchAll(); }, [fetchAll]);
+  useEffect(() => { fetchArtistsAndListeners(); }, [fetchArtistsAndListeners]);
+  useEffect(() => { if (tab === 'songs') fetchSongs(songPeriod); }, [tab, songPeriod, fetchSongs]);
+
+  // Realtime
+  useEffect(() => {
+    const ch = supabase.channel('leaderboard_v10000')
+      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'songs' }, () => {
+        if (tab === 'songs') fetchSongs(songPeriod);
+      })
+      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'users' }, () => {
+        if (tab !== 'songs') fetchArtistsAndListeners(true);
+      })
+      .subscribe();
+    return () => supabase.removeChannel(ch);
+  }, [tab, songPeriod, fetchArtistsAndListeners, fetchSongs]);
+
+  const currentData = tab === 'artists' ? topArtists : tab === 'songs' ? topSongs : topListeners;
+  const podiumData  = currentData.slice(0, 3);
+  const getScore    = (item) => tab === 'artists' ? (item.total_plays || 0) : tab === 'songs' ? (item.plays_count || 0) : (item.total_days || 0);
+  const scoreKey    = tab === 'artists' ? 'total_plays' : tab === 'songs' ? 'plays_count' : 'total_days';
+  const scoreLabel  = tab === 'artists' ? 'écoutes' : tab === 'songs' ? 'plays' : 'jours';
+  const myRank      = tab === 'artists' ? myArtistRank : tab === 'listeners' ? myListenerRank : null;
 
   const TABS = [
-    { id: 'artists',   label: 'Artistes',   icon: <Crown className="w-4 h-4" /> },
-    { id: 'songs',     label: 'Sons',        icon: <Music className="w-4 h-4" /> },
-    { id: 'listeners', label: 'Auditeurs',   icon: <Headphones className="w-4 h-4" /> },
+    { id: 'artists',   label: 'Artistes',  Icon: Crown },
+    { id: 'songs',     label: 'Sons',      Icon: Music },
+    { id: 'listeners', label: 'Auditeurs', Icon: Headphones },
   ];
-
-  const currentData = tab === 'artists' ? topArtists
-    : tab === 'songs' ? topSongs
-    : topListeners;
-
-  const podiumData = currentData.slice(0, 3);
 
   return (
     <>
@@ -217,8 +253,7 @@ const LeaderboardPage = () => {
           {/* Hero */}
           <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} className="text-center mb-10">
             <div className="inline-flex items-center gap-2 bg-amber-500/10 border border-amber-500/30 text-amber-400 px-4 py-1.5 rounded-full text-sm font-semibold mb-4">
-              <Trophy className="w-4 h-4" />
-              CLASSEMENT
+              <Trophy className="w-4 h-4" />CLASSEMENT
             </div>
             <h1 className="text-4xl md:text-5xl font-black text-white mb-2">
               Hall of <span className="bg-gradient-to-r from-amber-400 to-orange-500 bg-clip-text text-transparent">Fame</span>
@@ -227,22 +262,41 @@ const LeaderboardPage = () => {
           </motion.div>
 
           {/* Tabs */}
-          <div className="flex gap-2 mb-8 bg-gray-900 p-1.5 rounded-2xl">
-            {TABS.map(t => (
-              <button
-                key={t.id}
-                onClick={() => setTab(t.id)}
+          <div className="flex gap-2 mb-4 bg-gray-900 p-1.5 rounded-2xl">
+            {TABS.map(({ id, label, Icon }) => (
+              <button key={id} onClick={() => setTab(id)}
                 className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-semibold transition-all ${
-                  tab === t.id
+                  tab === id
                     ? 'bg-gradient-to-r from-cyan-500/20 to-fuchsia-500/20 text-white border border-white/10'
                     : 'text-gray-500 hover:text-gray-300'
-                }`}
-              >
-                {t.icon}
-                {t.label}
+                }`}>
+                <Icon className="w-4 h-4" />{label}
               </button>
             ))}
           </div>
+
+          {/* Filtre période (songs) */}
+          <AnimatePresence>
+            {tab === 'songs' && (
+              <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }}
+                className="flex gap-2 mb-6 overflow-hidden flex-wrap">
+                {SONG_PERIODS.map(({ id, label, Icon }) => (
+                  <button key={id} onClick={() => setSongPeriod(id)}
+                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold transition-all ${
+                      songPeriod === id
+                        ? 'bg-amber-500/20 text-amber-400 border border-amber-500/30'
+                        : 'text-gray-500 hover:text-gray-300 border border-transparent'
+                    }`}>
+                    <Icon className="w-3 h-3" />{label}
+                  </button>
+                ))}
+                <button onClick={() => fetchSongs(songPeriod)} disabled={loading || refreshing}
+                  className="ml-auto p-1.5 rounded-xl text-gray-600 hover:text-gray-400 transition-colors">
+                  <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin text-amber-400' : ''}`} />
+                </button>
+              </motion.div>
+            )}
+          </AnimatePresence>
 
           {loading ? (
             <div className="text-center py-16">
@@ -250,21 +304,28 @@ const LeaderboardPage = () => {
             </div>
           ) : (
             <>
-              {/* Podium Top 3 */}
-              {podiumData.length >= 3 && (
+              {/* Podium — fonctionne avec 1, 2 ou 3 entrées */}
+              {podiumData.length >= 1 && (
                 <div className="bg-gray-900/80 border border-gray-800 rounded-2xl p-6 mb-6 overflow-hidden relative">
                   <div className="absolute inset-0 bg-gradient-to-b from-amber-500/5 to-transparent pointer-events-none" />
-                  <h2 className="text-center text-sm font-bold text-amber-400 mb-6 flex items-center justify-center gap-2">
-                    <Award className="w-4 h-4" />
-                    PODIUM
-                  </h2>
+                  <div className="flex items-center justify-between mb-6">
+                    <h2 className="text-sm font-bold text-amber-400 flex items-center gap-2">
+                      <Award className="w-4 h-4" />PODIUM
+                    </h2>
+                    {tab !== 'songs' && (
+                      <button onClick={() => fetchArtistsAndListeners(true)} disabled={refreshing}
+                        className="p-1.5 rounded-xl text-gray-600 hover:text-gray-400 transition-colors">
+                        <RefreshCw className={`w-3.5 h-3.5 ${refreshing ? 'animate-spin text-amber-400' : ''}`} />
+                      </button>
+                    )}
+                  </div>
                   <div className="flex items-end justify-center gap-4 md:gap-8">
                     {[
-                      podiumData[1] && { user: podiumData[1], rank: 2, score: podiumData[1][tab === 'artists' ? 'total_plays' : tab === 'songs' ? 'plays_count' : 'total_days'] || 0 },
-                      podiumData[0] && { user: podiumData[0], rank: 1, score: podiumData[0][tab === 'artists' ? 'total_plays' : tab === 'songs' ? 'plays_count' : 'total_days'] || 0 },
-                      podiumData[2] && { user: podiumData[2], rank: 3, score: podiumData[2][tab === 'artists' ? 'total_plays' : tab === 'songs' ? 'plays_count' : 'total_days'] || 0 },
-                    ].filter(Boolean).map(({ user, rank, score }) => (
-                      <PodiumBar key={rank} user={user} rank={rank} score={score} />
+                      podiumData.length >= 2 ? { item: podiumData[1], rank: 2 } : null,
+                      { item: podiumData[0], rank: 1 },
+                      podiumData.length >= 3 ? { item: podiumData[2], rank: 3 } : null,
+                    ].filter(Boolean).map(({ item, rank }) => (
+                      <PodiumBar key={rank} user={item} rank={rank} score={getScore(item)} />
                     ))}
                   </div>
                 </div>
@@ -274,19 +335,23 @@ const LeaderboardPage = () => {
               <div className="bg-gray-900/50 border border-gray-800 rounded-2xl overflow-hidden">
                 <div className="px-4 py-3 border-b border-gray-800 flex items-center justify-between">
                   <span className="text-sm font-bold text-white">Top 20</span>
-                  <span className="text-xs text-gray-500">Mis à jour en temps réel</span>
+                  <span className="text-xs text-gray-600">
+                    {tab === 'artists' ? 'par écoutes totales' : tab === 'songs' ? 'par popularité' : 'par jours d\'écoute'}
+                  </span>
                 </div>
-                <div className="p-3 space-y-1">
+                <div className="p-3 space-y-0.5">
                   {currentData.map((item, i) => (
                     <RankRow
                       key={item.id}
                       item={item}
                       rank={i + 1}
-                      scoreKey={tab === 'artists' ? 'total_plays' : tab === 'songs' ? 'plays_count' : 'total_days'}
+                      scoreKey={scoreKey}
+                      scoreLabel={scoreLabel}
                       labelKey={tab === 'songs' ? 'title' : 'username'}
-                      secondLabel={tab === 'songs' ? 'artist' : tab === 'listeners' ? null : null}
+                      secondLabel={tab === 'songs' ? 'artist' : tab === 'listeners' ? 'current_streak' : null}
                       linkPrefix={tab === 'songs' ? '/song' : '/artist'}
                       onPlay={tab === 'songs' ? (s) => playSong(s, currentData) : null}
+                      isMe={currentUser?.id === item.id}
                     />
                   ))}
                   {currentData.length === 0 && (
@@ -297,20 +362,28 @@ const LeaderboardPage = () => {
 
               {/* Ma position */}
               {currentUser && (
-                <motion.div
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  transition={{ delay: 0.5 }}
-                  className="mt-6 p-4 bg-gradient-to-r from-cyan-500/10 to-fuchsia-500/10 border border-cyan-500/20 rounded-2xl"
-                >
+                <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.4 }}
+                  className="mt-6 p-4 bg-gradient-to-r from-cyan-500/10 to-fuchsia-500/10 border border-cyan-500/20 rounded-2xl">
                   <div className="flex items-center gap-3">
                     <Zap className="w-5 h-5 text-cyan-400 flex-shrink-0" />
-                    <div>
-                      <p className="text-white text-sm font-semibold">Ta position dans ce classement</p>
-                      <p className="text-gray-400 text-xs">Continue d'écouter et d'interagir pour grimper ! 🚀</p>
+                    <div className="flex-1">
+                      <p className="text-white text-sm font-semibold">
+                        {myRank
+                          ? `Tu es ${myRank === 1 ? '🥇 ' : myRank === 2 ? '🥈 ' : myRank === 3 ? '🥉 ' : ''}#${myRank} dans ce classement !`
+                          : tab === 'songs' ? 'Poste un son pour apparaître ici 🎵'
+                          : tab === 'listeners' ? 'Continue d\'écouter pour apparaître ici 🎧'
+                          : 'Continue de publier pour grimper ! 🚀'
+                        }
+                      </p>
+                      <p className="text-gray-500 text-xs mt-0.5">
+                        {tab === 'listeners'
+                          ? `Streak actuel : ${topListeners.find(u => u.id === currentUser.id)?.current_streak || 0} j 🔥`
+                          : 'Écoutes, likes et publications font grimper ton score'
+                        }
+                      </p>
                     </div>
-                    <Link to="/profile" className="ml-auto text-xs text-cyan-400 hover:text-cyan-300 flex items-center gap-1 flex-shrink-0">
-                      Mon profil <ChevronRight className="w-3 h-3" />
+                    <Link to="/profile" className="text-xs text-cyan-400 hover:text-cyan-300 flex items-center gap-1 flex-shrink-0">
+                      Profil <ChevronRight className="w-3 h-3" />
                     </Link>
                   </div>
                 </motion.div>

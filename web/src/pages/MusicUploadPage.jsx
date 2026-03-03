@@ -313,6 +313,7 @@ const MusicUploadPage = () => {
         created_at:  new Date().toISOString(),
         genre:       formData.genre || null,
         duration_s:  audioDuration || null,
+        description: formData.description?.trim() || null,
       });
       if (insertError) throw insertError;
 

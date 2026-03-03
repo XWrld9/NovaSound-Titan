@@ -568,6 +568,7 @@ const AudioPlayer = ({ currentSong, playlist = [], onNext, onPrevious, onClose, 
         onWaiting={() => setIsBuffering(true)}
         onCanPlay={() => setIsBuffering(false)}
         onPlaying={() => setIsBuffering(false)}
+        onError={() => { setIsBuffering(false); setIsPlaying(false); setIsPlayingGlobal(false); }}
         loop={repeat === 'one'}
         playsInline
         webkit-playsinline="true"

@@ -16,10 +16,14 @@ export const AuthProvider = ({ children }) => {
   // ── Auth state listener ──────────────────────────────────────────────────
   useEffect(() => {
     // iOS Safari peut perdre la session au reload — on la récupère explicitement d'abord
+    // Timeout de sécurité : si getSession() hang (offline/réseau lent), on débloque après 3s
+    const sessionTimeout = setTimeout(() => setInitialLoading(false), 3000);
     supabase.auth.getSession().then(({ data: { session } }) => {
+      clearTimeout(sessionTimeout);
       setCurrentUser(session?.user ?? null);
       setInitialLoading(false);
     }).catch(() => {
+      clearTimeout(sessionTimeout);
       setInitialLoading(false);
     });
 

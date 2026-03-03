@@ -6,6 +6,7 @@ import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { supabase } from '@/lib/supabaseClient';
 import { useAuth } from '@/contexts/AuthContext';
+import { notifyOwner } from '@/lib/notifUtils';
 
 const MOODS = [
   { key: 'hype',        emoji: '🔥', label: 'Hype' },
@@ -61,6 +62,15 @@ const MoodVote = ({ songId }) => {
         return n;
       });
       setMyVote(mood);
+      // Notifier le propriétaire du son
+      const moodDef = MOODS.find(m => m.key === mood);
+      notifyOwner(supabase, songId, currentUser.id, {
+        type:  'mood_vote',
+        title: `${moodDef?.emoji || '🎵'} Nouveau vote de vibe`,
+        body:  `${currentUser.username || 'Quelqu'un'} a voté "${moodDef?.label || mood}" sur ton son`,
+        url:   `/song/${songId}`,
+        metadata: { mood, moodEmoji: moodDef?.emoji, refId: songId },
+      });
     }
     setLoading(false);
   };

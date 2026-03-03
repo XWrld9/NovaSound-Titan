@@ -193,12 +193,16 @@ const SeekBar = ({ currentTime, duration, onSeek, color = '#22d3ee' }) => {
 };
 
 // ── SongRow ────────────────────────────────────────────────────────────────
-const SongRow = memo(({ song, isActive, isSelected, onPlay, onRemove, selectionMode, onToggleSelect }) => (
+const SongRow = memo(({ song, isActive, isSelected, onPlay, onRemove, selectionMode, onToggleSelect }) => {
+  const needsReimport = !!song._needsReimport;
+  return (
   <div
     className={`flex items-center gap-3 py-2.5 px-3 rounded-xl transition-all group cursor-pointer ${
+      needsReimport ? 'opacity-50 border border-amber-500/15 bg-amber-500/5' :
       isActive ? 'bg-white/10 border border-white/10' : isSelected ? 'bg-cyan-500/10 border border-cyan-500/20' : 'hover:bg-white/[0.05] border border-transparent'
     }`}
-    onClick={selectionMode ? onToggleSelect : onPlay}
+    onClick={needsReimport ? undefined : (selectionMode ? onToggleSelect : onPlay)}
+    title={needsReimport ? 'Fichier non disponible — recharge tes fichiers pour lire ce son' : undefined}
   >
     {selectionMode ? (
       <div className="w-5 h-5 flex-shrink-0">
@@ -208,15 +212,20 @@ const SongRow = memo(({ song, isActive, isSelected, onPlay, onRemove, selectionM
         }
       </div>
     ) : (
-      <div className="w-9 h-9 rounded-lg overflow-hidden flex-shrink-0">
+      <div className="w-9 h-9 rounded-lg overflow-hidden flex-shrink-0 relative">
         <img src={song.cover_url} alt={song.title} className="w-full h-full object-cover" />
+        {needsReimport && (
+          <div className="absolute inset-0 bg-black/60 flex items-center justify-center">
+            <span className="text-amber-400 text-xs">⚠</span>
+          </div>
+        )}
       </div>
     )}
     <div className="flex-1 min-w-0">
-      <p className={`text-sm font-semibold truncate ${isActive ? 'text-white' : 'text-gray-300'}`}>{song.title}</p>
-      <p className="text-[11px] text-gray-500 truncate">{song.artist}</p>
+      <p className={`text-sm font-semibold truncate ${isActive ? 'text-white' : needsReimport ? 'text-gray-500' : 'text-gray-300'}`}>{song.title}</p>
+      <p className="text-[11px] truncate">{needsReimport ? <span className="text-amber-500/70">Fichier à recharger</span> : <span className="text-gray-500">{song.artist}</span>}</p>
     </div>
-    {isActive && !selectionMode && (
+    {isActive && !selectionMode && !needsReimport && (
       <div className="flex gap-px items-end h-3.5 flex-shrink-0">
         {[1,2,3].map(i => (
           <div key={i} className="w-0.5 rounded-full bg-cyan-400"
@@ -231,7 +240,8 @@ const SongRow = memo(({ song, isActive, isSelected, onPlay, onRemove, selectionM
       ><Trash2 className="w-3.5 h-3.5" /></button>
     )}
   </div>
-));
+  );
+});
 
 // ── SavePlaylistModal ─────────────────────────────────────────────────────
 const SavePlaylistModal = ({ songs, selectedIds, onSave, onClose }) => {
@@ -276,7 +286,9 @@ const SavePlaylistModal = ({ songs, selectedIds, onSave, onClose }) => {
 
 // ════════════════════════════════════════════════════════════════════════════
 const LocalPlayerPage = () => {
-  const inputRef = useRef(null);
+  const inputRef    = useRef(null);
+  const reimportRef  = useRef(null);  // pour ré-importer les fichiers des playlists sauvegardées
+  const [reimportTarget, setReimportTarget] = useState(null); // playlist en attente de reimport
   const {
     playSong, currentSong, playlist,
     audioCurrentTime, audioDuration, isPlayingGlobal,
@@ -367,7 +379,19 @@ const LocalPlayerPage = () => {
 
   const savePlaylist = (name) => {
     const selected = songs.filter(s => selectedIds.has(s.id));
-    const pl = { id: Date.now(), name, songs: selected };
+    // Sauvegarder SANS les blob URLs — elles sont éphémères (session uniquement)
+    // On garde id (= 'local::filename::size') pour le re-matching automatique
+    const safeSongs = selected.map(s => ({
+      id:       s.id,       // 'local::filename::size' — sert au matching
+      title:    s.title,
+      artist:   s.artist,
+      album:    s.album || '',
+      // cover_url : si c'est un blob, on utilise le SVG généré (persistant)
+      cover_url: s.cover_url?.startsWith('blob:') ? makeCover(s.title, s.artist) : (s.cover_url || makeCover(s.title, s.artist)),
+      is_local: true,
+      _needsReimport: true,  // marqueur : blob URL manquante, fichier à recharger
+    }));
+    const pl = { id: Date.now(), name, songs: safeSongs };
     const updated = [...savedPlaylists, pl];
     setSavedPlaylists(updated);
     try { localStorage.setItem('novasound_local_playlists', JSON.stringify(updated)); } catch {}
@@ -376,12 +400,55 @@ const LocalPlayerPage = () => {
 
   const loadPlaylist = (pl) => {
     setSongs(prev => {
-      const merged = [...prev, ...pl.songs.filter(s => !prev.find(p => p.id === s.id))];
-      setTimeout(() => playSong(pl.songs[0], merged), 50);
+      // Tenter de matcher chaque son sauvegardé avec les fichiers déjà chargés (session courante)
+      const resolved = pl.songs.map(saved => {
+        const live = prev.find(p => p.id === saved.id);
+        if (live) return live;  // ✅ fichier déjà en mémoire, blob URL valide
+        return { ...saved, _needsReimport: true, audio_url: null }; // ⚠️ à réimporter
+      });
+      const merged = [...prev];
+      resolved.forEach(s => { if (!merged.find(p => p.id === s.id)) merged.push(s); });
+      // Lancer la lecture uniquement sur les sons qui ont un blob URL valide
+      const playable = resolved.filter(s => !s._needsReimport);
+      if (playable.length > 0) {
+        setTimeout(() => playSong(playable[0], playable), 50);
+      }
       return merged;
     });
     setShowPlaylists(false);
   };
+
+  // Réimport des fichiers pour restaurer une playlist — matching par nom+taille (id = 'local::name::size')
+  const onReimportFiles = useCallback(async (e) => {
+    const files = Array.from(e.target.files || []).filter(isAudioFile);
+    if (!files.length) return;
+    setLoading(true);
+    const BATCH = 4;
+    const newSongs = [];
+    try {
+      for (let i = 0; i < files.length; i += BATCH) {
+        const batch = files.slice(i, i + BATCH);
+        const results = await Promise.all(batch.map(f => fileToSong(f).catch(() => null)));
+        newSongs.push(...results.filter(Boolean));
+      }
+    } catch (err) { console.warn('[LocalPlayer] reimport error:', err); }
+    setSongs(prev => {
+      // Remplacer les songs _needsReimport par les nouvelles versions si l'id correspond
+      const updated = prev.map(s => {
+        if (!s._needsReimport) return s;
+        const match = newSongs.find(ns => ns.id === s.id);
+        return match || s;  // si match trouvé → version avec blob URL valide
+      });
+      // Ajouter aussi les nouvelles songs non encore présentes
+      newSongs.forEach(ns => { if (!updated.find(u => u.id === ns.id)) updated.push(ns); });
+      // Lancer la lecture sur les songs fraîchement résolues
+      const resolved = updated.filter(s => !s._needsReimport && newSongs.find(ns => ns.id === s.id));
+      if (resolved.length > 0) setTimeout(() => playSong(resolved[0], resolved), 50);
+      return updated;
+    });
+    setLoading(false);
+    e.target.value = '';
+  }, [playSong]);
 
   const deletePlaylist = (id) => {
     const updated = savedPlaylists.filter(p => p.id !== id);
@@ -404,7 +471,8 @@ const LocalPlayerPage = () => {
       <div className="min-h-screen bg-[#050510] flex flex-col items-center justify-center px-5"
         style={{ paddingBottom: 'env(safe-area-inset-bottom,12px)' }}>
         {/* accept="*" → TOUS les fichiers visibles dans le picker (Xender, OTG, SD...) */}
-        <input ref={inputRef} type="file" accept="*/*" multiple onChange={onFiles} className="hidden" />
+        <input ref={inputRef}   type="file" id="local-file-input"    name="local-file-input"    accept="*/*" multiple onChange={onFiles}        className="hidden" />
+      <input ref={reimportRef} type="file" id="local-reimport-input" name="local-reimport-input" accept="*/*" multiple onChange={onReimportFiles} className="hidden" />
 
         <motion.div initial={{ opacity:0, y:24 }} animate={{ opacity:1, y:0 }}
           className="w-full max-w-sm flex flex-col items-center gap-8 text-center">
@@ -492,7 +560,8 @@ const LocalPlayerPage = () => {
     <div className="min-h-screen bg-[#050510] flex flex-col"
       style={{ paddingBottom:'env(safe-area-inset-bottom,120px)', paddingTop:'env(safe-area-inset-top,0px)' }}>
       {/* accept="*" = TOUS les fichiers visibles depuis n'importe quel dossier */}
-      <input ref={inputRef} type="file" accept="*/*" multiple onChange={onFiles} className="hidden" />
+      <input ref={inputRef}   type="file" id="local-file-input"    name="local-file-input"    accept="*/*" multiple onChange={onFiles}        className="hidden" />
+      <input ref={reimportRef} type="file" id="local-reimport-input" name="local-reimport-input" accept="*/*" multiple onChange={onReimportFiles} className="hidden" />
 
       <div className="max-w-sm mx-auto w-full px-4 pt-5 flex flex-col gap-3">
 
@@ -676,6 +745,13 @@ const LocalPlayerPage = () => {
                         <p className="text-white text-sm font-semibold">{pl.name}</p>
                         <p className="text-gray-600 text-xs">{pl.songs.length} sons</p>
                       </div>
+                    </button>
+                    <button
+                      onClick={() => reimportRef.current?.click()}
+                      title="Recharger les fichiers de cette playlist"
+                      className="p-1.5 rounded-lg text-amber-500/70 hover:text-amber-400 hover:bg-amber-500/10 transition-all opacity-0 group-hover:opacity-100 flex-shrink-0"
+                    >
+                      <FolderOpen className="w-3.5 h-3.5" />
                     </button>
                     <button onClick={() => deletePlaylist(pl.id)}
                       className="p-1 text-gray-700 hover:text-red-400 transition-colors opacity-0 group-hover:opacity-100">

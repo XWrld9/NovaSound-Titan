@@ -96,7 +96,7 @@ const SearchPage = () => {
       // Requête parallèle : sons + artistes + playlists
       const [{ data: songs }, { data: artists }, { data: playlists }] = await Promise.all([
         supabase
-          .from('songs').select('id, title, artist, cover_url, plays_count, genre')
+          .from('songs').select('id, title, artist, cover_url, audio_url, plays_count, genre')
           .eq('is_archived', false)
           .or(`title.ilike.%${q}%,artist.ilike.%${q}%`)
           .order('plays_count', { ascending: false })

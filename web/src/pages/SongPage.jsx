@@ -112,19 +112,19 @@ const SongPage = () => {
         setArtist(ud || null); setArtistEmail(ud?.email || null);
       }
       const { data: sib } = await supabase.from('songs')
-        .select('id,title,artist,cover_url,genre,uploader_id,duration_s')
+        .select('id,title,artist,cover_url,audio_url,genre,uploader_id,duration_s')
         .eq('is_archived', false).order('created_at',{ascending:false}).limit(60);
       if (sib) { let l=sib; if(!l.find(s=>s.id===data.id)) l=[data,...l]; setSiblings(l); }
       if (data.genre) {
         const { data: gs } = await supabase.from('songs')
-          .select('id,title,artist,cover_url,plays_count,genre')
+          .select('id,title,artist,cover_url,audio_url,plays_count,genre')
           .eq('is_archived',false).eq('genre',data.genre).neq('id',data.id)
           .order('plays_count',{ascending:false}).limit(6);
         setSimilar(gs||[]);
       }
       if (data.uploader_id) {
         const { data: ss } = await supabase.from('songs')
-          .select('id,title,artist,cover_url,plays_count,genre')
+          .select('id,title,artist,cover_url,audio_url,plays_count,genre')
           .eq('is_archived',false).eq('uploader_id',data.uploader_id).neq('id',data.id)
           .order('created_at',{ascending:false}).limit(5);
         setMoreBySame(ss||[]);

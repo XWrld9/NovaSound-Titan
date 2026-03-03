@@ -1,5 +1,5 @@
 import React from 'react';
-import { AlertTriangle, RefreshCw, Home } from 'lucide-react';
+import { AlertTriangle, RefreshCw, Home, HardDrive } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 class ErrorBoundary extends React.Component {
@@ -29,9 +29,12 @@ class ErrorBoundary extends React.Component {
   };
 
   handleGoHome = () => {
-    this.setState({ hasError: false, error: null, errorInfo: null });
-    // Compatible HashRouter
-    window.location.hash = '#/';
+    window.location.href = window.location.origin + window.location.pathname + '#/';
+    setTimeout(() => window.location.reload(), 50);
+  };
+
+  handleGoLocal = () => {
+    window.location.href = window.location.origin + window.location.pathname + '#/local-player';
     setTimeout(() => window.location.reload(), 50);
   };
 
@@ -74,7 +77,7 @@ class ErrorBoundary extends React.Component {
               </details>
             )}
 
-            <div className="flex flex-col sm:flex-row gap-3 justify-center">
+            <div className="flex flex-col sm:flex-row gap-3 justify-center flex-wrap">
               <Button
                 onClick={this.handleReset}
                 className="bg-cyan-500 hover:bg-cyan-600 cursor-pointer"
@@ -92,6 +95,16 @@ class ErrorBoundary extends React.Component {
               >
                 <Home className="w-4 h-4 mr-2" />
                 Accueil
+              </Button>
+
+              <Button
+                variant="outline"
+                onClick={this.handleGoLocal}
+                className="border-cyan-600/50 text-cyan-400 hover:bg-cyan-500/10 cursor-pointer"
+                type="button"
+              >
+                <HardDrive className="w-4 h-4 mr-2" />
+                Lecteur Local
               </Button>
             </div>
 

@@ -33,6 +33,16 @@ const TYPE_CONFIG = {
   chat_reply:       { icon: Reply,          color: '#e879f9', bg: 'rgba(232,121,249,0.15)',label: 'Réponse'    },
   chat_mention:     { icon: AtSign,         color: '#67e8f9', bg: 'rgba(103,232,249,0.15)',label: 'Mention'    },
   chat_mention_all: { icon: Zap,            color: '#fbbf24', bg: 'rgba(251,191,36,0.15)', label: '@tous'      },
+  mood_vote:        { icon: Zap,            color: '#fb923c', bg: 'rgba(251,146,60,0.15)', label: 'Vibe'       },
+};
+
+// Remplace l'icône par l'emoji du mood si présent dans les metadata
+const getMoodConfig = (notif) => {
+  if (notif.type !== 'mood_vote') return null;
+  try {
+    const meta = typeof notif.metadata === 'string' ? JSON.parse(notif.metadata) : (notif.metadata || {});
+    return meta.moodEmoji || '🎵';
+  } catch { return '🎵'; }
 };
 
 const getTypeConfig = (type) => TYPE_CONFIG[type] || {
@@ -91,7 +101,9 @@ const ToastItem = ({ toast, onDismiss }) => {
       >
         {toast.icon_url
           ? <img src={toast.icon_url} alt="" className="w-10 h-10 rounded-xl object-cover" />
-          : <Icon className="w-5 h-5" style={{ color: cfg.color }} />
+          : (() => { const moodEmoji = getMoodConfig(toast); return moodEmoji
+            ? <span className="text-xl">{moodEmoji}</span>
+            : <Icon className="w-5 h-5" style={{ color: cfg.color }} />; })()
         }
       </div>
 
@@ -215,7 +227,7 @@ const NotifItem = ({ notif, onRead, onDelete, onClick }) => {
         {notif.icon_url
           ? <img src={notif.icon_url} alt="" className="w-9 h-9 rounded-xl object-cover border border-white/10" />
           : <div className="w-9 h-9 rounded-xl flex items-center justify-center border" style={{ background: cfg.bg, borderColor: `${cfg.color}25` }}>
-              <Icon className="w-4 h-4" style={{ color: cfg.color }} />
+              {(() => { const moodEmoji = getMoodConfig(notif); return moodEmoji ? <span className="text-base">{moodEmoji}</span> : <Icon className="w-4 h-4" style={{ color: cfg.color }} />; })()}
             </div>
         }
         {notif.icon_url && (
@@ -267,10 +279,23 @@ const NotifPanel = ({ panelRef, panelPos, onClose, mobile }) => {
 
   useEffect(() => { loadNotifications?.(); }, []);
 
-  const filtered = notifications.filter(n => {
+  // Base filtered (lu/non-lu uniquement)
+  const baseFiltered = notifications.filter(n => {
     if (tab === 'unread' && n.is_read) return false;
+    return true;
+  });
+
+  // Final filtered (+ filtre type)
+  const filtered = baseFiltered.filter(n => {
     if (filter !== 'all' && n.type !== filter) return false;
     return true;
+  });
+
+  // Compteurs par type (sur baseFiltered pour que les badges soient exacts)
+  const countByType = {};
+  baseFiltered.forEach(n => {
+    const k = n.type || 'other';
+    countByType[k] = (countByType[k] || 0) + 1;
   });
 
   const handleClick = (notif) => {
@@ -282,14 +307,24 @@ const NotifPanel = ({ panelRef, panelPos, onClose, mobile }) => {
     }
   };
 
-  const typeFilters = [
-    { key: 'all', label: 'Tout' },
-    { key: 'like', label: '❤️' },
-    { key: 'comment', label: '💬' },
-    { key: 'follow', label: '👤' },
-    { key: 'chat_reply', label: '↩️' },
-    { key: 'new_song', label: '🎵' },
+  // Tous les types supportés — seuls ceux qui ont des notifs sont affichés (+ "Tout")
+  const ALL_TYPE_FILTERS = [
+    { key: 'all',              emoji: '🔔', label: 'Tout'   },
+    { key: 'like',             emoji: '❤️', label: 'Likes'  },
+    { key: 'comment',          emoji: '💬', label: 'Comms'  },
+    { key: 'follow',           emoji: '👤', label: 'Abos'   },
+    { key: 'chat_reply',       emoji: '↩️', label: 'Rép.'   },
+    { key: 'chat_mention',     emoji: '@',  label: 'Mentions'},
+    { key: 'chat_mention_all', emoji: '⚡', label: '@tous'  },
+    { key: 'new_song',         emoji: '🎵', label: 'Sons'   },
+    { key: 'repost',           emoji: '🔁', label: 'Reposts'},
+    { key: 'mood_vote',        emoji: '🎭', label: 'Vibes'  },
+    { key: 'news',             emoji: '📰', label: 'News'   },
   ];
+  // N'affiche que "Tout" + les types qui ont au moins 1 notif
+  const typeFilters = ALL_TYPE_FILTERS.filter(
+    f => f.key === 'all' || (countByType[f.key] || 0) > 0
+  );
 
   const panelStyle = mobile ? {
     background: 'transparent', border: 'none', boxShadow: 'none',
@@ -366,29 +401,63 @@ const NotifPanel = ({ panelRef, panelPos, onClose, mobile }) => {
         ))}
       </div>
 
-      {/* Filtre par type */}
-      <div className="flex items-center gap-1 px-4 py-2 overflow-x-auto scrollbar-hide flex-shrink-0">
-        {typeFilters.map(({ key, label }) => (
-          <button key={key} onClick={() => setFilter(key)}
-            className={`flex-shrink-0 px-2.5 py-1 rounded-xl text-xs font-semibold transition-all ${
-              filter === key
-                ? 'bg-white/15 text-white border border-white/15'
-                : 'text-gray-600 hover:text-gray-400 hover:bg-white/5'
-            }`}
-          >{label}</button>
-        ))}
+      {/* Filtre par type — avec compteurs */}
+      <div className="flex items-center gap-1.5 px-3 py-2 overflow-x-auto scrollbar-hide flex-shrink-0 border-b border-white/[0.05]">
+        {typeFilters.map(({ key, emoji, label }) => {
+          const count = key === 'all' ? baseFiltered.length : (countByType[key] || 0);
+          const active = filter === key;
+          const cfg = getTypeConfig(key);
+          return (
+            <button key={key} onClick={() => setFilter(key)}
+              className={`flex-shrink-0 flex items-center gap-1 px-2.5 py-1.5 rounded-xl text-xs font-bold transition-all ${
+                active
+                  ? 'text-white border'
+                  : 'text-gray-500 hover:text-gray-300 hover:bg-white/5 border border-transparent'
+              }`}
+              style={active ? {
+                background: key === 'all' ? 'rgba(255,255,255,0.12)' : `${cfg.color}20`,
+                borderColor: key === 'all' ? 'rgba(255,255,255,0.15)' : `${cfg.color}40`,
+                color: key === 'all' ? '#fff' : cfg.color,
+              } : {}}
+            >
+              <span className="text-sm leading-none">{emoji || '🔔'}</span>
+              <span className="hidden sm:inline">{label}</span>
+              {count > 0 && (
+                <span className={`text-[9px] font-black px-1 py-0.5 rounded-full min-w-[16px] text-center leading-none ${
+                  active ? 'bg-white/20 text-white' : 'bg-white/10 text-gray-400'
+                }`}>
+                  {count > 99 ? '99+' : count}
+                </span>
+              )}
+            </button>
+          );
+        })}
       </div>
 
       {/* Liste groupée par catégorie */}
       <div className="flex-1 overflow-y-auto" style={mobile ? { maxHeight: 300 } : {}}>
         {filtered.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-12 text-center">
+          <div className="flex flex-col items-center justify-center py-12 text-center px-4">
             <div className="w-12 h-12 rounded-2xl bg-white/[0.04] flex items-center justify-center mb-3 border border-white/[0.06]">
-              <Bell className="w-6 h-6 text-gray-700" />
+              {filter !== 'all' ? (
+                <span className="text-2xl">{ALL_TYPE_FILTERS.find(f => f.key === filter)?.emoji || '🔔'}</span>
+              ) : (
+                <Bell className="w-6 h-6 text-gray-700" />
+              )}
             </div>
-            <p className="text-gray-500 text-sm font-medium">
-              {tab === 'unread' ? '✓ Tout est lu' : 'Aucune notification'}
+            <p className="text-gray-400 text-sm font-semibold">
+              {tab === 'unread'
+                ? '✓ Tout est lu'
+                : filter !== 'all'
+                  ? `Aucune notification "${ALL_TYPE_FILTERS.find(f => f.key === filter)?.label || filter}"`
+                  : 'Aucune notification'}
             </p>
+            {filter !== 'all' && (
+              <button onClick={() => setFilter('all')}
+                className="mt-2 text-xs text-cyan-500 hover:text-cyan-400 transition-colors">
+                Voir toutes les notifications
+              </button>
+            )}
           </div>
         ) : filter !== 'all' ? (
           // Vue filtrée par type : groupée avec header coloré
