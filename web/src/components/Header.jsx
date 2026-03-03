@@ -46,22 +46,27 @@ const Header = () => {
 
   const checkAdminAccess = async () => {
     if (!currentUser) return;
-    
+
+    // Court-circuit immédiat pour l'admin hardcodé — pas besoin de toucher user_roles
+    const adminEmail = 'eloadxfamily@gmail.com';
+    if (currentUser.email === adminEmail || currentUser.user_metadata?.email === adminEmail) {
+      setIsAdmin(true);
+      return;
+    }
+
+    // Pour les autres rôles admin — une seule tentative, pas de retry
     try {
-      const { data: roleData } = await supabase
+      const { data: roleData, error } = await supabase
         .from('user_roles')
         .select('role')
         .eq('user_id', currentUser.id)
         .eq('role', 'admin')
         .eq('is_active', true)
-        .single();
+        .maybeSingle();
 
-      // Vérification hardcodée pour eloadxfamily@gmail.com
-      if (currentUser.email === 'eloadxfamily@gmail.com' || roleData) {
-        setIsAdmin(true);
-      }
-    } catch (err) {
-      console.error('Erreur vérification admin:', err);
+      if (!error && roleData) setIsAdmin(true);
+    } catch {
+      // Silencieux — pas admin
     }
   };
 
@@ -140,9 +145,9 @@ const Header = () => {
             </Link>
 
             {/* Barre de recherche desktop */}
-            <div className="hidden md:block flex-1 max-w-xl relative mx-4">
+            <div className="hidden md:block flex-1 max-w-2xl relative mx-6">
               <div className="relative group">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-cyan-400 group-focus-within:text-fuchsia-500 transition-colors" />
+                <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-cyan-400 group-focus-within:text-fuchsia-400 transition-colors z-10" />
                 <input
                   type="text"
                   placeholder="Rechercher des sons, des artistes..."
@@ -150,7 +155,7 @@ const Header = () => {
                   onChange={(e) => setSearchQuery(e.target.value)}
                   onFocus={() => searchQuery && setShowResults(true)}
                   onBlur={() => setTimeout(() => setShowResults(false), 200)}
-                  className="w-full pl-10 pr-4 py-2 bg-gray-900 border border-cyan-500/30 rounded-full text-white placeholder-gray-400 focus:outline-none focus:border-fuchsia-500 focus:ring-2 focus:ring-fuchsia-500/20 transition-all"
+                  className="w-full pl-11 pr-5 py-3 bg-gray-900/80 border border-cyan-500/30 rounded-2xl text-white placeholder-gray-500 focus:outline-none focus:border-fuchsia-500/70 focus:ring-2 focus:ring-fuchsia-500/20 focus:bg-gray-900 transition-all text-sm shadow-inner shadow-black/30"
                 />
               </div>
               <AnimatePresence>
