@@ -67,7 +67,7 @@ const MoodVote = ({ songId }) => {
       notifyOwner(supabase, songId, currentUser.id, {
         type:  'mood_vote',
         title: `${moodDef?.emoji || '🎵'} Nouveau vote de vibe`,
-        body:  `${currentUser.username || 'Quelqu'un'} a voté "${moodDef?.label || mood}" sur ton son`,
+        body:  `${currentUser.username || "Quelqu'un"} a voté "${moodDef?.label || mood}" sur ton son`,
         url:   `/song/${songId}`,
         metadata: { mood, moodEmoji: moodDef?.emoji, refId: songId },
       });

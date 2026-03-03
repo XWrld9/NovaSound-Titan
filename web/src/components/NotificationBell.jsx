@@ -72,7 +72,14 @@ const ToastItem = ({ toast, onDismiss }) => {
 
   return (
     <motion.div
-      style={{ x, opacity }}
+      style={{ x, opacity,
+        background: `linear-gradient(135deg, #1a1a2e 0%, #16213e 100%)`,
+        border: `1.5px solid ${cfg.color}60`,
+        borderLeft: `4px solid ${cfg.color}`,
+        borderRadius: 16,
+        padding: '12px 14px 12px 12px',
+        boxShadow: `0 8px 32px rgba(0,0,0,0.8), 0 0 0 1px ${cfg.color}20, 0 4px 16px ${cfg.color}25`,
+      }}
       drag="x"
       dragConstraints={{ left: 0, right: 0 }}
       dragElastic={0.25}
@@ -84,14 +91,6 @@ const ToastItem = ({ toast, onDismiss }) => {
       exit={{ opacity: 0, y: -12, scale: 0.93 }}
       transition={{ type: 'spring', damping: 24, stiffness: 380 }}
       className="flex items-start gap-3 cursor-pointer select-none overflow-hidden"
-      style={{
-        background: `linear-gradient(135deg, #1a1a2e 0%, #16213e 100%)`,
-        border: `1.5px solid ${cfg.color}60`,
-        borderLeft: `4px solid ${cfg.color}`,
-        borderRadius: 16,
-        padding: '12px 14px 12px 12px',
-        boxShadow: `0 8px 32px rgba(0,0,0,0.8), 0 0 0 1px ${cfg.color}20, 0 4px 16px ${cfg.color}25`,
-      }}
       onClick={onDismiss}
     >
       {/* Icône type — toujours visible, fond coloré fort */}
