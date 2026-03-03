@@ -403,7 +403,7 @@ const LocalPlayerPage = () => {
     return (
       <div className="min-h-screen bg-[#050510] flex flex-col items-center justify-center px-5"
         style={{ paddingBottom: 'env(safe-area-inset-bottom,12px)' }}>
-        {/* accept="*/*" → TOUS les fichiers visibles dans le picker (Xender, OTG, SD...) */}
+        {/* accept="*" → TOUS les fichiers visibles dans le picker (Xender, OTG, SD...) */}
         <input ref={inputRef} type="file" accept="*/*" multiple onChange={onFiles} className="hidden" />
 
         <motion.div initial={{ opacity:0, y:24 }} animate={{ opacity:1, y:0 }}
@@ -491,7 +491,7 @@ const LocalPlayerPage = () => {
   return (
     <div className="min-h-screen bg-[#050510] flex flex-col"
       style={{ paddingBottom:'env(safe-area-inset-bottom,120px)', paddingTop:'env(safe-area-inset-top,0px)' }}>
-      {/* accept="*/*" = TOUS les fichiers visibles depuis n'importe quel dossier */}
+      {/* accept="*" = TOUS les fichiers visibles depuis n'importe quel dossier */}
       <input ref={inputRef} type="file" accept="*/*" multiple onChange={onFiles} className="hidden" />
 
       <div className="max-w-sm mx-auto w-full px-4 pt-5 flex flex-col gap-3">
