@@ -150,8 +150,10 @@ const fileToSong = async (file, fileHandle = null) => {
   const title  = tags.title  || raw;
   const artist = tags.artist || 'Fichier local';
   const svgCover = makeCoverSvg(title, artist);
+  const timestamp = Date.now(); // Pour suivre l'âge du blob
+  
   return {
-    id:            'local::' + file.name + '::' + file.size,
+    id:            'local::' + file.name + '::' + file.size + '::' + timestamp,
     title, artist,
     album:         tags.album || '',
     audio_url:     url,
@@ -163,6 +165,8 @@ const fileToSong = async (file, fileHandle = null) => {
     _hasBlobCover: !!tags.cover,
     _coverBlobUrl: tags.cover || null,
     _fileHandle:   fileHandle || null,
+    _blobTimestamp: timestamp, // Pour vérifier l'âge du blob
+    _blobMaxAge:   24 * 60 * 60 * 1000, // 24 heures max pour les blobs
   };
 };
 
@@ -423,12 +427,30 @@ const LocalPlayerPage = () => {
   const [volume,         setVolume]         = useState(80);
   const [showVolume,     setShowVolume]     = useState(false);
 
-  // ── Chargement playlists au montage ───────────────────────────────────────
+  // ── Vérification automatique des blobs expirés ───────────────────────────────
+  const checkExpiredBlobs = useCallback(async (songsList) => {
+    const expiredSongs = [];
+    for (const song of songsList) {
+      if (song._blobUrl && !song._needsReimport) {
+        const isValid = await verifyBlobUrl(song);
+        if (!isValid) {
+          song._needsReimport = true;
+          expiredSongs.push(song);
+        }
+      }
+    }
+    return expiredSongs;
+  }, [verifyBlobUrl]);
+
+// ── Chargement playlists au montage ───────────────────────────────────────
   useEffect(() => {
     (async () => {
       try {
         const idbPls = await idbLoadAll();
-        if (idbPls.length > 0) { setSavedPlaylists(idbPls); return; }
+        if (idbPls.length > 0) { 
+          setSavedPlaylists(idbPls); 
+          return; 
+        }
       } catch (_) {}
       try {
         const ls = JSON.parse(localStorage.getItem('novasound_local_playlists') || '[]');
@@ -443,6 +465,29 @@ const LocalPlayerPage = () => {
       } catch (_) {}
     })();
   }, []);
+
+// ── Vérification périodique des blobs ───────────────────────────────────────
+  useEffect(() => {
+    if (songs.length === 0) return;
+    
+    const checkBlobs = async () => {
+      const expired = await checkExpiredBlobs(songs);
+      if (expired.length > 0) {
+        // Mettre à jour la liste des chansons
+        setSongs(prev => [...prev]);
+        // Notifier l'utilisateur
+        console.warn(`[LocalPlayer] ${expired.length} fichier(s) audio expiré(s), réimportation requise`);
+      }
+    };
+    
+    // Vérifier au montage
+    checkBlobs();
+    
+    // Vérifier toutes les 5 minutes
+    const interval = setInterval(checkBlobs, 5 * 60 * 1000);
+    
+    return () => clearInterval(interval);
+  }, [songs.length, checkExpiredBlobs]);
 
   // ── Révocation blobs au unmount ───────────────────────────────────────────
   useEffect(() => () => {
@@ -533,7 +578,46 @@ const LocalPlayerPage = () => {
     e.target.value = '';
   }, [playSong]);
 
-  const playFromQueue   = useCallback((idx) => playSong(songs[idx], songs), [songs, playSong]);
+  const verifyBlobUrl = useCallback((song) => {
+  if (song._blobUrl) {
+    // Vérifier l'âge du blob d'abord
+    const age = Date.now() - (song._blobTimestamp || 0);
+    const maxAge = song._blobMaxAge || (24 * 60 * 60 * 1000); // 24h par défaut
+    
+    if (age > maxAge) {
+      return Promise.resolve(false); // Blob trop ancien
+    }
+    
+    // Vérifier si le blob est toujours accessible
+    return fetch(song._blobUrl, { method: 'HEAD' })
+      .then(res => res.ok)
+      .catch(() => false);
+  }
+  return Promise.resolve(false);
+}, []);
+
+const playFromQueue   = useCallback(async (idx) => {
+  const song = songs[idx];
+  if (song._needsReimport) {
+    // Demander réimportation
+    alert('Ce fichier nécessite une réimportation pour être lu');
+    setTimeout(() => reimportRef.current?.click(), 300);
+    return;
+  }
+  
+  // Vérifier si le blob URL est valide
+  if (song._blobUrl) {
+    const isValid = await verifyBlobUrl(song);
+    if (!isValid) {
+      song._needsReimport = true;
+      alert('Le fichier audio n\'est plus disponible. Veuillez réimporter.');
+      setTimeout(() => reimportRef.current?.click(), 300);
+      return;
+    }
+  }
+  
+  playSong(song, songs);
+}, [songs, playSong, verifyBlobUrl]);
   const removeFromQueue = useCallback((idx) => {
     setSongs(prev => {
       const s = prev[idx];
@@ -794,7 +878,23 @@ const LocalPlayerPage = () => {
 
                   {/* Play/Pause */}
                   <motion.button whileTap={{ scale:0.9 }}
-                    onClick={isLocalPlaying ? togglePlayPause : () => playSong(songs[0], songs)}
+                    onClick={() => {
+                      const firstPlayable = songs.find(s => !s._needsReimport && s._blobUrl);
+                      if (firstPlayable) {
+                        playSong(firstPlayable, songs);
+                      } else if (songs.length > 0) {
+                        // Vérifier si les fichiers nécessitent une réimportation
+                        const needsReimport = songs.some(s => s._needsReimport);
+                        if (needsReimport) {
+                          // Afficher notification pour réimporter
+                          alert('Veuillez réimporter les fichiers pour continuer l\'écoute');
+                          setTimeout(() => reimportRef.current?.click(), 300);
+                        } else {
+                          // Démarrer avec le premier fichier disponible
+                          playSong(songs[0], songs);
+                        }
+                      }
+                    }}
                     className="w-16 h-16 rounded-full flex items-center justify-center shadow-xl"
                     style={{ background:'linear-gradient(135deg,#0e7490,#7c3aed)', boxShadow:'0 0 40px rgba(6,182,212,0.4)' }}>
                     {isPlayingGlobal

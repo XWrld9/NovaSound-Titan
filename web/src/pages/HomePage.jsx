@@ -48,6 +48,7 @@ const HomePage = () => {
   const [selectedNews, setSelectedNews] = useState(null);
 
   const [newSongIds, setNewSongIds] = useState(new Set());
+  const [loadingHistorySong, setLoadingHistorySong] = useState(null);
 
   useEffect(() => {
     fetchData();
@@ -132,11 +133,39 @@ const HomePage = () => {
   const { playSong: globalPlaySong, currentSong } = usePlayer();
 
   // Lance la lecture avec toute la liste de la homepage comme playlist
-  const playSong = (song) => {
-    globalPlaySong(song, featuredSongs.filter(s => !s.is_archived));
-    logListened(song, currentUser?.id);
-    // Refresh history display
-    setListenedHistory(getListened(currentUser?.id));
+  const playSong = async (song) => {
+    try {
+      // Si la chanson vient de l'historique, récupérer les données complètes
+      if (!song.audio_url) {
+        setLoadingHistorySong(song.id);
+        const { data: fullSong, error } = await supabase
+          .from('songs')
+          .select('*')
+          .eq('id', song.id)
+          .single();
+        
+        setLoadingHistorySong(null);
+        
+        if (error || !fullSong) {
+          console.error('Song not found:', error);
+          return;
+        }
+        
+        // Utiliser la chanson complète
+        globalPlaySong(fullSong, featuredSongs.filter(s => !s.is_archived));
+        logListened(fullSong, currentUser?.id);
+      } else {
+        // Chanson déjà complète (featured songs)
+        globalPlaySong(song, featuredSongs.filter(s => !s.is_archived));
+        logListened(song, currentUser?.id);
+      }
+      
+      // Refresh history display
+      setListenedHistory(getListened(currentUser?.id));
+    } catch (error) {
+      console.error('Error playing song:', error);
+      setLoadingHistorySong(null);
+    }
   };
 
   return (
@@ -238,9 +267,15 @@ const HomePage = () => {
                         : <div className="w-full h-full flex items-center justify-center"><Music className="w-6 h-6 text-gray-600" /></div>
                       }
                       <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity">
-                        <div className="w-9 h-9 rounded-full bg-cyan-500 flex items-center justify-center shadow-lg">
-                          <Play className="w-4 h-4 text-white fill-white ml-0.5" />
-                        </div>
+                        {loadingHistorySong === song.id ? (
+                          <div className="w-9 h-9 rounded-full bg-cyan-500 flex items-center justify-center shadow-lg">
+                            <div className="w-4 h-4 rounded-full border-2 border-white/30 border-t-white animate-spin" />
+                          </div>
+                        ) : (
+                          <div className="w-9 h-9 rounded-full bg-cyan-500 flex items-center justify-center shadow-lg">
+                            <Play className="w-4 h-4 text-white fill-white ml-0.5" />
+                          </div>
+                        )}
                       </div>
                     </div>
                     <p className="text-white text-xs font-medium truncate">{song.title}</p>
