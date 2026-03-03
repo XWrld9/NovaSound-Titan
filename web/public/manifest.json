@@ -1,7 +1,7 @@
 {
   "name": "NovaSound TITAN LUX v2000",
   "short_name": "NovaSound",
-  "description": "Plateforme musicale nouvelle g\u00e9n\u00e9ration \u2014 d\u00e9couvre, \u00e9coute et partage.",
+  "description": "Plateforme musicale nouvelle génération — découvre, écoute et partage.",
   "start_url": "/#/",
   "scope": "/",
   "display": "standalone",
@@ -40,11 +40,9 @@
   ],
   "scope_extensions": [
     {
-      "type": "origin",
       "origin": "https://nova-sound-titan.vercel.app"
     },
     {
-      "type": "origin",
       "origin": "https://tleuzlyfelrnykpbwhkc.supabase.co"
     }
   ],
@@ -135,21 +133,21 @@
       "sizes": "512x512",
       "type": "image/png",
       "form_factor": "wide",
-      "label": "NovaSound TITAN LUX \u2014 Accueil"
+      "label": "NovaSound TITAN LUX — Accueil"
     },
     {
       "src": "/icon-512.png",
       "sizes": "512x512",
       "type": "image/png",
       "form_factor": "narrow",
-      "label": "NovaSound TITAN LUX \u2014 Mobile"
+      "label": "NovaSound TITAN LUX — Mobile"
     }
   ],
   "shortcuts": [
     {
       "name": "Chat Global",
       "short_name": "Chat",
-      "description": "Rejoindre le chat de la communaut\u00e9",
+      "description": "Rejoindre le chat de la communauté",
       "url": "/#/chat",
       "icons": [
         {
@@ -162,7 +160,7 @@
     {
       "name": "Explorer",
       "short_name": "Explorer",
-      "description": "D\u00e9couvrir de nouveaux sons",
+      "description": "Découvrir de nouveaux sons",
       "url": "/#/explorer",
       "icons": [
         {
@@ -201,7 +199,7 @@
     {
       "name": "Live Rooms",
       "short_name": "Live",
-      "description": "Rejoindre une salle d'\u00e9coute live",
+      "description": "Rejoindre une salle d'écoute live",
       "url": "/#/live",
       "icons": [
         {
@@ -246,7 +244,7 @@
     {
       "name": "NovaSound Player",
       "short_name": "Player",
-      "description": "Contr\u00f4le la lecture musicale",
+      "description": "Contrôle la lecture musicale",
       "tag": "novasound-player",
       "template": "player-widget",
       "ms_ac_template": "/widgets/player.json",
