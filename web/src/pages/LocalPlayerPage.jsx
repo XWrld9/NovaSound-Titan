@@ -26,6 +26,78 @@ const AUDIO_EXTS = /\.(mp3|m4a|wav|flac|ogg|aac|opus|webm|mp4|3gp|caf|aiff|wma|a
 const isAudioFile = (file) =>
   AUDIO_EXTS.test(file.name) || file.type.startsWith('audio/') || file.type === 'video/mp4';
 
+// ── IndexedDB — stockage persistant des playlists locales ─────────────────
+// Utilisé pour sauvegarder les FileSystemFileHandle (File System Access API)
+// permettant de relire les fichiers sans re-sélection sur PC/Chrome/Edge
+const IDB_NAME    = 'novasound_local_v1';
+const IDB_STORE   = 'playlists';
+const FS_ACCESS_SUPPORTED = typeof window !== 'undefined' && 'showOpenFilePicker' in window;
+
+const openIDB = () => new Promise((resolve, reject) => {
+  const req = indexedDB.open(IDB_NAME, 1);
+  req.onupgradeneeded = (e) => e.target.result.createObjectStore(IDB_STORE, { keyPath: 'id' });
+  req.onsuccess = (e) => resolve(e.target.result);
+  req.onerror   = () => reject(req.error);
+});
+
+const idbSave = async (playlist) => {
+  try {
+    const db   = await openIDB();
+    const tx   = db.transaction(IDB_STORE, 'readwrite');
+    tx.objectStore(IDB_STORE).put(playlist);
+    return new Promise((res, rej) => { tx.oncomplete = res; tx.onerror = rej; });
+  } catch (e) { console.warn('[LocalPlayer] idbSave error:', e); }
+};
+
+const idbDelete = async (id) => {
+  try {
+    const db = await openIDB();
+    const tx = db.transaction(IDB_STORE, 'readwrite');
+    tx.objectStore(IDB_STORE).delete(id);
+    return new Promise((res, rej) => { tx.oncomplete = res; tx.onerror = rej; });
+  } catch (e) { console.warn('[LocalPlayer] idbDelete error:', e); }
+};
+
+const idbLoadAll = async () => {
+  try {
+    const db  = await openIDB();
+    const tx  = db.transaction(IDB_STORE, 'readonly');
+    const req = tx.objectStore(IDB_STORE).getAll();
+    return new Promise((res, rej) => { req.onsuccess = () => res(req.result || []); req.onerror = rej; });
+  } catch (e) { console.warn('[LocalPlayer] idbLoadAll error:', e); return []; }
+};
+
+// Tenter de résoudre les FileHandle en objets File réels
+const resolveHandles = async (songs) => {
+  const resolved = [];
+  for (const s of songs) {
+    if (s._fileHandle) {
+      try {
+        // Vérifier permission d'abord
+        const perm = await s._fileHandle.queryPermission({ mode: 'read' });
+        let file = null;
+        if (perm === 'granted') {
+          file = await s._fileHandle.getFile();
+        } else {
+          const req = await s._fileHandle.requestPermission({ mode: 'read' });
+          if (req === 'granted') file = await s._fileHandle.getFile();
+        }
+        if (file) {
+          const song = await fileToSong(file);
+          song._fileHandle = s._fileHandle;
+          resolved.push(song);
+          continue;
+        }
+      } catch (_) {}
+    }
+    // Fallback : marqué comme nécessitant réimport
+    resolved.push({ ...s, _needsReimport: true, audio_url: null });
+  }
+  return resolved;
+};
+
+
+
 // ── Couleur déterministe depuis le nom ─────────────────────────────────────
 const nameToColor = (str = '') => {
   let h = 0;
@@ -82,7 +154,7 @@ const parseID3 = async (file) => {
   return meta;
 };
 
-const fileToSong = async (file) => {
+const fileToSong = async (file, fileHandle = null) => {
   const url    = URL.createObjectURL(file);
   const raw    = file.name.replace(/\.[^.]+$/, '').replace(/[-_]/g, ' ');
   const tags   = await parseID3(file);
@@ -99,6 +171,7 @@ const fileToSong = async (file) => {
     _blobUrl:      url,
     _hasBlobCover: !!tags.cover,
     _coverBlobUrl: tags.cover || null,
+    _fileHandle:   fileHandle || null,  // FileSystemFileHandle pour persistance
   };
 };
 
@@ -294,6 +367,8 @@ const LocalPlayerPage = () => {
     audioCurrentTime, audioDuration, isPlayingGlobal,
     seekTo, togglePlayPause,
     handleNext, handlePrevious,
+    shuffle, toggleShuffle,
+    repeat, cycleRepeat,
   } = usePlayer();
 
   const [songs,         setSongs]         = useState([]);
@@ -302,12 +377,24 @@ const LocalPlayerPage = () => {
   const [selectionMode, setSelectionMode] = useState(false);
   const [selectedIds,   setSelectedIds]   = useState(new Set());
   const [showSaveModal, setShowSaveModal] = useState(false);
-  const [savedPlaylists, setSavedPlaylists] = useState(() => {
-    try { return JSON.parse(localStorage.getItem('novasound_local_playlists') || '[]'); } catch { return []; }
-  });
+  const [savedPlaylists, setSavedPlaylists] = useState([]);
+  // Charger les playlists depuis IndexedDB au montage
+  useEffect(() => {
+    idbLoadAll().then(pls => {
+      if (pls.length > 0) setSavedPlaylists(pls);
+      else {
+        // Migration depuis localStorage si IDB vide
+        try {
+          const ls = JSON.parse(localStorage.getItem('novasound_local_playlists') || '[]');
+          if (ls.length) {
+            setSavedPlaylists(ls);
+            ls.forEach(pl => idbSave(pl).catch(() => {}));
+          }
+        } catch {}
+      }
+    });
+  }, []);
   const [showPlaylists, setShowPlaylists] = useState(false);
-  const [shuffle,       setShuffle]       = useState(false);
-  const [repeat,        setRepeat]        = useState('off');
   const [volume,        setVolume]        = useState(80);
   const [showVolume,    setShowVolume]    = useState(false);
 
@@ -319,6 +406,41 @@ const LocalPlayerPage = () => {
     });
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // ── File System Access API (PC/Chrome/Edge) — handles persistants ──────────
+  const openPickerFSA = useCallback(async () => {
+    if (!FS_ACCESS_SUPPORTED) { openPicker(); return; }
+    try {
+      const handles = await window.showOpenFilePicker({
+        types: [{ description: 'Fichiers Audio', accept: { 'audio/*': ['.mp3','.m4a','.wav','.flac','.ogg','.aac','.opus','.wma','.webm'] } }],
+        multiple: true,
+      });
+      setLoading(true);
+      const BATCH = 4;
+      const newSongs = [];
+      for (let i = 0; i < handles.length; i += BATCH) {
+        const batch = handles.slice(i, i + BATCH);
+        const results = await Promise.all(batch.map(async h => {
+          try {
+            const file = await h.getFile();
+            if (!isAudioFile(file)) return null;
+            return fileToSong(file, h); // passer le handle pour persistance
+          } catch { return null; }
+        }));
+        newSongs.push(...results.filter(Boolean));
+      }
+      if (!newSongs.length) { setLoading(false); return; }
+      setSongs(prev => {
+        const merged = [...prev, ...newSongs.filter(ns => !prev.find(p => p.id === ns.id))];
+        if (prev.length === 0) setTimeout(() => playSong(newSongs[0], newSongs), 50);
+        return merged;
+      });
+      setLoading(false);
+      setAdded(true); setTimeout(() => setAdded(false), 2000);
+    } catch (err) {
+      if (err?.name !== 'AbortError') openPicker(); // fallback input classique
+    }
+  }, [playSong]);
 
   const openPicker = () => inputRef.current?.click();
 
@@ -363,13 +485,20 @@ const LocalPlayerPage = () => {
     });
   }, []);
 
-  const clearAll = () => {
+  const clearAll = useCallback(() => {
+    if (!songs.length) return;
     songs.forEach(s => {
       if (s._blobUrl)      try { URL.revokeObjectURL(s._blobUrl);      } catch (_) {}
       if (s._hasBlobCover) try { URL.revokeObjectURL(s._coverBlobUrl); } catch (_) {}
     });
-    setSongs([]); setSelectedIds(new Set()); setSelectionMode(false);
-  };
+    setSongs([]);
+    setSelectedIds(new Set());
+    setSelectionMode(false);
+    // Arrêter le lecteur global si un son local est en cours
+    if (currentSong?.is_local) {
+      window.dispatchEvent(new CustomEvent('novasound:close-player'));
+    }
+  }, [songs, currentSong]);
 
   const selectAll    = useCallback(() => setSelectedIds(new Set(songs.map(s => s.id))), [songs]);
   const deselectAll  = useCallback(() => setSelectedIds(new Set()), []);
@@ -379,43 +508,58 @@ const LocalPlayerPage = () => {
 
   const savePlaylist = (name) => {
     const selected = songs.filter(s => selectedIds.has(s.id));
-    // Sauvegarder SANS les blob URLs — elles sont éphémères (session uniquement)
-    // On garde id (= 'local::filename::size') pour le re-matching automatique
     const safeSongs = selected.map(s => ({
-      id:       s.id,       // 'local::filename::size' — sert au matching
-      title:    s.title,
-      artist:   s.artist,
-      album:    s.album || '',
-      // cover_url : si c'est un blob, on utilise le SVG généré (persistant)
-      cover_url: s.cover_url?.startsWith('blob:') ? makeCover(s.title, s.artist) : (s.cover_url || makeCover(s.title, s.artist)),
-      is_local: true,
-      _needsReimport: true,  // marqueur : blob URL manquante, fichier à recharger
+      id:           s.id,
+      title:        s.title,
+      artist:       s.artist,
+      album:        s.album || '',
+      cover_url:    s.cover_url?.startsWith('blob:') ? makeCover(s.title, s.artist) : (s.cover_url || makeCover(s.title, s.artist)),
+      is_local:     true,
+      _needsReimport: !s._fileHandle, // pas besoin de reimport si on a le handle
+      _fileHandle:  s._fileHandle || null, // FileSystemFileHandle — persistant!
     }));
-    const pl = { id: Date.now(), name, songs: safeSongs };
+    const pl = { id: Date.now(), name, songs: safeSongs, createdAt: new Date().toISOString() };
     const updated = [...savedPlaylists, pl];
     setSavedPlaylists(updated);
-    try { localStorage.setItem('novasound_local_playlists', JSON.stringify(updated)); } catch {}
+    // Sauvegarder en IndexedDB (supporte les FileHandle)
+    idbSave(pl).catch(() => {});
+    // Fallback localStorage (sans les handles qui ne sont pas sérialisables)
+    try {
+      const lsSafe = updated.map(p => ({ ...p, songs: p.songs.map(s => ({ ...s, _fileHandle: undefined })) }));
+      localStorage.setItem('novasound_local_playlists', JSON.stringify(lsSafe));
+    } catch {}
     setShowSaveModal(false); setSelectionMode(false); setSelectedIds(new Set());
   };
 
-  const loadPlaylist = (pl) => {
-    setSongs(prev => {
-      // Tenter de matcher chaque son sauvegardé avec les fichiers déjà chargés (session courante)
-      const resolved = pl.songs.map(saved => {
-        const live = prev.find(p => p.id === saved.id);
-        if (live) return live;  // ✅ fichier déjà en mémoire, blob URL valide
-        return { ...saved, _needsReimport: true, audio_url: null }; // ⚠️ à réimporter
-      });
-      const merged = [...prev];
-      resolved.forEach(s => { if (!merged.find(p => p.id === s.id)) merged.push(s); });
-      // Lancer la lecture uniquement sur les sons qui ont un blob URL valide
-      const playable = resolved.filter(s => !s._needsReimport);
-      if (playable.length > 0) {
-        setTimeout(() => playSong(playable[0], playable), 50);
-      }
-      return merged;
-    });
+  const loadPlaylist = async (pl) => {
     setShowPlaylists(false);
+    setLoading(true);
+    try {
+      // Tenter de résoudre les FileHandle (PC/Chrome avec File System Access API)
+      const withHandles = pl.songs.filter(s => s._fileHandle);
+      const resolved = withHandles.length > 0 ? await resolveHandles(pl.songs) : pl.songs.map(s => ({ ...s, _needsReimport: true }));
+
+      setSongs(prev => {
+        const merged = [...prev];
+        resolved.forEach(saved => {
+          const live = prev.find(p => p.id === saved.id);
+          if (!live) merged.push(live || saved);
+          else {
+            // Si la version live a un blob URL valide, on la garde
+            const idx = merged.findIndex(p => p.id === saved.id);
+            if (idx >= 0 && !merged[idx]._needsReimport) return;
+            if (idx >= 0) merged[idx] = saved;
+          }
+        });
+        const playable = merged.filter(s => resolved.find(r => r.id === s.id) && !s._needsReimport);
+        if (playable.length > 0) setTimeout(() => playSong(playable[0], playable), 50);
+        return merged;
+      });
+    } catch (e) {
+      console.warn('[LocalPlayer] loadPlaylist error:', e);
+    } finally {
+      setLoading(false);
+    }
   };
 
   // Réimport des fichiers pour restaurer une playlist — matching par nom+taille (id = 'local::name::size')
@@ -453,7 +597,11 @@ const LocalPlayerPage = () => {
   const deletePlaylist = (id) => {
     const updated = savedPlaylists.filter(p => p.id !== id);
     setSavedPlaylists(updated);
-    try { localStorage.setItem('novasound_local_playlists', JSON.stringify(updated)); } catch {}
+    idbDelete(id).catch(() => {});
+    try {
+      const lsSafe = updated.map(p => ({ ...p, songs: p.songs.map(s => ({ ...s, _fileHandle: undefined })) }));
+      localStorage.setItem('novasound_local_playlists', JSON.stringify(lsSafe));
+    } catch {}
   };
 
   // ── Volume → applique sur l'élément audio global ─────────────────────
@@ -495,11 +643,11 @@ const LocalPlayerPage = () => {
             </p>
           </div>
 
-          <motion.button onClick={openPicker} whileTap={{ scale:0.95 }} disabled={loading}
+          <motion.button onClick={FS_ACCESS_SUPPORTED ? openPickerFSA : openPicker} whileTap={{ scale:0.95 }} disabled={loading}
             className="w-full flex items-center justify-center gap-3 py-4 px-6 rounded-2xl text-white font-bold disabled:opacity-60"
             style={{ background:'linear-gradient(135deg,#0e7490,#7c3aed)' }}>
             <FolderOpen className="w-5 h-5" />
-            {loading ? 'Chargement…' : "Ouvrir depuis l'appareil"}
+            {loading ? 'Chargement…' : FS_ACCESS_SUPPORTED ? 'Ouvrir (fichiers persistants)' : "Ouvrir depuis l'appareil"}
           </motion.button>
 
           <div className="bg-amber-500/10 border border-amber-500/20 rounded-xl px-4 py-3 w-full text-left">
@@ -508,6 +656,15 @@ const LocalPlayerPage = () => {
               Tous les fichiers sont affichés. Sélectionne tes fichiers audio depuis n'importe quel dossier (Xender, WhatsApp, SD card…). Les non-audio sont automatiquement ignorés.
             </p>
           </div>
+
+          {FS_ACCESS_SUPPORTED && (
+            <div className="bg-green-500/10 border border-green-500/20 rounded-xl px-4 py-3 w-full text-left">
+              <p className="text-green-300 text-xs font-semibold mb-1">✅ Mode PC — Playlists persistantes</p>
+              <p className="text-green-200/70 text-xs leading-relaxed">
+                Tes fichiers sont mémorisés entre les sessions. Tes playlists resteront disponibles même après plusieurs jours.
+              </p>
+            </div>
+          )}
 
           {savedPlaylists.length > 0 && (
             <div className="w-full">
@@ -607,7 +764,7 @@ const LocalPlayerPage = () => {
             {/* ── CONTRÔLES PRINCIPAUX ── */}
             <div className="flex items-center justify-between px-6 pb-3">
               {/* Shuffle */}
-              <button onClick={() => setShuffle(s => !s)}
+              <button onClick={toggleShuffle}
                 className={`p-2 rounded-full transition-all ${shuffle ? 'text-cyan-400' : 'text-gray-600 hover:text-gray-400'}`}>
                 <Shuffle className="w-4 h-4" />
               </button>
@@ -640,7 +797,7 @@ const LocalPlayerPage = () => {
               </motion.button>
 
               {/* Repeat */}
-              <button onClick={() => setRepeat(r => r==='off'?'all':r==='all'?'one':'off')}
+              <button onClick={cycleRepeat}
                 className={`p-2 rounded-full transition-all relative ${repeat!=='off'?'text-cyan-400':'text-gray-600 hover:text-gray-400'}`}>
                 <Repeat className="w-4 h-4" />
                 {repeat==='one' && <span className="absolute -top-0.5 -right-0.5 text-[8px] bg-cyan-500 text-black font-black rounded-full w-3.5 h-3.5 flex items-center justify-center">1</span>}
@@ -698,6 +855,15 @@ const LocalPlayerPage = () => {
             className={`flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold transition-all ${selectionMode ? 'bg-cyan-500/25 text-cyan-300 border border-cyan-500/30' : 'bg-white/[0.06] text-gray-400 hover:text-white border border-white/[0.08]'}`}>
             <CheckSquare className="w-3 h-3" /> Sélection
           </button>
+          {FS_ACCESS_SUPPORTED && (
+            <div className="bg-green-500/10 border border-green-500/20 rounded-xl px-4 py-3 w-full text-left">
+              <p className="text-green-300 text-xs font-semibold mb-1">✅ Mode PC — Playlists persistantes</p>
+              <p className="text-green-200/70 text-xs leading-relaxed">
+                Tes fichiers sont mémorisés entre les sessions. Tes playlists resteront disponibles même après plusieurs jours.
+              </p>
+            </div>
+          )}
+
           {savedPlaylists.length > 0 && (
             <button onClick={() => setShowPlaylists(v => !v)}
               className={`flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold transition-all ${showPlaylists ? 'bg-fuchsia-500/25 text-fuchsia-300 border border-fuchsia-500/30' : 'bg-white/[0.06] text-gray-400 hover:text-white border border-white/[0.08]'}`}>

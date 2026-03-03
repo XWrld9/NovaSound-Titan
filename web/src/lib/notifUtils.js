@@ -44,7 +44,7 @@ export const notifyUser = async (supabase, userId, payload) => {
   if (_isDupe(dedupeKey)) return;
 
   try {
-    await supabase.from('notifications').insert({
+    const { data: notifData } = await supabase.from('notifications').insert({
       user_id:  userId,
       type:     payload.type,
       title:    payload.title,
@@ -53,7 +53,30 @@ export const notifyUser = async (supabase, userId, payload) => {
       icon_url: payload.icon_url || '/icon-192.png',
       is_read:  false,
       metadata: JSON.stringify(payload.metadata || {}),
-    });
+    }).select('id').single();
+
+    // Déclencher le push via Edge Function (backup si le webhook DB n'est pas configuré)
+    if (notifData?.id) {
+      const supabaseUrl = supabase.supabaseUrl || import.meta?.env?.VITE_SUPABASE_URL;
+      const supabaseKey = supabase.supabaseKey || import.meta?.env?.VITE_SUPABASE_ANON_KEY;
+      if (supabaseUrl) {
+        fetch(`${supabaseUrl}/functions/v1/send-push-notification`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${supabaseKey}`,
+          },
+          body: JSON.stringify({
+            user_id:  userId,
+            id:       notifData.id,
+            title:    payload.title,
+            body:     (payload.body || '').slice(0, 200),
+            url:      payload.url || '/',
+            icon_url: payload.icon_url || '/icon-192.png',
+          }),
+        }).catch(() => {}); // Silencieux — le webhook peut déjà l'avoir fait
+      }
+    }
   } catch (err) {
     console.warn('[notifUtils] notifyUser error:', err?.message);
   }

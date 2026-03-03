@@ -29,6 +29,11 @@ export const PlayerProvider = ({ children }) => {
   const [audioDuration,     setAudioDuration]      = useState(0);
   // ── État lecture global (synchronisé par AudioPlayer) ──────────
   const [isPlayingGlobal,   setIsPlayingGlobal]   = useState(false);
+  // ── Shuffle & Repeat — partagés entre AudioPlayer + LocalPlayerPage ──
+  const [shuffle,           setShuffle]           = useState(false);
+  const [repeat,            setRepeat]            = useState('off'); // off | one | all
+  const toggleShuffle = useCallback(() => setShuffle(s => !s), []);
+  const cycleRepeat   = useCallback(() => setRepeat(r => r === 'off' ? 'all' : r === 'all' ? 'one' : 'off'), []);
 
   const playlistRef          = useRef([]);
   const currentSongRef       = useRef(null);
@@ -293,6 +298,8 @@ export const PlayerProvider = ({ children }) => {
       addToQueue, removeFromQueue, clearQueue,
       removeFromPlaylist, setCurrentPlaylistId,
       setSleepTimer, clearSleepTimer, toggleRadio, resetAutoPlay,
+      shuffle, setShuffle, toggleShuffle,
+      repeat, setRepeat, cycleRepeat,
     }}>
       {children}
     </PlayerContext.Provider>

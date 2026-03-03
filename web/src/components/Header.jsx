@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Search, Upload, User, LogOut, Menu, X, Globe, Newspaper, Music, Download, Share, Bell, TrendingUp, ListMusic, BarChart2, Radio, Trophy, Shield, Users } from 'lucide-react';
+import { Search, Upload, User, LogOut, Menu, X, Globe, Newspaper, Music, Download, Share, Bell, TrendingUp, ListMusic, BarChart2, Radio, Trophy, Shield, Users, HardDrive } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 
 import { supabase } from '@/lib/supabaseClient';
@@ -225,6 +225,9 @@ const Header = () => {
               </Link>
               <Link to="/leaderboard" className="text-gray-300 hover:text-amber-400 transition-colors flex items-center gap-2 font-medium">
                 <Trophy className="w-4 h-4" />Top
+              </Link>
+              <Link to="/local-player" className="text-gray-300 hover:text-cyan-400 transition-colors flex items-center gap-2 font-medium">
+                <HardDrive className="w-4 h-4" />Local
               </Link>
 
               {/* Bouton installer PWA — toujours visible sauf si déjà installé */}
@@ -464,6 +467,9 @@ const Header = () => {
                   </Link>
                   <Link to="/leaderboard" onClick={closeMenu} className="flex items-center gap-3 px-4 py-3 text-gray-300 hover:bg-amber-500/10 hover:text-amber-400 rounded-lg transition-colors">
                     <Trophy className="w-5 h-5 text-amber-400" />Classement
+                  </Link>
+                  <Link to="/local-player" onClick={closeMenu} className="flex items-center gap-3 px-4 py-3 text-gray-300 hover:bg-cyan-500/10 hover:text-cyan-400 rounded-lg transition-colors">
+                    <HardDrive className="w-5 h-5 text-cyan-400" />Lecteur Local
                   </Link>
                   {isAuthenticated && (
                     <>

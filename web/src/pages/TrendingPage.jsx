@@ -295,7 +295,7 @@ const TrendingPage = () => {
                           <p className="text-white font-bold text-sm truncate group-hover:text-cyan-300 transition-colors">{artist.username}</p>
                           <div className="flex items-center gap-2 mt-1 flex-wrap">
                             <span className="flex items-center gap-1 text-[10px] text-cyan-400">
-                              <Headphones className="w-3 h-3" />{formatPlays(Number(artist.total_plays))}
+                              <Headphones className="w-3 h-3" />{formatPlays(Number(artist.period_plays || artist.total_plays))}
                             </span>
                             <span className="flex items-center gap-1 text-[10px] text-pink-400">
                               <Heart className="w-3 h-3" />{formatPlays(Number(artist.total_likes))}

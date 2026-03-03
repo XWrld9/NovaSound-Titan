@@ -778,18 +778,20 @@ const ChatPage = () => {
                             {isMentionAll ? '📢' : isReply ? '💬' : '@'}
                           </div>
                           <div className="flex-1 min-w-0">
-                            <div className="flex items-center gap-2 mb-1">
-                              <span className="text-sm font-bold text-white truncate drop-shadow-sm">
+                            <div className="flex items-start justify-between gap-2 mb-1">
+                              <span className="text-sm font-bold text-white break-words leading-tight flex-1">
                                 {notif.title}
                               </span>
-                              <span className="text-[10px] text-gray-400 flex-shrink-0">{timeAgo(notif.created_at)}</span>
-                              {!notif.is_read && <span className="w-2 h-2 rounded-full bg-cyan-400 flex-shrink-0 animate-pulse" />}
+                              <div className="flex items-center gap-1.5 flex-shrink-0">
+                                {!notif.is_read && <span className="w-2 h-2 rounded-full bg-cyan-400 animate-pulse" />}
+                                <span className="text-[10px] text-gray-400">{timeAgo(notif.created_at)}</span>
+                              </div>
                             </div>
-                            <p className="text-sm leading-relaxed break-words line-clamp-2 text-gray-100">
+                            <p className="text-sm leading-relaxed break-words text-gray-100">
                               {notif.body}
                             </p>
                             {notif.is_read && (
-                              <span className="text-[10px] text-gray-500 mt-0.5 inline-flex items-center gap-1">
+                              <span className="text-[10px] text-gray-500 mt-1 inline-flex items-center gap-1">
                                 <Check className="w-2.5 h-2.5" /> Lu
                               </span>
                             )}

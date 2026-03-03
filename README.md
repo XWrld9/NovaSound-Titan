@@ -46,12 +46,28 @@ npm run dev
 ## ⚙️ Configuration Supabase
 
 > Tous les scripts SQL se trouvent dans le dossier `web/`.  
-> **⚠️ À partir de la v10000, utiliser uniquement `novasound-v10000-migration.sql` — il est idempotent et couvre tout.**
+> **⚠️ À partir de la v10000, utiliser les migrations numérotées — elles sont idempotentes et couvrent tout.**
 
 | Étape | Fichier | Ce que ça fait |
 |-------|---------|----------------|
 | 1–16 | *(anciens scripts)* | Base initiale — déjà appliqués si vous avez suivi les versions précédentes |
-| **17** | **`novasound-v10000-migration.sql`** | **⚠️ Migration MASTER v10000 — à run impérativement** |
+| **17** | **`novasound-v10000-migration.sql`** | **Migration MASTER v10000 — à run si pas encore fait** |
+| **18** | **`novasound-v12000-migration.sql`** | **⚠️ Migration v12000 — à run après la v10000** |
+
+### Ce que fait `novasound-v12000-migration.sql` (idempotent)
+
+- ✅ Table `song_play_events` — tracking précis des écoutes par période
+- ✅ Vues `trending_24h`, `trending_7d`, `trending_30d` — basées sur les `play_events` réels
+- ✅ `get_trending_artists()` — corrigé, score basé sur les écoutes de la période
+- ✅ `record_play_event()` — RPC client pour logger chaque écoute (appelée par `AudioPlayer`)
+- ✅ `push_subscriptions` RLS — corrigé, multi-appareils + bypass `service_role`
+- ✅ Notifications — index de performance + colonnes `image_url` / `icon_url`
+- ✅ Chat messages — colonnes `reply_*`, `is_deleted`, `period` garanties
+- ✅ Vue `chat_messages_public` — filtre les messages supprimés
+- ✅ Vue `spotlight_songs` — corrigée avec JOIN `users`
+- ✅ Realtime activé sur toutes les tables critiques
+- ✅ `refresh_all_user_totals()` — recalcul des totaux au démarrage
+- ✅ `cleanup_old_play_events()` — nettoyage automatique après 90 jours
 
 ### Ce que fait `novasound-v10000-migration.sql` (idempotent)
 
@@ -193,6 +209,7 @@ NovaSound-Titan/
 |-------|-------------|---------|
 | `users` | Profils + stats totales | `handle_new_user`, `sync_user_total_plays` |
 | `songs` | Morceaux + soft delete + description | `update_likes_count`, `sync_user_total_plays` |
+| `song_play_events` | Tracking précis des écoutes par période | — |
 | `likes` | Likes chansons | → `songs.likes_count` + `users.total_likes` |
 | `follows` | Relations | → `users.followers_count` |
 | `notifications` | Notifs in-app (10 types) | — |
@@ -264,6 +281,34 @@ NovaSound-Titan/
 ---
 
 ## 📝 Changelog
+
+### v12000 (2026-03-03) — Play Events · Trending réel · Push RLS multi-appareils
+
+#### ✨ Table `song_play_events` — Tracking précis par période
+Nouvelle table d'événements d'écoute (song_id, user_id, played_at, duration_s). Permet de calculer des tendances réelles sur 24h / 7j / 30j, indépendamment du compteur global `plays_count`.
+
+#### ✨ Vues `trending_24h` / `trending_7d` / `trending_30d` — score hybride
+Reconstruites sur `song_play_events` : score = `period_plays × 0.7 + likes_count × 0.3`. Données réelles et non plus approximations.
+
+#### ✨ `get_trending_artists()` — corrigé
+Utilise désormais les écoutes réelles de la période comme signal principal, avec fallback sur `total_plays` pour les artistes sans événements récents.
+
+#### ✨ `record_play_event()` — RPC client
+Nouvelle fonction appelée par `AudioPlayer` à chaque écoute. Insère un event et incrémente `plays_count`. Fallback silencieux vers `increment_plays()` si la fonction n'est pas encore disponible.
+
+#### 🔐 `push_subscriptions` RLS — corrigé multi-appareils
+Toutes les policies ont été recréées proprement. Le `service_role` peut désormais lire toutes les subscriptions (nécessaire pour l'Edge Function `send-push-notification`).
+
+#### 🗄️ Notifications — index + colonnes enrichies
+3 index composites sur `(user_id, is_read, created_at)` pour les requêtes les plus fréquentes. Colonnes `image_url` et `icon_url` ajoutées pour les push enrichis.
+
+#### 💬 `chat_messages` — colonnes garanties
+Colonnes `edited_at`, `is_deleted`, `reply_to_*`, `period` toutes ajoutées avec `IF NOT EXISTS`. Vue `chat_messages_public` qui filtre les supprimés.
+
+#### 🔴 Fix CRITIQUE — `chat_messages_public` vue
+La vue sélectionnait la colonne `period` sans qu'elle soit garantie en base. Fix : `ADD COLUMN IF NOT EXISTS period TEXT` ajouté avant la création de la vue.
+
+---
 
 ### v10000 (2026-03-03) — Migration MASTER · Notifications · Search · Build Fixes
 

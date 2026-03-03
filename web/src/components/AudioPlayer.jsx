@@ -73,6 +73,8 @@ const AudioPlayer = ({ currentSong, playlist = [], onNext, onPrevious, onClose, 
     setAudioCurrentTime,
     setAudioDuration,
     setIsPlayingGlobal,
+    shuffle, setShuffle, toggleShuffle,
+    repeat, setRepeat, cycleRepeat,
   } = usePlayer();
 
   const [isPlaying,      setIsPlaying]      = useState(false);
@@ -82,8 +84,6 @@ const AudioPlayer = ({ currentSong, playlist = [], onNext, onPrevious, onClose, 
   const [volume,         setVolume]         = useState(savedVolume);
   const [isMuted,        setIsMuted]        = useState(savedMuted);
   const [prevVolume,     setPrevVolume]     = useState(savedVolume);
-  const [shuffle,        setShuffle]        = useState(false);
-  const [repeat,         setRepeat]         = useState('off'); // off | one | all
   const [playbackSpeed,  setPlaybackSpeed]  = useState(1);
   const [showSpeedMenu,  setShowSpeedMenu]  = useState(false);
   const [isExpanded,     setIsExpanded]     = useState(false);
@@ -421,9 +421,22 @@ const AudioPlayer = ({ currentSong, playlist = [], onNext, onPrevious, onClose, 
   };
 
   const recordPlay = async () => {
-    if (playRecorded || !currentSong?.id) return;
+    if (playRecorded || !currentSong?.id || currentSong?.is_local) return;
     setPlayRecorded(true);
-    try { const { error } = await supabase.rpc('increment_plays', { song_id_param: currentSong.id }); if (error) await supabase.from('songs').update({ plays_count: (currentSong.plays_count || 0) + 1 }).eq('id', currentSong.id); } catch {}
+    try {
+      // Enregistrer via record_play_event (inclut play_events pour trending)
+      const { error } = await supabase.rpc('record_play_event', {
+        p_song_id:    currentSong.id,
+        p_user_id:    currentUser?.id || null,
+        p_duration_s: audioRef.current ? Math.floor(audioRef.current.duration) : null,
+      });
+      // Fallback ancienne méthode si RPC non disponible
+      if (error) {
+        await supabase.rpc('increment_plays', { song_id_param: currentSong.id }).catch(() =>
+          supabase.from('songs').update({ plays_count: (currentSong.plays_count || 0) + 1 }).eq('id', currentSong.id)
+        );
+      }
+    } catch {}
   };
 
   const togglePlay = (e) => {
@@ -512,7 +525,7 @@ const AudioPlayer = ({ currentSong, playlist = [], onNext, onPrevious, onClose, 
   goNextRef.current     = goNext;
   goPreviousRef.current = goPrevious;
 
-  const cycleRepeat = (e) => { e?.stopPropagation(); const modes = ['off', 'one', 'all']; setRepeat(modes[(modes.indexOf(repeat) + 1) % modes.length]); };
+  const cycleRepeatLocal = (e) => { e?.stopPropagation(); cycleRepeat(); };
 
   const VolumeIcon = isMuted || volume === 0 ? VolumeX : volume < 40 ? Volume1 : Volume2;
   const showFollowButton = currentUser && currentSong?.uploader_id && currentSong.uploader_id !== currentUser.id;
@@ -813,7 +826,7 @@ const AudioPlayer = ({ currentSong, playlist = [], onNext, onPrevious, onClose, 
                     title="Suivant (→)">
                     <SkipForward className="w-7 h-7" />
                   </button>
-                  <button onClick={cycleRepeat}
+                  <button onClick={cycleRepeatLocal}
                     className={`p-2 relative transition-all ${repeat !== 'off' ? 'text-cyan-400' : 'text-gray-500 hover:text-white'}`}
                     title={repeat === 'off' ? 'Répétition off' : repeat === 'one' ? 'Répéter ce son' : 'Répéter tout'}>
                     <Repeat className="w-5 h-5" />
@@ -1188,7 +1201,7 @@ const AudioPlayer = ({ currentSong, playlist = [], onNext, onPrevious, onClose, 
                   <button onClick={(e) => { e.stopPropagation(); goNext(); }} className="text-gray-400 hover:text-white hover:scale-110 transition-all">
                     <SkipForward className="w-5 h-5" />
                   </button>
-                  <button onClick={cycleRepeat}
+                  <button onClick={cycleRepeatLocal}
                     className={`relative transition-all ${repeat !== 'off' ? 'text-cyan-400' : 'text-gray-600 hover:text-white'}`}>
                     <Repeat className="w-4 h-4" />
                     {repeat === 'one' && <span className="absolute -bottom-1.5 left-1/2 -translate-x-1/2 text-[8px] font-black text-cyan-400 leading-none">1</span>}
@@ -1312,9 +1325,9 @@ const AudioPlayer = ({ currentSong, playlist = [], onNext, onPrevious, onClose, 
             onNext={() => { autoPlayRef.current = true; goNextRef.current?.(); }}
             onPrev={() => { autoPlayRef.current = true; goPreviousRef.current?.(); }}
             shuffle={shuffle}
-            onToggleShuffle={() => setShuffle(s => !s)}
+            onToggleShuffle={toggleShuffle}
             repeat={repeat}
-            onToggleRepeat={() => setRepeat(r => r === 'off' ? 'all' : r === 'all' ? 'one' : 'off')}
+            onToggleRepeat={cycleRepeat}
             currentTime={currentTime}
             duration={duration || currentSong?.duration_s || 0}
             onSeek={(val) => { if (audioRef.current) { audioRef.current.currentTime = val; setCurrentTime(val); } }}
