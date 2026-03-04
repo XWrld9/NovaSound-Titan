@@ -1,3 +1,9 @@
+-- ============================================================
+-- NovaSound — Migration FINALE (tous types confirmés)
+-- user_id = TEXT dans user_roles ET push_subscriptions
+-- → auth.uid()::text partout sans exception
+-- ============================================================
+
 -- ── 1. user_roles ─────────────────────────────────────────────
 ALTER TABLE user_roles ENABLE ROW LEVEL SECURITY;
 
@@ -17,7 +23,7 @@ CREATE POLICY "user_roles_admin_all" ON user_roles
     )
   );
 
--- ── 2. push_subscriptions ─────────────────────────────────────
+-- ── 2. push_subscriptions (user_id = text aussi) ──────────────
 ALTER TABLE push_subscriptions ENABLE ROW LEVEL SECURITY;
 
 DROP POLICY IF EXISTS "push_sub_select" ON push_subscriptions;
@@ -42,7 +48,7 @@ CREATE POLICY "push_sub_delete" ON push_subscriptions
 ALTER TABLE users ADD COLUMN IF NOT EXISTS is_banned   boolean DEFAULT false;
 ALTER TABLE songs ADD COLUMN IF NOT EXISTS is_archived boolean DEFAULT false;
 
--- ── 4. Admin eloadxfamily@gmail.com (FIXED) ───────────────────
+-- ── 4. Admin eloadxfamily@gmail.com ───────────────────────────
 DO $$
 DECLARE v_user_id text;
 BEGIN
@@ -52,9 +58,9 @@ BEGIN
   LIMIT 1;
 
   IF v_user_id IS NOT NULL THEN
-    INSERT INTO users (id, email, username)
-    VALUES (v_user_id::uuid, 'eloadxfamily@gmail.com', 'eloadxfamily')
-    ON CONFLICT (id) DO UPDATE SET email = EXCLUDED.email;
+    INSERT INTO users (id, email)
+    VALUES (v_user_id::uuid, 'eloadxfamily@gmail.com')
+    ON CONFLICT (id) DO NOTHING;
 
     DELETE FROM user_roles WHERE user_id = v_user_id AND role = 'admin';
     INSERT INTO user_roles (user_id, role, is_active)

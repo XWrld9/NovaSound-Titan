@@ -204,14 +204,15 @@ const ArtistProfilePage = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const { currentUser } = useAuth();
-  const [artist,     setArtist]     = useState(null);
-  const [songs,      setSongs]      = useState([]);
-  const [followers,  setFollowers]  = useState([]);
-  const [loading,    setLoading]    = useState(true);
-  const [showShare,  setShowShare]  = useState(false);
-  const [activeTab,  setActiveTab]  = useState('songs'); // 'songs' | 'about' | 'followers'
-  const [songView,   setSongView]   = useState('grid');  // 'grid' | 'list'
-  const [achievements, setAchievements] = useState([]);
+  const [artist,        setArtist]        = useState(null);
+  const [songs,         setSongs]         = useState([]);
+  const [followers,     setFollowers]     = useState([]);
+  const [repostedSongs, setRepostedSongs] = useState([]);
+  const [loading,       setLoading]       = useState(true);
+  const [showShare,     setShowShare]     = useState(false);
+  const [activeTab,     setActiveTab]     = useState('songs'); // 'songs' | 'reposts' | 'about' | 'followers'
+  const [songView,      setSongView]      = useState('grid');  // 'grid' | 'list'
+  const [achievements,  setAchievements]  = useState([]);
 
   const [bioExpanded, setBioExpanded] = useState(false);
   const { playSong: globalPlaySong, currentSong } = usePlayer();
@@ -239,14 +240,18 @@ const ArtistProfilePage = () => {
   const fetchArtistData = async () => {
     try {
       setLoading(true);
-      const [{ data: artistData, error: artistError }, { data: songsData }] = await Promise.all([
+      const [{ data: artistData, error: artistError }, { data: songsData }, { data: repostsData }] = await Promise.all([
         supabase.from('users').select('*').eq('id', id).single(),
         supabase.from('songs').select('*').eq('uploader_id', id).eq('is_archived', false)
           .order('plays_count', { ascending: false }).limit(50),
+        supabase.from('song_reposts')
+          .select('song_id, songs(id,title,artist,cover_url,audio_url,plays_count,likes_count,uploader_id,is_archived)')
+          .eq('user_id', id).order('created_at', { ascending: false }).limit(50),
       ]);
       if (artistError) throw artistError;
       setArtist(artistData);
       setSongs(songsData || []);
+      setRepostedSongs((repostsData || []).map(r => r.songs).filter(Boolean).filter(s => !s?.is_archived));
     } catch { } finally { setLoading(false); }
   };
 
@@ -424,6 +429,7 @@ const ArtistProfilePage = () => {
             <div className="flex items-center gap-1">
               {[
                 { key: 'songs',     label: `Musique (${songs.length})` },
+                { key: 'reposts',   label: `Repartagés (${repostedSongs.length})` },
                 { key: 'about',     label: 'À propos' },
                 { key: 'followers', label: `Abonnés (${followers.length})` },
               ].map(tab => (
@@ -517,6 +523,26 @@ const ArtistProfilePage = () => {
                           </Link>
                         </motion.div>
                       ))}
+                    </div>
+                  )}
+                </motion.div>
+              )}
+
+              {/* Onglet Repartagés */}
+              {activeTab === 'reposts' && (
+                <motion.div key="reposts" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} transition={{ duration: 0.18 }}>
+                  {repostedSongs.length > 0 ? (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                      {repostedSongs.map((song, i) => (
+                        <motion.div key={song.id} initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.04 }}>
+                          <SongCard song={song} currentSong={currentSong} onPlay={(s) => playSong(s, repostedSongs)} />
+                        </motion.div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="text-center py-16">
+                      <span className="text-4xl block mb-3">🔁</span>
+                      <p className="text-gray-500">Aucun son repartagé</p>
                     </div>
                   )}
                 </motion.div>

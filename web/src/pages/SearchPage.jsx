@@ -1,10 +1,9 @@
 /**
- * SearchPage — NovaSound TITAN LUX v70
- * Recherche globale : sons, artistes, playlists
- * - Résultats en temps réel avec debounce 350ms
- * - Historique de recherche (localStorage)
- * - Résultats classés par catégorie
- * - Écoute directe depuis les résultats
+ * SearchPage — NovaSound V27000
+ * ✅ Filtre par genre (pills cliquables)
+ * ✅ Recherche sons, artistes, playlists
+ * ✅ Historique de recherche
+ * ✅ Debounce 350ms
  */
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
@@ -64,12 +63,15 @@ const SearchPage = () => {
   const { currentUser } = useAuth();
   const { playSong }    = usePlayer();
 
-  const [query,    setQuery]    = useState(searchParams.get('q') || '');
-  const [results,  setResults]  = useState([]);
-  const [loading,  setLoading]  = useState(false);
-  const [searched, setSearched] = useState(false);
-  const [history,  setHistory]  = useState([]);
+  const [query,       setQuery]       = useState(searchParams.get('q') || '');
+  const [results,     setResults]     = useState([]);
+  const [loading,     setLoading]     = useState(false);
+  const [searched,    setSearched]    = useState(false);
+  const [history,     setHistory]     = useState([]);
+  const [activeGenre, setActiveGenre] = useState(null);
   const inputRef = useRef(null);
+
+  const GENRES = ['Hip-Hop', 'Afrobeats', 'Trap', 'R&B', 'Pop', 'Electronic', 'Drill', 'Amapiano', 'Gospel', 'Jazz'];
 
   // Charger l'historique au montage
   useEffect(() => {
@@ -78,11 +80,11 @@ const SearchPage = () => {
 
   // Debounce : déclencher la recherche automatiquement
   useEffect(() => {
-    if (!query.trim()) { setResults([]); setSearched(false); return; }
+    if (!query.trim() && !activeGenre) { setResults([]); setSearched(false); return; }
     const t = setTimeout(() => performSearch(query.trim()), 350);
     return () => clearTimeout(t);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [query]);
+  }, [query, activeGenre]);
 
   // Sync URL
   useEffect(() => {
@@ -94,23 +96,19 @@ const SearchPage = () => {
     setLoading(true);
     setSearched(true);
     try {
-      // Requête parallèle : sons + artistes + playlists
+      let songsQuery = supabase
+        .from('songs').select('id, title, artist, cover_url, audio_url, plays_count, genre')
+        .eq('is_archived', false)
+        .order('plays_count', { ascending: false })
+        .limit(12);
+
+      if (q) songsQuery = songsQuery.or(`title.ilike.%${q}%,artist.ilike.%${q}%`);
+      if (activeGenre) songsQuery = songsQuery.eq('genre', activeGenre);
+
       const [{ data: songs }, { data: artists }, { data: playlists }] = await Promise.all([
-        supabase
-          .from('songs').select('id, title, artist, cover_url, audio_url, plays_count, genre')
-          .eq('is_archived', false)
-          .or(`title.ilike.%${q}%,artist.ilike.%${q}%`)
-          .order('plays_count', { ascending: false })
-          .limit(12),
-        supabase
-          .from('users').select('id, username, avatar_url, bio')
-          .ilike('username', `%${q}%`)
-          .limit(6),
-        supabase
-          .from('playlists').select('id, name, cover_url, owner_id, users:owner_id(username)')
-          .eq('is_public', true)
-          .ilike('name', `%${q}%`)
-          .limit(6),
+        songsQuery,
+        supabase.from('users').select('id, username, avatar_url, bio').ilike('username', `%${q || ''}%`).limit(6),
+        supabase.from('playlists').select('id, name, cover_url, owner_id, users:owner_id(username)').eq('is_public', true).ilike('name', `%${q || ''}%`).limit(6),
       ]);
 
       const combined = [
@@ -119,19 +117,11 @@ const SearchPage = () => {
         ...(playlists || []).map(p => ({ ...p, _type: 'playlist' })),
       ];
       setResults(combined);
-
-      // Sauvegarder dans l'historique
-      if (currentUser?.id) {
-        saveHistory(currentUser.id, q);
-        setHistory(getHistory(currentUser.id));
-      }
+      if (currentUser?.id && q) { saveHistory(currentUser.id, q); setHistory(getHistory(currentUser.id)); }
     } catch (err) {
-      console.error('[Search]', err);
-      setResults([]);
-    } finally {
-      setLoading(false);
-    }
-  }, [currentUser?.id]);
+      console.error('[Search]', err); setResults([]);
+    } finally { setLoading(false); }
+  }, [currentUser?.id, activeGenre]);
 
   const handleHistoryClick = (q) => {
     setQuery(q);
@@ -180,7 +170,7 @@ const SearchPage = () => {
           </motion.div>
 
           {/* Barre de recherche */}
-          <div className="relative mb-8">
+          <div className="relative mb-4">
             <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-500 pointer-events-none" />
             <input
               ref={inputRef}
@@ -192,17 +182,27 @@ const SearchPage = () => {
             />
             <AnimatePresence>
               {query && (
-                <motion.button
-                  initial={{ opacity: 0, scale: 0.8 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  exit={{ opacity: 0, scale: 0.8 }}
+                <motion.button initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.8 }}
                   onClick={() => setQuery('')}
-                  className="absolute right-4 top-1/2 -translate-y-1/2 p-1 rounded-full hover:bg-gray-700 text-gray-400 hover:text-white transition-colors"
-                >
+                  className="absolute right-4 top-1/2 -translate-y-1/2 p-1 rounded-full hover:bg-gray-700 text-gray-400 hover:text-white transition-colors">
                   <X className="w-5 h-5" />
                 </motion.button>
               )}
             </AnimatePresence>
+          </div>
+
+          {/* Pills genres */}
+          <div className="flex gap-2 overflow-x-auto scrollbar-hide pb-2 mb-6">
+            {GENRES.map(g => (
+              <button key={g} onClick={() => setActiveGenre(activeGenre === g ? null : g)}
+                className={`flex-shrink-0 px-3 py-1.5 rounded-full text-xs font-semibold border transition-all ${
+                  activeGenre === g
+                    ? 'bg-cyan-500/25 text-cyan-300 border-cyan-500/50'
+                    : 'bg-gray-900/60 text-gray-500 border-gray-800 hover:text-gray-300 hover:border-gray-600'
+                }`}>
+                {g}
+              </button>
+            ))}
           </div>
 
           {/* HISTORIQUE */}
