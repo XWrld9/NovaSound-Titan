@@ -11,6 +11,7 @@ import {
 import { supabase } from '@/lib/supabaseClient';
 import { useAuth } from '@/contexts/AuthContext';
 import { motion, AnimatePresence } from 'framer-motion';
+import AdminConfirmDialog from '@/components/AdminConfirmDialog';
 
 const ADMIN_EMAIL = 'eloadxfamily@gmail.com';
 
@@ -28,6 +29,33 @@ const AdminPanel = () => {
   const [chatMsgs,   setChatMsgs]   = useState([]);
   const [actionMsg,  setActionMsg]  = useState('');
   const showAction = (msg) => { setActionMsg(msg); setTimeout(() => setActionMsg(''), 3000); };
+
+  // États pour les dialogues de confirmation
+  const [confirmDialog, setConfirmDialog] = useState({
+    isOpen: false,
+    type: 'danger',
+    title: '',
+    message: '',
+    onConfirm: null,
+    confirmText: 'Confirmer',
+    cancelText: 'Annuler'
+  });
+
+  const showConfirmDialog = (options) => {
+    setConfirmDialog({
+      isOpen: true,
+      type: options.type || 'danger',
+      title: options.title,
+      message: options.message,
+      onConfirm: options.onConfirm,
+      confirmText: options.confirmText || 'Confirmer',
+      cancelText: options.cancelText || 'Annuler'
+    });
+  };
+
+  const closeConfirmDialog = () => {
+    setConfirmDialog(prev => ({ ...prev, isOpen: false }));
+  };
 
   useEffect(() => {
     if (!currentUser) { setLoading(false); return; }
@@ -92,8 +120,22 @@ const AdminPanel = () => {
   };
 
   const deleteLiveRoom = async (roomId) => {
-    if (!window.confirm('Supprimer cette salle ?')) return;
-    try { await supabase.from('live_rooms').delete().eq('id', roomId); showAction('✅ Salle supprimée'); loadLiveRooms(); loadStats(); } catch (e) { showAction(`❌ ${e.message}`); }
+    showConfirmDialog({
+      type: 'radio',
+      title: 'Supprimer une salle live',
+      message: 'Êtes-vous sûr de vouloir supprimer cette salle live ?\n\nTous les participants seront déconnectés et la salle sera définitivement supprimée.',
+      confirmText: 'Supprimer',
+      onConfirm: async () => {
+        try {
+          await supabase.from('live_rooms').delete().eq('id', roomId);
+          showAction('✅ Salle supprimée');
+          loadLiveRooms();
+          loadStats();
+        } catch (e) {
+          showAction(`❌ ${e.message}`);
+        }
+      }
+    });
   };
 
   const cleanupInactiveRooms = async () => {
@@ -102,13 +144,50 @@ const AdminPanel = () => {
 
   const toggleBanUser = async (user) => {
     const newBan = !user.is_banned;
-    if (newBan && !window.confirm(`Bannir ${user.username || user.email} ?`)) return;
-    try { await supabase.from('users').update({ is_banned: newBan }).eq('id', user.id); showAction(newBan ? `🚫 ${user.username} banni` : `✅ ${user.username} débanni`); loadUsers(); } catch (e) { showAction(`❌ ${e.message}`); }
+    if (newBan) {
+      showConfirmDialog({
+        type: 'ban',
+        title: 'Bannir un utilisateur',
+        message: `Êtes-vous sûr de vouloir bannir ${user.username || user.email} ?\n\nL'utilisateur ne pourra plus accéder à la plateforme.`,
+        confirmText: 'Bannir',
+        onConfirm: async () => {
+          try {
+            await supabase.from('users').update({ is_banned: newBan }).eq('id', user.id);
+            showAction(`🚫 ${user.username} banni`);
+            loadUsers();
+          } catch (e) {
+            showAction(`❌ ${e.message}`);
+          }
+        }
+      });
+    } else {
+      try {
+        await supabase.from('users').update({ is_banned: newBan }).eq('id', user.id);
+        showAction(`✅ ${user.username} débanni`);
+        loadUsers();
+      } catch (e) {
+        showAction(`❌ ${e.message}`);
+      }
+    }
   };
 
   const deleteSong = async (song) => {
-    if (!window.confirm(`Supprimer "${song.title}" ?`)) return;
-    try { await supabase.from('songs').update({ is_archived: true }).eq('id', song.id); showAction(`📦 "${song.title}" archivé`); loadSongs(); loadStats(); } catch (e) { showAction(`❌ ${e.message}`); }
+    showConfirmDialog({
+      type: 'danger',
+      title: 'Archiver une musique',
+      message: `Êtes-vous sûr de vouloir archiver "${song.title}" de ${song.artist} ?\n\nLa musique ne sera plus visible mais ne sera pas définitivement supprimée.`,
+      confirmText: 'Archiver',
+      onConfirm: async () => {
+        try {
+          await supabase.from('songs').update({ is_archived: true }).eq('id', song.id);
+          showAction(`📦 "${song.title}" archivé`);
+          loadSongs();
+          loadStats();
+        } catch (e) {
+          showAction(`❌ ${e.message}`);
+        }
+      }
+    });
   };
 
   const deleteChatMsg = async (id) => {
@@ -116,8 +195,22 @@ const AdminPanel = () => {
   };
 
   const clearAllChat = async () => {
-    if (!window.confirm('Effacer TOUS les messages du chat global ?')) return;
-    try { await supabase.from('chat_messages').update({ is_deleted: true }).eq('is_deleted', false); showAction('🧹 Chat nettoyé'); loadChat(); loadStats(); } catch (e) { showAction(`❌ ${e.message}`); }
+    showConfirmDialog({
+      type: 'chat',
+      title: 'Nettoyer le chat global',
+      message: 'Êtes-vous sûr de vouloir effacer TOUS les messages du chat global ?\n\nCette action est irréversible et affectera tous les utilisateurs.',
+      confirmText: 'Nettoyer',
+      onConfirm: async () => {
+        try {
+          await supabase.from('chat_messages').update({ is_deleted: true }).eq('is_deleted', false);
+          showAction('🧹 Chat nettoyé');
+          loadChat();
+          loadStats();
+        } catch (e) {
+          showAction(`❌ ${e.message}`);
+        }
+      }
+    });
   };
 
   const q = searchQuery.toLowerCase();
@@ -314,6 +407,18 @@ const AdminPanel = () => {
           </div>
         )}
       </div>
+
+      {/* Dialogue de confirmation stylisé */}
+      <AdminConfirmDialog
+        isOpen={confirmDialog.isOpen}
+        onClose={closeConfirmDialog}
+        onConfirm={confirmDialog.onConfirm}
+        title={confirmDialog.title}
+        message={confirmDialog.message}
+        confirmText={confirmDialog.confirmText}
+        cancelText={confirmDialog.cancelText}
+        type={confirmDialog.type}
+      />
     </div>
   );
 };
