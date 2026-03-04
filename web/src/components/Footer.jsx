@@ -82,7 +82,7 @@ const AboutModal = ({ onClose }) => (
       <div className="relative px-6 pt-6 pb-4" style={{ background:'linear-gradient(135deg,rgba(6,182,212,0.1),rgba(124,58,237,0.08))' }}>
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <img src="/logo_eloadxfamily.png"
+            <img src="/icon-512.png"
               alt="Logo" className="w-10 h-10 rounded-2xl border border-cyan-400/30 object-cover" />
             <div>
               <h3 className="text-white font-black text-base leading-tight">NovaSound TITAN LUX</h3>
@@ -117,8 +117,8 @@ const AboutModal = ({ onClose }) => (
         <div className="bg-white/[0.04] rounded-2xl p-4 border border-white/[0.06] space-y-2">
           <p className="text-gray-500 text-xs font-semibold uppercase tracking-wider">Créateur</p>
           <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-full flex items-center justify-center font-black text-sm"
-              style={{ background:'linear-gradient(135deg,#0e7490,#7c3aed)' }}>E</div>
+            <img src="/logo_eloadxfamily.png"
+              alt="Logo ELOADXFAMILY" className="w-9 h-9 rounded-full border border-cyan-400/30 object-cover" />
             <div>
               <p className="text-white text-sm font-bold">ELOADXFAMILY</p>
               <p className="text-gray-600 text-xs">Développeur & fondateur</p>
@@ -156,7 +156,7 @@ const Footer = () => {
             {/* ── Brand ─────────────────────────────────────────────────────── */}
             <div className="flex flex-col items-center md:items-start space-y-3 sm:col-span-2 md:col-span-1">
               <div className="flex items-center gap-2.5">
-                <img src="/logo_eloadxfamily.png"
+                <img src="/icon-512.png"
                   alt="Logo NovaSound" className="w-9 h-9 rounded-xl border border-cyan-400/30 object-cover" />
                 <span className="text-base font-black bg-gradient-to-r from-cyan-400 to-fuchsia-500 bg-clip-text text-transparent">
                   NovaSound TITAN LUX
