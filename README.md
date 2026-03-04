@@ -53,6 +53,21 @@ npm run dev
 | 1–16 | *(anciens scripts)* | Base initiale — déjà appliqués si vous avez suivi les versions précédentes |
 | **17** | **`novasound-v10000-migration.sql`** | **Migration MASTER v10000 — à run si pas encore fait** |
 | **18** | **`novasound-v12000-migration.sql`** | **⚠️ Migration v12000 — à run après la v10000** |
+| 19 | `novasound-v25000-migration.sql` | Push notifications VAPID, song_reposts |
+| 20 | `novasound-v27000-migration.sql` | Reposts tab, genre filters, eloadXFamily branding |
+| **21** | **`novasound-v28000-migration.sql`** | **⚠️ Migration V28000 — live messages edit/delete + bucket audio live** |
+
+### Ce que fait `novasound-v28000-migration.sql` (idempotent)
+
+- ✅ `live_room_messages` : colonnes `is_edited`, `is_deleted`, `edited_at` ajoutées
+- ✅ RLS UPDATE par auteur (édition/suppression de ses propres messages)
+- ✅ Realtime activé sur `live_room_messages` (indispensable pour `postgres_changes`)
+- ✅ Bucket Storage `live-room-audio` (50 MB, audio uniquement, lecture publique)
+- ✅ Index performances sur `notifications (user_id, type)` et `push_subscriptions`
+- ✅ **Fix CRITIQUE** : `sw.js` — type `NAVIGATE` → `PUSH_NAVIGATE` (clic notification ne naviguait jamais)
+- ✅ **Fix CRITIQUE** : `notifyAll` — maintenant déclenche le push natif pour chaque utilisateur
+- ✅ **Fix CRITIQUE** : Edge Function — coordonnées VAPID `x/y` extraites dynamiquement
+- ✅ **Fix CRITIQUE** : Flow reset password — `type=recovery` redirige vers `/reset-password`
 
 ### Ce que fait `novasound-v12000-migration.sql` (idempotent)
 
@@ -92,6 +107,7 @@ npm run dev
 | `avatars` | Photos de profil | 5 MB | Public |
 | `audio` | Fichiers audio | 50 MB | Public |
 | `covers` | Pochettes d'albums | 10 MB | Public |
+| `live-room-audio` | Fichiers audio temporaires live rooms | 50 MB | Public |
 
 ```bash
 # Après avoir renseigné SUPABASE_SERVICE_KEY dans .env :
@@ -126,6 +142,12 @@ Dans **Supabase → Authentication → URL Configuration** :
 | Build Command | `npm run build` |
 | Output Directory | `dist` |
 | Node Version | `20.x` |
+
+**Edge Functions Supabase :**
+```bash
+# Déployer l'Edge Function push (obligatoire pour les notifications natives)
+supabase functions deploy send-push-notification
+```
 
 **Variables d'environnement Vercel :**
 ```
@@ -220,6 +242,7 @@ NovaSound-Titan/
 | `chat_messages` | Chat global | — |
 | `live_rooms` | Salles live | — |
 | `live_room_participants` | Participants (présence) | — |
+| `live_room_messages` | Messages live (is_edited, is_deleted, soft delete) | — |
 | `news` | Actualités | — |
 | `playlists` / `playlist_songs` | Playlists utilisateur | — |
 
@@ -277,10 +300,45 @@ NovaSound-Titan/
 | Upload avatar : "row-level security" | Ré-exécuter `fix-rls-avatars.sql` |
 | Email de confirmation non reçu | Vérifier spams — voir `GMAIL_SMTP_SETUP.md` |
 | Plein écran ne fonctionne pas iOS | Normal — mode immersif CSS en fallback |
+| Push natif jamais reçu (barre système) | Déployer la nouvelle Edge Function `send-push-notification` (fix v28000) |
+| Clic sur notification ne navigue pas | Déployer `sw.js` v28000 (fix type NAVIGATE→PUSH_NAVIGATE) |
+| Messages live non reçus par l'hôte | Activer Realtime sur `live_room_messages` via migration v28000 |
+| Lien "mot de passe oublié" redirige vers accueil | Déployer `AuthCallbackPage` v28000 |
 
 ---
 
 ## 📝 Changelog
+
+### v28000 (2026-03-04) — Live sync · Push natif · Reset password flow
+
+#### 🎵 Live Room — 4 bugs majeurs résolus
+- **Sync audio** : broadcast de position toutes les 2s, participants se resynchronisent automatiquement
+- **Fichier local** : hôte peut diffuser un MP3/WAV depuis son appareil (bucket `live-room-audio`)
+- **Messages DB** : persistance + `postgres_changes` → hôte reçoit 100% des messages
+- **Édition/suppression** : messages éditables et supprimables inline par leur auteur
+
+#### 🔔 Notifications — 4 bugs critiques corrigés
+- **`sw.js`** : `NAVIGATE` → `PUSH_NAVIGATE` (les clics sur notifs ne naviguaient jamais)
+- **`sw.js`** : `PUSH_RESUBSCRIBED` → `PUSH_SUBSCRIPTION_RENEWED` (renouvellement sub KO)
+- **`sw.js`** : `BG_SYNC_MESSAGES` → `SYNC_PENDING_MESSAGES` (messages offline jamais sync)
+- **`notifyAll`** : déclenchait DB mais jamais le push natif → 0 notification système pour les events globaux
+
+#### ⚡ Edge Function `send-push-notification`
+- Coordonnées VAPID `x/y` hardcodées → maintenant extraites dynamiquement depuis `VAPID_PUBLIC_KEY`
+
+#### 🔐 Flow "Mot de passe oublié" — refonte
+- `AuthCallbackPage` détecte `type=recovery` → redirige vers `/reset-password`
+- Après changement : déconnexion auto + redirect `/login` avec message de confirmation
+- L'utilisateur se reconnecte avec son nouveau mot de passe
+
+---
+
+### v27000 (2026-03-04) — Reposts · Genre filters · eloadXFamily branding
+- Onglet Repartagés (profil user + profil artiste public), URL persistence `?tab=reposts`
+- Genre filter pills sur SearchPage (Hip-Hop, Afrobeats, Trap, R&B…)
+- Logo eloadXFamily avec glow rouge dans l'onglet À propos
+
+---
 
 ### v12000 (2026-03-03) — Play Events · Trending réel · Push RLS multi-appareils
 

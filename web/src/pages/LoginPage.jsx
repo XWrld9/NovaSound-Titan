@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
 import { motion } from 'framer-motion';
 import { Mail, Lock, Eye, EyeOff, AlertCircle, KeyRound } from 'lucide-react';
@@ -7,16 +7,26 @@ import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 
 const LoginPage = () => {
-  const navigate = useNavigate();
+  const navigate  = useNavigate();
+  const location  = useLocation();
   const { login, resendVerification, sendPasswordReset } = useAuth();
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [showPassword, setShowPassword] = useState(false);
-  const [error, setError] = useState('');
-  const [loading, setLoading] = useState(false);
-  const [needsVerification, setNeedsVerification] = useState(false);
-  const [successMessage, setSuccessMessage] = useState('');
-  const [forgotMode, setForgotMode] = useState(false);
+  const [email,            setEmail]           = useState('');
+  const [password,         setPassword]        = useState('');
+  const [showPassword,     setShowPassword]    = useState(false);
+  const [error,            setError]           = useState('');
+  const [loading,          setLoading]         = useState(false);
+  const [needsVerification,setNeedsVerification] = useState(false);
+  const [successMessage,   setSuccessMessage]  = useState('');
+  const [forgotMode,       setForgotMode]      = useState(false);
+
+  // Afficher le message de confirmation après un reset de mot de passe réussi
+  useEffect(() => {
+    if (location.state?.message) {
+      setSuccessMessage(location.state.message);
+      // Nettoyer le state pour éviter de l'afficher à nouveau après navigation
+      window.history.replaceState({}, document.title);
+    }
+  }, [location.state]);
 
   const handleForgotPassword = async (e) => {
     e.preventDefault();
@@ -139,8 +149,9 @@ const LoginPage = () => {
             ) : (
             <form onSubmit={handleSubmit} className="space-y-6" autoComplete="on">
               {successMessage && (
-                <div className="bg-cyan-500/10 border border-cyan-500/30 rounded-lg p-4 flex items-start gap-3">
-                  <p className="text-cyan-400 text-sm">{successMessage}</p>
+                <div className={`rounded-lg p-4 flex items-start gap-3 ${successMessage.includes('nouveau mot de passe') ? 'bg-emerald-500/10 border border-emerald-500/30' : 'bg-cyan-500/10 border border-cyan-500/30'}`}>
+                  <span className="text-lg flex-shrink-0">{successMessage.includes('nouveau mot de passe') ? '🔐' : '✅'}</span>
+                  <p className={`text-sm ${successMessage.includes('nouveau mot de passe') ? 'text-emerald-400' : 'text-cyan-400'}`}>{successMessage}</p>
                 </div>
               )}
 

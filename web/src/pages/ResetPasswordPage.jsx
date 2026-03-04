@@ -98,7 +98,15 @@ const ResetPasswordPage = () => {
     setLoading(false);
     if (result.success) {
       setSuccess(true);
-      setTimeout(() => navigate('/profile'), 2800);
+      // Déconnecter proprement pour que l'utilisateur se reconnecte
+      // avec son NOUVEAU mot de passe → confirme que tout fonctionne
+      setTimeout(async () => {
+        await supabase.auth.signOut();
+        navigate('/login', {
+          replace: true,
+          state: { message: '✅ Mot de passe modifié ! Connecte-toi avec ton nouveau mot de passe.' }
+        });
+      }, 2800);
     } else {
       setError(result.message);
     }
@@ -144,9 +152,9 @@ const ResetPasswordPage = () => {
                   <CheckCircle className="w-8 h-8 text-emerald-400" />
                 </div>
                 <div>
-                  <p className="text-white font-bold text-lg">🎉 Mot de passe créé avec succès !</p>
+                  <p className="text-white font-bold text-lg">🎉 Mot de passe enregistré !</p>
                   <p className="text-gray-400 text-sm mt-1">Ton compte est maintenant sécurisé</p>
-                  <p className="text-cyan-400 text-xs mt-2">Redirection vers ton profil…</p>
+                  <p className="text-cyan-400 text-xs mt-2">Déconnexion en cours → utilise ton nouveau mot de passe…</p>
                 </div>
                 
                 {/* Conseils de sécurité */}

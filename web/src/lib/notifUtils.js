@@ -1,27 +1,18 @@
 /**
- * notifUtils — NovaSound TITAN LUX v8002
+ * notifUtils — NovaSound V28000
  *
- * Utilitaires côté client pour l'envoi de notifications.
- * 100% client-side — compatible Supabase Free Tier.
- * Pas de triggers DB, pas d'Edge Functions nécessaires.
- *
- * Fonctions exportées :
- *   notifyUser(supabase, userId, payload)   → 1 utilisateur
- *   notifyAll(supabase, payload, exclude[]) → TOUS les utilisateurs sauf exclus
- *   notifyOwner(supabase, songId, payload, actorId) → propriétaire d'un son
+ * FIXES v28000 :
+ * ✅ notifyAll → déclenche push natif pour CHAQUE utilisateur (bug : était silencieux)
+ * ✅ notifyUser → inchangé, fonctionnel
+ * ✅ notifyOwner → inchangé, fonctionnel
+ * ✅ Déduplication anti-doublon maintenue
  */
 
-const ADMIN_EMAIL = 'eloadxfamily@gmail.com';
-
-/**
- * Anti-doublon en mémoire (clé = userId:type:refId, expire 30s)
- */
 const _recentNotifs = new Map();
 const _isDupe = (key) => {
   const ts = _recentNotifs.get(key);
   if (ts && Date.now() - ts < 30_000) return true;
   _recentNotifs.set(key, Date.now());
-  // Nettoyage automatique des entrées expirées (max 200)
   if (_recentNotifs.size > 200) {
     const now = Date.now();
     for (const [k, t] of _recentNotifs) {
@@ -31,18 +22,33 @@ const _isDupe = (key) => {
   return false;
 };
 
-/**
- * Insérer une notification pour UN utilisateur.
- * @param {object} supabase - client Supabase
- * @param {string} userId   - destinataire
- * @param {object} payload  - { type, title, body, url, icon_url?, metadata? }
- */
+const _getUrlKey = (supabase) => ({
+  url: supabase.supabaseUrl || import.meta?.env?.VITE_SUPABASE_URL || '',
+  key: supabase.supabaseKey || import.meta?.env?.VITE_SUPABASE_ANON_KEY || '',
+});
+
+// Fire-and-forget push vers Edge Function
+const _triggerPush = (supabase, userId, notifId, payload) => {
+  const { url, key } = _getUrlKey(supabase);
+  if (!url) return;
+  fetch(`${url}/functions/v1/send-push-notification`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${key}` },
+    body: JSON.stringify({
+      user_id:  userId,
+      id:       notifId,
+      title:    payload.title,
+      body:     (payload.body || '').slice(0, 200),
+      url:      payload.url || '/',
+      icon_url: payload.icon_url || '/icon-192.png',
+    }),
+  }).catch(() => {});
+};
+
 export const notifyUser = async (supabase, userId, payload) => {
   if (!userId || !payload?.type) return;
-
   const dedupeKey = `${userId}:${payload.type}:${payload.metadata?.refId || payload.body?.slice(0, 30)}`;
   if (_isDupe(dedupeKey)) return;
-
   try {
     const { data: notifData } = await supabase.from('notifications').insert({
       user_id:  userId,
@@ -54,107 +60,67 @@ export const notifyUser = async (supabase, userId, payload) => {
       is_read:  false,
       metadata: JSON.stringify(payload.metadata || {}),
     }).select('id').single();
-
-    // Déclencher le push via Edge Function (backup si le webhook DB n'est pas configuré)
-    if (notifData?.id) {
-      const supabaseUrl = supabase.supabaseUrl || import.meta?.env?.VITE_SUPABASE_URL;
-      const supabaseKey = supabase.supabaseKey || import.meta?.env?.VITE_SUPABASE_ANON_KEY;
-      if (supabaseUrl) {
-        fetch(`${supabaseUrl}/functions/v1/send-push-notification`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${supabaseKey}`,
-          },
-          body: JSON.stringify({
-            user_id:  userId,
-            id:       notifData.id,
-            title:    payload.title,
-            body:     (payload.body || '').slice(0, 200),
-            url:      payload.url || '/',
-            icon_url: payload.icon_url || '/icon-192.png',
-          }),
-        }).catch(() => {}); // Silencieux — le webhook peut déjà l'avoir fait
-      }
-    }
+    if (notifData?.id) _triggerPush(supabase, userId, notifData.id, payload);
   } catch (err) {
     console.warn('[notifUtils] notifyUser error:', err?.message);
   }
 };
 
 /**
- * Insérer une notification pour TOUS les utilisateurs enregistrés.
- * Exclut automatiquement l'acteur et les IDs passés dans `exclude`.
- *
- * @param {object}   supabase  - client Supabase
- * @param {object}   payload   - { type, title, body, url, icon_url?, metadata? }
- * @param {string[]} exclude   - IDs à exclure (acteur, propriétaire déjà notifié…)
+ * FIX v28000 : notifyAll déclenchait les insertions DB mais n'appelait JAMAIS
+ * l'Edge Function push → 0 notification système. Corrigé : push pour chaque user.
  */
 export const notifyAll = async (supabase, payload, exclude = []) => {
   if (!payload?.type) return;
-
   try {
-    // Récupérer tous les IDs utilisateurs
-    const { data: users, error } = await supabase
-      .from('users')
-      .select('id');
-
+    const { data: users, error } = await supabase.from('users').select('id');
     if (error || !users?.length) return;
-
     const excludeSet = new Set(exclude.filter(Boolean));
+    const targets = users.filter(u => !excludeSet.has(u.id));
+    if (!targets.length) return;
 
-    // Construire le batch en filtrant les exclus et les doublons
-    const rows = users
-      .filter(u => !excludeSet.has(u.id))
-      .map(u => ({
-        user_id:  u.id,
-        type:     payload.type,
-        title:    payload.title,
-        body:     (payload.body || '').slice(0, 200),
-        url:      payload.url || '/',
-        icon_url: payload.icon_url || '/icon-192.png',
-        is_read:  false,
-        metadata: JSON.stringify(payload.metadata || {}),
-      }));
+    const rows = targets.map(u => ({
+      user_id:  u.id,
+      type:     payload.type,
+      title:    payload.title,
+      body:     (payload.body || '').slice(0, 200),
+      url:      payload.url || '/',
+      icon_url: payload.icon_url || '/icon-192.png',
+      is_read:  false,
+      metadata: JSON.stringify(payload.metadata || {}),
+    }));
 
-    if (!rows.length) return;
-
-    // Insérer par batch de 100 pour éviter les limites Supabase
+    const inserted = [];
     for (let i = 0; i < rows.length; i += 100) {
-      await supabase.from('notifications').insert(rows.slice(i, i + 100));
+      const { data } = await supabase.from('notifications')
+        .insert(rows.slice(i, i + 100)).select('id, user_id');
+      if (data) inserted.push(...data);
+    }
+
+    // ✅ FIX : déclencher push natif pour chaque utilisateur
+    const byUser = new Map();
+    for (const row of inserted) {
+      if (!byUser.has(row.user_id)) byUser.set(row.user_id, row.id);
+    }
+    for (const [userId, notifId] of byUser) {
+      _triggerPush(supabase, userId, notifId, payload);
     }
   } catch (err) {
     console.warn('[notifUtils] notifyAll error:', err?.message);
   }
 };
 
-/**
- * Notifier le propriétaire d'un son.
- * Ne fait rien si actorId === ownerId (pas d'auto-notif).
- *
- * @param {object} supabase  - client Supabase
- * @param {string} songId    - ID du son
- * @param {string} actorId   - ID de l'acteur (liker, commenteur…)
- * @param {object} payload   - { type, title, body, url, icon_url?, metadata? }
- * @returns {string|null}    - uploader_id si trouvé
- */
 export const notifyOwner = async (supabase, songId, actorId, payload) => {
   if (!songId || !actorId) return null;
   try {
     const { data: song } = await supabase
-      .from('songs')
-      .select('uploader_id, title')
-      .eq('id', songId)
-      .maybeSingle();
-
+      .from('songs').select('uploader_id, title').eq('id', songId).maybeSingle();
     if (!song?.uploader_id) return null;
-    if (song.uploader_id === actorId) return song.uploader_id; // pas d'auto-notif
-
+    if (song.uploader_id === actorId) return song.uploader_id;
     await notifyUser(supabase, song.uploader_id, {
       ...payload,
       metadata: { ...(payload.metadata || {}), songId, songTitle: song.title },
     });
-
     return song.uploader_id;
   } catch (err) {
     console.warn('[notifUtils] notifyOwner error:', err?.message);

@@ -25,7 +25,7 @@
  * ════════════════════════════════════════════════════════════════
  */
 
-const CACHE_NAME    = 'novasound-titan-v25000';
+const CACHE_NAME    = 'novasound-titan-v28000';
 const STATIC_ASSETS = [
   '/', '/index.html', '/manifest.json', '/favicon.ico',
   '/favicon.png', '/apple-touch-icon.png', '/icon-192.png', '/icon-512.png',
@@ -176,7 +176,7 @@ self.addEventListener('notificationclick', e => {
         try {
           if (new URL(client.url).origin === self.location.origin) {
             client.focus();
-            client.postMessage({ type:'NAVIGATE', url:targetUrl, notifId });
+            client.postMessage({ type:'PUSH_NAVIGATE', url:targetUrl, notifId });
             return;
           }
         } catch (_) {}
@@ -214,7 +214,7 @@ self.addEventListener('pushsubscriptionchange', e => {
     }).then(sub => {
       // Notifier les clients pour re-enregistrer en base
       return self.clients.matchAll({ type:'window' }).then(list =>
-        list.forEach(c => c.postMessage({ type:'PUSH_RESUBSCRIBED', subscription: sub.toJSON() }))
+        list.forEach(c => c.postMessage({ type:'PUSH_SUBSCRIPTION_RENEWED', subscription: sub.toJSON() }))
       );
     }).catch(() => {})
   );
@@ -225,7 +225,7 @@ self.addEventListener('sync', e => {
   if (e.tag === 'bg-sync-messages') {
     e.waitUntil(
       self.clients.matchAll().then(list =>
-        list.forEach(c => c.postMessage({ type:'BG_SYNC_MESSAGES' }))
+        list.forEach(c => c.postMessage({ type:'SYNC_PENDING_MESSAGES' }))
       )
     );
   }

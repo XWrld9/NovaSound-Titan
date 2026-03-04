@@ -2,41 +2,46 @@ import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/lib/supabaseClient';
 
-/*
- * AuthCallbackPage — /auth/callback
+/**
+ * AuthCallbackPage — NovaSound V28000
  *
- * iOS Safari ouvre les liens Supabase sous deux formes :
- *   A) https://site.com/?token=xxx&type=signup#/  (token AVANT le #)
- *   B) https://site.com/#/auth/callback?token=xxx (token APRÈS le #, géré par HashRouter)
- *
- * Ce composant gère les deux cas + le cas où Supabase a déjà traité le token
- * côté serveur et redirigé avec access_token dans le hash.
+ * FIX v28000 : Quand le lien email est de type "recovery" (mot de passe oublié),
+ * redirige vers /reset-password au lieu de / — l'utilisateur peut ainsi
+ * définir son nouveau mot de passe AVANT d'accéder à la plateforme.
  */
 const AuthCallbackPage = () => {
   const navigate = useNavigate();
-  const [status, setStatus] = useState('loading'); // loading | success | error
-  const [msg, setMsg] = useState('Vérification en cours…');
+  const [status, setStatus] = useState('loading');
+  const [msg,    setMsg]    = useState('Vérification en cours…');
 
-  useEffect(() => {
-    handleCallback();
-  }, []);
+  useEffect(() => { handleCallback(); }, []);
+
+  // Détecter si le flux est une récupération de mot de passe
+  const isRecoveryFlow = () => {
+    const hash   = window.location.hash;
+    const search = window.location.search;
+    const allParams = hash + search;
+    return (
+      allParams.includes('type=recovery') ||
+      allParams.includes('type=password_recovery') ||
+      // Supabase met parfois le type dans les searchParams du hash-route
+      new URLSearchParams(hash.includes('?') ? hash.split('?')[1] : '').get('type') === 'recovery' ||
+      new URLSearchParams(search).get('type') === 'recovery'
+    );
+  };
 
   const handleCallback = async () => {
     try {
-      const rawHash  = window.location.hash;   // ex: "#/auth/callback#access_token=..."
-      const rawSearch = window.location.search; // ex: "?token_hash=xxx"
+      const rawHash   = window.location.hash;
+      const rawSearch = window.location.search;
 
-      // ── 1. access_token dans le hash (Android Chrome + certains clients mail)
-      //       Deux sous-cas :
-      //       a) #access_token=xxx (hash brut, redirigé par index.html)
-      //       b) #/auth/callback#access_token=xxx (double hash)
+      // ── 1. access_token dans le hash (Android Chrome + clients mail)
       let hashParams = '';
       if (rawHash.includes('access_token=')) {
         const idx = rawHash.lastIndexOf('#');
         hashParams = rawHash.slice(idx + 1);
       }
-      // Aussi vérifier access_token dans les query params (cas C)
-      const searchParams = new URLSearchParams(rawSearch);
+      const searchParams         = new URLSearchParams(rawSearch);
       const accessTokenFromSearch = searchParams.get('access_token');
       const refreshTokenFromSearch = searchParams.get('refresh_token');
 
@@ -44,42 +49,57 @@ const AuthCallbackPage = () => {
         const params       = hashParams ? new URLSearchParams(hashParams) : searchParams;
         const accessToken  = params.get('access_token') || accessTokenFromSearch;
         const refreshToken = params.get('refresh_token') || refreshTokenFromSearch || '';
+        const tokenType    = params.get('type') || searchParams.get('type') || '';
 
         if (accessToken) {
           const { data, error } = await supabase.auth.setSession({
-            access_token: accessToken,
+            access_token:  accessToken,
             refresh_token: refreshToken,
           });
           if (error) throw error;
           if (data?.user) {
             await ensureProfile(data.user);
-            setStatus('success');
-            setMsg('Email vérifié ! Redirection…');
-            setTimeout(() => navigate('/', { replace: true }), 1200);
+            // ✅ FIX : si recovery → reset-password, sinon accueil
+            if (tokenType === 'recovery' || isRecoveryFlow()) {
+              setStatus('success');
+              setMsg('Lien vérifié ! Définis ton nouveau mot de passe…');
+              setTimeout(() => navigate('/reset-password', { replace: true }), 900);
+            } else {
+              setStatus('success');
+              setMsg('Email vérifié ! Redirection…');
+              setTimeout(() => navigate('/', { replace: true }), 1200);
+            }
             return;
           }
         }
       }
 
-      // ── 2. token_hash dans les query params ou le hash route (iOS + PKCE)
-      const hashRoute      = rawHash.includes('?') ? rawHash.split('?')[1] : '';
+      // ── 2. token_hash dans les query params (iOS + PKCE)
+      const hashRoute       = rawHash.includes('?') ? rawHash.split('?')[1] : '';
       const hashRouteParams = new URLSearchParams(hashRoute);
-
       const tokenHash = searchParams.get('token_hash') || hashRouteParams.get('token_hash');
       const token     = searchParams.get('token')      || hashRouteParams.get('token');
       const type      = searchParams.get('type')       || hashRouteParams.get('type') || 'signup';
 
       if (tokenHash || token) {
+        const otpType = (type === 'recovery' || type === 'password_recovery') ? 'recovery' : 'signup';
         const { data, error } = await supabase.auth.verifyOtp({
           token_hash: tokenHash || token,
-          type: type === 'recovery' ? 'recovery' : 'signup',
+          type: otpType,
         });
         if (error) throw error;
         if (data?.user) {
           await ensureProfile(data.user);
-          setStatus('success');
-          setMsg('Email vérifié ! Redirection…');
-          setTimeout(() => navigate('/', { replace: true }), 1200);
+          // ✅ FIX : recovery → reset-password
+          if (otpType === 'recovery') {
+            setStatus('success');
+            setMsg('Lien vérifié ! Définis ton nouveau mot de passe…');
+            setTimeout(() => navigate('/reset-password', { replace: true }), 900);
+          } else {
+            setStatus('success');
+            setMsg('Email vérifié ! Redirection…');
+            setTimeout(() => navigate('/', { replace: true }), 1200);
+          }
           return;
         }
       }
@@ -88,9 +108,16 @@ const AuthCallbackPage = () => {
       const { data: { session } } = await supabase.auth.getSession();
       if (session?.user) {
         await ensureProfile(session.user);
-        setStatus('success');
-        setMsg('Compte vérifié ! Redirection…');
-        setTimeout(() => navigate('/', { replace: true }), 1200);
+        // Si l'URL contient "recovery", diriger vers reset-password quand même
+        if (isRecoveryFlow()) {
+          setStatus('success');
+          setMsg('Lien vérifié ! Définis ton nouveau mot de passe…');
+          setTimeout(() => navigate('/reset-password', { replace: true }), 900);
+        } else {
+          setStatus('success');
+          setMsg('Compte vérifié ! Redirection…');
+          setTimeout(() => navigate('/', { replace: true }), 1200);
+        }
         return;
       }
 
@@ -102,9 +129,11 @@ const AuthCallbackPage = () => {
     } catch (err) {
       console.error('[AuthCallback]', err);
       setStatus('error');
-      setMsg(err.message?.includes('expired') || err.message?.includes('invalid')
-        ? 'Lien expiré. Renvoie un email de confirmation depuis la page connexion.'
-        : 'Erreur de vérification. Essaie de te connecter directement.');
+      setMsg(
+        err.message?.includes('expired') || err.message?.includes('invalid')
+          ? 'Lien expiré. Renvoie un email depuis la page connexion.'
+          : 'Erreur de vérification. Essaie de te connecter directement.'
+      );
       setTimeout(() => navigate('/login', { replace: true }), 3000);
     }
   };
@@ -126,7 +155,6 @@ const AuthCallbackPage = () => {
   return (
     <div className="min-h-screen bg-gray-950 flex items-center justify-center px-4">
       <div className="text-center max-w-sm">
-        {/* Logo */}
         <img
           src="https://horizons-cdn.hostinger.com/83c37f40-fa54-4cc6-8247-95b1353f3eba/a4885bba5290b1958f05bcdb82731c39.jpg"
           alt="NovaSound"
@@ -148,7 +176,9 @@ const AuthCallbackPage = () => {
                 <polyline points="20 6 9 17 4 12"/>
               </svg>
             </div>
-            <p className="text-white font-semibold text-lg mb-1">Email vérifié ! 🎉</p>
+            <p className="text-white font-semibold text-lg mb-1">
+              {msg.includes('mot de passe') ? '🔐 Lien vérifié !' : '✅ Email vérifié !'}
+            </p>
             <p className="text-gray-400 text-sm">{msg}</p>
           </>
         )}

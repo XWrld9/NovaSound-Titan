@@ -307,7 +307,7 @@ export const AuthProvider = ({ children }) => {
   // ── Send password reset email ────────────────────────────────────────────
   const sendPasswordReset = async (email) => {
     try {
-      const redirectTo = window.location.origin + '/#/reset-password';
+      const redirectTo = window.location.origin + '/#/auth/callback';
       const { error } = await supabase.auth.resetPasswordForEmail(email.trim().toLowerCase(), {
         redirectTo,
       });
