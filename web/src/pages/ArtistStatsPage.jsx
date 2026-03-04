@@ -1,12 +1,13 @@
 /**
- * ArtistStatsPage — NovaSound TITAN LUX v70
+ * ArtistStatsPage — NovaSound TITAN LUX V50000
  * Dashboard analytics artiste
- * - Courbes plays/likes sur 7j/30j (simulation via plays_count snapshot)
+ * - Graphes réels depuis song_plays_history (V50000) avec fallback simulation
+ * - Courbes plays/likes sur 7j/30j
  * - Classement de ses morceaux par performance
  * - Total cumulé: écoutes, likes, favoris, abonnés
- * - Accessible depuis UserProfilePage si ≥1 son uploadé
+ * - Insight cards: meilleur jour, meilleure semaine
  */
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { Helmet } from 'react-helmet-async';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
@@ -117,7 +118,9 @@ const ArtistStatsPage = () => {
     if (currentUser?.id) fetchStats();
   }, [currentUser?.id]);
 
-  const fetchStats = async () => {
+  const [playsHistory, setPlaysHistory] = useState([]);
+
+  const fetchStats = useCallback(async () => {
     setLoading(true);
     try {
       const [{ data: songsData }, { data: followersData }] = await Promise.all([
@@ -132,30 +135,67 @@ const ArtistStatsPage = () => {
       const totalLikes    = list.reduce((s, sg) => s + (sg.likes_count || 0), 0);
       const totalFollowers = followersData?.count || 0;
 
-      // Favoris
       const { count: totalFavs } = await supabase
         .from('favorites')
         .select('id', { count: 'exact', head: true })
-        .in('song_id', list.map(s => s.id));
+        .in('song_id', list.map(s => s.id).filter(Boolean));
 
       setStats({
         totalPlays, totalLikes, totalFollowers,
         totalFavs: totalFavs || 0,
         songCount: list.filter(s => !s.is_archived).length,
       });
+
+      // V50000: Fetch historique réel depuis song_plays_history
+      if (list.length > 0) {
+        try {
+          const since30 = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
+          const { data: history } = await supabase
+            .from('song_plays_history')
+            .select('listened_at')
+            .in('song_id', list.map(s => s.id).filter(Boolean))
+            .gte('listened_at', since30)
+            .order('listened_at', { ascending: true });
+          setPlaysHistory(history || []);
+        } catch { setPlaysHistory([]); }
+      }
     } catch (e) {
       console.error(e);
     } finally {
       setLoading(false);
     }
-  };
+  }, [currentUser?.id]);
 
-  // Générer les data de graphe à partir des totaux actuels
+  // V50000: Utiliser les données réelles si disponibles, sinon simuler
   const chartData = useMemo(() => {
     if (!songs.length) return [];
+
+    if (chartMetric === 'plays' && playsHistory.length > 0) {
+      // Grouper par jour
+      const dayMap = new Map();
+      const now = Date.now();
+      const cutoff = now - period * 24 * 60 * 60 * 1000;
+      for (const row of playsHistory) {
+        const ts = new Date(row.listened_at).getTime();
+        if (ts < cutoff) continue;
+        const day = new Date(row.listened_at).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' });
+        dayMap.set(day, (dayMap.get(day) || 0) + 1);
+      }
+      // Remplir les jours manquants
+      const result = [];
+      for (let i = period - 1; i >= 0; i--) {
+        const d = new Date(now - i * 24 * 60 * 60 * 1000);
+        const label = d.toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' });
+        result.push({ label, value: dayMap.get(label) || 0 });
+      }
+      // Afficher max 30 points en 30j, ou tous en 7j
+      return period === 7 ? result : result.filter((_, i) => i % 3 === 0 || i === result.length - 1);
+    }
+
+    // Fallback: simulation
     const totalMetric = songs.reduce((s, sg) => s + (sg[chartMetric === 'plays' ? 'plays_count' : 'likes_count'] || 0), 0);
     return generateDailyData(totalMetric, period, currentUser?.id?.charCodeAt(0) || 42);
-  }, [songs, period, chartMetric, currentUser?.id]);
+  }, [songs, period, chartMetric, currentUser?.id, playsHistory]);
 
   const sparkValues = useMemo(() => chartData.map(d => d.value), [chartData]);
 

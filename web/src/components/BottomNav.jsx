@@ -1,26 +1,27 @@
 /**
- * BottomNav — NovaSound TITAN LUX v5000
+ * BottomNav — NovaSound TITAN LUX V60000
  * Barre de navigation mobile fixe en bas
  * Visible UNIQUEMENT sur mobile (hidden md:flex)
  * Laisse 80px d'espace pour l'AudioPlayer au-dessus
  */
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Home, Compass, TrendingUp, User, Search, Globe, Radio, Trophy, HardDrive } from 'lucide-react';
+import { Home, Compass, TrendingUp, User, Search, Globe, Radio, Trophy, HardDrive, Bell } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
+import { useNotifications } from '@/contexts/NotificationContext';
 import { motion } from 'framer-motion';
 
 const NAV_ITEMS = [
-  { to: '/',             icon: Home,      label: 'Accueil'  },
-  { to: '/explorer',     icon: Compass,   label: 'Explorer' },
-  { to: '/local-player', icon: HardDrive, label: 'Local'    },
-  { to: '/live',         icon: Radio,     label: 'Live', dot: true },
-  { to: '/leaderboard',  icon: Trophy,    label: 'Top'      },
+  { to: '/',             icon: Home,    label: 'Accueil'  },
+  { to: '/explorer',     icon: Compass, label: 'Explorer' },
+  { to: '/live',         icon: Radio,   label: 'Live', dot: true },
+  { to: '/leaderboard',  icon: Trophy,  label: 'Top'      },
 ];
 
 const BottomNav = () => {
   const location  = useLocation();
   const { currentUser, isAuthenticated } = useAuth();
+  const { unreadCount } = useNotifications() || {};
 
   const isActive = (path) => {
     if (path === '/') return location.pathname === '/';
@@ -31,8 +32,13 @@ const BottomNav = () => {
     ? `/artist/${currentUser.id}`
     : '/login';
 
+  const notifItem = isAuthenticated
+    ? { to: '/notifications', icon: Bell, label: 'Notifs', badge: unreadCount > 0 ? (unreadCount > 9 ? '9+' : String(unreadCount)) : null }
+    : null;
+
   const allItems = [
     ...NAV_ITEMS,
+    ...(notifItem ? [notifItem] : []),
     { to: profileTo, icon: User, label: 'Profil' },
   ];
 

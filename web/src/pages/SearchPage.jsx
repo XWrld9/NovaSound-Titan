@@ -1,5 +1,5 @@
 /**
- * SearchPage — NovaSound V27000
+ * SearchPage — NovaSound TITAN LUX V60000
  * ✅ Filtre par genre (pills cliquables)
  * ✅ Recherche sons, artistes, playlists
  * ✅ Historique de recherche
@@ -20,6 +20,7 @@ import {
 } from 'lucide-react';
 import { formatPlays } from '@/lib/utils';
 import { GENRE_THEMES_MAP } from '@/hooks/useGenreTheme';
+import { logSearch } from '@/lib/notifUtils';
 
 const HISTORY_KEY = (uid) => `novasound.search.history.${uid}`;
 const MAX_HISTORY = 10;
@@ -64,6 +65,7 @@ const SearchPage = () => {
   const { playSong }    = usePlayer();
 
   const [query,       setQuery]       = useState(searchParams.get('q') || '');
+  const [trending,    setTrending]    = useState([]);
   const [results,     setResults]     = useState([]);
   const [loading,     setLoading]     = useState(false);
   const [searched,    setSearched]    = useState(false);
@@ -118,10 +120,23 @@ const SearchPage = () => {
       ];
       setResults(combined);
       if (currentUser?.id && q) { saveHistory(currentUser.id, q); setHistory(getHistory(currentUser.id)); }
+      // V60000 : log search for trending
+      const totalResults = (songs?.length || 0) + (artists?.length || 0) + (playlists?.length || 0);
+      logSearch(supabase, q, currentUser?.id || null, totalResults);
     } catch (err) {
       console.error('[Search]', err); setResults([]);
     } finally { setLoading(false); }
   }, [currentUser?.id, activeGenre]);
+
+  // V60000 : charger les recherches tendance
+  const fetchTrending = async () => {
+    try {
+      const { data } = await supabase.from('trending_searches').select('query, search_count').limit(8);
+      setTrending(data || []);
+    } catch {}
+  };
+
+  useEffect(() => { fetchTrending(); }, []);
 
   const handleHistoryClick = (q) => {
     setQuery(q);

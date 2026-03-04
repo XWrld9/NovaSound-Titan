@@ -70,6 +70,7 @@ const LocalPlayerPage   = lazy(() => import('@/pages/LocalPlayerPage'));
 const AdminPanel        = lazy(() => import('@/pages/AdminPanel'));
 const ResetPasswordPage = lazy(() => import('@/pages/ResetPasswordPage'));
 const ArtistsPage       = lazy(() => import('@/pages/ArtistsPage'));
+const NotificationsPage = lazy(() => import('@/pages/NotificationsPage'));
 
 /* ── Player global — monté UNE SEULE FOIS, survit à toute navigation ── */
 const GlobalPlayer = () => {
@@ -173,6 +174,7 @@ function App() {
                           <Route path="/admin"           element={<ProtectedRoute><AdminPanel /></ProtectedRoute>} />
                           <Route path="/reset-password"  element={<ResetPasswordPage />} />
                           <Route path="/artists"          element={<ArtistsPage />} />
+                          <Route path="/notifications"   element={<ProtectedRoute><NotificationsPage /></ProtectedRoute>} />
                         </Routes>
                       </Suspense>
                       </ErrorBoundary>

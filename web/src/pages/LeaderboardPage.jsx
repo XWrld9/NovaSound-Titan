@@ -148,6 +148,8 @@ const LeaderboardPage = () => {
 
   const [tab, setTab]               = useState('artists');
   const [songPeriod, setSongPeriod] = useState('trending_7d');
+  const [streaks,    setStreaks]    = useState([]);
+  const [streakTab,  setStreakTab]  = useState(false); // V50000: onglet streaks
   const [topArtists, setTopArtists] = useState([]);
   const [topListeners, setTopListeners] = useState([]);
   const [topSongs, setTopSongs]     = useState([]);
@@ -217,6 +219,20 @@ const LeaderboardPage = () => {
   useEffect(() => { fetchArtistsAndListeners(); }, [fetchArtistsAndListeners]);
   useEffect(() => { if (tab === 'songs') fetchSongs(songPeriod); }, [tab, songPeriod, fetchSongs]);
 
+  // V50000: fetch streaks
+  useEffect(() => {
+    if (tab !== 'streaks') return;
+    (async () => {
+      try {
+        const { data } = await supabase
+          .from('leaderboard_streaks')
+          .select('*')
+          .limit(30);
+        setStreaks(data || []);
+      } catch {}
+    })();
+  }, [tab]);
+
   // Realtime
   useEffect(() => {
     const ch = supabase.channel('leaderboard_v10000')
@@ -241,6 +257,7 @@ const LeaderboardPage = () => {
     { id: 'artists',   label: 'Artistes',  Icon: Crown },
     { id: 'songs',     label: 'Sons',      Icon: Music },
     { id: 'listeners', label: 'Auditeurs', Icon: Headphones },
+    { id: 'streaks',   label: 'Séries',    Icon: Flame },   // V50000
   ];
 
   return (
@@ -387,6 +404,62 @@ const LeaderboardPage = () => {
                     </Link>
                   </div>
                 </motion.div>
+              )}
+
+              {/* ── STREAKS TAB V50000 ── */}
+              {tab === 'streaks' && (
+                <div className="space-y-2">
+                  <p className="text-gray-500 text-xs mb-4 flex items-center gap-1.5">
+                    <Flame className="w-3.5 h-3.5 text-orange-400" />
+                    Séries d'écoute consécutives — qui écoute le plus régulièrement ?
+                  </p>
+                  {streaks.length === 0 ? (
+                    <div className="text-center py-12 text-gray-600">
+                      <Flame className="w-10 h-10 mx-auto mb-3 opacity-30" />
+                      <p>Aucune série en cours</p>
+                      <p className="text-xs mt-1">Écoute de la musique chaque jour pour apparaître ici !</p>
+                    </div>
+                  ) : streaks.map((s, i) => (
+                    <motion.div key={s.user_id}
+                      initial={{ opacity: 0, x: -12 }} animate={{ opacity: 1, x: 0 }}
+                      transition={{ delay: i * 0.03 }}
+                      className={`flex items-center gap-3 p-3 rounded-xl transition-all ${
+                        s.user_id === currentUser?.id
+                          ? 'bg-gradient-to-r from-orange-500/15 to-amber-500/10 border border-orange-500/30'
+                          : 'hover:bg-gray-800/60'
+                      }`}
+                    >
+                      <div className="w-8 text-center flex-shrink-0">
+                        {i === 0 ? <span className="text-xl">🥇</span>
+                        : i === 1 ? <span className="text-xl">🥈</span>
+                        : i === 2 ? <span className="text-xl">🥉</span>
+                        : <span className="text-gray-500 text-sm font-bold">#{i+1}</span>}
+                      </div>
+                      <div className="w-10 h-10 rounded-xl overflow-hidden bg-gray-800 flex-shrink-0">
+                        {s.avatar_url
+                          ? <img src={s.avatar_url} className="w-full h-full object-cover" alt="" />
+                          : <div className="w-full h-full bg-gradient-to-br from-orange-500 to-amber-500 flex items-center justify-center text-white font-bold">
+                              {(s.username || '?')[0].toUpperCase()}
+                            </div>
+                        }
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className={`font-semibold text-sm truncate ${s.user_id === currentUser?.id ? 'text-orange-300' : 'text-white'}`}>
+                          {s.username}
+                          {s.user_id === currentUser?.id && <span className="ml-1.5 text-[10px] bg-orange-500/20 text-orange-400 px-1.5 py-0.5 rounded-full font-bold">Toi</span>}
+                        </p>
+                        <p className="text-gray-600 text-xs">{s.total_days} jour{s.total_days > 1 ? 's' : ''} total · record: {s.longest_streak}j</p>
+                      </div>
+                      <div className="text-right flex-shrink-0">
+                        <div className="flex items-center gap-1 justify-end">
+                          <Flame className="w-4 h-4 text-orange-400" />
+                          <span className="text-orange-400 font-black text-lg tabular-nums">{s.current_streak}</span>
+                        </div>
+                        <p className="text-gray-600 text-[10px]">jours de suite</p>
+                      </div>
+                    </motion.div>
+                  ))}
+                </div>
               )}
             </>
           )}

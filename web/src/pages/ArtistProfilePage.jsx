@@ -13,7 +13,7 @@ import ArtistStatsCard from '@/components/ArtistStatsCard';
 import {
   Music, User, Users, Headphones, Share2,
   Instagram, Youtube, ExternalLink,
-  Twitter, Music2, Globe, Play, Grid3X3, List
+  Twitter, Music2, Globe, Play, Grid3X3, List, Radio,
 } from 'lucide-react';
 import { formatPlays } from '@/lib/utils';
 import { toPng } from 'html-to-image';
@@ -213,14 +213,27 @@ const ArtistProfilePage = () => {
   const [activeTab,     setActiveTab]     = useState('songs'); // 'songs' | 'reposts' | 'about' | 'followers'
   const [songView,      setSongView]      = useState('grid');  // 'grid' | 'list'
   const [achievements,  setAchievements]  = useState([]);
+  const [liveRoom,      setLiveRoom]      = useState(null); // salle live active de cet artiste
 
   const [bioExpanded, setBioExpanded] = useState(false);
   const { playSong: globalPlaySong, currentSong } = usePlayer();
   const playSong = (song) => globalPlaySong(song, songs.filter(s => !s.is_archived));
 
   useEffect(() => {
-    if (id) { fetchArtistData(); fetchFollowers(); fetchAchievements(); }
+    if (id) { fetchArtistData(); fetchFollowers(); fetchAchievements(); fetchLiveRoom(); }
   }, [id]);
+
+  const fetchLiveRoom = async () => {
+    try {
+      const { data } = await supabase
+        .from('live_rooms')
+        .select('id, name, participant_count')
+        .eq('host_id', id)
+        .eq('is_live', true)
+        .maybeSingle();
+      setLiveRoom(data || null);
+    } catch {}
+  };
 
   const fetchAchievements = async () => {
     try {
@@ -358,6 +371,15 @@ const ArtistProfilePage = () => {
                   <h1 className="text-2xl md:text-3xl font-bold text-white">{artist.username || 'Artiste inconnu'}</h1>
                   {totalPlays >= 1000 && (
                     <span title="Artiste populaire" className="text-cyan-400 text-lg">✦</span>
+                  )}
+                  {liveRoom && (
+                    <Link to={`/live/${liveRoom.id}`}
+                      className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-red-500/15 border border-red-500/30 text-red-400 text-xs font-bold hover:bg-red-500/25 transition-all animate-pulse"
+                      onClick={e => e.stopPropagation()}
+                    >
+                      <Radio className="w-3 h-3" />
+                      EN LIVE · {liveRoom.participant_count || 0} 🎧
+                    </Link>
                   )}
                 </div>
 

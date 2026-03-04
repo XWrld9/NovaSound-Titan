@@ -24,7 +24,7 @@ import { Button } from '@/components/ui/button';
 import { Upload, Image, AlertCircle, CheckCircle, Lock, FileAudio } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { supabase, supabaseUrl as _supabaseUrl, supabaseAnonKey as _supabaseAnonKey } from '@/lib/supabaseClient';
-import { notifyAll } from '@/lib/notifUtils';
+import { notifyAll, notifyFollowers } from '@/lib/notifUtils';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import { ALL_GENRES } from '@/hooks/useGenreTheme';
@@ -313,6 +313,16 @@ const MusicUploadPage = () => {
         description: formData.description?.trim() || null,
       });
       if (insertError) throw insertError;
+
+      // V50000: Notifier les abonnés d'abord (plus pertinent), puis notifyAll
+      notifyFollowers(supabase, currentUser.id, {
+        type:     'new_song',
+        title:    `🎵 ${currentUser.username || formData.artist} vient de publier un son`,
+        body:     `"${formData.title.trim()}" est maintenant disponible`,
+        url:      '/',
+        icon_url: albumCoverUrl || '/icon-192.png',
+        metadata: { artistId: currentUser.id },
+      }).catch(() => {});
 
       // Notifier TOUS les utilisateurs de la nouvelle publication (non-bloquant)
       notifyAll(supabase, {
