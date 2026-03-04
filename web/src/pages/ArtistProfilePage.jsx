@@ -17,6 +17,7 @@ import {
 } from 'lucide-react';
 import { formatPlays } from '@/lib/utils';
 import { toPng } from 'html-to-image';
+import { GENRE_THEMES_MAP } from '@/hooks/useGenreTheme';
 
 /* ══════════════════════════════════════════════════
    SHARE MODAL ARTISTE — Style Spotify (inchangé)
@@ -505,7 +506,11 @@ const ArtistProfilePage = () => {
                               <span className="text-xs text-gray-600 tabular-nums">{formatPlays(song.plays_count)}</span>
                             </div>
                           </div>
-                          {song.genre && <span className="flex-shrink-0 text-[9px] px-1.5 py-0.5 rounded-full bg-cyan-500/10 text-cyan-400 border border-cyan-500/15">{song.genre}</span>}
+                          {song.genre && (() => {
+                            const t = GENRE_THEMES_MAP[song.genre];
+                            const c = t?.primary || '#06b6d4';
+                            return <span className="flex-shrink-0 text-[9px] px-1.5 py-0.5 rounded-full font-semibold" style={{color:c,background:c+'18',border:`1px solid ${c}35`}}>{song.genre}</span>;
+                          })()}
                           <Link to={`/song/${song.id}`} onClick={e => e.stopPropagation()}
                             className="flex-shrink-0 p-1 text-gray-600 hover:text-white transition-colors opacity-0 group-hover:opacity-100">
                             <ExternalLink className="w-3.5 h-3.5" />

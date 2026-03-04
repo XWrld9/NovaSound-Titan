@@ -27,6 +27,7 @@ import { supabase, supabaseUrl as _supabaseUrl, supabaseAnonKey as _supabaseAnon
 import { notifyAll } from '@/lib/notifUtils';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
+import { ALL_GENRES } from '@/hooks/useGenreTheme';
 
 // ── Détecte iOS ───────────────────────────────────────────────────
 const isIOS = () =>
@@ -166,11 +167,7 @@ const MusicUploadPage = () => {
   const [uploadBytes,    setUploadBytes]    = useState({ loaded: 0, total: 0 });
   const [uploadPhase,    setUploadPhase]    = useState('');  // 'audio' | 'cover' | 'saving'
 
-  const GENRES = [
-    'Afrobeats', 'Hip-Hop', 'R&B', 'Pop', 'Électronique', 'Trap',
-    'Gospel', 'Jazz', 'Reggae', 'Dancehall', 'Amapiano', 'Coupé-Décalé',
-    'Rock', 'Classique', 'Folk', 'Country', 'Latin', 'Drill', 'Outro',
-  ];
+  const GENRES = ALL_GENRES; // centralisé dans useGenreTheme.js
 
   const handleChange = (e) => setFormData(prev => ({ ...prev, [e.target.name]: e.target.value }));
 

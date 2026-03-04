@@ -1,5 +1,5 @@
 {
-  "name": "NovaSound TITAN LUX v2000",
+  "name": "NovaSound TITAN LUX",
   "short_name": "NovaSound",
   "description": "Plateforme musicale nouvelle génération — découvre, écoute et partage.",
   "start_url": "/#/",
@@ -259,5 +259,5 @@
       "update": 86400
     }
   ],
-  "version": "2000"
+  "version": "25000"
 }

@@ -4,6 +4,7 @@ import { Link } from 'react-router-dom';
 import { AnimatePresence, motion } from 'framer-motion';
 import ReactDOM from 'react-dom';
 import { useAuth } from '@/contexts/AuthContext';
+import { GENRE_THEMES_MAP } from '@/hooks/useGenreTheme';
 import { usePlayer } from '@/contexts/PlayerContext';
 import { supabase } from '@/lib/supabaseClient';
 import LikeButton from '@/components/LikeButton';
@@ -176,14 +177,23 @@ const SongCard = memo(({ song: initialSong, onPlay, isPlaying: isPlayingProp, se
             <p className="text-gray-400 text-xs truncate mt-0.5">{song.artist}</p>
           )}
 
-          {/* Genre badge */}
-          {song.genre && (
-            <div className="mt-1.5">
-              <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-cyan-500/10 text-cyan-400 border border-cyan-500/20 inline-block">
-                {song.genre}
-              </span>
-            </div>
-          )}
+          {/* Genre badge — couleur dynamique par genre */}
+          {song.genre && (() => {
+            const t = GENRE_THEMES_MAP[song.genre];
+            const col = t ? t.primary : '#06b6d4';
+            const style = {
+              color: col,
+              background: col + '18',
+              border: `1px solid ${col}35`,
+            };
+            return (
+              <div className="mt-1.5">
+                <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full inline-block" style={style}>
+                  {song.genre}
+                </span>
+              </div>
+            );
+          })()}
 
           <div className="flex items-center justify-between mt-2.5 gap-1 overflow-hidden">
             <div className="flex items-center gap-1.5 min-w-0 overflow-hidden">

@@ -25,12 +25,9 @@ import {
   Download, Share2, ExternalLink, ListMusic
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { ALL_GENRES, GENRE_THEMES_MAP } from '@/hooks/useGenreTheme';
 
-const GENRES = [
-  'Afrobeats','Hip-Hop','R&B','Pop','Électronique','Trap','Gospel',
-  'Jazz','Reggae','Dancehall','Amapiano','Coupé-Décalé',
-  'Rock','Classique','Folk','Latin','Drill',
-];
+const GENRES = ALL_GENRES; // centralisé dans useGenreTheme.js
 
 const VIEW_KEY = 'novasound.explorer.view';
 

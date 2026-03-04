@@ -29,17 +29,30 @@ import {
 import { usePlayer } from '@/contexts/PlayerContext';
 import { useAuth } from '@/contexts/AuthContext';
 
-const VIBE_COLORS = {
-  Rap:'#a855f7','Hip-Hop':'#a855f7',HipHop:'#a855f7',
-  Trap:'#ef4444',Drill:'#ef4444',
-  'R&B':'#ec4899',Soul:'#ec4899',RnB:'#ec4899',
-  Pop:'#06b6d4',Electro:'#06b6d4',Electronic:'#06b6d4',
-  Jazz:'#f59e0b',Blues:'#f59e0b',
-  Afrobeats:'#22c55e',Afro:'#22c55e',Reggae:'#22c55e',
-  Rock:'#f97316',Metal:'#f97316',
-  Classique:'#8b5cf6',Lofi:'#64748b',Ambient:'#64748b',
+import { GENRE_THEMES_MAP } from '@/hooks/useGenreTheme';
+
+// vibeColor — résout la couleur primaire d'un genre
+// Priorité : GENRE_THEMES_MAP (centralisé) → fallback carte locale → cyan par défaut
+const VIBE_COLORS_LOCAL = {
+  'Rap':'#a855f7','HipHop':'#a855f7','Hip-Hop':'#a855f7',
+  'Drill':'#94a3b8','Trap':'#ef4444',
+  'R&B':'#ec4899','Soul':'#ec4899','RnB':'#ec4899',
+  'Pop':'#06b6d4','Electro':'#06b6d4','Electronic':'#06b6d4','Électronique':'#00ffcc',
+  'Jazz':'#f59e0b','Blues':'#f59e0b',
+  'Afrobeats':'#f59e0b','Afro':'#f59e0b','Reggae':'#84cc16',
+  'Rock':'#f97316','Metal':'#f97316',
+  'Classique':'#e2c37b','Lofi':'#64748b','Ambient':'#64748b',
+  'Amapiano':'#34d399','Dancehall':'#fbbf24','Gospel':'#f97316',
+  'Coupé-Décalé':'#f472b6','Latin':'#f87171','Country':'#d4a574',
+  // Genres camerounais
+  'Bikutsi':'#e53e3e','Makossa':'#d4a017','Assiko':'#2f855a',
+  'Ambas-Bay':'#2b6cb0','Benskin':'#6b46c1','Mbolé':'#c05621',
 };
-const vibeColor = (g) => VIBE_COLORS[g] || '#06b6d4';
+const vibeColor = (g) => {
+  if (!g) return '#06b6d4';
+  if (GENRE_THEMES_MAP[g]) return GENRE_THEMES_MAP[g].primary;
+  return VIBE_COLORS_LOCAL[g] || '#06b6d4';
+};
 
 const StaticWaveform = ({ isPlaying, color = '#06b6d4' }) => {
   const bars = [3,5,8,6,9,4,7,5,10,6,8,4,6,9,5,7,3,8,6,7,5,9,4,8,6];
