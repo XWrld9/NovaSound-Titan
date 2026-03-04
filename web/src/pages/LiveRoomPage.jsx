@@ -743,7 +743,7 @@ const LiveRoomPage = () => {
                     <span className="text-white">{room?.name}</span>
                   </div>
                   <button onClick={copyLink} className="w-full bg-gray-800 hover:bg-gray-700 text-white rounded-xl px-4 py-2 text-sm transition-all flex items-center gap-2">
-                    <Copy className="w-4 h-4" />{copied ? <Check className="w-4 h-4 text-green-400" : 'Copier le lien'}
+                    <Copy className="w-4 h-4" />{copied ? <Check className="w-4 h-4 text-green-400" /> : 'Copier le lien'}
                   </button>
                 </div>
               </div>
