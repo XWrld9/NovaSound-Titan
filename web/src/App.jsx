@@ -1,5 +1,11 @@
 import React, { lazy, Suspense, useEffect } from 'react';
 import { Route, Routes, HashRouter as Router, useNavigate, useLocation } from 'react-router-dom';
+// PWA Install Prompt
+let deferredPrompt;
+window.addEventListener('beforeinstallprompt', (e) => {
+  e.preventDefault();
+  deferredPrompt = e;
+});
 import { AuthProvider } from '@/contexts/AuthContext';
 import { NotificationProvider } from '@/contexts/NotificationContext';
 import { NotificationToast } from '@/components/NotificationBell';
