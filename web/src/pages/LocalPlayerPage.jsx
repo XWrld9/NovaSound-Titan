@@ -879,19 +879,28 @@ const playFromQueue   = useCallback(async (idx) => {
                   {/* Play/Pause */}
                   <motion.button whileTap={{ scale:0.9 }}
                     onClick={() => {
-                      const firstPlayable = songs.find(s => !s._needsReimport && s._blobUrl);
-                      if (firstPlayable) {
-                        playSong(firstPlayable, songs);
-                      } else if (songs.length > 0) {
-                        // Vérifier si les fichiers nécessitent une réimportation
-                        const needsReimport = songs.some(s => s._needsReimport);
-                        if (needsReimport) {
-                          // Afficher notification pour réimporter
-                          alert('Veuillez réimporter les fichiers pour continuer l\'écoute');
-                          setTimeout(() => reimportRef.current?.click(), 300);
-                        } else {
-                          // Démarrer avec le premier fichier disponible
-                          playSong(songs[0], songs);
+                      if (activeSong && currentSong?.id === activeSong.id && isPlayingGlobal) {
+                        // Pause si la chanson actuelle joue déjà
+                        togglePlayPause();
+                      } else if (activeSong) {
+                        // Jouer la chanson active
+                        playSong(activeSong, songs);
+                      } else {
+                        // Démarrer avec le premier fichier jouable
+                        const firstPlayable = songs.find(s => !s._needsReimport && s._blobUrl);
+                        if (firstPlayable) {
+                          playSong(firstPlayable, songs);
+                        } else if (songs.length > 0) {
+                          // Vérifier si les fichiers nécessitent une réimportation
+                          const needsReimport = songs.some(s => s._needsReimport);
+                          if (needsReimport) {
+                            // Afficher notification pour réimporter
+                            alert('Veuillez réimporter les fichiers pour continuer l\'écoute');
+                            setTimeout(() => reimportRef.current?.click(), 300);
+                          } else {
+                            // Démarrer avec le premier fichier disponible
+                            playSong(songs[0], songs);
+                          }
                         }
                       }
                     }}
