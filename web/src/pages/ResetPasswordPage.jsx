@@ -25,6 +25,37 @@ const ResetPasswordPage = () => {
   const [success,      setSuccess]      = useState(false);
   const [sessionReady, setSessionReady] = useState(false);
 
+  // Validation de la force du mot de passe
+  const getPasswordStrength = (pwd) => {
+    if (!pwd) return { score: 0, text: '', color: '' };
+    
+    let score = 0;
+    const checks = {
+      length: pwd.length >= 8,
+      lowercase: /[a-z]/.test(pwd),
+      uppercase: /[A-Z]/.test(pwd),
+      numbers: /\d/.test(pwd),
+      special: /[!@#$%^&*(),.?":{}|<>]/.test(pwd)
+    };
+    
+    Object.values(checks).forEach(passed => {
+      if (passed) score++;
+    });
+    
+    const levels = [
+      { score: 0, text: 'Très faible', color: 'text-red-400' },
+      { score: 1, text: 'Faible', color: 'text-red-400' },
+      { score: 2, text: 'Moyen', color: 'text-yellow-400' },
+      { score: 3, text: 'Bon', color: 'text-cyan-400' },
+      { score: 4, text: 'Fort', color: 'text-emerald-400' },
+      { score: 5, text: 'Très fort', color: 'text-emerald-400' }
+    ];
+    
+    return levels[Math.min(score, 4)];
+  };
+
+  const passwordStrength = getPasswordStrength(password);
+
   // Supabase envoie l'event PASSWORD_RECOVERY quand le token est valide
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
@@ -45,8 +76,23 @@ const ResetPasswordPage = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
-    if (password.length < 6) { setError('Le mot de passe doit faire au moins 6 caractères.'); return; }
-    if (password !== confirm) { setError('Les mots de passe ne correspondent pas.'); return; }
+    
+    // Validation améliorée
+    if (password.length < 8) { 
+      setError('Le mot de passe doit faire au moins 8 caractères.'); 
+      return; 
+    }
+    
+    if (passwordStrength.score < 2) { 
+      setError('Le mot de passe est trop faible. Ajoutez des majuscules, chiffres ou caractères spéciaux.'); 
+      return; 
+    }
+    
+    if (password !== confirm) { 
+      setError('Les mots de passe ne correspondent pas.'); 
+      return; 
+    }
+    
     setLoading(true);
     const result = await updatePassword(password);
     setLoading(false);
@@ -98,8 +144,19 @@ const ResetPasswordPage = () => {
                   <CheckCircle className="w-8 h-8 text-emerald-400" />
                 </div>
                 <div>
-                  <p className="text-white font-bold text-lg">Mot de passe mis à jour !</p>
-                  <p className="text-gray-400 text-sm mt-1">Redirection vers ton profil…</p>
+                  <p className="text-white font-bold text-lg">🎉 Mot de passe créé avec succès !</p>
+                  <p className="text-gray-400 text-sm mt-1">Ton compte est maintenant sécurisé</p>
+                  <p className="text-cyan-400 text-xs mt-2">Redirection vers ton profil…</p>
+                </div>
+                
+                {/* Conseils de sécurité */}
+                <div className="bg-cyan-500/10 border border-cyan-500/30 rounded-lg p-3 text-left">
+                  <p className="text-cyan-400 text-xs font-semibold mb-2">💡 Conseils de sécurité :</p>
+                  <ul className="text-gray-300 text-xs space-y-1">
+                    <li>• Utilise un gestionnaire de mots de passe</li>
+                    <li>• Ne partage jamais ton mot de passe</li>
+                    <li>• Change-le régulièrement</li>
+                  </ul>
                 </div>
               </motion.div>
             ) : !sessionReady ? (
@@ -130,16 +187,60 @@ const ResetPasswordPage = () => {
                       type={showPwd ? 'text' : 'password'}
                       value={password}
                       onChange={e => setPassword(e.target.value)}
-                      required minLength={6}
+                      required minLength={8}
                       autoComplete="new-password"
                       className="w-full pl-10 pr-12 py-3 bg-gray-900/50 border border-cyan-500/30 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-cyan-400 focus:ring-2 focus:ring-cyan-400/20 transition-all"
-                      placeholder="Au moins 6 caractères"
+                      placeholder="8+ caractères, majuscules, chiffres, symboles"
                     />
                     <button type="button" onClick={() => setShowPwd(v => !v)}
                       className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-cyan-400 transition-colors">
                       {showPwd ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                     </button>
                   </div>
+                  
+                  {/* Indicateur de force du mot de passe */}
+                  {password && (
+                    <div className="mt-3 space-y-2">
+                      <div className="flex items-center justify-between">
+                        <span className={`text-xs font-medium ${passwordStrength.color}`}>
+                          Force: {passwordStrength.text}
+                        </span>
+                        <span className="text-xs text-gray-500">
+                          {password.length}/8+ caractères
+                        </span>
+                      </div>
+                      <div className="w-full bg-gray-700 rounded-full h-1.5">
+                        <div 
+                          className={`h-1.5 rounded-full transition-all duration-300 ${
+                            passwordStrength.score <= 1 ? 'bg-red-500' :
+                            passwordStrength.score === 2 ? 'bg-yellow-500' :
+                            passwordStrength.score === 3 ? 'bg-cyan-500' :
+                            'bg-emerald-500'
+                          }`}
+                          style={{ width: `${(passwordStrength.score / 4) * 100}%` }}
+                        />
+                      </div>
+                      
+                      {/* Exigences */}
+                      <div className="grid grid-cols-2 gap-1 text-xs">
+                        <div className={`flex items-center gap-1 ${password.length >= 8 ? 'text-emerald-400' : 'text-gray-600'}`}>
+                          <span>{password.length >= 8 ? '✓' : '○'}</span> 8+ caractères
+                        </div>
+                        <div className={`flex items-center gap-1 ${/[a-z]/.test(password) ? 'text-emerald-400' : 'text-gray-600'}`}>
+                          <span>{/[a-z]/.test(password) ? '✓' : '○'}</span> minuscule
+                        </div>
+                        <div className={`flex items-center gap-1 ${/[A-Z]/.test(password) ? 'text-emerald-400' : 'text-gray-600'}`}>
+                          <span>{/[A-Z]/.test(password) ? '✓' : '○'}</span> majuscule
+                        </div>
+                        <div className={`flex items-center gap-1 ${/\d/.test(password) ? 'text-emerald-400' : 'text-gray-600'}`}>
+                          <span>{/\d/.test(password) ? '✓' : '○'}</span> chiffre
+                        </div>
+                        <div className={`flex items-center gap-1 ${/[!@#$%^&*(),.?":{}|<>]/.test(password) ? 'text-emerald-400' : 'text-gray-600'}`}>
+                          <span>{/[!@#$%^&*(),.?":{}|<>]/.test(password) ? '✓' : '○'}</span> spécial
+                        </div>
+                      </div>
+                    </div>
+                  )}
                 </div>
 
                 <div>
@@ -150,10 +251,10 @@ const ResetPasswordPage = () => {
                       type={showConf ? 'text' : 'password'}
                       value={confirm}
                       onChange={e => setConfirm(e.target.value)}
-                      required minLength={6}
+                      required minLength={8}
                       autoComplete="new-password"
                       className="w-full pl-10 pr-12 py-3 bg-gray-900/50 border border-cyan-500/30 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-cyan-400 focus:ring-2 focus:ring-cyan-400/20 transition-all"
-                      placeholder="Répétez le mot de passe"
+                      placeholder="Confirmez le nouveau mot de passe"
                     />
                     <button type="button" onClick={() => setShowConf(v => !v)}
                       className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-cyan-400 transition-colors">
@@ -173,9 +274,9 @@ const ResetPasswordPage = () => {
                   </p>
                 )}
 
-                <Button type="submit" disabled={loading || (!!password && !!confirm && password !== confirm)}
-                  className="w-full bg-gradient-to-r from-cyan-500 to-fuchsia-500 hover:from-cyan-600 hover:to-fuchsia-600 text-white py-3 text-base font-semibold shadow-lg shadow-cyan-500/30 mt-2">
-                  {loading ? 'Mise à jour…' : '🔒 Mettre à jour le mot de passe'}
+                <Button type="submit" disabled={loading || (!!password && !!confirm && (password !== confirm || passwordStrength.score < 2))}
+                  className="w-full bg-gradient-to-r from-cyan-500 to-fuchsia-500 hover:from-cyan-600 hover:to-fuchsia-600 text-white py-3 text-base font-semibold shadow-lg shadow-cyan-500/30 mt-2 disabled:opacity-50 disabled:cursor-not-allowed">
+                  {loading ? 'Mise à jour…' : '🔒 Créer mon nouveau mot de passe'}
                 </Button>
 
                 <button type="button" onClick={() => navigate('/login')}
