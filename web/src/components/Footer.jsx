@@ -82,7 +82,7 @@ const AboutModal = ({ onClose }) => (
       <div className="relative px-6 pt-6 pb-4" style={{ background:'linear-gradient(135deg,rgba(6,182,212,0.1),rgba(124,58,237,0.08))' }}>
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <img src="https://horizons-cdn.hostinger.com/83c37f40-fa54-4cc6-8247-95b1353f3eba/a4885bba5290b1958f05bcdb82731c39.jpg"
+            <img src="/logo_eloadxfamily.png"
               alt="Logo" className="w-10 h-10 rounded-2xl border border-cyan-400/30 object-cover" />
             <div>
               <h3 className="text-white font-black text-base leading-tight">NovaSound TITAN LUX</h3>
@@ -156,7 +156,7 @@ const Footer = () => {
             {/* ── Brand ─────────────────────────────────────────────────────── */}
             <div className="flex flex-col items-center md:items-start space-y-3 sm:col-span-2 md:col-span-1">
               <div className="flex items-center gap-2.5">
-                <img src="https://horizons-cdn.hostinger.com/83c37f40-fa54-4cc6-8247-95b1353f3eba/a4885bba5290b1958f05bcdb82731c39.jpg"
+                <img src="/logo_eloadxfamily.png"
                   alt="Logo NovaSound" className="w-9 h-9 rounded-xl border border-cyan-400/30 object-cover" />
                 <span className="text-base font-black bg-gradient-to-r from-cyan-400 to-fuchsia-500 bg-clip-text text-transparent">
                   NovaSound TITAN LUX
