@@ -553,6 +553,19 @@ const ArtistProfilePage = () => {
                 <motion.div key="about" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} transition={{ duration: 0.18 }}
                   className="max-w-2xl space-y-6">
                   
+                  {/* Logo eloadXFamily */}
+                  {artist.username?.toLowerCase() === 'eloadxfamily' && (
+                    <div className="flex flex-col items-center py-6 bg-gray-900/60 border border-white/8 rounded-2xl">
+                      <img
+                        src="/logo_eloadxfamily.png"
+                        alt="eloadXFamily"
+                        className="w-48 h-48 object-contain drop-shadow-2xl"
+                        style={{ filter: 'drop-shadow(0 0 24px rgba(220,38,38,0.35))' }}
+                      />
+                      <p className="text-gray-500 text-xs mt-2 tracking-widest uppercase">Développeur · NovaSound TITAN LUX</p>
+                    </div>
+                  )}
+
                   {/* Stats */}
                   <div className="bg-gray-900/60 border border-white/8 rounded-2xl p-5">
                     <ArtistStatsCard songs={songs} followersCount={followers.length} />
