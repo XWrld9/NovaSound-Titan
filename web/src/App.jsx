@@ -5,7 +5,20 @@ let deferredPrompt;
 window.addEventListener('beforeinstallprompt', (e) => {
   e.preventDefault();
   deferredPrompt = e;
+  console.log('PWA install prompt ready');
 });
+
+// Fonction globale pour installer PWA
+window.installPWA = async () => {
+  if (deferredPrompt) {
+    deferredPrompt.prompt();
+    const { outcome } = await deferredPrompt.userChoice;
+    console.log(`User response to the install prompt: ${outcome}`);
+    deferredPrompt = null;
+  } else {
+    console.log('PWA install prompt not available');
+  }
+};
 import { AuthProvider } from '@/contexts/AuthContext';
 import { NotificationProvider } from '@/contexts/NotificationContext';
 import { NotificationToast } from '@/components/NotificationBell';
