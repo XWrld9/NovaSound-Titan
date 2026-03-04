@@ -1,49 +1,46 @@
 /**
- * LocalPlayerPage — NovaSound TITAN LUX v20000
+ * LocalPlayerPage — NovaSound TITAN LUX v27000
  *
- * FIXES v20000 :
- * ✅ Crash corrigé : verifyBlobUrl référencé avant déclaration (hook circulaire)
- * ✅ Ordre des hooks/callbacks strictement respecté
- * ✅ Persistance playlists iOS/Android : IDB + localStorage double backup
- * ✅ Covers SVG déterministes (jamais de blob URL dans les playlists)
- * ✅ Onglet Playlists complet avec grille + covers + actions
- * ✅ Footer ajouté
- * ✅ BottomNav masqué (géré par App.jsx)
- * ✅ Bouton Prev ne fait plus de toggle-play parasite
- * ✅ Bouton Play lance le 1er son si rien n'est en lecture
- * ✅ Réimport intelligent par nom+taille
- * ✅ Waveform animé sur le son actif
- * ✅ Mini-liste dans l'onglet Lecteur
+ * FIXES v27000 :
+ * ✅ FileSystemFileHandle persisté dans IDB (store séparé "file_handles")
+ * ✅ Restauration automatique des handles au rechargement (PC/Chrome/Edge)
+ * ✅ requestPermission() appelé proprement à la reprise
+ * ✅ Playlists relues sans "À recharger" sur PC si handles disponibles
+ * ✅ Toutes les corrections v20000 conservées
  */
 import React, { useState, useRef, useCallback, useEffect, memo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   FolderOpen, HardDrive, WifiOff, ListMusic, Trash2, Plus,
   Play, Pause, SkipBack, SkipForward, Shuffle, Repeat, Volume2, VolumeX,
-  Sliders, ChevronDown, ArrowLeft, Home,
-  Music, Save, CheckSquare, Square, Folder, ChevronUp,
-  RefreshCw, AlertTriangle,
+  ChevronDown, ArrowLeft, Home,
+  Save, CheckSquare, Square, Folder, ChevronUp,
+  RefreshCw, AlertTriangle, RefreshCcw,
 } from 'lucide-react';
 import { useNavigate, Link } from 'react-router-dom';
 import { usePlayer } from '@/contexts/PlayerContext';
 import Footer from '@/components/Footer';
 
-// ── Audio extensions ──────────────────────────────────────────────────────────
 const AUDIO_EXTS = /\.(mp3|m4a|wav|flac|ogg|aac|opus|webm|mp4|3gp|caf|aiff|wma|amr|ape|mka)$/i;
 const isAudioFile = (f) => AUDIO_EXTS.test(f.name) || f.type.startsWith('audio/') || f.type === 'video/mp4';
-
-// ── File System Access API (PC/Chrome/Edge) ───────────────────────────────────
 const FS_ACCESS_SUPPORTED = typeof window !== 'undefined' && 'showOpenFilePicker' in window;
 
-// ── IndexedDB helpers ─────────────────────────────────────────────────────────
-const IDB_NAME = 'novasound_local_v2';
-const IDB_STORE = 'playlists';
+// ── IndexedDB ─────────────────────────────────────────────────────────────────
+const IDB_NAME    = 'novasound_local_v2';
+const IDB_STORE   = 'playlists';
+const IDB_HANDLES = 'file_handles';
+
 const openIDB = () => new Promise((res, rej) => {
-  const r = indexedDB.open(IDB_NAME, 1);
-  r.onupgradeneeded = e => e.target.result.createObjectStore(IDB_STORE, { keyPath: 'id' });
+  const r = indexedDB.open(IDB_NAME, 2);
+  r.onupgradeneeded = e => {
+    const db = e.target.result;
+    if (!db.objectStoreNames.contains(IDB_STORE))   db.createObjectStore(IDB_STORE,   { keyPath: 'id' });
+    if (!db.objectStoreNames.contains(IDB_HANDLES)) db.createObjectStore(IDB_HANDLES, { keyPath: 'songId' });
+  };
   r.onsuccess = e => res(e.target.result);
   r.onerror   = () => rej(r.error);
 });
+
 const idbSave = async (pl) => {
   try {
     const db = await openIDB();
@@ -69,7 +66,47 @@ const idbLoadAll = async () => {
   } catch (_) { return []; }
 };
 
-// ── SVG Cover déterministe (stable, jamais de blob URL) ───────────────────────
+// ── Handle persistence ────────────────────────────────────────────────────────
+const idbSaveHandle = async (songId, handle) => {
+  if (!handle) return;
+  try {
+    const db = await openIDB();
+    const tx = db.transaction(IDB_HANDLES, 'readwrite');
+    tx.objectStore(IDB_HANDLES).put({ songId, handle });
+    return new Promise((res) => { tx.oncomplete = res; tx.onerror = () => res(); });
+  } catch (_) {}
+};
+const idbGetHandle = async (songId) => {
+  try {
+    const db = await openIDB();
+    const tx = db.transaction(IDB_HANDLES, 'readonly');
+    const r  = tx.objectStore(IDB_HANDLES).get(songId);
+    return new Promise((res) => { r.onsuccess = () => res(r.result?.handle || null); r.onerror = () => res(null); });
+  } catch (_) { return null; }
+};
+const idbDeleteHandle = async (songId) => {
+  try {
+    const db = await openIDB();
+    const tx = db.transaction(IDB_HANDLES, 'readwrite');
+    tx.objectStore(IDB_HANDLES).delete(songId);
+  } catch (_) {}
+};
+
+// ── Restaurer un handle FSA → song ───────────────────────────────────────────
+const resolveFromHandle = async (saved) => {
+  if (!FS_ACCESS_SUPPORTED) return null;
+  const handle = saved._fileHandle || (await idbGetHandle(saved.id));
+  if (!handle) return null;
+  try {
+    let perm = await handle.queryPermission({ mode: 'read' });
+    if (perm === 'prompt') perm = await handle.requestPermission({ mode: 'read' });
+    if (perm !== 'granted') return null;
+    const file = await handle.getFile();
+    return fileToSong(file, handle);
+  } catch (_) { return null; }
+};
+
+// ── SVG Cover déterministe ─────────────────────────────────────────────────────
 const makeCoverSvg = (title = '', artist = '') => {
   const hue = (s) => { let h = 0; for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) >>> 0; return h % 360; };
   const c1 = `hsl(${hue(title)},60%,42%)`;
@@ -80,18 +117,15 @@ const makeCoverSvg = (title = '', artist = '') => {
   catch (_) { return `data:image/svg+xml,${encodeURIComponent(svg)}`; }
 };
 
-// ── Persistance universelle ────────────────────────────────────────────────────
 const persistPlaylists = (playlists) => {
-  // IDB (primary — supporte plus de données)
   playlists.forEach(pl => idbSave(pl).catch(() => {}));
-  // localStorage (fallback mobile garanti)
   try {
     const safe = playlists.map(pl => ({
       id: pl.id, name: pl.name, createdAt: pl.createdAt,
       songs: pl.songs.map(s => ({
         id: s.id, title: s.title, artist: s.artist, album: s.album || '',
-        cover_url:  s.cover_svg || makeCoverSvg(s.title, s.artist),
-        cover_svg:  s.cover_svg || makeCoverSvg(s.title, s.artist),
+        cover_url: s.cover_svg || makeCoverSvg(s.title, s.artist),
+        cover_svg: s.cover_svg || makeCoverSvg(s.title, s.artist),
         is_local: true, _needsReimport: true,
       })),
     }));
@@ -100,7 +134,7 @@ const persistPlaylists = (playlists) => {
   } catch (_) {}
 };
 
-// ── Parse ID3v2 minimal ────────────────────────────────────────────────────────
+// ── Parse ID3v2 ───────────────────────────────────────────────────────────────
 const parseID3 = async (file) => {
   const meta = { title: '', artist: '', album: '', cover: null };
   try {
@@ -151,7 +185,7 @@ const fmtTime = (s) => {
   return `${Math.floor(s/60)}:${String(Math.floor(s%60)).padStart(2,'0')}`;
 };
 
-// ── SeekBar draggable (touch + mouse) ─────────────────────────────────────────
+// ── SeekBar ───────────────────────────────────────────────────────────────────
 const SeekBar = ({ currentTime, duration, onSeek, color = '#22d3ee' }) => {
   const trackRef = useRef(null);
   const [dragging, setDragging] = useState(false);
@@ -277,7 +311,6 @@ const PlaylistCard = ({ pl, onLoad, onDelete, onReimport, liveSongs }) => {
     return s._needsReimport && !(live && !live._needsReimport);
   });
   const covers = pl.songs.slice(0, 4).map(s => s.cover_svg || s.cover_url || makeCoverSvg(s.title, s.artist));
-
   return (
     <motion.div initial={{ opacity:0, y:8 }} animate={{ opacity:1, y:0 }}
       className="bg-white/[0.04] border border-white/[0.07] rounded-2xl overflow-hidden hover:border-cyan-500/20 transition-all">
@@ -334,18 +367,18 @@ const LocalPlayerPage = () => {
   } = usePlayer();
 
   const navigate = useNavigate();
-  const [activeSection,  setActiveSection]  = useState('player');
-  const [songs,          setSongs]          = useState([]);
-  const [loading,        setLoading]        = useState(false);
-  const [added,          setAdded]          = useState(false);
-  const [selectionMode,  setSelectionMode]  = useState(false);
-  const [selectedIds,    setSelectedIds]    = useState(new Set());
-  const [showSaveModal,  setShowSaveModal]  = useState(false);
-  const [savedPlaylists, setSavedPlaylists] = useState([]);
-  const [volume,         setVolume]         = useState(80);
-  const [showVolume,     setShowVolume]     = useState(false);
+  const [activeSection,      setActiveSection]      = useState('player');
+  const [songs,              setSongs]              = useState([]);
+  const [loading,            setLoading]            = useState(false);
+  const [added,              setAdded]              = useState(false);
+  const [selectionMode,      setSelectionMode]      = useState(false);
+  const [selectedIds,        setSelectedIds]        = useState(new Set());
+  const [showSaveModal,      setShowSaveModal]      = useState(false);
+  const [savedPlaylists,     setSavedPlaylists]     = useState([]);
+  const [volume,             setVolume]             = useState(80);
+  const [showVolume,         setShowVolume]         = useState(false);
+  const [restoringHandles,   setRestoringHandles]   = useState(false);
 
-  // ── Chargement playlists persistées ──────────────────────────────────────────
   useEffect(() => {
     (async () => {
       try {
@@ -363,7 +396,6 @@ const LocalPlayerPage = () => {
     })();
   }, []);
 
-  // ── Révocation blobs au démontage ─────────────────────────────────────────────
   useEffect(() => () => {
     songs.forEach(s => {
       if (s._blobUrl)      try { URL.revokeObjectURL(s._blobUrl);      } catch (_) {}
@@ -372,16 +404,13 @@ const LocalPlayerPage = () => {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // ── Volume → audio global ─────────────────────────────────────────────────────
   useEffect(() => {
     const a = document.querySelector('audio');
     if (a) a.volume = volume / 100;
   }, [volume]);
 
-  // ── Ouverture fichiers ────────────────────────────────────────────────────────
   const processBatch = async (files) => {
-    const BATCH = 4;
-    const results = [];
+    const BATCH = 4; const results = [];
     for (let i = 0; i < files.length; i += BATCH) {
       const r = await Promise.all(files.slice(i, i + BATCH).map(f => fileToSong(f).catch(() => null)));
       results.push(...r.filter(Boolean));
@@ -400,7 +429,13 @@ const LocalPlayerPage = () => {
       const newSongs = [];
       for (let i = 0; i < handles.length; i += 4) {
         const res = await Promise.all(handles.slice(i, i+4).map(async h => {
-          try { const f = await h.getFile(); return isAudioFile(f) ? fileToSong(f, h) : null; } catch { return null; }
+          try {
+            const f = await h.getFile();
+            if (!isAudioFile(f)) return null;
+            const song = await fileToSong(f, h);
+            await idbSaveHandle(song.id, h);
+            return song;
+          } catch { return null; }
         }));
         newSongs.push(...res.filter(Boolean));
       }
@@ -419,7 +454,7 @@ const LocalPlayerPage = () => {
 
   const onFiles = useCallback(async (e) => {
     const files = Array.from(e.target.files || []).filter(isAudioFile);
-    if (!files.length) { alert('Aucun fichier audio. Formats: MP3, M4A, WAV, FLAC, AAC, OGG, OPUS…'); return; }
+    if (!files.length) { alert('Aucun fichier audio.'); return; }
     setLoading(true);
     const newSongs = await processBatch(files);
     if (!newSongs.length) { setLoading(false); return; }
@@ -428,8 +463,7 @@ const LocalPlayerPage = () => {
       if (prev.length === 0) setTimeout(() => playSong(newSongs[0], newSongs), 50);
       return merged;
     });
-    setLoading(false);
-    e.target.value = '';
+    setLoading(false); e.target.value = '';
     setAdded(true); setTimeout(() => setAdded(false), 2000);
   }, [playSong]);
 
@@ -448,8 +482,7 @@ const LocalPlayerPage = () => {
       if (resolved.length > 0) setTimeout(() => playSong(resolved[0], resolved), 50);
       return updated;
     });
-    setLoading(false);
-    e.target.value = '';
+    setLoading(false); e.target.value = '';
   }, [playSong]);
 
   const playFromQueue   = useCallback((i) => playSong(songs[i], songs), [songs, playSong]);
@@ -458,6 +491,7 @@ const LocalPlayerPage = () => {
       const s = prev[i];
       if (s._blobUrl)      try { URL.revokeObjectURL(s._blobUrl);      } catch (_) {}
       if (s._hasBlobCover) try { URL.revokeObjectURL(s._coverBlobUrl); } catch (_) {}
+      idbDeleteHandle(s.id).catch(() => {});
       return prev.filter((_, j) => j !== i);
     });
   }, []);
@@ -479,6 +513,9 @@ const LocalPlayerPage = () => {
 
   const savePlaylist = useCallback((name) => {
     const selected = songs.filter(s => selectedIds.has(s.id));
+    if (FS_ACCESS_SUPPORTED) {
+      selected.forEach(s => { if (s._fileHandle) idbSaveHandle(s.id, s._fileHandle).catch(() => {}); });
+    }
     const safeSongs = selected.map(s => ({
       id: s.id, title: s.title, artist: s.artist, album: s.album || '',
       cover_url: s.cover_svg || makeCoverSvg(s.title, s.artist),
@@ -493,29 +530,47 @@ const LocalPlayerPage = () => {
     setActiveSection('playlists');
   }, [songs, selectedIds, savedPlaylists]);
 
+  // ── Chargement playlist avec restauration auto FSA ────────────────────────────
+  // IMPORTANT: séquentiel (pas Promise.all) — Chrome n'autorise qu'un
+  // requestPermission par geste utilisateur. En parallèle, les handles 2…N
+  // sont refusés silencieusement et les fichiers restent "_needsReimport".
   const loadPlaylist = useCallback(async (pl) => {
     setLoading(true);
+    setRestoringHandles(true);
     try {
-      const resolved = pl.songs.map(saved => {
+      const resolved = [];
+      for (const saved of pl.songs) {
         const live = songs.find(l => l.id === saved.id && !l._needsReimport);
-        return live || saved;
-      });
+        if (live) { resolved.push(live); continue; }
+        if (FS_ACCESS_SUPPORTED) {
+          const fromHandle = await resolveFromHandle(saved);
+          if (fromHandle) {
+            await idbSaveHandle(fromHandle.id, fromHandle._fileHandle);
+            resolved.push(fromHandle);
+            continue;
+          }
+        }
+        resolved.push({ ...saved, _needsReimport: true });
+      }
+
       setSongs(prev => {
         const merged = [...prev];
         resolved.forEach(s => {
-          if (!merged.find(p => p.id === s.id)) merged.push(s);
-          else {
-            const idx = merged.findIndex(p => p.id === s.id);
-            if (idx >= 0 && merged[idx]._needsReimport && !s._needsReimport) merged[idx] = s;
-          }
+          const idx = merged.findIndex(p => p.id === s.id);
+          if (idx < 0) merged.push(s);
+          else if (merged[idx]._needsReimport && !s._needsReimport) merged[idx] = s;
         });
         const playable = resolved.filter(s => !s._needsReimport);
         if (playable.length > 0) setTimeout(() => playSong(playable[0], playable), 100);
         return merged;
       });
-      if (resolved.every(s => s._needsReimport)) setTimeout(() => reimportRef.current?.click(), 300);
+
+      if (!FS_ACCESS_SUPPORTED && resolved.every(s => s._needsReimport)) {
+        reimportRef.current?.click();
+      }
     } catch (_) {}
     setLoading(false);
+    setRestoringHandles(false);
     setActiveSection('player');
   }, [songs, playSong]);
 
@@ -526,7 +581,6 @@ const LocalPlayerPage = () => {
     persistPlaylists(updated);
   }, [savedPlaylists]);
 
-  // ── Computed ──────────────────────────────────────────────────────────────────
   const activeIdx      = songs.findIndex(s => s.id === currentSong?.id);
   const isLocalPlaying = !!currentSong?.is_local;
   const activeSong     = isLocalPlaying ? currentSong : (songs[0] || null);
@@ -534,11 +588,9 @@ const LocalPlayerPage = () => {
   const ct             = isLocalPlaying ? (audioCurrentTime || 0) : 0;
   const VolumeIcon     = volume === 0 ? VolumeX : Volume2;
 
-  // ── Empty state ───────────────────────────────────────────────────────────────
   if (!songs.length) {
     return (
       <div className="min-h-screen bg-[#050510] flex flex-col">
-        {/* Nav */}
         <div className="sticky top-0 z-30 flex items-center gap-3 px-4 py-3 bg-[#050510]/95 backdrop-blur-md border-b border-white/[0.06]"
           style={{ paddingTop: 'calc(env(safe-area-inset-top,0px) + 12px)' }}>
           <button onClick={() => navigate(-1)} className="w-9 h-9 rounded-xl bg-white/[0.07] text-gray-400 hover:text-white transition-all flex items-center justify-center">
@@ -552,19 +604,15 @@ const LocalPlayerPage = () => {
             <Home className="w-4 h-4" />
           </Link>
         </div>
-
-        <input ref={inputRef}    type="file" accept="*/*" multiple onChange={onFiles}        className="hidden" />
+        <input ref={inputRef}    type="file" accept="*/*" multiple onChange={onFiles}         className="hidden" />
         <input ref={reimportRef} type="file" accept="*/*" multiple onChange={onReimportFiles} className="hidden" />
-
         <div className="flex-1 flex items-center justify-center px-5 py-10">
           <motion.div initial={{ opacity:0, y:24 }} animate={{ opacity:1, y:0 }}
             className="w-full max-w-sm flex flex-col items-center gap-6 text-center">
-
             <div className="relative w-24 h-24 rounded-3xl flex items-center justify-center"
               style={{ background:'linear-gradient(135deg,#0e7490,#7c3aed)', boxShadow:'0 0 60px rgba(6,182,212,0.3)' }}>
               {loading ? <div className="w-9 h-9 rounded-full border-2 border-white/30 border-t-white animate-spin" /> : <HardDrive className="w-12 h-12 text-white" />}
             </div>
-
             <div>
               <div className="flex items-center justify-center gap-2 mb-2">
                 <WifiOff className="w-4 h-4 text-cyan-400" />
@@ -572,15 +620,13 @@ const LocalPlayerPage = () => {
               </div>
               <p className="text-gray-400 text-sm leading-relaxed">Écoute tes fichiers audio directement depuis ton appareil, sans connexion.</p>
             </div>
-
             <motion.button onClick={FS_ACCESS_SUPPORTED ? openPickerFSA : () => inputRef.current?.click()}
               whileTap={{ scale:.95 }} disabled={loading}
               className="w-full flex items-center justify-center gap-3 py-4 rounded-2xl text-white font-bold text-base disabled:opacity-60"
               style={{ background:'linear-gradient(135deg,#0e7490,#7c3aed)', boxShadow:'0 4px 24px rgba(6,182,212,0.25)' }}>
               <FolderOpen className="w-5 h-5" />
-              {loading ? 'Chargement…' : FS_ACCESS_SUPPORTED ? 'Ouvrir (PC — fichiers persistants)' : "Ouvrir depuis l'appareil"}
+              {loading ? 'Chargement…' : FS_ACCESS_SUPPORTED ? 'Ouvrir (fichiers persistants)' : "Ouvrir depuis l'appareil"}
             </motion.button>
-
             {savedPlaylists.length > 0 && (
               <div className="w-full">
                 <p className="text-gray-600 text-xs mb-3 text-left font-semibold uppercase tracking-wider">
@@ -602,10 +648,13 @@ const LocalPlayerPage = () => {
                 </div>
               </div>
             )}
-
             <div className="bg-amber-500/10 border border-amber-500/20 rounded-xl px-4 py-3 w-full text-left">
               <p className="text-amber-300 text-xs font-semibold mb-1">💡 Astuce</p>
-              <p className="text-amber-200/70 text-xs leading-relaxed">Tous les fichiers sont visibles. Sélectionne depuis n'importe quel dossier (WhatsApp, Xender, SD card…).</p>
+              <p className="text-amber-200/70 text-xs leading-relaxed">
+                {FS_ACCESS_SUPPORTED
+                  ? 'Sur PC, les fichiers sont mémorisés. Tes playlists se rechargent automatiquement sans re-sélectionner.'
+                  : "Tous les fichiers sont visibles. Sélectionne depuis n'importe quel dossier (WhatsApp, Xender, SD card…)."}
+              </p>
             </div>
             <p className="text-gray-700 text-[11px]">MP3 · M4A · WAV · FLAC · AAC · OGG · OPUS · WMA</p>
           </motion.div>
@@ -615,12 +664,8 @@ const LocalPlayerPage = () => {
     );
   }
 
-  // ══════════════════════════════════════════════════════════════════════════════
-  // RENDER PRINCIPAL
-  // ══════════════════════════════════════════════════════════════════════════════
   return (
     <div className="min-h-screen bg-[#050510] flex flex-col">
-      {/* Nav */}
       <div className="sticky top-0 z-30 flex items-center gap-3 px-4 py-3 bg-[#050510]/95 backdrop-blur-md border-b border-white/[0.06]"
         style={{ paddingTop: 'calc(env(safe-area-inset-top,0px) + 12px)' }}>
         <button onClick={() => navigate(-1)} className="w-9 h-9 rounded-xl bg-white/[0.07] text-gray-400 hover:text-white transition-all flex items-center justify-center">
@@ -630,6 +675,12 @@ const LocalPlayerPage = () => {
           <p className="text-white font-black text-base leading-none">Lecteur Local</p>
           <p className="text-gray-600 text-[10px] mt-0.5">100% hors-ligne · {songs.length} son{songs.length>1?'s':''}</p>
         </div>
+        {restoringHandles && (
+          <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-cyan-500/15 border border-cyan-500/25">
+            <RefreshCcw className="w-3 h-3 text-cyan-400 animate-spin" />
+            <span className="text-cyan-400 text-[10px] font-semibold">Restauration…</span>
+          </div>
+        )}
         <button onClick={FS_ACCESS_SUPPORTED ? openPickerFSA : () => inputRef.current?.click()} disabled={loading}
           className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold bg-white/[0.07] text-gray-300 hover:text-white transition-all disabled:opacity-50">
           {loading ? <div className="w-3.5 h-3.5 rounded-full border border-gray-500 border-t-cyan-400 animate-spin" /> : <><Plus className="w-3.5 h-3.5" />Ajouter</>}
@@ -639,7 +690,6 @@ const LocalPlayerPage = () => {
         </Link>
       </div>
 
-      {/* Tabs */}
       <div className="flex items-center gap-1 px-4 py-2.5 border-b border-white/[0.05]">
         {[
           { key:'player',    label:'Lecteur',   icon:'🎵' },
@@ -660,20 +710,17 @@ const LocalPlayerPage = () => {
         ))}
       </div>
 
-      <input ref={inputRef}    type="file" accept="*/*" multiple onChange={onFiles}        className="hidden" />
+      <input ref={inputRef}    type="file" accept="*/*" multiple onChange={onFiles}         className="hidden" />
       <input ref={reimportRef} type="file" accept="*/*" multiple onChange={onReimportFiles} className="hidden" />
 
       <div className="flex-1 max-w-xl mx-auto w-full px-4 pt-4 pb-8 flex flex-col gap-4">
 
-        {/* ══ ONGLET LECTEUR ════════════════════════════════════════════════════ */}
         {activeSection === 'player' && (
           <div className="flex flex-col gap-4">
             {activeSong && (
               <motion.div initial={{ opacity:0, y:-8 }} animate={{ opacity:1, y:0 }}
                 className="rounded-2xl overflow-hidden border border-cyan-500/20"
                 style={{ background:'linear-gradient(135deg,rgba(6,182,212,0.08),rgba(124,58,237,0.06))' }}>
-
-                {/* Cover + info */}
                 <div className="flex items-center gap-4 p-4 pb-3">
                   <div className="w-20 h-20 rounded-2xl overflow-hidden flex-shrink-0"
                     style={{ boxShadow:'0 0 28px rgba(6,182,212,0.3)' }}>
@@ -686,13 +733,9 @@ const LocalPlayerPage = () => {
                     {!isLocalPlaying && <p className="text-gray-600 text-xs mt-1 italic">Appuie sur ▶ pour démarrer</p>}
                   </div>
                 </div>
-
-                {/* SeekBar */}
                 <div className="px-4 pb-1">
                   <SeekBar currentTime={ct} duration={duration} onSeek={seekTo} color="#22d3ee" />
                 </div>
-
-                {/* Contrôles */}
                 <div className="flex items-center justify-between px-6 pb-4 pt-1">
                   <button onClick={toggleShuffle} className={`p-2 rounded-full transition-all ${shuffle?'text-cyan-400':'text-gray-600 hover:text-gray-400'}`}>
                     <Shuffle className="w-4 h-4" />
@@ -716,8 +759,6 @@ const LocalPlayerPage = () => {
                     {repeat==='one' && <span className="absolute -top-0.5 -right-0.5 text-[8px] bg-cyan-500 text-black font-black rounded-full w-3.5 h-3.5 flex items-center justify-center">1</span>}
                   </button>
                 </div>
-
-                {/* Volume */}
                 <div className="px-5 pb-4">
                   <button onClick={() => setShowVolume(v => !v)} className="flex items-center gap-2 text-xs text-gray-500 hover:text-gray-300 mb-2 transition-colors">
                     <VolumeIcon className="w-3.5 h-3.5" /><span>Volume — {volume}%</span>
@@ -734,8 +775,6 @@ const LocalPlayerPage = () => {
                 </div>
               </motion.div>
             )}
-
-            {/* Toolbar sélection */}
             <div className="flex items-center gap-2">
               <button onClick={() => { setSelectionMode(v => !v); if (selectionMode) setSelectedIds(new Set()); }}
                 className={`flex items-center gap-1 px-2.5 py-1.5 rounded-full text-xs font-semibold transition-all ${selectionMode?'bg-cyan-500/25 text-cyan-300 border border-cyan-500/30':'bg-white/[0.06] text-gray-400 hover:text-white border border-white/[0.08]'}`}>
@@ -745,8 +784,6 @@ const LocalPlayerPage = () => {
                 <Trash2 className="w-3 h-3" /> Vider
               </button>
             </div>
-
-            {/* Selection bar */}
             <AnimatePresence>
               {selectionMode && (
                 <motion.div initial={{ opacity:0, height:0 }} animate={{ opacity:1, height:'auto' }} exit={{ opacity:0, height:0 }}
@@ -764,8 +801,6 @@ const LocalPlayerPage = () => {
                 </motion.div>
               )}
             </AnimatePresence>
-
-            {/* Mini-liste */}
             <div className="bg-white/[0.03] rounded-2xl border border-white/[0.05] overflow-hidden">
               <div className="flex items-center justify-between px-4 py-2.5 border-b border-white/[0.05]">
                 <div className="flex items-center gap-2">
@@ -792,7 +827,6 @@ const LocalPlayerPage = () => {
           </div>
         )}
 
-        {/* ══ ONGLET PLAYLISTS ══════════════════════════════════════════════════ */}
         {activeSection === 'playlists' && (
           <div className="flex flex-col gap-4">
             <div className="flex items-center justify-between">
@@ -809,7 +843,6 @@ const LocalPlayerPage = () => {
                 <Plus className="w-3 h-3" /> Nouvelle
               </button>
             </div>
-
             {savedPlaylists.length === 0 ? (
               <motion.div initial={{ opacity:0 }} animate={{ opacity:1 }}
                 className="flex flex-col items-center gap-5 py-16 text-center">
@@ -827,8 +860,22 @@ const LocalPlayerPage = () => {
                   <div className="bg-amber-500/10 border border-amber-500/20 rounded-xl px-4 py-3">
                     <div className="flex items-start gap-2">
                       <AlertTriangle className="w-4 h-4 text-amber-400 flex-shrink-0 mt-0.5" />
-                      <p className="text-amber-200/80 text-xs leading-relaxed">
-                        <strong className="text-amber-300">Mobile :</strong> les noms & playlists sont sauvegardés. Appuie sur <strong>🔄</strong> pour recharger les fichiers audio.
+                      <div>
+                        <p className="text-amber-300 text-xs font-bold mb-0.5">Fichiers à recharger</p>
+                        <p className="text-amber-200/70 text-xs leading-relaxed">
+                          Sur mobile, les fichiers audio ne peuvent pas être sauvegardés entre les sessions.
+                          Appuie sur <strong className="text-amber-300">Écouter</strong> puis re-sélectionne tes fichiers — la playlist est conservée.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                )}
+                {FS_ACCESS_SUPPORTED && savedPlaylists.some(pl => pl.songs.some(s => s._needsReimport)) && (
+                  <div className="bg-cyan-500/10 border border-cyan-500/20 rounded-xl px-4 py-3">
+                    <div className="flex items-start gap-2">
+                      <RefreshCcw className="w-4 h-4 text-cyan-400 flex-shrink-0 mt-0.5" />
+                      <p className="text-cyan-200/80 text-xs leading-relaxed">
+                        Clique sur <strong>Écouter</strong> — les fichiers seront restaurés automatiquement.
                       </p>
                     </div>
                   </div>
@@ -850,7 +897,6 @@ const LocalPlayerPage = () => {
           </div>
         )}
 
-        {/* ══ ONGLET FICHIERS ═══════════════════════════════════════════════════ */}
         {activeSection === 'files' && (
           <div className="flex flex-col gap-3">
             <div className="flex items-center justify-between">
@@ -900,13 +946,11 @@ const LocalPlayerPage = () => {
         )}
       </div>
 
-      {/* Save modal */}
       <AnimatePresence>
         {showSaveModal && (
           <SavePlaylistModal count={selectedIds.size} onSave={savePlaylist} onClose={() => setShowSaveModal(false)} />
         )}
       </AnimatePresence>
-
       <Footer />
     </div>
   );
