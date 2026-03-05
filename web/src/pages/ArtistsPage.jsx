@@ -11,6 +11,7 @@ import { supabase } from '@/lib/supabaseClient';
 import { formatPlays } from '@/lib/utils';
 import Header from '@/components/Header';
 import { usePlayer } from '@/contexts/PlayerContext';
+import { useLang } from '@/contexts/LangContext';
 
 const ArtistsPage = () => {
   const { playSong } = usePlayer();

@@ -1,5 +1,5 @@
 /**
- * LiveRoomPage — NovaSound TITAN LUX V110000
+ * LiveRoomPage — NovaSound TITAN LUX V200000
  *
  * ✅ V100000 — Sync audio, playlist, file locale, réactions, typing, WakeLock
  * ✅ V110000 — Fix zone de saisie mobile (BottomNav masqué = input visible)
@@ -15,6 +15,7 @@ import { Helmet } from 'react-helmet-async';
 import { motion, AnimatePresence } from 'framer-motion';
 import { supabase } from '@/lib/supabaseClient';
 import { useAuth } from '@/contexts/AuthContext';
+import { useLang } from '@/contexts/LangContext';
 import { usePlayer } from '@/contexts/PlayerContext';
 import Header from '@/components/Header';
 import { Link, useNavigate, useParams } from 'react-router-dom';
@@ -986,7 +987,7 @@ const LiveRoomPage = () => {
               {isHost && (
                 <button onClick={togglePause}
                   className={`flex items-center gap-1.5 text-xs px-2.5 py-1.5 rounded-lg transition-all ${liveIsPaused ? 'bg-amber-500/20 text-amber-400 border border-amber-500/30' : 'bg-gray-800 text-gray-400 hover:text-white hover:bg-gray-700'}`}>
-                  {liveIsPaused ? <><Play className="w-3.5 h-3.5" /><span className="hidden sm:inline">Reprendre</span></> : <><Pause className="w-3.5 h-3.5" /><span className="hidden sm:inline">Pause</span></>}
+                  {liveIsPaused ? <><Play className="w-3.5 h-3.5" /><span className="hidden sm:inline">{t('resumeLive')}</span></> : <><Pause className="w-3.5 h-3.5" /><span className="hidden sm:inline">Pause</span></>}
                 </button>
               )}
               <button onClick={copyLink} className="flex items-center gap-1.5 text-xs text-gray-400 hover:text-white bg-gray-800 hover:bg-gray-700 px-2.5 sm:px-3 py-1.5 rounded-lg transition-all">
@@ -1060,8 +1061,8 @@ const LiveRoomPage = () => {
                   {messages.length === 0 ? (
                     <div className="flex flex-col items-center justify-center h-full text-center py-12">
                       <div className="w-14 h-14 rounded-2xl bg-gray-900 border border-gray-800 flex items-center justify-center mb-4"><Headphones className="w-7 h-7 text-gray-700" /></div>
-                      <p className="text-gray-500 text-sm font-medium">Aucun message</p>
-                      <p className="text-gray-700 text-xs mt-1">Commence la conversation !</p>
+                      <p className="text-gray-500 text-sm font-medium">{t('noMessages')}</p>
+                      <p className="text-gray-700 text-xs mt-1">{t('typeToChat')}</p>
                     </div>
                   ) : (
                     <AnimatePresence initial={false}>
@@ -1086,8 +1087,7 @@ const LiveRoomPage = () => {
               </div>
 
               {/* Input chat */}
-              <div className="flex-shrink-0 p-2.5 sm:p-3 bg-gray-900/95 border-t border-gray-800"
-                style={{ paddingBottom: `calc(${playerVisible && playerSong ? '72px + ' : ''}env(safe-area-inset-bottom, 8px) + 10px)` }}>
+              <div className="flex-shrink-0 bg-gray-900/95 border-t border-gray-800 ns-live-input">
                 <AnimatePresence>
                   {showReactions && (
                     <motion.div initial={{ opacity: 0, y: 8, scale: 0.95 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, y: 8, scale: 0.95 }}
@@ -1110,7 +1110,7 @@ const LiveRoomPage = () => {
                 <div className="flex gap-2 items-center">
                   <input value={msgInput} onChange={e => { setMsgInput(e.target.value); broadcastTyping(); }}
                     onKeyDown={e => e.key === 'Enter' && !e.shiftKey && sendMessage()}
-                    placeholder="Tape ton message…" maxLength={500}
+                    placeholder={t('typeMessage')} maxLength={500}
                     className="flex-1 bg-gray-800 border border-gray-700 text-white rounded-xl px-3 sm:px-4 py-2.5 text-sm focus:outline-none focus:border-cyan-500 placeholder-gray-500 transition-colors" />
                   <button onClick={() => setShowReactions(!showReactions)}
                     className={`p-2.5 rounded-xl transition-all flex-shrink-0 ${showReactions ? 'bg-fuchsia-500/20 text-fuchsia-400' : 'bg-gray-800 text-gray-400 hover:text-white hover:bg-gray-700'}`}>
@@ -1303,7 +1303,7 @@ const LiveRoomPage = () => {
                       </button>
                       {/* V110000 — Partager dans le chat global */}
                       <button onClick={shareInGlobalChat} className="w-full bg-gray-800 hover:bg-gray-700 text-white rounded-xl px-4 py-2 text-xs transition-all flex items-center justify-center gap-2">
-                        {chatShared ? <><Check className="w-3.5 h-3.5 text-green-400" />Partagé dans le chat !</> : <><MessageCircle className="w-3.5 h-3.5 text-fuchsia-400" />Partager dans le chat global</>}
+                        {chatShared ? <><Check className="w-3.5 h-3.5 text-green-400" />Partagé dans le chat !</> : <><MessageCircle className="w-3.5 h-3.5 text-fuchsia-400" />{t('shareInChat')}</>}
                       </button>
                     </div>
 
@@ -1408,7 +1408,7 @@ const LiveRoomPage = () => {
                         {isHost && (
                           <button onClick={() => { togglePause(); }}
                             className={`w-full rounded-xl px-4 py-3 text-sm transition-all flex items-center gap-2 border ${liveIsPaused ? 'bg-amber-500/20 border-amber-500/30 text-amber-400' : 'bg-gray-800 border-gray-700 text-white hover:bg-gray-700'}`}>
-                            {liveIsPaused ? <><Play className="w-4 h-4" />Reprendre le live</> : <><Pause className="w-4 h-4" />Mettre en pause</>}
+                            {liveIsPaused ? <><Play className="w-4 h-4" />Reprendre le live</> : <><Pause className="w-4 h-4" />{t('pauseLive')}</>}
                           </button>
                         )}
 
@@ -1477,7 +1477,7 @@ const LiveRoomPage = () => {
                     {/* V110000 — Partager dans le chat global (mobile) */}
                     <button onClick={() => { shareInGlobalChat(); setMobileSideOpen(false); }}
                       className="w-full bg-gray-800 hover:bg-gray-700 text-white rounded-xl px-4 py-2.5 text-xs transition-all flex items-center justify-center gap-2">
-                      {chatShared ? <><Check className="w-3.5 h-3.5 text-green-400" />Partagé !</> : <><MessageCircle className="w-3.5 h-3.5 text-fuchsia-400" />Partager dans le chat global</>}
+                      {chatShared ? <><Check className="w-3.5 h-3.5 text-green-400" />Partagé !</> : <><MessageCircle className="w-3.5 h-3.5 text-fuchsia-400" />{t('shareInChat')}</>}
                     </button>
                   </div>
                 )}

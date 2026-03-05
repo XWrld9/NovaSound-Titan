@@ -9,6 +9,7 @@
  * ✅ Toutes les corrections v20000 conservées
  */
 import React, { useState, useRef, useCallback, useEffect, memo } from 'react';
+import { useLang } from '@/contexts/LangContext';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   FolderOpen, HardDrive, WifiOff, ListMusic, Trash2, Plus,
@@ -367,6 +368,7 @@ const LocalPlayerPage = () => {
   } = usePlayer();
 
   const navigate = useNavigate();
+  const { t }    = useLang();
   const [activeSection,      setActiveSection]      = useState('player');
   const [songs,              setSongs]              = useState([]);
   const [loading,            setLoading]            = useState(false);
@@ -454,7 +456,7 @@ const LocalPlayerPage = () => {
 
   const onFiles = useCallback(async (e) => {
     const files = Array.from(e.target.files || []).filter(isAudioFile);
-    if (!files.length) { alert('Aucun fichier audio.'); return; }
+    if (!files.length) { alert('{t('noFiles')}.'); return; }
     setLoading(true);
     const newSongs = await processBatch(files);
     if (!newSongs.length) { setLoading(false); return; }
@@ -625,7 +627,7 @@ const LocalPlayerPage = () => {
               className="w-full flex items-center justify-center gap-3 py-4 rounded-2xl text-white font-bold text-base disabled:opacity-60"
               style={{ background:'linear-gradient(135deg,#0e7490,#7c3aed)', boxShadow:'0 4px 24px rgba(6,182,212,0.25)' }}>
               <FolderOpen className="w-5 h-5" />
-              {loading ? 'Chargement…' : FS_ACCESS_SUPPORTED ? 'Ouvrir (fichiers persistants)' : "Ouvrir depuis l'appareil"}
+              {loading ? '{t('loading')}' : FS_ACCESS_SUPPORTED ? 'Ouvrir (fichiers persistants)' : "Ouvrir depuis l'appareil"}
             </motion.button>
             {savedPlaylists.length > 0 && (
               <div className="w-full">
@@ -713,7 +715,7 @@ const LocalPlayerPage = () => {
       <input ref={inputRef}    type="file" accept="*/*" multiple onChange={onFiles}         className="hidden" />
       <input ref={reimportRef} type="file" accept="*/*" multiple onChange={onReimportFiles} className="hidden" />
 
-      <div className="flex-1 max-w-xl mx-auto w-full px-4 pt-4 pb-8 flex flex-col gap-4">
+      <div className="flex-1 w-full px-4 lg:px-8 pt-4 pb-8 flex flex-col gap-4 max-w-4xl mx-auto">
 
         {activeSection === 'player' && (
           <div className="flex flex-col gap-4">
@@ -902,7 +904,7 @@ const LocalPlayerPage = () => {
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <ListMusic className="w-4 h-4 text-cyan-400" />
-                <span className="text-white font-black text-base">Fichiers</span>
+                <span className="text-white font-black text-base">{t('files_section')}</span>
                 <span className="text-[10px] bg-cyan-500/15 text-cyan-400 px-2 py-0.5 rounded-full font-bold">{songs.length}</span>
               </div>
               <button onClick={FS_ACCESS_SUPPORTED ? openPickerFSA : () => inputRef.current?.click()} disabled={loading}

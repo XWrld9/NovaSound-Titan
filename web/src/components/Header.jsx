@@ -6,6 +6,7 @@ import {
   Trophy, Shield, Users, HardDrive, ChevronDown
 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
+import { useLang } from '@/contexts/LangContext';
 import { supabase } from '@/lib/supabaseClient';
 import { Button } from '@/components/ui/button';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -25,23 +26,24 @@ const isStandalone = () =>
 
 // Liens principaux (toujours visibles)
 const PRIMARY_LINKS = [
-  { to: '/',           label: 'Accueil',     Icon: Music,      color: 'hover:text-cyan-400' },
-  { to: '/explorer',   label: 'Explorer',    Icon: Globe,      color: 'hover:text-cyan-400' },
-  { to: '/trending',   label: 'Tendances',   Icon: TrendingUp, color: 'hover:text-cyan-400' },
-  { to: '/live',       label: 'Live',        Icon: Radio,      color: 'hover:text-red-400', badge: true },
+  { to: '/',           label: t('home'),     Icon: Music,      color: 'hover:text-cyan-400' },
+  { to: '/explorer',   label: t('explore'),    Icon: Globe,      color: 'hover:text-cyan-400' },
+  { to: '/trending',   label: t('trending'),   Icon: TrendingUp, color: 'hover:text-cyan-400' },
+  { to: '/live',       label: t('live'),        Icon: Radio,      color: 'hover:text-red-400', badge: true },
 ];
 
 // Liens secondaires (dans le menu "Plus")
 const SECONDARY_LINKS = [
-  { to: '/artists',      label: 'Artistes',    Icon: Users,     color: 'hover:text-fuchsia-400' },
-  { to: '/news',         label: 'Actualités',  Icon: Newspaper, color: 'hover:text-cyan-400' },
-  { to: '/chat',         label: 'Chat',        Icon: Globe,     color: 'hover:text-cyan-400' },
-  { to: '/leaderboard',  label: 'Top',         Icon: Trophy,    color: 'hover:text-amber-400' },
-  { to: '/local-player', label: 'Local',       Icon: HardDrive, color: 'hover:text-cyan-400' },
+  { to: '/artists',      label: t('artists'),    Icon: Users,     color: 'hover:text-fuchsia-400' },
+  { to: '/news',         label: t('news'),  Icon: Newspaper, color: 'hover:text-cyan-400' },
+  { to: '/chat',         label: t('chat'),        Icon: Globe,     color: 'hover:text-cyan-400' },
+  { to: '/leaderboard',  label: t('leaderboard'),         Icon: Trophy,    color: 'hover:text-amber-400' },
+  { to: '/local-player', label: t('local'),       Icon: HardDrive, color: 'hover:text-cyan-400' },
 ];
 
 const Header = () => {
   const { currentUser, isAuthenticated, logout } = useAuth();
+  const { t, lang, toggleLang } = useLang();
   const [isAdmin, setIsAdmin]                   = useState(false);
   const navigate                                 = useNavigate();
   const location                                 = useLocation();
@@ -245,9 +247,9 @@ const Header = () => {
                 </span>
               </button>
 
-              {/* Installer PWA — desktop uniquement */}
+              {/* Installer PWA — mobile/tablette uniquement, caché sur PC (lg+) */}
               {!alreadyInstalled && (
-                <div className="relative hidden md:block">
+                <div className="relative hidden md:block lg:hidden">
                   <motion.button
                     onClick={handleInstallClick}
                     whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}
@@ -255,7 +257,7 @@ const Header = () => {
                     title="Installer l'application"
                   >
                     <Download className="w-4 h-4" />
-                    <span className="hidden lg:block">Installer</span>
+                    <span className="hidden lg:block">{t('install')}</span>
                   </motion.button>
                   <AnimatePresence>
                     {showIOSTooltip && (
@@ -306,7 +308,7 @@ const Header = () => {
                         {isAdmin && (
                           <Link to="/admin" className="flex items-center gap-2 px-4 py-2 text-sm text-red-400 hover:bg-red-500/10 rounded-lg"><Shield className="w-4 h-4" />Panneau Admin</Link>
                         )}
-                        <button onClick={handleLogout} className="w-full text-left flex items-center gap-2 px-4 py-2 text-sm text-red-400 hover:bg-red-500/10 rounded-lg"><LogOut className="w-4 h-4" />Déconnexion</button>
+                        <button onClick={handleLogout} className="w-full text-left flex items-center gap-2 px-4 py-2 text-sm text-red-400 hover:bg-red-500/10 rounded-lg"><LogOut className="w-4 h-4" />{t('logout')}</button>
                       </div>
                     </div>
                   </div>
@@ -521,13 +523,22 @@ const Header = () => {
 
               {/* Pied drawer */}
               <div className="p-4 border-t border-cyan-500/20 bg-gray-900/50 space-y-3">
+                {/* Langue FR/EN — mobile */}
+                <button
+                  onClick={toggleLang}
+                  className="w-full flex items-center gap-2 py-2.5 px-3 rounded-xl bg-white/5 text-gray-300 hover:bg-white/10 transition-all text-sm"
+                >
+                  <Globe className="w-4 h-4 text-cyan-400" />
+                  <span className="flex-1 text-left">{lang === 'fr' ? 'Switch to English' : 'Passer en Français'}</span>
+                  <span className="text-xs text-gray-500 bg-white/10 px-2 py-0.5 rounded-full">{lang === 'fr' ? 'EN' : 'FR'}</span>
+                </button>
                 {!alreadyInstalled && (
                   <button
                     onClick={() => { if (ios) setShowIOSTooltip(v => !v); else if (android) { setShowAndroidGuide(true); closeMenu(); } else if (canInstall) { install(); closeMenu(); } else setShowIOSTooltip(v => !v); }}
                     className="w-full flex items-center justify-center gap-2 py-3 rounded-xl border border-purple-500/40 text-purple-300 hover:bg-purple-500/10 transition-all text-sm font-medium"
                   >
                     <Download className="w-4 h-4" />
-                    {ios ? "Comment installer sur iPhone" : "Télécharger NovaST LUX"}
+                    {ios ? "Comment installer sur iPhone" : t('install')}
                   </button>
                 )}
                 {isAuthenticated ? (
@@ -537,10 +548,10 @@ const Header = () => {
                 ) : (
                   <div className="grid grid-cols-2 gap-3">
                     <Link to="/login" onClick={closeMenu}>
-                      <Button className="w-full bg-cyan-600 hover:bg-cyan-700 text-white rounded-full">Connexion</Button>
+                      <Button className="w-full bg-cyan-600 hover:bg-cyan-700 text-white rounded-full">{t('login')}</Button>
                     </Link>
                     <Link to="/signup" onClick={closeMenu}>
-                      <Button className="w-full bg-gradient-to-r from-cyan-500 to-fuchsia-500 text-white rounded-full">Inscription</Button>
+                      <Button className="w-full bg-gradient-to-r from-cyan-500 to-fuchsia-500 text-white rounded-full">{t('signup')}</Button>
                     </Link>
                   </div>
                 )}

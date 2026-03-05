@@ -2,6 +2,8 @@ import React, { lazy, Suspense, useEffect } from 'react';
 import { Route, Routes, HashRouter as Router, useNavigate, useLocation } from 'react-router-dom';
 import { AuthProvider } from '@/contexts/AuthContext';
 import { NotificationProvider } from '@/contexts/NotificationContext';
+import { LangProvider } from '@/contexts/LangContext';
+import DesktopSidebar from '@/components/DesktopSidebar';
 import { NotificationToast } from '@/components/NotificationBell';
 import { PlayerProvider, usePlayer } from '@/contexts/PlayerContext';
 import { PlaylistProvider } from '@/contexts/PlaylistContext';
@@ -113,6 +115,7 @@ function App() {
     <HelmetProvider>
       <DialogProvider>
         <ToastProvider>
+          <LangProvider>
           <OnlineProvider><AuthProvider>
             <PlayerProvider>
               <PlaylistProvider>
@@ -126,6 +129,10 @@ function App() {
                       <OfflineBanner />
                       <InstallBanner />
                       <ErrorBoundary>
+                      {/* Layout V200000 : sidebar fixe (md+) + zone contenu */}
+                      <div className="ns-layout">
+                        <DesktopSidebar />
+                        <div className="ns-content">
                       <Suspense fallback={<div className="min-h-screen bg-gray-950 flex items-center justify-center"><LoadingSpinner /></div>}>
                         <Routes>
                           <Route path="/"               element={<HomePage />} />
@@ -159,6 +166,8 @@ function App() {
                           <Route path="/notifications"   element={<ProtectedRoute><NotificationsPage /></ProtectedRoute>} />
                         </Routes>
                       </Suspense>
+                        </div>{/* ns-content */}
+                      </div>{/* ns-layout */}
                       </ErrorBoundary>
                       {/* Player global — persiste pendant toute la navigation */}
                       <ErrorBoundary fallback={null}>
@@ -174,6 +183,7 @@ function App() {
               </PlaylistProvider>
             </PlayerProvider>
           </AuthProvider></OnlineProvider>
+          </LangProvider>
         </ToastProvider>
       </DialogProvider>
     </HelmetProvider>

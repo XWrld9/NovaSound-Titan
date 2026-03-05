@@ -157,43 +157,7 @@ const InstallBanner = () => {
           </motion.div>
         )}
 
-        {/* ── Desktop Banner ── */}
-        {canInstall && !isIOS() && (
-          <motion.div
-            key="install-banner-desktop"
-            initial={{ opacity: 0, y: -20 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -20 }}
-            transition={{ delay: 1.5 }}
-            className="hidden md:flex items-center justify-center gap-4 py-2.5 px-6 bg-gradient-to-r from-cyan-500/10 via-purple-500/10 to-pink-500/10 border-b border-cyan-500/20"
-          >
-            <img src="/apple-touch-icon.png" alt="" className="w-6 h-6 rounded-lg" />
-            <div className="flex items-center gap-2 text-sm text-gray-300">
-              <Monitor className="w-4 h-4 text-cyan-400" />
-              <span>Installe <span className="text-cyan-400 font-semibold">NovaSound TITAN LUX</span> sur ton bureau pour un accès instantané</span>
-            </div>
-            <motion.button
-              onClick={install}
-              whileHover={{ scale: 1.03 }}
-              whileTap={{ scale: 0.97 }}
-              className="flex items-center gap-2 px-4 py-1.5 rounded-full bg-gradient-to-r from-cyan-500 to-purple-500 text-white text-sm font-semibold"
-            >
-              <Download className="w-3.5 h-3.5" />
-              Installer l'application
-            </motion.button>
-            <button onClick={dismiss} className="text-gray-500 hover:text-gray-300 ml-2">
-              <X className="w-4 h-4" />
-            </button>
-          </motion.div>
-        )}
-
-      </AnimatePresence>
-
-      {/* Modal Android Guide */}
-      <AnimatePresence>
-        {showAndroidGuide && (
-          <AndroidInstallGuide onClose={() => { setShowAndroidGuide(false); dismiss(); }} />
-        )}
+        <AndroidInstallGuide onClose={() => { setShowAndroidGuide(false); dismiss(); }} />
       </AnimatePresence>
     </>
   );

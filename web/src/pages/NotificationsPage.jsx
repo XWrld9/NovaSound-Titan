@@ -24,6 +24,7 @@ import {
 import Header from '@/components/Header';
 import { useNotifications } from '@/contexts/NotificationContext';
 import { useAuth } from '@/contexts/AuthContext';
+import { useLang } from '@/contexts/LangContext';
 
 // ── Type config ──────────────────────────────────────────────
 const TYPE_CONFIG = {
@@ -179,11 +180,11 @@ const EmptyState = ({ tab }) => (
     <div className="w-16 h-16 rounded-full bg-white/[0.04] border border-white/[0.08] flex items-center justify-center mb-4">
       <Bell className="w-7 h-7 text-gray-600" />
     </div>
-    <p className="text-gray-400 font-semibold">Aucune notification</p>
+    <p className="text-gray-400 font-semibold">{t('noNotifs')}</p>
     <p className="text-gray-600 text-sm mt-1">
       {tab === 'all'
         ? 'Tu es à jour 🎉'
-        : `Aucune notification dans "${tab}"`}
+        : `{t('noNotifs')} dans "${tab}"`}
     </p>
   </motion.div>
 );
@@ -191,6 +192,7 @@ const EmptyState = ({ tab }) => (
 // ════════════════════════════════════════════════════════════
 const NotificationsPage = () => {
   const navigate   = useNavigate();
+  const { t } = useLang();
   const { currentUser } = useAuth();
   const {
     notifications, unreadCount,

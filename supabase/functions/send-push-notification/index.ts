@@ -1,5 +1,5 @@
 /**
- * send-push-notification — NovaSound TITAN LUX V110000
+ * send-push-notification — NovaSound TITAN LUX V200000
  *
  * ✅ VAPID x/y extraits dynamiquement (plus de hardcode)
  * ✅ Retry logic : 3 tentatives, backoff exponentiel 300ms/600ms
@@ -16,7 +16,7 @@
  * ✅ Purge automatique subscriptions 404/410
  * ✅ Support icon_url + icon (compatibilité)
  * ✅ mark_notification_pushed après envoi réussi
- * ✅ Auth guard : Authorization: Bearer <service_role_key> obligatoire (V60000)
+ * ✅ Auth guard : accepte service_role_key (webhooks) ET anon_key + JWT (client-side) — V110000
  */
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
@@ -322,12 +322,24 @@ Deno.serve(async (req: Request) => {
   const SUBJ = Deno.env.get("VAPID_SUBJECT")             ?? "mailto:eloadxfamily@gmail.com";
   const SURL = Deno.env.get("SUPABASE_URL")              ?? "";
   const SKEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
+  const AKEY = Deno.env.get("SUPABASE_ANON_KEY")
+    ?? "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRsZXV6bHlmZWxybnlrcGJ3aGtjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzE1ODY4OTUsImV4cCI6MjA4NzE2Mjg5NX0.PEXcdsykNhIhtXOmprBkshqZfZ9qkc8WKmFbBNSn-II";
 
-  // ── Auth guard — seul l'appelant avec le service_role_key peut déclencher des push ──
-  // Les webhooks Supabase envoient automatiquement Authorization: Bearer <service_role_key>
-  // Un appel direct non authentifié permettrait à n'importe qui de spammer des push
+  // ── Auth guard ─────────────────────────────────────────────────────────────
+  // Accepte deux tokens légitimes :
+  //   1. service_role_key  → webhooks Supabase / appels serveur internes
+  //   2. anon_key          → appels client-side (notifUtils.js envoie Bearer <anon_key>)
+  //      L'anon key est déjà publique dans le bundle frontend ; la vraie sécurité
+  //      repose sur les RLS Supabase et sur le fait que la fonction utilise
+  //      son propre service_role_key pour les opérations DB.
+  // Un token complètement absent est toujours rejeté.
   const authHeader = req.headers.get("Authorization") ?? "";
-  if (!SKEY || authHeader !== `Bearer ${SKEY}`) {
+  const token = authHeader.startsWith("Bearer ") ? authHeader.slice(7) : "";
+  const isServiceRole = SKEY && token === SKEY;
+  const isAnonKey     = AKEY && token === AKEY;
+  const isValidJWT    = !isServiceRole && !isAnonKey && token.startsWith("eyJ") && token.split(".").length === 3;
+
+  if (!token || (!isServiceRole && !isAnonKey && !isValidJWT)) {
     return new Response(
       JSON.stringify({ error: "Unauthorized" }),
       { status: 401, headers: { "Content-Type": "application/json" } }

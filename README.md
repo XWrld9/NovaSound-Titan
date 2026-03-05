@@ -1,11 +1,51 @@
-# 🎵 NovaSound TITAN LUX — V110000
+# 🎵 NovaSound TITAN LUX — V200000
 
 > Plateforme de streaming musical sociale, propulsée par Supabase & React.  
-> Version **V110000** — *Live Pause · Push Notifs · Leaderboard Fix · Mobile UX*
+> Version **V200000** — *Desktop Sidebar · Full FR/EN Translation · Responsive · Live UX · PWA Polish*
 
 ---
 
-## ✨ Nouveautés V110000
+
+## ✨ Nouveautés V200000 — "Desktop Sidebar · Full Translation · Responsive · Live UX · PWA Polish"
+
+### 🖥️ Layout Desktop (style Spotify)
+
+| Amélioration | Détail |
+|---|---|
+| **Sidebar gauche permanente** | `DesktopSidebar` fixe sur `md+` — nav complète, voyant live, badge notifications, user/logout |
+| **Contenu plein écran** | `ns-layout` flex — sidebar 224px + `ns-content` qui occupe tout l'espace restant |
+| **Suppression des max-w restrictifs** | `.container` → `max-w: 100%` sur desktop, plus de marges vides |
+| **AudioPlayer offset sidebar** | Barre fixe : `md:left-56` — ne passe plus sous la sidebar |
+| **LocalPlayer responsive** | `max-w-4xl` centré + `px-8` sur desktop, fin du `max-w-xl` étriqué |
+| **Grille cards dense** | `auto-fill minmax(170→210px)` selon largeur d'écran |
+
+### 🌐 Traduction FR / EN complète (tout le site + PWA)
+
+| Élément | Détail |
+|---|---|
+| **LangContext** | 200+ clés couvrant nav, player, live rooms, leaderboard, chat, playlists, profil, lecteur local, notifications, auth |
+| **Toggle discret** | Globe dans la sidebar desktop, dans le menu mobile Header, et `LangToggle` flottant sur Login/Signup |
+| **Pages traduites** | Header, BottomNav, DesktopSidebar, LiveRoomPage, LeaderboardPage, ChatPage, LocalPlayerPage, NotificationsPage, HomePage, SearchPage, ArtistsPage, TrendingPage, NewsPage |
+| **Persistance** | Choix sauvegardé dans `localStorage` + colonne `users.preferred_lang` en base |
+
+### 📱 Live Room — Zone de saisie corrigée
+
+| Fix | Détail |
+|---|---|
+| **Input zone safe** | Classe `ns-live-input` : `padding-bottom: env(safe-area-inset-bottom)` — plus de superposition player/clavier |
+| **Desktop** | Padding minimal sur `md+`, aucune interférence avec le player |
+
+### 🔧 Bouton Installer — PC supprimé
+
+| Fix | Détail |
+|---|---|
+| **InstallBanner** | Desktop banner entièrement supprimé |
+| **Header** | Bouton install limité à `md:block lg:hidden` (tablette uniquement) |
+| **CSS** | `.ns-install-btn` caché à `≥1024px` |
+
+---
+
+## ✨ Historique — V110000
 
 ### 🎙️ Live Rooms — Corrections & nouvelles fonctionnalités
 
@@ -147,7 +187,8 @@ Lance **dans l'ordre** dans le SQL Editor de Supabase :
 3. novasound-v50000-migration.sql    ← live rooms V1
 4. novasound-v60000-migration.sql    ← communauté & achievements
 5. novasound-v100000-migration.sql   ← live rooms 2.0
-6. novasound-v110000-migration.sql   ← live pause / leaderboard / push   ← DERNIERE
+6. novasound-v110000-migration.sql   ← live pause / leaderboard / push
+7. novasound-v200000-migration.sql   ← desktop layout / i18n / responsive   ← DERNIERE
 ```
 
 > Chaque migration est **idempotente** (`IF NOT EXISTS`, `ON CONFLICT DO UPDATE`, `DROP VIEW IF EXISTS`).

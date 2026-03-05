@@ -1,5 +1,5 @@
 /**
- * LeaderboardPage — NovaSound TITAN LUX V110000
+ * LeaderboardPage — NovaSound TITAN LUX V200000
  * - Auditeurs : données user_streaks, scoreLabel correct, lien profil OK
  * - Séries : user_streaks ordonné par current_streak (plus leaderboard_streaks)
  * - currentData pour onglet Séries = streaks (corrigé)
@@ -11,6 +11,7 @@ import { Helmet } from 'react-helmet-async';
 import { motion, AnimatePresence } from 'framer-motion';
 import { supabase } from '@/lib/supabaseClient';
 import { useAuth } from '@/contexts/AuthContext';
+import { useLang } from '@/contexts/LangContext';
 import { usePlayer } from '@/contexts/PlayerContext';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
@@ -144,6 +145,7 @@ const SONG_PERIODS = [
 // ══════════════════════════════════════════════════════════════════
 const LeaderboardPage = () => {
   const { currentUser } = useAuth();
+  const { t } = useLang();
   const { playSong }    = usePlayer();
 
   const [tab, setTab]               = useState('artists');
@@ -275,7 +277,7 @@ const LeaderboardPage = () => {
   const scoreKey    =
     tab === 'artists' ? 'total_plays' : tab === 'songs' ? 'plays_count' : tab === 'listeners' ? 'total_days' : 'current_streak';
   const scoreLabel  =
-    tab === 'artists' ? 'écoutes' : tab === 'songs' ? 'plays' : tab === 'listeners' ? 'j écoutés' : 'j de suite';
+    tab === 'artists' ? 'écoutes' : tab === 'songs' ? 'plays' : tab === 'listeners' ? t('daysListened') : 'j de suite';
   const myRank      =
     tab === 'artists' ? myArtistRank : tab === 'listeners' ? myListenerRank : tab === 'streaks' ? myStreakRank : null;
 
