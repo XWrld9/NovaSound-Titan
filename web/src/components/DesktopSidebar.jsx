@@ -22,41 +22,6 @@ import { useLang } from '@/contexts/LangContext';
 import { supabase } from '@/lib/supabaseClient';
 import usePWAInstall from '@/hooks/usePWAInstall';
 
-/* ─── Groupes de navigation ──────────────────────────────────────────────── */
-const useNavGroups = (t, isAuthenticated, isAdmin) => [
-  {
-    label: null,
-    items: [
-      { to: '/',            icon: Home,          key: 'home'        },
-      { to: '/explorer',    icon: Compass,       key: 'explore'     },
-      { to: '/trending',    icon: TrendingUp,    key: 'trending'    },
-      { to: '/live',        icon: Radio,         key: 'live',   liveIndicator: true },
-      { to: '/artists',     icon: Users,         key: 'artists'     },
-    ],
-  },
-  {
-    label: 'Découvrir',
-    items: [
-      { to: '/news',        icon: Newspaper,     key: 'news'        },
-      { to: '/chat',        icon: MessageSquare, key: 'chat'        },
-      { to: '/leaderboard', icon: Trophy,        key: 'leaderboard' },
-    ],
-  },
-  ...(isAuthenticated ? [{
-    label: 'Ma bibliothèque',
-    items: [
-      { to: '/profile',     icon: User,          key: 'profile'     },
-      { to: '/playlists',   icon: ListMusic,     key: 'playlists'   },
-      { to: '/upload',      icon: Upload,        key: 'upload'      },
-      { to: '/stats',       icon: BarChart2,     key: 'stats'       },
-      { to: '/messages',    icon: MessageCircle, key: 'messages'    },
-      { to: '/notifications',icon: Bell,         key: 'notifications'},
-      { to: '/local-player',icon: HardDrive,     key: 'local'       },
-      ...(isAdmin ? [{ to: '/admin', icon: Shield, key: 'admin' }] : []),
-    ],
-  }] : []),
-];
-
 /* ─── Composant principal ────────────────────────────────────────────────── */
 const DesktopSidebar = () => {
   const location                          = useLocation();
@@ -67,6 +32,41 @@ const DesktopSidebar = () => {
   const { canInstall, install }           = usePWAInstall();
   const [hasActiveLive, setHasActiveLive] = useState(false);
   const [isAdmin, setIsAdmin]             = useState(false);
+
+  /* ─── Groupes de navigation ──────────────────────────────────────────────── */
+  const navGroups = [
+    {
+      label: null,
+      items: [
+        { to: '/',            icon: Home,          key: 'home'        },
+        { to: '/explorer',    icon: Compass,       key: 'explore'     },
+        { to: '/trending',    icon: TrendingUp,    key: 'trending'    },
+        { to: '/live',        icon: Radio,         key: 'live',   liveIndicator: true },
+        { to: '/artists',     icon: Users,         key: 'artists'     },
+      ],
+    },
+    {
+      label: t('discover'),
+      items: [
+        { to: '/news',        icon: Newspaper,     key: 'news'        },
+        { to: '/chat',        icon: MessageSquare, key: 'chat'        },
+        { to: '/leaderboard', icon: Trophy,        key: 'leaderboard' },
+      ],
+    },
+    ...(isAuthenticated ? [{
+      label: t('my_library'),
+      items: [
+        { to: '/profile',     icon: User,          key: 'profile'     },
+        { to: '/playlists',   icon: ListMusic,     key: 'playlists'   },
+        { to: '/upload',      icon: Upload,        key: 'upload'      },
+        { to: '/stats',       icon: BarChart2,     key: 'stats'       },
+        { to: '/messages',    icon: MessageCircle, key: 'messages'    },
+        { to: '/notifications',icon: Bell,         key: 'notifications'},
+        { to: '/local-player',icon: HardDrive,     key: 'local'       },
+        ...(isAdmin ? [{ to: '/admin', icon: Shield, key: 'admin' }] : []),
+      ],
+    }] : []),
+  ];
 
   /* Live indicator */
   useEffect(() => {
@@ -99,8 +99,6 @@ const DesktopSidebar = () => {
   /* Masquer sidebar sur live room */
   if (location.pathname.startsWith('/live/')) return null;
   if (location.pathname === '/local-player') return null;
-
-  const navGroups = useNavGroups(t, isAuthenticated, isAdmin);
 
   const isActive = (to) =>
     to === '/' ? location.pathname === '/' : location.pathname.startsWith(to);
