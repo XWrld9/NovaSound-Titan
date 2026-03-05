@@ -1,27 +1,59 @@
 /**
- * BottomNav — NovaSound TITAN LUX V60000
- * Barre de navigation mobile fixe en bas
- * Visible UNIQUEMENT sur mobile (hidden md:flex)
- * Laisse 80px d'espace pour l'AudioPlayer au-dessus
+ * BottomNav — NovaSound TITAN LUX V100000
+ * Navigation mobile fixe en bas
+ * - Voyant VERT si au moins un live est en cours (rejoins la fête !)
+ * - Voyant ROUGE si aucun live actif
+ * - Badge notifications en temps réel
+ * - Masqué sur /local-player et /live/:roomId
  */
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { Home, Compass, TrendingUp, User, Search, Globe, Radio, Trophy, HardDrive, Bell } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useNotifications } from '@/contexts/NotificationContext';
+import { supabase } from '@/lib/supabaseClient';
 import { motion } from 'framer-motion';
 
 const NAV_ITEMS = [
-  { to: '/',             icon: Home,    label: 'Accueil'  },
-  { to: '/explorer',     icon: Compass, label: 'Explorer' },
-  { to: '/live',         icon: Radio,   label: 'Live', dot: true },
-  { to: '/leaderboard',  icon: Trophy,  label: 'Top'      },
+  { to: '/',            icon: Home,   label: 'Accueil'  },
+  { to: '/explorer',    icon: Compass,label: 'Explorer' },
+  { to: '/live',        icon: Radio,  label: 'Live', liveIndicator: true },
+  { to: '/leaderboard', icon: Trophy, label: 'Top'      },
 ];
 
 const BottomNav = () => {
   const location  = useLocation();
   const { currentUser, isAuthenticated } = useAuth();
   const { unreadCount } = useNotifications() || {};
+  const [hasActiveLive, setHasActiveLive] = useState(false);
+
+  /* Vérifier s'il y a des lives actifs — sondage léger toutes les 30s */
+  useEffect(() => {
+    let mounted = true;
+    const check = async () => {
+      try {
+        const { count } = await supabase
+          .from('live_rooms')
+          .select('id', { count: 'exact', head: true })
+          .eq('is_active', true)
+          .eq('is_private', false);
+        if (mounted) setHasActiveLive((count || 0) > 0);
+      } catch {}
+    };
+    check();
+    const interval = setInterval(check, 30000);
+
+    // Realtime : réagit immédiatement aux changements
+    const ch = supabase.channel('bottomnav_live_check')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'live_rooms' }, check)
+      .subscribe();
+
+    return () => {
+      mounted = false;
+      clearInterval(interval);
+      supabase.removeChannel(ch);
+    };
+  }, []);
 
   const isActive = (path) => {
     if (path === '/') return location.pathname === '/';
@@ -46,14 +78,14 @@ const BottomNav = () => {
     <nav
       className="fixed bottom-0 left-0 right-0 z-40 flex md:hidden"
       style={{
-        background: 'rgba(3,7,18,0.96)',
+        background: 'rgba(3,7,18,0.97)',
         backdropFilter: 'blur(20px)',
         WebkitBackdropFilter: 'blur(20px)',
         borderTop: '1px solid rgba(6,182,212,0.15)',
         paddingBottom: 'env(safe-area-inset-bottom)',
       }}
     >
-      {allItems.map(({ to, icon: Icon, label, dot, badge }) => {
+      {allItems.map(({ to, icon: Icon, label, liveIndicator, badge }) => {
         const active = isActive(to);
         return (
           <Link
@@ -73,10 +105,18 @@ const BottomNav = () => {
               className={`relative transition-all duration-200 ${active ? 'text-cyan-400' : 'text-gray-500'}`}
             >
               <Icon className="w-5 h-5" strokeWidth={active ? 2.5 : 1.8} />
-              {/* Point rouge "live" (ex: salon en direct) */}
-              {dot && (
-                <span className="absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full bg-red-500 animate-pulse border border-gray-950" />
+
+              {/* Voyant LIVE dynamique : vert si live actif, rouge si aucun */}
+              {liveIndicator && (
+                <span
+                  className={`absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full border border-gray-950 ${
+                    hasActiveLive
+                      ? 'bg-green-400 animate-pulse'
+                      : 'bg-red-500'
+                  }`}
+                />
               )}
+
               {/* Badge numérique pour les notifications non lues */}
               {badge && (
                 <span className="absolute -top-1.5 -right-1.5 min-w-[16px] h-4 px-0.5 flex items-center justify-center rounded-full bg-cyan-500 text-[9px] font-black text-gray-950 border border-gray-950 leading-none">

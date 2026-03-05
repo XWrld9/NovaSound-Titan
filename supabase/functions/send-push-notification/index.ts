@@ -173,6 +173,7 @@ const URGENCY_MAP: Record<string, string> = {
   chat_mention_all:   "high",
   mood_vote:          "low",
   live_start:         "high",
+  live_started:       "high",   // alias V100000
   live_invite:        "high",
   queue_song:         "normal",
   default:            "normal",
@@ -180,6 +181,7 @@ const URGENCY_MAP: Record<string, string> = {
 
 const TTL_MAP: Record<string, number> = {
   live_start:         3600,     // 1h  — périme vite
+  live_started:       3600,     // alias V100000
   live_invite:        3600,
   chat_reply:         86400,    // 24h
   chat_mention:       86400,

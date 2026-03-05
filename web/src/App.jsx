@@ -99,10 +99,12 @@ const OfflineRedirect = () => {
   return null;
 };
 
-/* ── BottomNav masqué sur /local-player (interface standalone) ────────────── */
+/* ── BottomNav masqué sur /local-player et /live/:roomId ──────────────────── */
 const BottomNavConditional = () => {
   const location = useLocation();
+  // Masqué sur le lecteur local standalone ET dans les salles live (immersion totale)
   if (location.pathname === '/local-player') return null;
+  if (location.pathname.startsWith('/live/')) return null;
   return <BottomNav />;
 };
 
