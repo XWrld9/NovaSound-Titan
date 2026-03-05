@@ -1,14 +1,10 @@
 /**
- * LeaderboardPage — NovaSound TITAN LUX v10000
- * Fixes:
- *  - audio_url inclus dans le SELECT songs → lecture fonctionnelle
- *  - myRank calculé dynamiquement (artistes + auditeurs)
- *  - Podium gracieux avec 1, 2 ou 3 entrées
- *  - Realtime subscription sur songs/users
- *  - Labels de score corrects (écoutes, jours)
- *  - Filtre période pour les sons (24h / 7j / 30j / all-time)
- *  - Bouton refresh manuel
- *  - "Ma position" affiche le rang réel
+ * LeaderboardPage — NovaSound TITAN LUX V110000
+ * - Auditeurs : données user_streaks, scoreLabel correct, lien profil OK
+ * - Séries : user_streaks ordonné par current_streak (plus leaderboard_streaks)
+ * - currentData pour onglet Séries = streaks (corrigé)
+ * - myStreakRank ajouté + secondLabelFn pour label dynamique per-row
+ * - Podium + Top20 unifiés sur tous les onglets
  */
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { Helmet } from 'react-helmet-async';
@@ -73,10 +69,14 @@ const PodiumBar = ({ user, rank, score }) => {
 };
 
 // ── Ligne classement ──────────────────────────────────────────────────
-const RankRow = ({ item, rank, scoreKey, scoreLabel, labelKey, secondLabel, linkPrefix, onPlay, isMe }) => {
+const RankRow = ({ item, rank, scoreKey, scoreLabel, labelKey, secondLabel, secondLabelFn, linkPrefix, onPlay, isMe }) => {
   const badge  = getBadge(item[scoreKey] || 0);
   const isTop3 = rank <= 3;
   const name   = item[labelKey] || '?';
+  // V110000 : secondLabelFn override secondLabel pour valeurs dynamiques
+  const secondContent = secondLabelFn
+    ? secondLabelFn(item)
+    : (typeof secondLabel === 'string' ? item[secondLabel] : secondLabel);
   return (
     <motion.div
       initial={{ opacity: 0, x: -12 }} animate={{ opacity: 1, x: 0 }}
@@ -115,8 +115,8 @@ const RankRow = ({ item, rank, scoreKey, scoreLabel, labelKey, secondLabel, link
               {isMe && <span className="ml-1.5 text-[10px] bg-cyan-500/20 text-cyan-400 px-1.5 py-0.5 rounded-full font-bold">Toi</span>}
             </p>
         }
-        {secondLabel != null && (
-          <p className="text-gray-500 text-xs truncate">{typeof secondLabel === 'string' ? item[secondLabel] : secondLabel}</p>
+        {secondContent != null && (
+          <p className="text-gray-500 text-xs truncate">{secondContent}</p>
         )}
       </div>
       <span className="text-xs hidden sm:block flex-shrink-0" style={{ color: badge.color }}>{badge.icon}</span>
@@ -157,6 +157,7 @@ const LeaderboardPage = () => {
   const [refreshing, setRefreshing] = useState(false);
   const [myArtistRank, setMyArtistRank] = useState(null);
   const [myListenerRank, setMyListenerRank] = useState(null);
+  const [myStreakRank, setMyStreakRank] = useState(null); // V110000
 
   const fetchArtistsAndListeners = useCallback(async (isRefresh = false) => {
     if (isRefresh) setRefreshing(true); else setLoading(true);
@@ -219,19 +220,36 @@ const LeaderboardPage = () => {
   useEffect(() => { fetchArtistsAndListeners(); }, [fetchArtistsAndListeners]);
   useEffect(() => { if (tab === 'songs') fetchSongs(songPeriod); }, [tab, songPeriod, fetchSongs]);
 
-  // V50000: fetch streaks
+  // V110000: fetch streaks — source user_streaks (fiable) ordonné par current_streak
   useEffect(() => {
     if (tab !== 'streaks') return;
     (async () => {
       try {
-        const { data } = await supabase
-          .from('leaderboard_streaks')
-          .select('*')
+        const { data: streakData } = await supabase
+          .from('user_streaks')
+          .select('user_id,current_streak,longest_streak,total_days')
+          .order('current_streak', { ascending: false })
           .limit(30);
-        setStreaks(data || []);
-      } catch {}
+        if (!streakData?.length) { setStreaks([]); return; }
+        const ids = streakData.map(r => r.user_id);
+        const { data: ud } = await supabase.from('users').select('id,username,avatar_url').in('id', ids);
+        const byId = new Map((ud || []).map(u => [u.id, u]));
+        const rows = streakData
+          .map(r => ({
+            ...(byId.get(r.user_id) || { id: r.user_id, username: 'Anonyme', avatar_url: null }),
+            current_streak: r.current_streak,
+            longest_streak: r.longest_streak,
+            total_days:     r.total_days,
+          }))
+          .filter(r => r.username && r.username !== 'Anonyme');
+        setStreaks(rows);
+        if (currentUser?.id) {
+          const idx = rows.findIndex(r => r.id === currentUser.id);
+          setMyStreakRank(idx >= 0 ? idx + 1 : null);
+        }
+      } catch(e) { console.error('[Séries]', e); setStreaks([]); }
     })();
-  }, [tab]);
+  }, [tab, currentUser?.id]);
 
   // Realtime
   useEffect(() => {
@@ -246,12 +264,20 @@ const LeaderboardPage = () => {
     return () => supabase.removeChannel(ch);
   }, [tab, songPeriod, fetchArtistsAndListeners, fetchSongs]);
 
-  const currentData = tab === 'artists' ? topArtists : tab === 'songs' ? topSongs : topListeners;
+  // V110000 — currentData, scoreKey, scoreLabel, myRank corrects pour TOUS les onglets
+  const currentData = tab === 'artists' ? topArtists : tab === 'songs' ? topSongs : tab === 'listeners' ? topListeners : streaks;
   const podiumData  = currentData.slice(0, 3);
-  const getScore    = (item) => tab === 'artists' ? (item.total_plays || 0) : tab === 'songs' ? (item.plays_count || 0) : (item.total_days || 0);
-  const scoreKey    = tab === 'artists' ? 'total_plays' : tab === 'songs' ? 'plays_count' : 'total_days';
-  const scoreLabel  = tab === 'artists' ? 'écoutes' : tab === 'songs' ? 'plays' : 'jours';
-  const myRank      = tab === 'artists' ? myArtistRank : tab === 'listeners' ? myListenerRank : null;
+  const getScore    = (item) =>
+    tab === 'artists'   ? (item.total_plays    || 0)
+    : tab === 'songs'   ? (item.plays_count    || 0)
+    : tab === 'listeners' ? (item.total_days   || 0)
+    :                     (item.current_streak || 0); // streaks
+  const scoreKey    =
+    tab === 'artists' ? 'total_plays' : tab === 'songs' ? 'plays_count' : tab === 'listeners' ? 'total_days' : 'current_streak';
+  const scoreLabel  =
+    tab === 'artists' ? 'écoutes' : tab === 'songs' ? 'plays' : tab === 'listeners' ? 'j écoutés' : 'j de suite';
+  const myRank      =
+    tab === 'artists' ? myArtistRank : tab === 'listeners' ? myListenerRank : tab === 'streaks' ? myStreakRank : null;
 
   const TABS = [
     { id: 'artists',   label: 'Artistes',  Icon: Crown },
@@ -359,16 +385,21 @@ const LeaderboardPage = () => {
                 <div className="p-3 space-y-0.5">
                   {currentData.map((item, i) => (
                     <RankRow
-                      key={item.id}
+                      key={item.id || item.user_id || i}
                       item={item}
                       rank={i + 1}
                       scoreKey={scoreKey}
                       scoreLabel={scoreLabel}
                       labelKey={tab === 'songs' ? 'title' : 'username'}
-                      secondLabel={tab === 'songs' ? 'artist' : tab === 'listeners' ? 'current_streak' : null}
+                      secondLabel={tab === 'songs' ? 'artist' : null}
+                      secondLabelFn={
+                        tab === 'listeners' ? (r) => `🔥 ${r.current_streak || 0}j de suite`
+                        : tab === 'streaks'  ? (r) => `record : ${r.longest_streak || 0}j · total : ${r.total_days || 0}j`
+                        : null
+                      }
                       linkPrefix={tab === 'songs' ? '/song' : '/artist'}
                       onPlay={tab === 'songs' ? (s) => playSong(s, currentData) : null}
-                      isMe={currentUser?.id === item.id}
+                      isMe={currentUser?.id === item.id || currentUser?.id === item.user_id}
                     />
                   ))}
                   {currentData.length === 0 && (
@@ -389,77 +420,24 @@ const LeaderboardPage = () => {
                           ? `Tu es ${myRank === 1 ? '🥇 ' : myRank === 2 ? '🥈 ' : myRank === 3 ? '🥉 ' : ''}#${myRank} dans ce classement !`
                           : tab === 'songs' ? 'Poste un son pour apparaître ici 🎵'
                           : tab === 'listeners' ? 'Continue d\'écouter pour apparaître ici 🎧'
+                          : tab === 'streaks' ? 'Écoute chaque jour pour apparaître ici 🔥'
                           : 'Continue de publier pour grimper ! 🚀'
                         }
                       </p>
                       <p className="text-gray-500 text-xs mt-0.5">
                         {tab === 'listeners'
                           ? `Streak actuel : ${topListeners.find(u => u.id === currentUser.id)?.current_streak || 0} j 🔥`
+                          : tab === 'streaks'
+                          ? `Série actuelle : ${streaks.find(r => r.id === currentUser.id || r.user_id === currentUser.id)?.current_streak || 0} j 🔥`
                           : 'Écoutes, likes et publications font grimper ton score'
                         }
                       </p>
                     </div>
-                    <Link to="/profile" className="text-xs text-cyan-400 hover:text-cyan-300 flex items-center gap-1 flex-shrink-0">
+                    <Link to={`/artist/${currentUser.id}`} className="text-xs text-cyan-400 hover:text-cyan-300 flex items-center gap-1 flex-shrink-0">
                       Profil <ChevronRight className="w-3 h-3" />
                     </Link>
                   </div>
                 </motion.div>
-              )}
-
-              {/* ── STREAKS TAB V50000 ── */}
-              {tab === 'streaks' && (
-                <div className="space-y-2">
-                  <p className="text-gray-500 text-xs mb-4 flex items-center gap-1.5">
-                    <Flame className="w-3.5 h-3.5 text-orange-400" />
-                    Séries d'écoute consécutives — qui écoute le plus régulièrement ?
-                  </p>
-                  {streaks.length === 0 ? (
-                    <div className="text-center py-12 text-gray-600">
-                      <Flame className="w-10 h-10 mx-auto mb-3 opacity-30" />
-                      <p>Aucune série en cours</p>
-                      <p className="text-xs mt-1">Écoute de la musique chaque jour pour apparaître ici !</p>
-                    </div>
-                  ) : streaks.map((s, i) => (
-                    <motion.div key={s.user_id}
-                      initial={{ opacity: 0, x: -12 }} animate={{ opacity: 1, x: 0 }}
-                      transition={{ delay: i * 0.03 }}
-                      className={`flex items-center gap-3 p-3 rounded-xl transition-all ${
-                        s.user_id === currentUser?.id
-                          ? 'bg-gradient-to-r from-orange-500/15 to-amber-500/10 border border-orange-500/30'
-                          : 'hover:bg-gray-800/60'
-                      }`}
-                    >
-                      <div className="w-8 text-center flex-shrink-0">
-                        {i === 0 ? <span className="text-xl">🥇</span>
-                        : i === 1 ? <span className="text-xl">🥈</span>
-                        : i === 2 ? <span className="text-xl">🥉</span>
-                        : <span className="text-gray-500 text-sm font-bold">#{i+1}</span>}
-                      </div>
-                      <div className="w-10 h-10 rounded-xl overflow-hidden bg-gray-800 flex-shrink-0">
-                        {s.avatar_url
-                          ? <img src={s.avatar_url} className="w-full h-full object-cover" alt="" />
-                          : <div className="w-full h-full bg-gradient-to-br from-orange-500 to-amber-500 flex items-center justify-center text-white font-bold">
-                              {(s.username || '?')[0].toUpperCase()}
-                            </div>
-                        }
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <p className={`font-semibold text-sm truncate ${s.user_id === currentUser?.id ? 'text-orange-300' : 'text-white'}`}>
-                          {s.username}
-                          {s.user_id === currentUser?.id && <span className="ml-1.5 text-[10px] bg-orange-500/20 text-orange-400 px-1.5 py-0.5 rounded-full font-bold">Toi</span>}
-                        </p>
-                        <p className="text-gray-600 text-xs">{s.total_days} jour{s.total_days > 1 ? 's' : ''} total · record: {s.longest_streak}j</p>
-                      </div>
-                      <div className="text-right flex-shrink-0">
-                        <div className="flex items-center gap-1 justify-end">
-                          <Flame className="w-4 h-4 text-orange-400" />
-                          <span className="text-orange-400 font-black text-lg tabular-nums">{s.current_streak}</span>
-                        </div>
-                        <p className="text-gray-600 text-[10px]">jours de suite</p>
-                      </div>
-                    </motion.div>
-                  ))}
-                </div>
               )}
             </>
           )}

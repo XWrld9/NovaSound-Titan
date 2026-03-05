@@ -1,19 +1,13 @@
 /**
- * LiveRoomPage — NovaSound TITAN LUX V100000
+ * LiveRoomPage — NovaSound TITAN LUX V110000
  *
- * ✅ Sync audio précise entre hôte et invités (WebRTC-like via Supabase Realtime)
- * ✅ Import fichier local par l'hôte → upload Supabase → broadcast URL
- * ✅ Playlist de l'hôte synchronisée avec tous les participants
- * ✅ File d'attente avec auto-advance quand un son se termine
- * ✅ Indicateur VERT (live actif) / ROUGE (aucun live) sur BottomNav
- * ✅ Menu masqué sur mobile (BottomNav) quand dans une room
- * ✅ Layout mobile optimisé — panneau glissant du bas
- * ✅ Chrono du live en temps réel
- * ✅ Screen Wake Lock pour l'hôte (mobile)
- * ✅ Recherche multi-source : bibliothèque + playlists perso
- * ✅ Réactions emoji flottantes
- * ✅ Messages éditable + supprimable
- * ✅ Indicateur de frappe en temps réel
+ * ✅ V100000 — Sync audio, playlist, file locale, réactions, typing, WakeLock
+ * ✅ V110000 — Fix zone de saisie mobile (BottomNav masqué = input visible)
+ * ✅ V110000 — Notifications join/leave remplacées par floating toast discret
+ * ✅ V110000 — Zone réaction : fermeture manuelle (croix) + pas d'auto-close
+ * ✅ V110000 — Pause/Resume live par l'hôte + broadcast aux auditeurs
+ * ✅ V110000 — Partage du lien en live dans le chat global
+ * ✅ V110000 — Notification push automatique aux abonnés au démarrage du live
  */
 
 import React, { useState, useEffect, useRef, useCallback } from 'react';
@@ -24,11 +18,13 @@ import { useAuth } from '@/contexts/AuthContext';
 import { usePlayer } from '@/contexts/PlayerContext';
 import Header from '@/components/Header';
 import { Link, useNavigate, useParams } from 'react-router-dom';
+import { notifyFollowers } from '@/lib/notifUtils';
 import {
   Radio, Users, Music, Send, Heart, Crown, Copy, Check, Plus, Lock, Unlock,
   Headphones, Zap, X, ArrowLeft, Loader2, WifiOff, RefreshCw, Search, Upload,
   Pencil, Trash2, CheckCircle2, XCircle, Play, ListMusic, SkipForward, LogOut,
   Smile, Share2, AlertCircle, Clock, Volume2, ChevronUp, BookOpen, Pause,
+  MessageCircle,
 } from 'lucide-react';
 
 /* ══════════════════════════════════════════════════════════════════════════
@@ -319,6 +315,10 @@ const LiveRoomPage = () => {
   const [mobileSideOpen, setMobileSideOpen] = useState(false);
   const [liveDuration, setLiveDuration] = useState(0);
   const [syncQuality, setSyncQuality]   = useState(100); // 0-100
+  // V110000 — nouvelles features
+  const [liveIsPaused, setLiveIsPaused] = useState(false);
+  const [joinLeaveToast, setJoinLeaveToast] = useState(null); // { text, type }
+  const [chatShared, setChatShared]     = useState(false);
 
   /* Refs */
   const chatRef        = useRef(null);
@@ -337,6 +337,7 @@ const LiveRoomPage = () => {
   const queueRef       = useRef([]);
   const startedAtRef   = useRef(null);
   const wakeLockRef    = useRef(null);
+  const joinLeaveTimer = useRef(null); // V110000
 
   const isAdmin = currentUser?.email === 'eloadxfamily@gmail.com';
   const canStop = isHost || isAdmin;
@@ -462,6 +463,41 @@ const LiveRoomPage = () => {
     scrollChat();
   }, [scrollChat]);
 
+  /* ── V110000 : floating toast pour join/leave (discret, non-intrusif) ── */
+  const showJoinLeave = useCallback((text, type) => {
+    if (joinLeaveTimer.current) clearTimeout(joinLeaveTimer.current);
+    setJoinLeaveToast({ text, type });
+    joinLeaveTimer.current = setTimeout(() => setJoinLeaveToast(null), 3000);
+  }, []);
+
+  /* ── V110000 : Pause / Resume live par l'hôte ──────────────────── */
+  const togglePause = useCallback(async () => {
+    if (!isHostRef.current || !chanRef.current) return;
+    const audio = document.querySelector('audio');
+    const newPaused = !liveIsPaused;
+    setLiveIsPaused(newPaused);
+    if (audio) {
+      try { newPaused ? audio.pause() : await audio.play(); } catch {}
+    }
+    chanRef.current.send({ type: 'broadcast', event: 'live_pause', payload: { isPaused: newPaused } }).catch(() => {});
+    if (roomRef.current) {
+      await supabase.from('live_rooms').update({ is_paused: newPaused }).eq('id', roomRef.current.id).catch(() => {});
+    }
+  }, [liveIsPaused]);
+
+  /* ── V110000 : Partager le lien du live dans le chat global ─────── */
+  const shareInGlobalChat = useCallback(async () => {
+    if (!currentUser || !roomRef.current) return;
+    const username = currentUser.user_metadata?.username || currentUser.email?.split('@')[0] || 'Quelqu\'un';
+    const link = `${window.location.origin}/#/live/${roomRef.current.id}`;
+    const content = `🔴 LIVE • ${roomRef.current.name}\n${username} vous invite à rejoindre !\n👉 ${link}`;
+    try {
+      await supabase.from('chat_messages').insert({ user_id: currentUser.id, content: content.slice(0, 1000) });
+      setChatShared(true);
+      setTimeout(() => setChatShared(false), 3000);
+    } catch (err) { console.error('shareInGlobalChat:', err); }
+  }, [currentUser]);
+
   /* ── Créer une salle ─────────────────────────────────────────── */
   const createRoom = async () => {
     if (!currentUser || !roomName.trim()) return;
@@ -471,6 +507,17 @@ const LiveRoomPage = () => {
         .insert({ name: roomName.trim(), host_id: currentUser.id, is_private: isPrivate, is_active: true })
         .select().single();
       if (error) throw error;
+
+      // V110000 — notifier les abonnés que le live a démarré
+      const hostUsername = currentUser.user_metadata?.username || currentUser.email?.split('@')[0] || 'Un artiste';
+      notifyFollowers(supabase, currentUser.id, {
+        type:     'live_started',
+        title:    '🔴 Live en cours !',
+        body:     `${hostUsername} a démarré un live : "${data.name}"`,
+        url:      `/live/${data.id}`,
+        icon_url: currentUser.user_metadata?.avatar_url || '/icon-192.png',
+      }).catch(() => {});
+
       await joinRoom(data.id, true);
     } catch (e) { console.error(e); setCreatingRoom(false); }
   };
@@ -516,11 +563,11 @@ const LiveRoomPage = () => {
         })
         .on('presence', { event: 'join' }, ({ newPresences }) => {
           const u = newPresences?.[0]?.user;
-          if (u && u.id !== currentUser.id) injectSys(`${u.username} a rejoint 👋`, 'join');
+          if (u && u.id !== currentUser.id) showJoinLeave(`${u.username} a rejoint 👋`, 'join');
         })
         .on('presence', { event: 'leave' }, ({ leftPresences }) => {
           const u = leftPresences?.[0]?.user;
-          if (u && u.id !== currentUser.id) injectSys(`${u.username} a quitté`, 'leave');
+          if (u && u.id !== currentUser.id) showJoinLeave(`${u.username} a quitté`, 'leave');
         })
         .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'live_room_messages', filter: `room_id=eq.${id}` },
           async ({ new: nm }) => {
@@ -576,6 +623,15 @@ const LiveRoomPage = () => {
         })
         .on('broadcast', { event: 'burst' }, ({ payload }) => addBurst(payload.emoji, payload.x))
         .on('broadcast', { event: 'room_closed' }, () => handleRoomClosed())
+        // V110000 — Pause / Resume live reçu par les auditeurs
+        .on('broadcast', { event: 'live_pause' }, ({ payload }) => {
+          if (!payload || isHostRef.current) return;
+          setLiveIsPaused(payload.isPaused);
+          const audio = document.querySelector('audio');
+          if (!audio) return;
+          if (payload.isPaused) { audio.pause(); }
+          else { audio.play().catch(() => {}); }
+        })
         .subscribe(async (status) => {
           if (status === 'SUBSCRIBED') {
             setChannelStatus('connected');
@@ -599,7 +655,7 @@ const LiveRoomPage = () => {
     } catch (err) {
       console.error('joinRoom:', err); setJoinError(err.message || 'Impossible de rejoindre.'); setPhase('error'); hasJoined.current = false;
     }
-  }, [currentUser, navigate, playSong, scrollChat, startSync, startHeartbeat, startDurationTimer, acquireWakeLock, injectSys]); // eslint-disable-line
+  }, [currentUser, navigate, playSong, scrollChat, startSync, startHeartbeat, startDurationTimer, acquireWakeLock, injectSys, showJoinLeave]); // eslint-disable-line
 
   useEffect(() => {
     if (roomIdParam && currentUser && phase === 'joining' && !hasJoined.current) joinRoom(roomIdParam);
@@ -747,7 +803,8 @@ const LiveRoomPage = () => {
     if (!chanRef.current) return;
     const e = emoji || REACTION_EMOJIS[Math.floor(Math.random() * REACTION_EMOJIS.length)];
     const x = `${Math.random() * 80 + 10}%`;
-    addBurst(e, x); setShowReactions(false);
+    addBurst(e, x);
+    // V110000 : ne pas fermer automatiquement — l'utilisateur ferme manuellement
     await chanRef.current.send({ type: 'broadcast', event: 'burst', payload: { emoji: e, x } });
   };
 
@@ -900,6 +957,12 @@ const LiveRoomPage = () => {
                       <Clock className="w-2.5 h-2.5" />{fmtDuration(liveDuration)}
                     </span>
                   )}
+                  {/* V110000 — indicateur pause */}
+                  {liveIsPaused && (
+                    <span className="text-[10px] text-amber-400 flex items-center gap-1 bg-amber-500/10 px-2 py-0.5 rounded-full border border-amber-500/30">
+                      <Pause className="w-2.5 h-2.5" />En pause
+                    </span>
+                  )}
                 </div>
               </div>
             </div>
@@ -918,6 +981,13 @@ const LiveRoomPage = () => {
                   <Volume2 className="w-3 h-3" />
                   <span className={syncQuality > 70 ? 'text-green-400' : syncQuality > 40 ? 'text-amber-400' : 'text-red-400'}>{syncQuality}%</span>
                 </span>
+              )}
+              {/* V110000 — Bouton Pause/Resume hôte */}
+              {isHost && (
+                <button onClick={togglePause}
+                  className={`flex items-center gap-1.5 text-xs px-2.5 py-1.5 rounded-lg transition-all ${liveIsPaused ? 'bg-amber-500/20 text-amber-400 border border-amber-500/30' : 'bg-gray-800 text-gray-400 hover:text-white hover:bg-gray-700'}`}>
+                  {liveIsPaused ? <><Play className="w-3.5 h-3.5" /><span className="hidden sm:inline">Reprendre</span></> : <><Pause className="w-3.5 h-3.5" /><span className="hidden sm:inline">Pause</span></>}
+                </button>
               )}
               <button onClick={copyLink} className="flex items-center gap-1.5 text-xs text-gray-400 hover:text-white bg-gray-800 hover:bg-gray-700 px-2.5 sm:px-3 py-1.5 rounded-lg transition-all">
                 {copied ? <><Check className="w-3.5 h-3.5 text-green-400" />Copié</> : <><Share2 className="w-3.5 h-3.5" /><span className="hidden sm:inline">Partager</span></>}
@@ -965,6 +1035,26 @@ const LiveRoomPage = () => {
 
               {/* Messages */}
               <div className="flex-1 relative overflow-hidden">
+                {/* V110000 — Toast discret join/leave en haut du chat */}
+                <AnimatePresence>
+                  {joinLeaveToast && (
+                    <motion.div
+                      initial={{ opacity: 0, y: -20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: -20 }}
+                      transition={{ duration: 0.25 }}
+                      className="absolute top-2 left-1/2 -translate-x-1/2 z-20 pointer-events-none"
+                    >
+                      <div className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-medium shadow-lg border backdrop-blur-sm
+                        ${joinLeaveToast.type === 'join'
+                          ? 'bg-green-500/15 border-green-500/30 text-green-300'
+                          : 'bg-gray-800/90 border-gray-700 text-gray-400'}`}>
+                        {joinLeaveToast.type === 'join' ? <Users className="w-3 h-3" /> : <LogOut className="w-3 h-3" />}
+                        {joinLeaveToast.text}
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
                 <div ref={chatRef} className="absolute inset-0 overflow-y-auto px-3 sm:px-4 py-3 space-y-2 scrollbar-hide">
                   <EmojiBurst bursts={bursts} />
                   {messages.length === 0 ? (
@@ -1001,10 +1091,19 @@ const LiveRoomPage = () => {
                 <AnimatePresence>
                   {showReactions && (
                     <motion.div initial={{ opacity: 0, y: 8, scale: 0.95 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, y: 8, scale: 0.95 }}
-                      className="flex flex-wrap gap-2 mb-2.5 p-3 bg-gray-800 rounded-xl">
-                      {REACTION_EMOJIS.map(e => (
-                        <button key={e} onClick={() => sendBurst(e)} className="text-xl hover:scale-125 transition-transform active:scale-90">{e}</button>
-                      ))}
+                      className="flex flex-wrap gap-2 mb-2.5 p-3 bg-gray-800 rounded-xl relative">
+                      {/* V110000 — Bouton fermeture manuelle */}
+                      <button
+                        onClick={() => setShowReactions(false)}
+                        className="absolute top-1.5 right-1.5 w-5 h-5 flex items-center justify-center rounded-full bg-gray-700 hover:bg-gray-600 text-gray-400 hover:text-white transition-colors"
+                        title="Fermer">
+                        <X className="w-3 h-3" />
+                      </button>
+                      <div className="w-full flex flex-wrap gap-2 pr-6">
+                        {REACTION_EMOJIS.map(e => (
+                          <button key={e} onClick={() => sendBurst(e)} className="text-xl hover:scale-125 transition-transform active:scale-90">{e}</button>
+                        ))}
+                      </div>
                     </motion.div>
                   )}
                 </AnimatePresence>
@@ -1202,6 +1301,10 @@ const LiveRoomPage = () => {
                       <button onClick={copyLink} className="w-full bg-gray-800 hover:bg-gray-700 text-white rounded-xl px-4 py-2 text-xs transition-all flex items-center justify-center gap-2">
                         {copied ? <><Check className="w-3.5 h-3.5 text-green-400" />Lien copié !</> : <><Copy className="w-3.5 h-3.5" />Copier le lien</>}
                       </button>
+                      {/* V110000 — Partager dans le chat global */}
+                      <button onClick={shareInGlobalChat} className="w-full bg-gray-800 hover:bg-gray-700 text-white rounded-xl px-4 py-2 text-xs transition-all flex items-center justify-center gap-2">
+                        {chatShared ? <><Check className="w-3.5 h-3.5 text-green-400" />Partagé dans le chat !</> : <><MessageCircle className="w-3.5 h-3.5 text-fuchsia-400" />Partager dans le chat global</>}
+                      </button>
                     </div>
 
                     {!isHost && (
@@ -1301,6 +1404,13 @@ const LiveRoomPage = () => {
                             <X className="w-4 h-4" />Terminer le live
                           </button>
                         )}
+                        {/* V110000 — Pause mobile */}
+                        {isHost && (
+                          <button onClick={() => { togglePause(); }}
+                            className={`w-full rounded-xl px-4 py-3 text-sm transition-all flex items-center gap-2 border ${liveIsPaused ? 'bg-amber-500/20 border-amber-500/30 text-amber-400' : 'bg-gray-800 border-gray-700 text-white hover:bg-gray-700'}`}>
+                            {liveIsPaused ? <><Play className="w-4 h-4" />Reprendre le live</> : <><Pause className="w-4 h-4" />Mettre en pause</>}
+                          </button>
+                        )}
 
                         {/* Picker dans le panneau mobile */}
                         {showPicker && (
@@ -1363,6 +1473,11 @@ const LiveRoomPage = () => {
                     )}
                     <button onClick={copyLink} className="w-full bg-gray-800 hover:bg-gray-700 text-white rounded-xl px-4 py-2.5 text-xs transition-all flex items-center justify-center gap-2">
                       {copied ? <><Check className="w-3.5 h-3.5 text-green-400" />Lien copié !</> : <><Copy className="w-3.5 h-3.5" />Copier le lien</>}
+                    </button>
+                    {/* V110000 — Partager dans le chat global (mobile) */}
+                    <button onClick={() => { shareInGlobalChat(); setMobileSideOpen(false); }}
+                      className="w-full bg-gray-800 hover:bg-gray-700 text-white rounded-xl px-4 py-2.5 text-xs transition-all flex items-center justify-center gap-2">
+                      {chatShared ? <><Check className="w-3.5 h-3.5 text-green-400" />Partagé !</> : <><MessageCircle className="w-3.5 h-3.5 text-fuchsia-400" />Partager dans le chat global</>}
                     </button>
                   </div>
                 )}

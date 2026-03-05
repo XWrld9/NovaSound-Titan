@@ -1,10 +1,10 @@
 /**
- * BottomNav — NovaSound TITAN LUX V100000
+ * BottomNav — NovaSound TITAN LUX V110000
  * Navigation mobile fixe en bas
  * - Voyant VERT si au moins un live est en cours (rejoins la fête !)
  * - Voyant ROUGE si aucun live actif
  * - Badge notifications en temps réel
- * - Masqué sur /local-player et /live/:roomId
+ * - Masqué sur /local-player et /live/:roomId  ← effectivement implémenté
  */
 import React, { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
@@ -54,6 +54,12 @@ const BottomNav = () => {
       supabase.removeChannel(ch);
     };
   }, []);
+
+  // Masqué sur les pages immersives (live room, lecteur local)
+  const isHiddenPage =
+    location.pathname === '/local-player' ||
+    /^\/live\/.+/.test(location.pathname);
+  if (isHiddenPage) return null;
 
   const isActive = (path) => {
     if (path === '/') return location.pathname === '/';

@@ -1,5 +1,5 @@
 /**
- * send-push-notification — NovaSound TITAN LUX V60000
+ * send-push-notification — NovaSound TITAN LUX V110000
  *
  * ✅ VAPID x/y extraits dynamiquement (plus de hardcode)
  * ✅ Retry logic : 3 tentatives, backoff exponentiel 300ms/600ms

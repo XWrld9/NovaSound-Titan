@@ -106,8 +106,19 @@ const ReactionBar = memo(({ msgId, reactions, currentUserId, onToggle }) => {
 // Rendu du contenu avec mentions colorées
 const renderContent = (text) => {
   if (!text) return null;
-  const parts = text.split(/(@\w+(?:-\w+)*)/g);
+  // V110000 : détecter les URLs (live room links + autres) et les rendre cliquables
+  const urlRegex = /(https?:\/\/[^\s]+|#\/live\/[^\s]+)/g;
+  const parts = text.split(urlRegex);
   return parts.map((part, i) => {
+    if (urlRegex.test(part) || part.startsWith('#/live/')) {
+      const href = part.startsWith('#/live/') ? part : part;
+      return (
+        <a key={i} href={href} target="_blank" rel="noopener noreferrer"
+          className="text-cyan-400 underline hover:text-cyan-300 break-all" onClick={e => e.stopPropagation()}>
+          {part.includes('/live/') ? '🔴 Rejoindre le live' : part}
+        </a>
+      );
+    }
     if (!part.startsWith('@')) return <span key={i}>{part}</span>;
     const lower = part.toLowerCase();
     const isAll = ['@tous', '@all', '@everyone', '@todo', '@todos', '@tutti', '@allen', '@alle'].includes(lower);
