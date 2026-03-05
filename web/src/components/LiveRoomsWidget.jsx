@@ -21,9 +21,20 @@ const LiveRoomsWidget = () => {
   const fetchRooms = async () => {
     const { data } = await supabase
       .from('live_rooms')
-      .select('id, name, description, host_id, genre, participant_count, current_song_title, current_song_artist, is_live')
-      .eq('is_live', true)
-      .order('participant_count', { ascending: false })
+      .select(`
+        id, 
+        name, 
+        host_id, 
+        is_active, 
+        is_private, 
+        participants_count, 
+        current_song_id, 
+        created_at, 
+        updated_at,
+        current_song:songs(id, title, artist)
+      `)
+      .eq('is_active', true)
+      .order('participants_count', { ascending: false })
       .limit(4);
     setRooms(data || []);
     setLoading(false);
@@ -93,7 +104,7 @@ const LiveRoomsWidget = () => {
               </p>
 
               {/* Current song */}
-              {room.current_song_title ? (
+              {room.current_song?.title ? (
                 <div className="flex items-center gap-1.5 mb-2.5">
                   <div className="flex gap-[2px] items-end h-3 flex-shrink-0">
                     {[3,5,4,6,3].map((h,j) => (
@@ -101,7 +112,7 @@ const LiveRoomsWidget = () => {
                         style={{ height: h * 2, animationDelay: `${j * 0.1}s` }} />
                     ))}
                   </div>
-                  <p className="text-gray-400 text-[11px] truncate">{room.current_song_title}</p>
+                  <p className="text-gray-400 text-[11px] truncate">{room.current_song.title}</p>
                 </div>
               ) : (
                 <div className="flex items-center gap-1.5 mb-2.5">
