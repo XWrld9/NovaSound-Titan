@@ -24,23 +24,6 @@ const isStandalone = () =>
   (window.matchMedia('(display-mode: standalone)').matches ||
     window.navigator.standalone === true);
 
-// Liens principaux (toujours visibles)
-const PRIMARY_LINKS = [
-  { to: '/',           label: t('home'),     Icon: Music,      color: 'hover:text-cyan-400' },
-  { to: '/explorer',   label: t('explore'),    Icon: Globe,      color: 'hover:text-cyan-400' },
-  { to: '/trending',   label: t('trending'),   Icon: TrendingUp, color: 'hover:text-cyan-400' },
-  { to: '/live',       label: t('live'),        Icon: Radio,      color: 'hover:text-red-400', badge: true },
-];
-
-// Liens secondaires (dans le menu "Plus")
-const SECONDARY_LINKS = [
-  { to: '/artists',      label: t('artists'),    Icon: Users,     color: 'hover:text-fuchsia-400' },
-  { to: '/news',         label: t('news'),  Icon: Newspaper, color: 'hover:text-cyan-400' },
-  { to: '/chat',         label: t('chat'),        Icon: Globe,     color: 'hover:text-cyan-400' },
-  { to: '/leaderboard',  label: t('leaderboard'),         Icon: Trophy,    color: 'hover:text-amber-400' },
-  { to: '/local-player', label: t('local'),       Icon: HardDrive, color: 'hover:text-cyan-400' },
-];
-
 const Header = () => {
   const { currentUser, isAuthenticated, logout } = useAuth();
   const { t, lang, toggleLang } = useLang();
@@ -48,6 +31,23 @@ const Header = () => {
   const location = useLocation();
   const { canInstall, install } = usePWAInstall();
   const [isAdmin, setIsAdmin]                   = useState(false);
+
+  // Liens principaux (toujours visibles)
+  const PRIMARY_LINKS = [
+    { to: '/',           label: t('home'),     Icon: Music,      color: 'hover:text-cyan-400' },
+    { to: '/explorer',   label: t('explore'),    Icon: Globe,      color: 'hover:text-cyan-400' },
+    { to: '/trending',   label: t('trending'),   Icon: TrendingUp, color: 'hover:text-cyan-400' },
+    { to: '/live',       label: t('live'),        Icon: Radio,      color: 'hover:text-red-400', badge: true },
+  ];
+
+  // Liens secondaires (dans le menu "Plus")
+  const SECONDARY_LINKS = [
+    { to: '/artists',      label: t('artists'),    Icon: Users,     color: 'hover:text-fuchsia-400' },
+    { to: '/news',         label: t('news'),  Icon: Newspaper, color: 'hover:text-cyan-400' },
+    { to: '/chat',         label: t('chat'),        Icon: Globe,     color: 'hover:text-cyan-400' },
+    { to: '/leaderboard',  label: t('leaderboard'),         Icon: Trophy,    color: 'hover:text-amber-400' },
+    { to: '/local-player', label: t('local'),       Icon: HardDrive, color: 'hover:text-cyan-400' },
+  ];
 
   // Search state
   const [searchOpen, setSearchOpen]             = useState(false);
