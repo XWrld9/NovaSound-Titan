@@ -44,10 +44,10 @@ const SECONDARY_LINKS = [
 const Header = () => {
   const { currentUser, isAuthenticated, logout } = useAuth();
   const { t, lang, toggleLang } = useLang();
+  const navigate = useNavigate();
+  const location = useLocation();
+  const { canInstall, install } = usePWAInstall();
   const [isAdmin, setIsAdmin]                   = useState(false);
-  const navigate                                 = useNavigate();
-  const location                                 = useLocation();
-  const { canInstall, install }                  = usePWAInstall();
 
   // Search state
   const [searchOpen, setSearchOpen]             = useState(false);

@@ -15,19 +15,19 @@ import { useNotifications } from '@/contexts/NotificationContext';
 import { supabase } from '@/lib/supabaseClient';
 import { motion } from 'framer-motion';
 
-const NAV_ITEMS = [
-  { to: '/',            icon: Home,   label: t('home')  },
-  { to: '/explorer',    icon: Compass,label: t('explore') },
-  { to: '/live',        icon: Radio,  label: t('live'), liveIndicator: true },
-  { to: '/leaderboard', icon: Trophy, label: t('leaderboard')      },
-];
-
 const BottomNav = () => {
   const location  = useLocation();
   const { t }     = useLang();
   const { currentUser, isAuthenticated } = useAuth();
   const { unreadCount } = useNotifications() || {};
   const [hasActiveLive, setHasActiveLive] = useState(false);
+
+  const NAV_ITEMS = [
+    { to: '/',            icon: Home,   label: t('home')  },
+    { to: '/explorer',    icon: Compass,label: t('explore') },
+    { to: '/live',        icon: Radio,  label: t('live'), liveIndicator: true },
+    { to: '/leaderboard', icon: Trophy, label: t('leaderboard')      },
+  ];
 
   /* Vérifier s'il y a des lives actifs — sondage léger toutes les 30s */
   useEffect(() => {

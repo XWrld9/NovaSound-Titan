@@ -10,6 +10,7 @@ import { supabase } from '@/lib/supabaseClient';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '@/contexts/AuthContext';
 import { usePlayer } from '@/contexts/PlayerContext';
+import { useLang } from '@/contexts/LangContext';
 import LottieAnimation from '@/components/LottieAnimation';
 import playAnimation from '@/animations/play-animation.json';
 import { useNavigate } from 'react-router-dom';
