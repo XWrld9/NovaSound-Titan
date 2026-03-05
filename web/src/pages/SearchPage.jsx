@@ -73,7 +73,7 @@ const SearchPage = () => {
   const [activeGenre, setActiveGenre] = useState(null);
   const inputRef = useRef(null);
 
-  const GENRES = ['Hip-Hop', 'Afrobeats', 'Trap', 'R&B', 'Pop', 'Electronic', 'Drill', 'Amapiano', 'Gospel', 'Jazz'];
+  const GENRES = ['Hip-Hop', 'Afrobeats', 'Trap', 'R&B', 'Pop', 'Électronique', 'Drill', 'Amapiano', 'Gospel', 'Jazz'];
 
   // Charger l'historique au montage
   useEffect(() => {

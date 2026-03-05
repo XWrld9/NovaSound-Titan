@@ -53,7 +53,7 @@ const BottomNav = () => {
         paddingBottom: 'env(safe-area-inset-bottom)',
       }}
     >
-      {allItems.map(({ to, icon: Icon, label, dot }) => {
+      {allItems.map(({ to, icon: Icon, label, dot, badge }) => {
         const active = isActive(to);
         return (
           <Link
@@ -73,8 +73,15 @@ const BottomNav = () => {
               className={`relative transition-all duration-200 ${active ? 'text-cyan-400' : 'text-gray-500'}`}
             >
               <Icon className="w-5 h-5" strokeWidth={active ? 2.5 : 1.8} />
+              {/* Point rouge "live" (ex: salon en direct) */}
               {dot && (
                 <span className="absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full bg-red-500 animate-pulse border border-gray-950" />
+              )}
+              {/* Badge numérique pour les notifications non lues */}
+              {badge && (
+                <span className="absolute -top-1.5 -right-1.5 min-w-[16px] h-4 px-0.5 flex items-center justify-center rounded-full bg-cyan-500 text-[9px] font-black text-gray-950 border border-gray-950 leading-none">
+                  {badge}
+                </span>
               )}
             </motion.div>
             <span

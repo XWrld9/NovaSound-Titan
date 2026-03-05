@@ -128,9 +128,9 @@ const UserProfilePage = () => {
     try {
       const { data } = await supabase
         .from('user_achievements')
-        .select('achievement_id, earned_at, achievement_definitions!user_achievements_achievement_id_fkey(label,icon,rarity,points,description)')
+        .select('achievement, unlocked_at, achievement_definitions:achievement(label,icon,rarity,points,description)')
         .eq('user_id', currentUser.id)
-        .order('earned_at', { ascending: false });
+        .order('unlocked_at', { ascending: false });
       setAchievements(data || []);
     } catch {}
   }, [currentUser?.id]);
@@ -532,10 +532,10 @@ const UserProfilePage = () => {
                               legendary: 'border-amber-500/40 bg-amber-500/8 shadow-[0_0_20px_rgba(245,158,11,0.15)]',
                             }[def?.rarity || 'common'];
                             return (
-                              <div key={a.achievement_id} className={`flex items-center gap-3 rounded-xl border px-4 py-3 ${rarityStyles}`}>
+                              <div key={a.achievement} className={`flex items-center gap-3 rounded-xl border px-4 py-3 ${rarityStyles}`}>
                                 <span className="text-2xl flex-shrink-0">{def?.icon || '🎵'}</span>
                                 <div className="flex-1 min-w-0">
-                                  <p className="text-white text-sm font-semibold">{def?.label || a.achievement_id}</p>
+                                  <p className="text-white text-sm font-semibold">{def?.label || a.achievement}</p>
                                   <p className="text-gray-500 text-xs">{def?.description || ''}</p>
                                 </div>
                                 <div className="text-right flex-shrink-0">

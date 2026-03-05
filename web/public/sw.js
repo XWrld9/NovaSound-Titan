@@ -25,7 +25,7 @@
  * ════════════════════════════════════════════════════════════════
  */
 
-const CACHE_NAME    = 'novasound-titan-v28000';
+const CACHE_NAME    = 'novasound-titan-v60000';
 const STATIC_ASSETS = [
   '/', '/index.html', '/manifest.json', '/favicon.ico',
   '/favicon.png', '/apple-touch-icon.png', '/icon-192.png', '/icon-512.png',

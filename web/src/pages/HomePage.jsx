@@ -47,8 +47,7 @@ const getListened = (uid) => {
 };
 
 const HomePage = () => {
-  const { isAuthenticated } = useAuth();
-  const { currentUser } = useAuth();
+  const { isAuthenticated, currentUser } = useAuth();
   const [featuredSongs,    setFeaturedSongs]    = useState([]);
   const [listenedHistory,  setListenedHistory]  = useState([]);
   const [topSongs,         setTopSongs]         = useState([]);

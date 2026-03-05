@@ -136,7 +136,7 @@ END $$;
 -- Activer realtime
 DO $$
 BEGIN
-  -- Retirer la table si elle est déjà dans la publication
+  -- Retirer chat_reactions si déjà dans la publication pour éviter l'erreur 42710
   IF EXISTS (
     SELECT 1 FROM pg_publication_tables 
     WHERE pubname = 'supabase_realtime' 
@@ -187,10 +187,12 @@ DO $$ BEGIN
 END $$;
 
 -- ── 3. Plus d'achievements dans achievement_definitions ──────
+-- ⚠️ Valeurs rarity autorisées UNIQUEMENT : 'common','rare','epic','legendary'
+-- 'uncommon' n'existe PAS dans le CHECK constraint réel → utiliser 'common' ou 'rare'
 INSERT INTO public.achievement_definitions (code, label, description, icon, points, rarity)
 VALUES
   ('first_upload',    'Premier Son',         'Uploader ton premier son',                 '🎵', 10,  'common'),
-  ('five_uploads',    'Créateur',            'Uploader 5 sons',                          '🎤', 30,  'common'),
+  ('five_uploads',    'Créateur',            'Uploader 5 sons',                          '🎤', 30,  'rare'),
   ('first_like',      'Premier Like',        'Liker un son pour la première fois',       '❤️', 5,   'common'),
   ('first_comment',   'Premier Commentaire', 'Commenter un son pour la première fois',   '💬', 5,   'common'),
   ('first_follow',    'Premier Abonnement',  'Suivre un artiste',                        '👤', 5,   'common'),
@@ -257,22 +259,36 @@ LIMIT 10;
 
 -- ── 7. Fonction grant_achievement ────────────────────────────
 -- Débloquer un achievement pour un user (idempotent)
+-- ⚠️ user_achievements n'a PAS de colonne 'progress' dans le schéma réel
+-- ⚠️ Utilise ON CONFLICT sur la contrainte UNIQUE (user_id, achievement)
 CREATE OR REPLACE FUNCTION public.grant_achievement(
   p_user_id   text,
-  p_code      text,
-  p_progress  integer DEFAULT 100
+  p_code      text
 )
 RETURNS boolean LANGUAGE plpgsql SECURITY DEFINER AS $$
 BEGIN
-  INSERT INTO public.user_achievements (user_id, achievement, progress, unlocked_at)
-  VALUES (p_user_id, p_code, p_progress, now())
-  ON CONFLICT (user_id, achievement) DO UPDATE
-    SET progress = GREATEST(user_achievements.progress, EXCLUDED.progress);
+  INSERT INTO public.user_achievements (user_id, achievement, unlocked_at)
+  VALUES (p_user_id, p_code, now())
+  ON CONFLICT (user_id, achievement) DO NOTHING;
   RETURN true;
 EXCEPTION WHEN OTHERS THEN
   RETURN false;
 END;
 $$;
+
+-- ── 7b. Contrainte UNIQUE sur song_moods(song_id, user_id) ───
+-- Requise par MoodVote.jsx → upsert({ onConflict: 'song_id,user_id' })
+-- La table existe déjà dans Supabase mais sans cette contrainte
+DO $$ BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_constraint
+    WHERE conname = 'song_moods_song_user_unique'
+      AND conrelid = 'public.song_moods'::regclass
+  ) THEN
+    ALTER TABLE public.song_moods
+      ADD CONSTRAINT song_moods_song_user_unique UNIQUE (song_id, user_id);
+  END IF;
+END $$;
 
 -- ── 8. Fonction purge vieilles search_logs (>7j) ─────────────
 CREATE OR REPLACE FUNCTION public.purge_old_search_logs()
@@ -302,8 +318,101 @@ INSERT INTO public.app_meta (key, value)
 VALUES ('schema_version', 'v60000')
 ON CONFLICT (key) DO UPDATE SET value = 'v60000', updated_at = now();
 
+-- ── 11. Table song_moods — votes de vibe crowd-sourcés ───────
+-- Utilisée par MoodVote.jsx. Un vote par utilisateur par son.
+CREATE TABLE IF NOT EXISTS public.song_moods (
+  id         uuid NOT NULL DEFAULT gen_random_uuid(),
+  song_id    uuid NOT NULL,
+  user_id    text NOT NULL,
+  mood       text NOT NULL
+    CHECK (mood = ANY(ARRAY[
+      'hype','chill','motivant','sad','amour','focus','fête','nostalgique'
+    ])),
+  created_at timestamp with time zone NOT NULL DEFAULT now(),
+  updated_at timestamp with time zone NOT NULL DEFAULT now(),
+  CONSTRAINT song_moods_pkey     PRIMARY KEY (id),
+  CONSTRAINT song_moods_unique   UNIQUE (song_id, user_id)
+);
+
+CREATE INDEX IF NOT EXISTS idx_song_moods_song
+  ON public.song_moods(song_id);
+CREATE INDEX IF NOT EXISTS idx_song_moods_user
+  ON public.song_moods(user_id);
+
+ALTER TABLE public.song_moods ENABLE ROW LEVEL SECURITY;
+
+DO $$ BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE tablename='song_moods' AND policyname='song_moods_select') THEN
+    CREATE POLICY "song_moods_select" ON public.song_moods FOR SELECT USING (true);
+  END IF;
+END $$;
+DO $$ BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE tablename='song_moods' AND policyname='song_moods_insert') THEN
+    CREATE POLICY "song_moods_insert" ON public.song_moods FOR INSERT
+      WITH CHECK (auth.uid()::text = user_id);
+  END IF;
+END $$;
+DO $$ BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE tablename='song_moods' AND policyname='song_moods_update') THEN
+    CREATE POLICY "song_moods_update" ON public.song_moods FOR UPDATE
+      USING (auth.uid()::text = user_id);
+  END IF;
+END $$;
+DO $$ BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE tablename='song_moods' AND policyname='song_moods_delete') THEN
+    CREATE POLICY "song_moods_delete" ON public.song_moods FOR DELETE
+      USING (auth.uid()::text = user_id);
+  END IF;
+END $$;
+
+-- ── 12. Fonction increment_plays — fallback compteur d'écoutes ──
+-- Utilisée par AudioPlayer.jsx comme fallback si record_play_event manque.
+-- ⚠️ songs.id est de type TEXT (pas uuid) → paramètre text obligatoire
+CREATE OR REPLACE FUNCTION public.increment_plays(song_id_param text)
+RETURNS void LANGUAGE plpgsql SECURITY DEFINER AS $$
+BEGIN
+  UPDATE public.songs
+  SET plays_count = COALESCE(plays_count, 0) + 1
+  WHERE id = song_id_param;
+END;
+$$;
+
+-- ── 13. Fonction record_play_event — tracking avancé des lectures ──
+-- Appelée par AudioPlayer.jsx pour enregistrer une écoute.
+-- ⚠️ songs.id est TEXT → p_song_id doit être text (pas uuid)
+-- ⚠️ Table réelle = song_play_events (pas song_plays_history)
+CREATE OR REPLACE FUNCTION public.record_play_event(
+  p_song_id    text,
+  p_user_id    text    DEFAULT NULL,
+  p_duration_s integer DEFAULT NULL
+)
+RETURNS void LANGUAGE plpgsql SECURITY DEFINER AS $$
+BEGIN
+  -- Incrémenter le compteur de lectures sur songs
+  UPDATE public.songs
+  SET plays_count = COALESCE(plays_count, 0) + 1
+  WHERE id = p_song_id;
+
+  -- Insérer dans song_play_events (table réelle confirmée dans le schéma Supabase)
+  INSERT INTO public.song_play_events (song_id, user_id, duration_s, played_at)
+  VALUES (p_song_id, p_user_id, p_duration_s, now());
+
+  -- Mettre à jour les streaks si l'utilisateur est connecté (optionnel V50000+)
+  IF p_user_id IS NOT NULL THEN
+    BEGIN
+      PERFORM public.record_listen(p_user_id, p_song_id);
+    EXCEPTION WHEN undefined_function THEN
+      NULL;
+    END;
+  END IF;
+END;
+$$;
+
+GRANT EXECUTE ON FUNCTION public.increment_plays(text)              TO authenticated, anon;
+GRANT EXECUTE ON FUNCTION public.record_play_event(text, text, integer) TO authenticated, anon;
+
 -- ── DONE ──────────────────────────────────────────────────────
 SELECT
   'NovaSound V60000 migration completed ✅' AS status,
   'V41000 content included (idempotent)'     AS note_v41,
-  'New: chat_reactions, user_achievements, songs.mood, search_logs' AS new_tables;
+  'New: chat_reactions, user_achievements, songs.mood, search_logs, song_moods, record_play_event, increment_plays' AS new_tables;

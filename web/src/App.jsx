@@ -1,24 +1,5 @@
 import React, { lazy, Suspense, useEffect } from 'react';
 import { Route, Routes, HashRouter as Router, useNavigate, useLocation } from 'react-router-dom';
-// PWA Install Prompt
-let deferredPrompt;
-window.addEventListener('beforeinstallprompt', (e) => {
-  e.preventDefault();
-  deferredPrompt = e;
-  console.log('PWA install prompt ready');
-});
-
-// Fonction globale pour installer PWA
-window.installPWA = async () => {
-  if (deferredPrompt) {
-    deferredPrompt.prompt();
-    const { outcome } = await deferredPrompt.userChoice;
-    console.log(`User response to the install prompt: ${outcome}`);
-    deferredPrompt = null;
-  } else {
-    console.log('PWA install prompt not available');
-  }
-};
 import { AuthProvider } from '@/contexts/AuthContext';
 import { NotificationProvider } from '@/contexts/NotificationContext';
 import { NotificationToast } from '@/components/NotificationBell';
@@ -33,7 +14,7 @@ import ScrollToTop from '@/components/ScrollToTop';
 import ErrorBoundary from '@/components/ErrorBoundary';
 import ProtectedRoute from '@/components/ProtectedRoute';
 import LoadingSpinner from '@/components/LoadingSpinner';
-import { OnlineProvider } from '@/contexts/OnlineContext';
+import { OnlineProvider, useOnline } from '@/contexts/OnlineContext';
 import OfflineBanner from '@/components/OfflineBanner';
 import InstallBanner from '@/components/InstallBanner';
 import AudioPlayer from '@/components/AudioPlayer';
@@ -90,7 +71,6 @@ const GlobalPlayer = () => {
 };
 
 // ── Redirect hors-ligne → /local-player ──────────────────────────────────────
-import { useOnline } from '@/contexts/OnlineContext';
 const OfflineRedirect = () => {
   const { isOnline } = useOnline();
   const navigate = useNavigate();

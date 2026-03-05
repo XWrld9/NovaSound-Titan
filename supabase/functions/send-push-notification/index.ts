@@ -1,13 +1,13 @@
 /**
- * send-push-notification — NovaSound TITAN LUX V41000
+ * send-push-notification — NovaSound TITAN LUX V60000
  *
  * ✅ VAPID x/y extraits dynamiquement (plus de hardcode)
  * ✅ Retry logic : 3 tentatives, backoff exponentiel 300ms/600ms
  * ✅ Concurrence limitée : max 10 envois parallèles (évite rate limits)
  * ✅ Mode broadcast : envoyer à TOUS les users abonnés (broadcast: true)
  * ✅ Urgency dynamique : high | normal | low selon type de notif
- * ✅ TTL dynamique selon type (live = 1h, news = 30j, etc.)
- * ✅ Support actions (boutons dans la notif), image_url, renotify
+ * ✅ TTL dynamique selon type (live = 1h, news = 30j, mood_vote = 7j, etc.)
+ * ✅ Support actions (boutons dans la notif), image_url, renotify, silent
  * ✅ Logs structurés avec timing par endpoint
  * ✅ Delivery tracking dans push_notification_logs (migration V41000)
  * ✅ Gestion 429 Too Many Requests (Retry-After + backoff)
@@ -16,6 +16,7 @@
  * ✅ Purge automatique subscriptions 404/410
  * ✅ Support icon_url + icon (compatibilité)
  * ✅ mark_notification_pushed après envoi réussi
+ * ✅ Auth guard : Authorization: Bearer <service_role_key> obligatoire (V60000)
  */
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
@@ -188,6 +189,7 @@ const TTL_MAP: Record<string, number> = {
   new_song:           604800,
   comment:            604800,
   repost:             604800,
+  mood_vote:          604800,   // 7j — cohérent avec like/repost
   news:               2592000,  // 30j
   default:            86400,
 };
@@ -319,17 +321,28 @@ Deno.serve(async (req: Request) => {
   const SURL = Deno.env.get("SUPABASE_URL")              ?? "";
   const SKEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
 
+  // ── Auth guard — seul l'appelant avec le service_role_key peut déclencher des push ──
+  // Les webhooks Supabase envoient automatiquement Authorization: Bearer <service_role_key>
+  // Un appel direct non authentifié permettrait à n'importe qui de spammer des push
+  const authHeader = req.headers.get("Authorization") ?? "";
+  if (!SKEY || authHeader !== `Bearer ${SKEY}`) {
+    return new Response(
+      JSON.stringify({ error: "Unauthorized" }),
+      { status: 401, headers: { "Content-Type": "application/json" } }
+    );
+  }
+
   if (!PUB || !PRIV)
-    return new Response(JSON.stringify({ error: "VAPID keys not configured" }), { status: 500 });
+    return new Response(JSON.stringify({ error: "VAPID keys not configured" }), { status: 500, headers: { "Content-Type": "application/json" } });
 
   try { extractXY(PUB); } catch (e: unknown) {
     const msg = e instanceof Error ? e.message : String(e);
-    return new Response(JSON.stringify({ error: `Invalid VAPID_PUBLIC_KEY: ${msg}` }), { status: 500 });
+    return new Response(JSON.stringify({ error: `Invalid VAPID_PUBLIC_KEY: ${msg}` }), { status: 500, headers: { "Content-Type": "application/json" } });
   }
 
   let raw: Record<string, unknown>;
   try { raw = await req.json(); } catch {
-    return new Response(JSON.stringify({ error: "Invalid JSON body" }), { status: 400 });
+    return new Response(JSON.stringify({ error: "Invalid JSON body" }), { status: 400, headers: { "Content-Type": "application/json" } });
   }
 
   const rec         = (raw.record ?? raw) as Record<string, unknown>;
@@ -345,7 +358,7 @@ Deno.serve(async (req: Request) => {
   const actions     = (rec.actions  as PushAction[]) || undefined;
 
   if (!isBroadcast && !userId)
-    return new Response(JSON.stringify({ error: "user_id required (or set broadcast: true)" }), { status: 400 });
+    return new Response(JSON.stringify({ error: "user_id required (or set broadcast: true)" }), { status: 400, headers: { "Content-Type": "application/json" } });
 
   const db = createClient(SURL, SKEY);
 
@@ -376,7 +389,7 @@ Deno.serve(async (req: Request) => {
   const { data: subs, error: dbErr } = await query;
   if (dbErr) {
     console.error("[Push] DB error:", dbErr);
-    return new Response(JSON.stringify({ error: dbErr.message }), { status: 500 });
+    return new Response(JSON.stringify({ error: dbErr.message }), { status: 500, headers: { "Content-Type": "application/json" } });
   }
   if (!subs?.length) {
     return new Response(

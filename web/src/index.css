@@ -119,11 +119,7 @@ button {
   100% { transform: scaleY(1.0); }
 }
 
-/* Masquer scrollbar sur mobile (tabs profil) */
-.scrollbar-hide::-webkit-scrollbar { display: none; }
-.scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
-
-/* Respect de prefers-reduced-motion — accessibilité */
+/* Masquer scrollbar sur mobile (tabs profil) */ — accessibilité */
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
     animation-duration: 0.01ms !important;
