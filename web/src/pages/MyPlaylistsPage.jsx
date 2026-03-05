@@ -81,7 +81,7 @@ const MyPlaylistsPage = () => {
       <Helmet><title>Mes Playlists — NovaSound</title></Helmet>
       <Header />
 
-      <main className="flex-1 max-w-3xl mx-auto w-full px-4 py-8">
+      <main className="flex-1 max-w-3xl lg:max-w-5xl mx-auto w-full px-4 py-8">
         <button onClick={() => navigate(-1)} className="flex items-center gap-2 text-gray-500 hover:text-white mb-6 transition-colors text-sm group">
           <ArrowLeft className="w-4 h-4 group-hover:-translate-x-0.5 transition-transform" />
           Retour

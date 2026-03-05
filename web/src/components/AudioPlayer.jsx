@@ -10,7 +10,6 @@ import { supabase } from '@/lib/supabaseClient';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '@/contexts/AuthContext';
 import { usePlayer } from '@/contexts/PlayerContext';
-import { useLang } from '@/contexts/LangContext';
 import LottieAnimation from '@/components/LottieAnimation';
 import playAnimation from '@/animations/play-animation.json';
 import { useNavigate } from 'react-router-dom';
@@ -758,13 +757,13 @@ const AudioPlayer = ({ currentSong, playlist = [], onNext, onPrevious, onClose, 
             </div>
 
             {/* CONTENU */}
-            <div className="flex-1 flex flex-col md:flex-row items-center justify-center gap-6 md:gap-8 px-5 pb-4 md:pb-8 z-10 overflow-y-auto">
+            <div className="flex-1 flex flex-col md:flex-row items-center justify-center gap-6 md:gap-10 lg:gap-16 px-5 md:px-10 lg:px-20 pb-4 md:pb-8 z-10 overflow-y-auto">
               {/* Pochette */}
               <motion.div
                 initial={{ scale: 0.88, opacity: 0 }}
                 animate={{ scale: 1, opacity: 1 }}
                 transition={{ delay: 0.08, type: 'spring', damping: 22 }}
-                className={`relative z-0 flex-shrink-0 rounded-2xl overflow-hidden shadow-2xl border border-white/10 transition-all duration-500 ${isCoverMode ? 'w-72 h-72 sm:w-80 sm:h-80 md:w-[22rem] md:h-[22rem]' : 'w-60 h-60 sm:w-72 sm:h-72 md:w-80 md:h-80'}`}
+                className={`relative z-0 flex-shrink-0 rounded-2xl overflow-hidden shadow-2xl border border-white/10 transition-all duration-500 ${isCoverMode ? 'w-72 h-72 sm:w-80 sm:h-80 md:w-[22rem] md:h-[22rem] lg:w-[26rem] lg:h-[26rem]' : 'w-60 h-60 sm:w-72 sm:h-72 md:w-80 md:h-80 lg:w-96 lg:h-96'}`}
               >
                 {currentSong.cover_url
                   ? <img src={currentSong.cover_url} alt={currentSong.title} className="w-full h-full object-cover" />
@@ -773,7 +772,7 @@ const AudioPlayer = ({ currentSong, playlist = [], onNext, onPrevious, onClose, 
               </motion.div>
 
               {/* Controles */}
-              <div className="flex flex-col gap-4 w-full max-w-sm sm:max-w-md md:max-w-sm">
+              <div className="flex flex-col gap-4 w-full max-w-sm sm:max-w-md md:max-w-md lg:max-w-lg">
                 {/* Titre + artiste + actions */}
                 <div className="flex items-start justify-between gap-3">
                   <div className="min-w-0 flex-1">
@@ -1041,7 +1040,7 @@ const AudioPlayer = ({ currentSong, playlist = [], onNext, onPrevious, onClose, 
             initial={{ y: 100, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
             exit={{ y: 100, opacity: 0 }}
-            className="fixed bottom-14 md:bottom-0 left-0 md:left-56 right-0 z-50 border-t border-white/[0.06] shadow-2xl shadow-black/60"
+            className="fixed bottom-14 md:bottom-0 left-0 right-0 z-50 border-t border-white/[0.06] shadow-2xl shadow-black/60"
             style={{
               backgroundColor: 'rgb(18 18 18 / 0.97)',
               backdropFilter: 'blur(24px)',
@@ -1172,7 +1171,7 @@ const AudioPlayer = ({ currentSong, playlist = [], onNext, onPrevious, onClose, 
             </div>
 
             {/* DESKTOP md+ */}
-            <div className="hidden md:grid md:grid-cols-3 items-center px-4 py-3 gap-4">
+            <div className="hidden md:grid md:grid-cols-3 items-center px-6 lg:px-10 xl:px-16 py-3 gap-4 max-w-screen-2xl mx-auto w-full">
               {/* Gauche */}
               <div className="flex items-center gap-3 min-w-0">
                 <div className="relative w-14 h-14 flex-shrink-0 rounded-lg overflow-hidden shadow-lg cursor-pointer group"

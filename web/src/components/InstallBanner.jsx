@@ -6,7 +6,7 @@
  */
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Download, X, Monitor, Share, ArrowUp, Smartphone } from 'lucide-react';
+import { Download, X, Share, ArrowUp, Smartphone } from 'lucide-react';
 import usePWAInstall from '@/hooks/usePWAInstall';
 import AndroidInstallGuide from '@/components/AndroidInstallGuide';
 
@@ -125,7 +125,7 @@ const InstallBanner = () => {
           </motion.div>
         )}
 
-        {/* ── Chrome/non-Android Banner (canInstall) ── */}
+        {/* ── Chrome/non-Android Banner (canInstall) — mobile uniquement ── */}
         {canInstall && !isIOS() && !isAndroid() && (
           <motion.div
             key="install-banner-mobile"
@@ -157,7 +157,15 @@ const InstallBanner = () => {
           </motion.div>
         )}
 
-        <AndroidInstallGuide onClose={() => { setShowAndroidGuide(false); dismiss(); }} />
+        {/* ── Desktop : PAS de bannière d'installation — le bouton est dans le Header ── */}
+
+      </AnimatePresence>
+
+      {/* Modal Android Guide */}
+      <AnimatePresence>
+        {showAndroidGuide && (
+          <AndroidInstallGuide onClose={() => { setShowAndroidGuide(false); dismiss(); }} />
+        )}
       </AnimatePresence>
     </>
   );

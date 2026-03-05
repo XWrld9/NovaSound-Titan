@@ -6,13 +6,14 @@ import {
   Trophy, Shield, Users, HardDrive, ChevronDown
 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
-import { useLang } from '@/contexts/LangContext';
 import { supabase } from '@/lib/supabaseClient';
 import { Button } from '@/components/ui/button';
 import { motion, AnimatePresence } from 'framer-motion';
 import usePWAInstall from '@/hooks/usePWAInstall';
 import NotificationBell from '@/components/NotificationBell';
 import AndroidInstallGuide from '@/components/AndroidInstallGuide';
+import LanguageSwitcher from '@/components/LanguageSwitcher';
+import { useTranslation } from 'react-i18next';
 
 const isIOS = () =>
   typeof navigator !== 'undefined' &&
@@ -24,30 +25,30 @@ const isStandalone = () =>
   (window.matchMedia('(display-mode: standalone)').matches ||
     window.navigator.standalone === true);
 
+// Liens principaux (toujours visibles)
+const PRIMARY_LINKS = [
+  { to: '/',           label: 'Accueil',     Icon: Music,      color: 'hover:text-cyan-400' },
+  { to: '/explorer',   label: 'Explorer',    Icon: Globe,      color: 'hover:text-cyan-400' },
+  { to: '/trending',   label: 'Tendances',   Icon: TrendingUp, color: 'hover:text-cyan-400' },
+  { to: '/live',       label: 'Live',        Icon: Radio,      color: 'hover:text-red-400', badge: true },
+];
+
+// Liens secondaires (dans le menu "Plus")
+const SECONDARY_LINKS = [
+  { to: '/artists',      label: 'Artistes',    Icon: Users,     color: 'hover:text-fuchsia-400' },
+  { to: '/news',         label: 'Actualités',  Icon: Newspaper, color: 'hover:text-cyan-400' },
+  { to: '/chat',         label: 'Chat',        Icon: Globe,     color: 'hover:text-cyan-400' },
+  { to: '/leaderboard',  label: 'Top',         Icon: Trophy,    color: 'hover:text-amber-400' },
+  { to: '/local-player', label: 'Local',       Icon: HardDrive, color: 'hover:text-cyan-400' },
+];
+
 const Header = () => {
   const { currentUser, isAuthenticated, logout } = useAuth();
-  const { t, lang, toggleLang } = useLang();
-  const navigate = useNavigate();
-  const location = useLocation();
-  const { canInstall, install } = usePWAInstall();
   const [isAdmin, setIsAdmin]                   = useState(false);
-
-  // Liens principaux (toujours visibles)
-  const PRIMARY_LINKS = [
-    { to: '/',           label: t('home'),     Icon: Music,      color: 'hover:text-cyan-400' },
-    { to: '/explorer',   label: t('explore'),    Icon: Globe,      color: 'hover:text-cyan-400' },
-    { to: '/trending',   label: t('trending'),   Icon: TrendingUp, color: 'hover:text-cyan-400' },
-    { to: '/live',       label: t('live'),        Icon: Radio,      color: 'hover:text-red-400', badge: true },
-  ];
-
-  // Liens secondaires (dans le menu "Plus")
-  const SECONDARY_LINKS = [
-    { to: '/artists',      label: t('artists'),    Icon: Users,     color: 'hover:text-fuchsia-400' },
-    { to: '/news',         label: t('news'),  Icon: Newspaper, color: 'hover:text-cyan-400' },
-    { to: '/chat',         label: t('chat'),        Icon: Globe,     color: 'hover:text-cyan-400' },
-    { to: '/leaderboard',  label: t('leaderboard'),         Icon: Trophy,    color: 'hover:text-amber-400' },
-    { to: '/local-player', label: t('local'),       Icon: HardDrive, color: 'hover:text-cyan-400' },
-  ];
+  const navigate                                 = useNavigate();
+  const location                                 = useLocation();
+  const { canInstall, install }                  = usePWAInstall();
+  const { t }                                    = useTranslation();
 
   // Search state
   const [searchOpen, setSearchOpen]             = useState(false);
@@ -243,43 +244,26 @@ const Header = () => {
               >
                 <Search className="w-4 h-4" />
                 <span className="hidden md:block text-xs text-gray-500 group-hover:text-gray-400 transition-colors pr-1">
-                  Rechercher...
+                  {t('nav.search')}
                 </span>
               </button>
 
-              {/* Installer PWA — mobile/tablette uniquement, caché sur PC (lg+) */}
-              {!alreadyInstalled && (
-                <div className="relative hidden md:block lg:hidden">
+              {/* LanguageSwitcher — visible sur desktop */}
+              <div className="hidden md:block">
+                <LanguageSwitcher />
+              </div>
+
+              {/* Installer PWA — mobile/tablet uniquement (pas sur PC) */}
+              {!alreadyInstalled && (ios || android) && (
+                <div className="relative md:hidden">
                   <motion.button
                     onClick={handleInstallClick}
                     whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}
                     className="flex items-center gap-1.5 px-3 py-2 rounded-full border border-purple-500/40 text-purple-300 hover:bg-purple-500/10 hover:border-purple-400 hover:text-purple-200 transition-all text-sm font-medium"
-                    title="Installer l'application"
+                    title={t('install.title')}
                   >
                     <Download className="w-4 h-4" />
-                    <span className="hidden lg:block">{t('install')}</span>
                   </motion.button>
-                  <AnimatePresence>
-                    {showIOSTooltip && (
-                      <motion.div
-                        initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 8 }}
-                        className="absolute right-0 top-full mt-2 w-64 bg-gray-900 border border-cyan-500/30 rounded-xl shadow-2xl p-4 z-50"
-                      >
-                        <button onClick={() => setShowIOSTooltip(false)} className="absolute top-2 right-2 text-gray-500 hover:text-white"><X className="w-3.5 h-3.5" /></button>
-                        <p className="text-white text-sm font-semibold mb-2">{ios ? 'Installer sur iPhone / iPad' : 'Installer sur Android'}</p>
-                        <div className="space-y-2 text-xs text-gray-300">
-                          <div className="flex items-center gap-2">
-                            <span className="w-5 h-5 rounded-full bg-cyan-500/20 text-cyan-400 text-[10px] font-bold flex items-center justify-center flex-shrink-0">1</span>
-                            <span>{ios ? <>Appuie sur <span className="inline-flex items-center gap-0.5 px-1 py-0.5 rounded bg-cyan-500/15 border border-cyan-500/30 text-cyan-400"><Share className="w-3 h-3" /> Partager</span></> : <>Appuie sur <strong className="text-white">⋮</strong> menu du navigateur</>}</span>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <span className="w-5 h-5 rounded-full bg-purple-500/20 text-purple-400 text-[10px] font-bold flex items-center justify-center flex-shrink-0">2</span>
-                            <span>{ios ? <><strong className="text-white">"Sur l'écran d'accueil"</strong></> : <><strong className="text-white">"Ajouter à l'écran d'accueil"</strong></>}</span>
-                          </div>
-                        </div>
-                      </motion.div>
-                    )}
-                  </AnimatePresence>
                 </div>
               )}
 
@@ -288,7 +272,7 @@ const Header = () => {
                   <NotificationBell />
                   <Link to="/upload" className="hidden md:block">
                     <Button className="bg-gradient-to-r from-cyan-500 to-fuchsia-500 hover:from-cyan-600 hover:to-fuchsia-600 text-white rounded-full px-4 font-medium shadow-lg shadow-cyan-500/20 text-sm">
-                      <Upload className="w-4 h-4 mr-1.5" />Uploader
+                      <Upload className="w-4 h-4 mr-1.5" />{t('nav.upload')}
                     </Button>
                   </Link>
                   {/* Avatar + dropdown */}
@@ -308,7 +292,7 @@ const Header = () => {
                         {isAdmin && (
                           <Link to="/admin" className="flex items-center gap-2 px-4 py-2 text-sm text-red-400 hover:bg-red-500/10 rounded-lg"><Shield className="w-4 h-4" />Panneau Admin</Link>
                         )}
-                        <button onClick={handleLogout} className="w-full text-left flex items-center gap-2 px-4 py-2 text-sm text-red-400 hover:bg-red-500/10 rounded-lg"><LogOut className="w-4 h-4" />{t('logout')}</button>
+                        <button onClick={handleLogout} className="w-full text-left flex items-center gap-2 px-4 py-2 text-sm text-red-400 hover:bg-red-500/10 rounded-lg"><LogOut className="w-4 h-4" />Déconnexion</button>
                       </div>
                     </div>
                   </div>
@@ -523,24 +507,21 @@ const Header = () => {
 
               {/* Pied drawer */}
               <div className="p-4 border-t border-cyan-500/20 bg-gray-900/50 space-y-3">
-                {/* Langue FR/EN — mobile */}
-                <button
-                  onClick={toggleLang}
-                  className="w-full flex items-center gap-2 py-2.5 px-3 rounded-xl bg-white/5 text-gray-300 hover:bg-white/10 transition-all text-sm"
-                >
-                  <Globe className="w-4 h-4 text-cyan-400" />
-                  <span className="flex-1 text-left">{lang === 'fr' ? 'Switch to English' : 'Passer en Français'}</span>
-                  <span className="text-xs text-gray-500 bg-white/10 px-2 py-0.5 rounded-full">{lang === 'fr' ? 'EN' : 'FR'}</span>
-                </button>
                 {!alreadyInstalled && (
                   <button
                     onClick={() => { if (ios) setShowIOSTooltip(v => !v); else if (android) { setShowAndroidGuide(true); closeMenu(); } else if (canInstall) { install(); closeMenu(); } else setShowIOSTooltip(v => !v); }}
                     className="w-full flex items-center justify-center gap-2 py-3 rounded-xl border border-purple-500/40 text-purple-300 hover:bg-purple-500/10 transition-all text-sm font-medium"
                   >
                     <Download className="w-4 h-4" />
-                    {ios ? "Comment installer sur iPhone" : t('install')}
+                    {ios ? "Comment installer sur iPhone" : "Télécharger NovaST LUX"}
                   </button>
                 )}
+                {/* Language Switcher mobile */}
+                <div className="w-full flex items-center gap-2 py-2">
+                  <Globe className="w-4 h-4 text-gray-500 flex-shrink-0" />
+                  <span className="text-gray-400 text-sm flex-shrink-0">{t('language.select')} :</span>
+                  <LanguageSwitcher compact={false} />
+                </div>
                 {isAuthenticated ? (
                   <Button onClick={handleLogout} variant="outline" className="w-full border-red-500/30 text-red-400 hover:bg-red-500/10 hover:text-red-300 justify-start">
                     <LogOut className="w-4 h-4 mr-2" />Déconnexion
@@ -548,10 +529,10 @@ const Header = () => {
                 ) : (
                   <div className="grid grid-cols-2 gap-3">
                     <Link to="/login" onClick={closeMenu}>
-                      <Button className="w-full bg-cyan-600 hover:bg-cyan-700 text-white rounded-full">{t('login')}</Button>
+                      <Button className="w-full bg-cyan-600 hover:bg-cyan-700 text-white rounded-full">Connexion</Button>
                     </Link>
                     <Link to="/signup" onClick={closeMenu}>
-                      <Button className="w-full bg-gradient-to-r from-cyan-500 to-fuchsia-500 text-white rounded-full">{t('signup')}</Button>
+                      <Button className="w-full bg-gradient-to-r from-cyan-500 to-fuchsia-500 text-white rounded-full">Inscription</Button>
                     </Link>
                   </div>
                 )}

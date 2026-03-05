@@ -15,7 +15,6 @@ import { Helmet } from 'react-helmet-async';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
-import { useLang } from '@/contexts/LangContext';
 import { useChat, CHAT_PERIODS, isMentionAll } from '@/contexts/ChatContext';
 import { usePlayer } from '@/contexts/PlayerContext';
 import { useNotifications } from '@/contexts/NotificationContext';
@@ -281,7 +280,6 @@ const ChatMessage = memo(({
 
 // ════════════════════════════════════════════════════════════════════
 const ChatPage = () => {
-  const { t } = useLang();
   const { currentUser } = useAuth();
   const currentUserEmail = currentUser?.email || '';
   const navigate  = useNavigate();
@@ -774,7 +772,7 @@ const ChatPage = () => {
                     <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-fuchsia-500/20 to-pink-500/20 border border-fuchsia-500/20 flex items-center justify-center mb-4">
                       <Bell className="w-8 h-8 text-fuchsia-400" />
                     </div>
-                    <p className="text-gray-300 font-semibold text-lg">{t('noMessages')} reçu</p>
+                    <p className="text-gray-300 font-semibold text-lg">Aucun message reçu</p>
                     <p className="text-gray-500 text-sm mt-2 max-w-xs">Les réponses et mentions dans le chat apparaîtront ici dès que quelqu'un te répond.</p>
                   </div>
                 ) : (
@@ -872,7 +870,7 @@ const ChatPage = () => {
                       <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-cyan-500/15 to-fuchsia-500/15 border border-cyan-500/15 flex items-center justify-center mb-4">
                         <Music className="w-8 h-8 text-cyan-400/60" />
                       </div>
-                      <p className="text-gray-300 font-semibold">{t('noMessages')} pour cette période</p>
+                      <p className="text-gray-300 font-semibold">Aucun message pour cette période</p>
                       <p className="text-gray-500 text-sm mt-1.5">Sois le premier à écrire ! 🎵</p>
                     </div>
                   )}

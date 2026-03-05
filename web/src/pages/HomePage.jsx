@@ -19,7 +19,6 @@ import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/contexts/AuthContext';
-import { useLang } from '@/contexts/LangContext';
 import NewsLikeButton from '@/components/NewsLikeButton';
 import NewsShareButton from '@/components/NewsShareButton';
 import SongActionsMenu from '@/components/SongActionsMenu';

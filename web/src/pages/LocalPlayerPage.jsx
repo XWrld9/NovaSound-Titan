@@ -9,7 +9,6 @@
  * ✅ Toutes les corrections v20000 conservées
  */
 import React, { useState, useRef, useCallback, useEffect, memo } from 'react';
-import { useLang } from '@/contexts/LangContext';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   FolderOpen, HardDrive, WifiOff, ListMusic, Trash2, Plus,
@@ -368,7 +367,6 @@ const LocalPlayerPage = () => {
   } = usePlayer();
 
   const navigate = useNavigate();
-  const { t }    = useLang();
   const [activeSection,      setActiveSection]      = useState('player');
   const [songs,              setSongs]              = useState([]);
   const [loading,            setLoading]            = useState(false);
@@ -456,7 +454,7 @@ const LocalPlayerPage = () => {
 
   const onFiles = useCallback(async (e) => {
     const files = Array.from(e.target.files || []).filter(isAudioFile);
-    if (!files.length) { alert(t('noFiles')); return; }
+    if (!files.length) { alert('Aucun fichier audio.'); return; }
     setLoading(true);
     const newSongs = await processBatch(files);
     if (!newSongs.length) { setLoading(false); return; }
@@ -627,7 +625,7 @@ const LocalPlayerPage = () => {
               className="w-full flex items-center justify-center gap-3 py-4 rounded-2xl text-white font-bold text-base disabled:opacity-60"
               style={{ background:'linear-gradient(135deg,#0e7490,#7c3aed)', boxShadow:'0 4px 24px rgba(6,182,212,0.25)' }}>
               <FolderOpen className="w-5 h-5" />
-              {loading ? t('loading') : FS_ACCESS_SUPPORTED ? 'Ouvrir (fichiers persistants)' : "Ouvrir depuis l'appareil"}
+              {loading ? 'Chargement…' : FS_ACCESS_SUPPORTED ? 'Ouvrir (fichiers persistants)' : "Ouvrir depuis l'appareil"}
             </motion.button>
             {savedPlaylists.length > 0 && (
               <div className="w-full">
@@ -715,7 +713,7 @@ const LocalPlayerPage = () => {
       <input ref={inputRef}    type="file" accept="*/*" multiple onChange={onFiles}         className="hidden" />
       <input ref={reimportRef} type="file" accept="*/*" multiple onChange={onReimportFiles} className="hidden" />
 
-      <div className="flex-1 w-full px-4 lg:px-8 pt-4 pb-8 flex flex-col gap-4 max-w-4xl mx-auto">
+      <div className="flex-1 max-w-xl md:max-w-3xl lg:max-w-5xl xl:max-w-6xl mx-auto w-full px-4 pt-4 pb-8 flex flex-col gap-4">
 
         {activeSection === 'player' && (
           <div className="flex flex-col gap-4">
@@ -723,57 +721,63 @@ const LocalPlayerPage = () => {
               <motion.div initial={{ opacity:0, y:-8 }} animate={{ opacity:1, y:0 }}
                 className="rounded-2xl overflow-hidden border border-cyan-500/20"
                 style={{ background:'linear-gradient(135deg,rgba(6,182,212,0.08),rgba(124,58,237,0.06))' }}>
-                <div className="flex items-center gap-4 p-4 pb-3">
-                  <div className="w-20 h-20 rounded-2xl overflow-hidden flex-shrink-0"
-                    style={{ boxShadow:'0 0 28px rgba(6,182,212,0.3)' }}>
-                    <img src={activeSong.cover_svg || activeSong.cover_url} alt={activeSong.title} className="w-full h-full object-cover" />
+                <div className="flex flex-col md:flex-row gap-0">
+                  {/* Colonne gauche : pochette + info */}
+                  <div className="flex items-center gap-4 p-4 pb-3 md:flex-col md:items-start md:gap-3 md:w-64 md:flex-shrink-0 md:pb-4">
+                    <div className="w-20 h-20 md:w-full md:h-48 rounded-2xl overflow-hidden flex-shrink-0"
+                      style={{ boxShadow:'0 0 28px rgba(6,182,212,0.3)' }}>
+                      <img src={activeSong.cover_svg || activeSong.cover_url} alt={activeSong.title} className="w-full h-full object-cover" />
+                    </div>
+                    <div className="flex-1 min-w-0 md:w-full">
+                      <p className="text-white font-bold text-base truncate leading-tight">{activeSong.title}</p>
+                      <p className="text-cyan-400/80 text-sm truncate mt-0.5">{activeSong.artist}</p>
+                      {activeSong.album && <p className="text-gray-600 text-xs truncate mt-0.5">{activeSong.album}</p>}
+                      {!isLocalPlaying && <p className="text-gray-600 text-xs mt-1 italic">Appuie sur ▶ pour démarrer</p>}
+                    </div>
                   </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-white font-bold text-base truncate leading-tight">{activeSong.title}</p>
-                    <p className="text-cyan-400/80 text-sm truncate mt-0.5">{activeSong.artist}</p>
-                    {activeSong.album && <p className="text-gray-600 text-xs truncate mt-0.5">{activeSong.album}</p>}
-                    {!isLocalPlaying && <p className="text-gray-600 text-xs mt-1 italic">Appuie sur ▶ pour démarrer</p>}
+                  {/* Colonne droite : contrôles */}
+                  <div className="flex-1 flex flex-col justify-center">
+                    <div className="px-4 pb-1 pt-0 md:pt-4">
+                      <SeekBar currentTime={ct} duration={duration} onSeek={seekTo} color="#22d3ee" />
+                    </div>
+                    <div className="flex items-center justify-between px-6 pb-4 pt-1">
+                      <button onClick={toggleShuffle} className={`p-2 rounded-full transition-all ${shuffle?'text-cyan-400':'text-gray-600 hover:text-gray-400'}`}>
+                        <Shuffle className="w-4 h-4" />
+                      </button>
+                      <motion.button whileTap={{ scale:.88 }} onClick={() => handlePrevious?.()}
+                        className="p-2 text-gray-300 hover:text-white transition-colors">
+                        <SkipBack className="w-7 h-7 fill-current" />
+                      </motion.button>
+                      <motion.button whileTap={{ scale:.9 }}
+                        onClick={isLocalPlaying ? togglePlayPause : () => playSong(songs[0], songs)}
+                        className="w-16 h-16 rounded-full flex items-center justify-center shadow-xl"
+                        style={{ background:'linear-gradient(135deg,#0e7490,#7c3aed)', boxShadow:'0 0 40px rgba(6,182,212,0.4)' }}>
+                        {isPlayingGlobal ? <Pause className="w-8 h-8 text-white fill-current" /> : <Play className="w-8 h-8 text-white fill-current ml-0.5" />}
+                      </motion.button>
+                      <motion.button whileTap={{ scale:.88 }} onClick={() => handleNext?.()}
+                        className="p-2 text-gray-300 hover:text-white transition-colors">
+                        <SkipForward className="w-7 h-7 fill-current" />
+                      </motion.button>
+                      <button onClick={cycleRepeat} className={`p-2 rounded-full transition-all relative ${repeat!=='off'?'text-cyan-400':'text-gray-600 hover:text-gray-400'}`}>
+                        <Repeat className="w-4 h-4" />
+                        {repeat==='one' && <span className="absolute -top-0.5 -right-0.5 text-[8px] bg-cyan-500 text-black font-black rounded-full w-3.5 h-3.5 flex items-center justify-center">1</span>}
+                      </button>
+                    </div>
+                    <div className="px-5 pb-4">
+                      <button onClick={() => setShowVolume(v => !v)} className="flex items-center gap-2 text-xs text-gray-500 hover:text-gray-300 mb-2 transition-colors">
+                        <VolumeIcon className="w-3.5 h-3.5" /><span>Volume — {volume}%</span>
+                        {showVolume ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
+                      </button>
+                      <AnimatePresence>
+                        {showVolume && (
+                          <motion.div initial={{ height:0, opacity:0 }} animate={{ height:'auto', opacity:1 }} exit={{ height:0, opacity:0 }} className="overflow-hidden">
+                            <input type="range" min={0} max={100} step={1} value={volume} onChange={e => setVolume(Number(e.target.value))}
+                              className="w-full h-2 rounded-full appearance-none cursor-pointer" style={{ accentColor:'#22d3ee' }} />
+                          </motion.div>
+                        )}
+                      </AnimatePresence>
+                    </div>
                   </div>
-                </div>
-                <div className="px-4 pb-1">
-                  <SeekBar currentTime={ct} duration={duration} onSeek={seekTo} color="#22d3ee" />
-                </div>
-                <div className="flex items-center justify-between px-6 pb-4 pt-1">
-                  <button onClick={toggleShuffle} className={`p-2 rounded-full transition-all ${shuffle?'text-cyan-400':'text-gray-600 hover:text-gray-400'}`}>
-                    <Shuffle className="w-4 h-4" />
-                  </button>
-                  <motion.button whileTap={{ scale:.88 }} onClick={() => handlePrevious?.()}
-                    className="p-2 text-gray-300 hover:text-white transition-colors">
-                    <SkipBack className="w-7 h-7 fill-current" />
-                  </motion.button>
-                  <motion.button whileTap={{ scale:.9 }}
-                    onClick={isLocalPlaying ? togglePlayPause : () => playSong(songs[0], songs)}
-                    className="w-16 h-16 rounded-full flex items-center justify-center shadow-xl"
-                    style={{ background:'linear-gradient(135deg,#0e7490,#7c3aed)', boxShadow:'0 0 40px rgba(6,182,212,0.4)' }}>
-                    {isPlayingGlobal ? <Pause className="w-8 h-8 text-white fill-current" /> : <Play className="w-8 h-8 text-white fill-current ml-0.5" />}
-                  </motion.button>
-                  <motion.button whileTap={{ scale:.88 }} onClick={() => handleNext?.()}
-                    className="p-2 text-gray-300 hover:text-white transition-colors">
-                    <SkipForward className="w-7 h-7 fill-current" />
-                  </motion.button>
-                  <button onClick={cycleRepeat} className={`p-2 rounded-full transition-all relative ${repeat!=='off'?'text-cyan-400':'text-gray-600 hover:text-gray-400'}`}>
-                    <Repeat className="w-4 h-4" />
-                    {repeat==='one' && <span className="absolute -top-0.5 -right-0.5 text-[8px] bg-cyan-500 text-black font-black rounded-full w-3.5 h-3.5 flex items-center justify-center">1</span>}
-                  </button>
-                </div>
-                <div className="px-5 pb-4">
-                  <button onClick={() => setShowVolume(v => !v)} className="flex items-center gap-2 text-xs text-gray-500 hover:text-gray-300 mb-2 transition-colors">
-                    <VolumeIcon className="w-3.5 h-3.5" /><span>Volume — {volume}%</span>
-                    {showVolume ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
-                  </button>
-                  <AnimatePresence>
-                    {showVolume && (
-                      <motion.div initial={{ height:0, opacity:0 }} animate={{ height:'auto', opacity:1 }} exit={{ height:0, opacity:0 }} className="overflow-hidden">
-                        <input type="range" min={0} max={100} step={1} value={volume} onChange={e => setVolume(Number(e.target.value))}
-                          className="w-full h-2 rounded-full appearance-none cursor-pointer" style={{ accentColor:'#22d3ee' }} />
-                      </motion.div>
-                    )}
-                  </AnimatePresence>
                 </div>
               </motion.div>
             )}
@@ -904,7 +908,7 @@ const LocalPlayerPage = () => {
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <ListMusic className="w-4 h-4 text-cyan-400" />
-                <span className="text-white font-black text-base">{t('files_section')}</span>
+                <span className="text-white font-black text-base">Fichiers</span>
                 <span className="text-[10px] bg-cyan-500/15 text-cyan-400 px-2 py-0.5 rounded-full font-bold">{songs.length}</span>
               </div>
               <button onClick={FS_ACCESS_SUPPORTED ? openPickerFSA : () => inputRef.current?.click()} disabled={loading}

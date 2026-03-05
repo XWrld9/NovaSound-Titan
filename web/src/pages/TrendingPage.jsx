@@ -19,7 +19,6 @@ import {
   Users, Music, Loader2,
 } from 'lucide-react';
 import { formatPlays } from '@/lib/utils';
-import { useLang } from '@/contexts/LangContext';
 
 const PERIODS = [
   { id: '24h', label: '24 h',     icon: Clock,       view: 'trending_24h' },

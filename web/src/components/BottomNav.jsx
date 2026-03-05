@@ -1,5 +1,5 @@
 /**
- * BottomNav — NovaSound TITAN LUX V200000
+ * BottomNav — NovaSound TITAN LUX V110000
  * Navigation mobile fixe en bas
  * - Voyant VERT si au moins un live est en cours (rejoins la fête !)
  * - Voyant ROUGE si aucun live actif
@@ -10,24 +10,24 @@ import React, { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { Home, Compass, TrendingUp, User, Search, Globe, Radio, Trophy, HardDrive, Bell } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
-import { useLang } from '@/contexts/LangContext';
 import { useNotifications } from '@/contexts/NotificationContext';
 import { supabase } from '@/lib/supabaseClient';
 import { motion } from 'framer-motion';
+import { useTranslation } from 'react-i18next';
+
+const NAV_ITEMS = [
+  { to: '/',            icon: Home,   label: 'Accueil'  },
+  { to: '/explorer',    icon: Compass,label: 'Explorer' },
+  { to: '/live',        icon: Radio,  label: 'Live', liveIndicator: true },
+  { to: '/leaderboard', icon: Trophy, label: 'Top'      },
+];
 
 const BottomNav = () => {
   const location  = useLocation();
-  const { t }     = useLang();
   const { currentUser, isAuthenticated } = useAuth();
   const { unreadCount } = useNotifications() || {};
   const [hasActiveLive, setHasActiveLive] = useState(false);
-
-  const NAV_ITEMS = [
-    { to: '/',            icon: Home,   label: t('home')  },
-    { to: '/explorer',    icon: Compass,label: t('explore') },
-    { to: '/live',        icon: Radio,  label: t('live'), liveIndicator: true },
-    { to: '/leaderboard', icon: Trophy, label: t('leaderboard')      },
-  ];
+  const { t } = useTranslation();
 
   /* Vérifier s'il y a des lives actifs — sondage léger toutes les 30s */
   useEffect(() => {

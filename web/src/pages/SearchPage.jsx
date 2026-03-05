@@ -11,7 +11,6 @@ import { Helmet } from 'react-helmet-async';
 import { motion, AnimatePresence } from 'framer-motion';
 import { supabase } from '@/lib/supabaseClient';
 import { useAuth } from '@/contexts/AuthContext';
-import { useLang } from '@/contexts/LangContext';
 import { usePlayer } from '@/contexts/PlayerContext';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
@@ -175,7 +174,7 @@ const SearchPage = () => {
       <div className="min-h-screen bg-gray-950 flex flex-col pb-32">
         <Header />
 
-        <main className="flex-1 container mx-auto px-4 py-8 max-w-3xl">
+        <main className="flex-1 container mx-auto px-4 py-8 max-w-5xl">
 
           {/* Titre */}
           <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className="mb-6">
@@ -298,7 +297,7 @@ const SearchPage = () => {
                 {!hasResults ? (
                   <div className="text-center py-20">
                     <Music className="w-14 h-14 text-gray-800 mx-auto mb-4" />
-                    <p className="text-gray-400 text-lg font-medium">{t('noResults')} pour <span className="text-white">"{query}"</span></p>
+                    <p className="text-gray-400 text-lg font-medium">Aucun résultat pour <span className="text-white">"{query}"</span></p>
                     <p className="text-gray-600 text-sm mt-2">Essaie un autre terme ou vérifie l'orthographe</p>
                   </div>
                 ) : (

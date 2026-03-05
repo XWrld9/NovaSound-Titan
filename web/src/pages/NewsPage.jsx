@@ -8,7 +8,6 @@ import NewsForm from '@/components/NewsForm';
 import ReportButton from '@/components/ReportButton';
 import NewsLikeButton from '@/components/NewsLikeButton';
 import { useAuth } from '@/contexts/AuthContext';
-import { useLang } from '@/contexts/LangContext';
 import { Newspaper, Calendar, User, X, ChevronRight } from 'lucide-react';
 import NewsShareButton from '@/components/NewsShareButton';
 import NewsCommentSection from '@/components/NewsCommentSection';

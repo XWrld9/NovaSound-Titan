@@ -1,4 +1,3 @@
-import LangToggle from '@/components/LangToggle';
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
@@ -87,7 +86,7 @@ const LoginPage = () => {
         <meta name="description" content="Connecte-toi à NovaSound TITAN LUX pour accéder à ta bibliothèque musicale" />
       </Helmet>
 
-      <div className="min-h-screen relative bg-gray-950 flex items-center justify-center px-4 py-12 overflow-x-hidden">
+      <div className="min-h-screen bg-gray-950 flex items-center justify-center px-4 py-12 overflow-x-hidden">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
