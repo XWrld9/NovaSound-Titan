@@ -275,7 +275,7 @@ const LoadingScreen = ({ label = 'Connexion…' }) => (
 const LiveRoomPage = () => {
   const { roomId: roomIdParam } = useParams();
   const { currentUser }        = useAuth();
-  const { playSong }           = usePlayer();
+  const { playSong, isVisible: playerVisible, currentSong: playerSong } = usePlayer();
   const navigate               = useNavigate();
 
   /* Phases */
@@ -996,7 +996,8 @@ const LiveRoomPage = () => {
               </div>
 
               {/* Input chat */}
-              <div className="flex-shrink-0 p-2.5 sm:p-3 bg-gray-900/95 border-t border-gray-800">
+              <div className="flex-shrink-0 p-2.5 sm:p-3 bg-gray-900/95 border-t border-gray-800"
+                style={{ paddingBottom: `calc(${playerVisible && playerSong ? '72px + ' : ''}env(safe-area-inset-bottom, 8px) + 10px)` }}>
                 <AnimatePresence>
                   {showReactions && (
                     <motion.div initial={{ opacity: 0, y: 8, scale: 0.95 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, y: 8, scale: 0.95 }}
