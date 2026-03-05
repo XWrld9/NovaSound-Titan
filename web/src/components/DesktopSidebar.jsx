@@ -92,7 +92,7 @@ const DesktopSidebar = () => {
   /* Admin check */
   useEffect(() => {
     if (!currentUser?.id) return;
-    supabase.from('users').select('role').eq('id', currentUser.id).maybeSingle()
+    supabase.from('user_roles').select('role').eq('user_id', currentUser.id).eq('is_active', true).maybeSingle()
       .then(({ data }) => setIsAdmin(data?.role === 'admin' || data?.role === 'moderator'));
   }, [currentUser?.id]);
 
