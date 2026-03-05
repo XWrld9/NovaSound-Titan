@@ -421,7 +421,7 @@ const LiveRoomPage = () => {
       const { data:msgs } = await supabase.from('live_room_messages')
         .select('*, user:user_id(id,username,avatar_url)')
         .eq('room_id', id).eq('is_deleted', false)
-        .order('created_at', { ascending:true }).limit(80);
+        .order('created_at', { ascending: true }).limit(80);
       setMessages(msgs||[]); messagesRef.current = msgs||[];
 
       if (rd.current_song) { setNowPlaying(rd.current_song); playSong(rd.current_song,[rd.current_song]); }
