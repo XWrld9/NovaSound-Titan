@@ -227,9 +227,9 @@ const ArtistProfilePage = () => {
     try {
       const { data } = await supabase
         .from('live_rooms')
-        .select('id, name, participant_count')
+        .select('id, name, participants_count')
         .eq('host_id', id)
-        .eq('is_live', true)
+        .eq('is_active', true)
         .maybeSingle();
       setLiveRoom(data || null);
     } catch {}
@@ -378,7 +378,7 @@ const ArtistProfilePage = () => {
                       onClick={e => e.stopPropagation()}
                     >
                       <Radio className="w-3 h-3" />
-                      EN LIVE · {liveRoom.participant_count || 0} 🎧
+                      EN LIVE · {liveRoom.participants_count || 0} 🎧
                     </Link>
                   )}
                 </div>
