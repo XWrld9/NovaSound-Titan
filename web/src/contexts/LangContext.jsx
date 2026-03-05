@@ -46,7 +46,7 @@ const FR = {
   heroSub: 'Découvre, partage et vis la musique en temps réel',
   discoverMusic: 'Découvrir la musique', liveNow: 'Lives en cours',
   newReleases: 'Nouvelles sorties', featured: 'À la une',
-  recommended: 'Recommandés', trending: 'Tendances', recentlyPlayed: 'Récemment joué',
+  recommended: 'Recommandés', recentlyPlayed: 'Récemment joué',
   topArtists: 'Top artistes', topSongs: 'Top sons',
 
   /* ── Player ────────────────────────────────────── */

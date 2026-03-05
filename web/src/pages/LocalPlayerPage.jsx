@@ -456,7 +456,7 @@ const LocalPlayerPage = () => {
 
   const onFiles = useCallback(async (e) => {
     const files = Array.from(e.target.files || []).filter(isAudioFile);
-    if (!files.length) { alert('{t('noFiles')}.'); return; }
+    if (!files.length) { alert(t('noFiles')); return; }
     setLoading(true);
     const newSongs = await processBatch(files);
     if (!newSongs.length) { setLoading(false); return; }
@@ -627,7 +627,7 @@ const LocalPlayerPage = () => {
               className="w-full flex items-center justify-center gap-3 py-4 rounded-2xl text-white font-bold text-base disabled:opacity-60"
               style={{ background:'linear-gradient(135deg,#0e7490,#7c3aed)', boxShadow:'0 4px 24px rgba(6,182,212,0.25)' }}>
               <FolderOpen className="w-5 h-5" />
-              {loading ? '{t('loading')}' : FS_ACCESS_SUPPORTED ? 'Ouvrir (fichiers persistants)' : "Ouvrir depuis l'appareil"}
+              {loading ? t('loading') : FS_ACCESS_SUPPORTED ? 'Ouvrir (fichiers persistants)' : "Ouvrir depuis l'appareil"}
             </motion.button>
             {savedPlaylists.length > 0 && (
               <div className="w-full">
