@@ -90,7 +90,7 @@ const Eq = ({ active = true, color = 'cyan' }) => {
     <div className="flex items-end gap-0.5 h-4 flex-shrink-0">
       {bars.map((h, i) => (
         <motion.div key={i} className={`w-0.5 rounded-full ${c}`}
-          animate={active ? { height: [`${h * 100}%`, '20%', `${h * 80}%`, '100%`, `${h * 100}%`] } : { height: '20%' }}
+          animate={active ? { height: [`${h * 100}%`, '20%', `${h * 80}%`, '100%', `${h * 100}%`] } : { height: '20%' }}
           transition={{ duration: 1.2, repeat: Infinity, delay: i * 0.15, ease: 'easeInOut' }}
           style={{ height: '20%' }} />
       ))}
