@@ -149,7 +149,7 @@ const LoginPage = () => {
                         {needsVerification && email && (
                           <button type="button" onClick={handleResendVerification} disabled={loading}
                             className="mt-2 w-full flex items-center justify-center gap-1.5 px-3 py-1.5 bg-cyan-500/10 border border-cyan-500/25 rounded-lg text-cyan-400 text-xs hover:bg-cyan-500/20">
-                            {'📧 Renvoyer l'email de confirmation'}
+                            {'📧 Renvoyer l\'email de confirmation'}
                           </button>
                         )}
                       </div>
@@ -188,7 +188,7 @@ const LoginPage = () => {
               )}
               {!forgotMode && (
                 <div className="mt-5 text-center space-y-2">
-                  <p className="text-gray-400 text-sm">{'Pas encore de compte ?'}{' '}<Link to="/signup" className="text-cyan-400 hover:text-cyan-300 font-semibold">{'S'inscrire'}</Link></p>
+                  <p className="text-gray-400 text-sm">{'Pas encore de compte ?'}{' '}<Link to="/signup" className="text-cyan-400 hover:text-cyan-300 font-semibold">{'S\'inscrire'}</Link></p>
                   <p className="text-gray-600 text-xs">{'Compte créé récemment ? Pensez à vérifier vos spams.'}</p>
                 </div>
               )}
