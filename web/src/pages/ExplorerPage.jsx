@@ -83,7 +83,7 @@ const SongRow = ({ song, index, onPlay, isPlaying, currentUser }) => {
   const handleDl = (e) => {
     e.stopPropagation();
     if (!song.audio_url) return;
-    const a = document.createElemen'a';
+    const a = document.createElement('a');
     a.href = song.audio_url;
     a.download = `${song.title}.mp3`;
     a.target = '_blank';
