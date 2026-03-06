@@ -149,7 +149,7 @@ export const ChatProvider = ({ children }) => {
 
     const senderName = currentUser.username
       || currentUser.user_metadata?.username
-      || currentUser.email?.spli'@'[0]
+      || currentUser.email?.split('@')[0]
       || 'Utilisateur';
 
     // Si c'est une réponse → auto-tag l'auteur du message original
@@ -452,7 +452,7 @@ export const ChatProvider = ({ children }) => {
         if (status === 'SUBSCRIBED' && currentUser?.id) {
           const senderName = currentUser.username
             || currentUser.user_metadata?.username
-            || currentUser.email?.spli'@'[0]
+            || currentUser.email?.split('@')[0]
             || 'Utilisateur';
           await channel.track({
             user_id:    currentUser.id,
