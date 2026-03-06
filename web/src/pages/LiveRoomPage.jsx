@@ -350,7 +350,7 @@ const LiveRoomPage = () => {
   const acquireWakeLock = useCallback(async () => {
     if (!('wakeLock' in navigator)) return;
     try {
-      wakeLockRef.current = await navigator.wakeLock.reques'screen';
+      wakeLockRef.current = await navigator.wakeLock.request('screen');
     } catch {}
   }, []);
 
@@ -429,7 +429,7 @@ const LiveRoomPage = () => {
         chanRef.current.track({
           user: {
             id: currentUser.id,
-            username: currentUser.user_metadata?.username || currentUser.email?.spli'@'[0] || 'Anonyme',
+            username: currentUser.user_metadata?.username || currentUser.email?.split('@')[0] || 'Anonyme',
             avatar_url: currentUser.user_metadata?.avatar_url || null,
             lastSeen: Date.now(),
           }
@@ -488,7 +488,7 @@ const LiveRoomPage = () => {
   /* ── V110000 : Partager le lien du live dans le chat global ─────── */
   const shareInGlobalChat = useCallback(async () => {
     if (!currentUser || !roomRef.current) return;
-    const username = currentUser.user_metadata?.username || currentUser.email?.spli'@'[0] || 'Quelqu\'un';
+    const username = currentUser.user_metadata?.username || currentUser.email?.split('@')[0] || 'Quelqu\'un';
     const link = `${window.location.origin}/#/live/${roomRef.current.id}`;
     const content = `🔴 LIVE • ${roomRef.current.name}\n${username} vous invite à rejoindre !\n👉 ${link}`;
     try {
@@ -509,7 +509,7 @@ const LiveRoomPage = () => {
       if (error) throw error;
 
       // V110000 — notifier les abonnés que le live a démarré
-      const hostUsername = currentUser.user_metadata?.username || currentUser.email?.spli'@'[0] || 'Un artiste';
+      const hostUsername = currentUser.user_metadata?.username || currentUser.email?.split('@')[0] || 'Un artiste';
       notifyFollowers(supabase, currentUser.id, {
         type:     'live_started',
         title:    '🔴 Live en cours !',
@@ -638,7 +638,7 @@ const LiveRoomPage = () => {
             const uPayload = {
               user: {
                 id: currentUser.id,
-                username: currentUser.user_metadata?.username || currentUser.email?.spli'@'[0] || 'Anonyme',
+                username: currentUser.user_metadata?.username || currentUser.email?.split('@')[0] || 'Anonyme',
                 avatar_url: currentUser.user_metadata?.avatar_url || null,
                 lastSeen: Date.now(),
               }
@@ -752,11 +752,11 @@ const LiveRoomPage = () => {
   const handleLocalFile = async (e) => {
     const file = e.target.files?.[0];
     if (!file || !isHostRef.current || !roomRef.current) return;
-    if (!file.type.startsWith('audio/')) { aler'wav…)'; return; }
-    if (file.size > 80 * 1024 * 1024) { aler'Fichier trop volumineux (max 80 Mo)'; return; }
+    if (!file.type.startsWith('audio/')) { alert('Fichiers audio uniquement (mp3, wav…)'); return; }
+    if (file.size > 80 * 1024 * 1024) { alert('Fichier trop volumineux (max 80 Mo)'); return; }
     setUploadingLocal(true);
     try {
-      const ext = file.name.spli''.pop().toLowerCase();
+      const ext = file.name.split('.').pop().toLowerCase();
       const path = `live-temp/${roomRef.current.id}/${Date.now()}.${ext}`;
       const { error: upErr } = await supabase.storage.from('live-room-audio').upload(path, file, { contentType: file.type, upsert: true });
       if (upErr) throw upErr;
