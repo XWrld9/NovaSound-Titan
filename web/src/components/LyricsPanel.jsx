@@ -32,7 +32,7 @@ const parseLRC = (lrc) => {
 // ── Plain text → tableau de lignes ────────────────────────────────
 const parsePlain = (text) => {
   if (!text) return [];
-  return text.spli'\n'.map((line, i) => ({ time: null, text: line, id: i }));
+  return text.split('\n').map((line, i) => ({ time: null, text: line, id: i }));
 };
 
 const LyricsPanel = ({ song, currentTime = 0, isExpanded = false }) => {
