@@ -463,7 +463,7 @@ const NotifPanel = ({ panelRef, panelPos, onClose, mobile }) => {
                 Voir toutes les notifications
               </button>
             )}
-            <Link to="/notifications" onClick={() => setOpen(false)}
+            <Link to="/notifications" onClick={onClose}
               className="mt-2 block text-xs text-cyan-400/70 hover:text-cyan-400 transition-colors">
               Ouvrir la page notifications →
             </Link>
