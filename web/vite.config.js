@@ -29,8 +29,6 @@ export default defineConfig({
           'vendor-lottie': ['lottie-react'],
           // Vendor : UI libs
           'vendor-ui': ['lucide-react', '@radix-ui/react-slider', '@radix-ui/react-slot'],
-          // Vendor : i18n
-          'vendor-i18n': ['i18next', 'react-i18next', 'i18next-browser-languagedetector'],
         }
       }
     },
