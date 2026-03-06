@@ -199,7 +199,7 @@ const SongRow = ({ song, index, onPlay, isPlaying, currentUser }) => {
 };
 
 // ════════════════════════════════════════════════════════════════════
-const {t('explorer.title')}Page = () => {
+const ExplorerPage = () => {
   const [songs,         setSongs]         = useState([]);
   const [loading,       setLoading]       = useState(true);
   const [initialLoad,   setInitialLoad]   = useState(true);
@@ -465,4 +465,4 @@ const {t('explorer.title')}Page = () => {
   );
 };
 
-export default {t('explorer.title')}Page;
+export default ExplorerPage;
