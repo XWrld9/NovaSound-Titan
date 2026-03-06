@@ -429,7 +429,7 @@ const PlaylistCard = ({ pl, onLoad, onDelete, onReimport, liveSongs, t }) => {
 };
 
 // ── SavePlaylistModal ──────────────────────────────────────────────────────────
-const SavePlaylistModal = ({ count, onSave, onClose, t }) => {
+const SavePlaylistModal = ({ count, onSave, onClose }) => {
   const [name, setName] = useState('');
   return (
     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
@@ -1378,7 +1378,7 @@ const LocalPlayerPage = () => {
                       <PlaylistCard key={pl.id} pl={pl}
                         onLoad={loadPlaylist} onDelete={deletePlaylist}
                         onReimport={() => reimportRef.current?.click()}
-                        liveSongs={songs} t={t}
+                        liveSongs={songs}
                       />
                     ))}
                     {/* Add new playlist button */}
@@ -1401,7 +1401,7 @@ const LocalPlayerPage = () => {
       {/* Modals */}
       <AnimatePresence>
         {showSaveModal && (
-          <SavePlaylistModal count={selectedIds.size} onSave={savePlaylist} onClose={() => setShowSaveModal(false)} t={t} />
+          <SavePlaylistModal count={selectedIds.size} onSave={savePlaylist} onClose={() => setShowSaveModal(false)} />
         )}
       </AnimatePresence>
     </div>
