@@ -73,7 +73,7 @@ const SongCard = memo(({ song: initialSong, onPlay, isPlaying: isPlayingProp, se
   const handleDownload = (e) => {
     e.stopPropagation();
     if (!song.audio_url) return;
-    const link = document.createElemen'a';
+    const link = document.createElement('a');
     link.href = song.audio_url;
     link.download = `${song.title}.mp3`;
     link.target = '_blank';
