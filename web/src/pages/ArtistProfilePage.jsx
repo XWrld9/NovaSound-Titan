@@ -37,9 +37,9 @@ const loadLocalLogo = () =>
 const toDataUrl = (src) => new Promise(resolve => {
   const img = new Image(); img.crossOrigin = 'anonymous';
   img.onload = () => {
-    const c = document.createElemen'canvas';
+    const c = document.createElement('canvas');
     c.width = img.naturalWidth; c.height = img.naturalHeight;
-    c.getContex'2d'.drawImage(img, 0, 0);
+    c.getContext('2d').drawImage(img, 0, 0);
     try { resolve(c.toDataURL('image/jpeg', 0.92)); } catch { resolve(src); }
   };
   img.onerror = () => resolve(null);
@@ -52,7 +52,7 @@ const waitForImages = (node) => {
 };
 
 const dataUrlToBlob = (dataUrl) => {
-  const arr = dataUrl.spli','; const mime = arr[0].match(/:(.*?);/)[1];
+  const arr = dataUrl.split(','); const mime = arr[0].match(/:(.*?);/)[1];
   const bstr = atob(arr[1]); let n = bstr.length; const u8 = new Uint8Array(n);
   while (n--) u8[n] = bstr.charCodeAt(n);
   return new Blob([u8], { type: mime });
@@ -93,7 +93,7 @@ const ArtistShareModal = ({ artist, onClose }) => {
     if (navigator.canShare?.({ files: [file] })) {
       await navigator.share({ files: [file], text: `Découvre ${artist.username} sur NovaSound TITAN LUX`, url: shareUrl });
     } else {
-      const a = document.createElemen'a'; a.href = cardImg;
+      const a = document.createElement('a'); a.href = cardImg;
       a.download = `${artist.username}-novasound.png`; a.click();
     }
   };
