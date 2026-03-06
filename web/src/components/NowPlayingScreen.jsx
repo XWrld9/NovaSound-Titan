@@ -33,7 +33,7 @@ const IdleWave = ({ isPlaying, color }) => {
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
-    const ctx = canvas.getContex'2d';
+    const ctx = canvas.getContext('2d');
     const resize = () => {
       const dpr = window.devicePixelRatio || 1;
       canvas.width  = canvas.offsetWidth  * dpr;
@@ -244,7 +244,7 @@ const NowPlayingScreen = ({
 
   const handleDownload = () => {
     if (!currentSong?.audio_url) return;
-    const a = document.createElemen'a';
+    const a = document.createElement('a');
     a.href = currentSong.audio_url;
     a.download = (currentSong.title||'audio') + (currentSong.is_local ? '' : '.m4a');
     a.target = '_blank';
@@ -504,7 +504,7 @@ const NowPlayingScreen = ({
               </button>
             </div>
             <div className="space-y-3 text-center pb-12 max-w-2xl mx-auto">
-              {lyricsContent.spli'\n'.map((line,i) => (
+              {lyricsContent.split('\n').map((line,i) => (
                 <p key={i} className={line.trim()?'text-white text-base leading-relaxed':'py-2'}>{line||'\u00A0'}</p>
               ))}
             </div>
