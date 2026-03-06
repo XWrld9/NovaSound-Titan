@@ -19,6 +19,7 @@ import WaveformVisualizer from '@/components/WaveformVisualizer';
 import SongShareModal from '@/components/SongShareModal';
 import NowPlayingScreen from '@/components/NowPlayingScreen';
 import AddToPlaylistModal from '@/components/AddToPlaylistModal';
+import { useTranslation } from 'react-i18next';
 
 
 const isIOS = () =>
@@ -82,11 +83,12 @@ if (typeof window !== 'undefined') {
 }
 
 const AudioPlayer = ({ currentSong, playlist = [], onNext, onPrevious, onClose, shouldAutoPlay = false, resetAutoPlay }) => {
+  const { t } = useTranslation();
   const { currentUser } = useAuth();
   const genreTheme = useGenreTheme(currentSong?.genre);
   const navigate = useNavigate();
   const toast = useToast();
-  const audioRef = useRef(null);
+  const audioRef = useRef(null);;
 
   // Queue & Sleep timer depuis PlayerContext
   const {
@@ -694,7 +696,7 @@ const AudioPlayer = ({ currentSong, playlist = [], onNext, onPrevious, onClose, 
                   <button
                     onClick={(e) => { e.stopPropagation(); setShowSleepMenu(v => !v); setShowQueue(false); }}
                     className={`p-2 rounded-full border transition-all relative ${sleepTimer !== null ? 'bg-amber-500/20 border-amber-500/50 text-amber-400' : 'bg-black/30 border-white/10 text-gray-400 hover:text-white'}`}
-                    title="Minuteur de sommeil"
+                    title={t("player.sleepTimer")}
                   >
                     <Moon className="w-4 h-4" />
                     {sleepTimer !== null && (
@@ -734,7 +736,7 @@ const AudioPlayer = ({ currentSong, playlist = [], onNext, onPrevious, onClose, 
                 <button
                   onClick={(e) => { e.stopPropagation(); setShowQueue(v => !v); setShowSleepMenu(false); }}
                   className={`p-2 rounded-full border transition-all relative ${showQueue ? 'bg-cyan-500/20 border-cyan-500/50 text-cyan-400' : 'bg-black/30 border-white/10 text-gray-400 hover:text-white'}`}
-                  title="File d'attente"
+                  title={t("player.queue")}
                 >
                   <ListMusic className="w-4 h-4" />
                   {queue.length > 0 && (
@@ -809,12 +811,12 @@ const AudioPlayer = ({ currentSong, playlist = [], onNext, onPrevious, onClose, 
                     {/* Lecteur local hors-ligne */}
                     
                     {/* Ajouter à la file d'attente */}
-                    <button onClick={() => addToQueue(currentSong)} className="text-gray-400 hover:text-cyan-400 transition-colors" title="Ajouter à la file d'attente">
+                    <button onClick={() => addToQueue(currentSong)} className="text-gray-400 hover:text-cyan-400 transition-colors" title={t("player.addToQueue")}>
                       <ListMusic className="w-4 h-4" />
                     </button>
                     {/* Ajouter à une playlist */}
                     {currentUser && (
-                      <button onClick={() => setShowAddToPlaylist(true)} className="text-gray-400 hover:text-purple-400 transition-colors" title="Ajouter à une playlist">
+                      <button onClick={() => setShowAddToPlaylist(true)} className="text-gray-400 hover:text-purple-400 transition-colors" title={t("player.addToPlaylist")}>
                         <Plus className="w-4 h-4" />
                       </button>
                     )}
@@ -848,14 +850,14 @@ const AudioPlayer = ({ currentSong, playlist = [], onNext, onPrevious, onClose, 
                 {/* Transport */}
                 <div className="flex items-center justify-between">
                   <button onClick={(e) => { e.stopPropagation(); setShuffle(!shuffle); }}
-                    className={`p-2 transition-all ${shuffle ? 'text-cyan-400' : 'text-gray-500 hover:text-white'}`} title="Aléatoire">
+                    className={`p-2 transition-all ${shuffle ? 'text-cyan-400' : 'text-gray-500 hover:text-white'}`} title={t("player.shuffle")}>
                     <Shuffle className="w-5 h-5" />
                   </button>
                   <button
                     type="button"
                     onClick={(e) => { e.stopPropagation(); autoPlayRef.current = true; goPreviousRef.current?.(); }}
                     className="p-2 text-gray-300 hover:text-white hover:scale-110 active:scale-90 transition-all"
-                    title="Précédent (←)">
+                    title={t("player.previous")}>
                     <SkipBack className="w-7 h-7" />
                   </button>
                   <button onClick={togglePlay}
@@ -870,7 +872,7 @@ const AudioPlayer = ({ currentSong, playlist = [], onNext, onPrevious, onClose, 
                     type="button"
                     onClick={(e) => { e.stopPropagation(); autoPlayRef.current = true; goNextRef.current?.(); }}
                     className="p-2 text-gray-300 hover:text-white hover:scale-110 active:scale-90 transition-all"
-                    title="Suivant (→)">
+                    title={t("player.next")}>
                     <SkipForward className="w-7 h-7" />
                   </button>
                   <button onClick={cycleRepeatLocal}
@@ -897,7 +899,7 @@ const AudioPlayer = ({ currentSong, playlist = [], onNext, onPrevious, onClose, 
                     <button
                       onClick={(e) => { e.stopPropagation(); setShowSpeedMenu(v => !v); setShowSleepMenu(false); setShowQueue(false); }}
                       className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-xs font-bold transition-all ${playbackSpeed !== 1 ? 'bg-cyan-500/20 border-cyan-400/50 text-cyan-300' : 'bg-black/20 border-white/10 text-gray-400 hover:text-white'}`}
-                      title="Vitesse de lecture"
+                      title={t("player.speed")}
                     >
                       <Gauge className="w-3.5 h-3.5" />
                       {playbackSpeed}×
@@ -930,7 +932,7 @@ const AudioPlayer = ({ currentSong, playlist = [], onNext, onPrevious, onClose, 
                     <a href={`/#/song/${currentSong.id}`}
                       className="flex items-center gap-1 text-xs text-gray-500 hover:text-cyan-400 transition-colors px-2 py-1 rounded-full hover:bg-white/5"
                       onClick={e => e.stopPropagation()}
-                      title="Page du son"
+                      title={t("player.songPage")}
                     >
                       <ExternalLink className="w-3.5 h-3.5" />
                       <span>Page du son</span>
@@ -973,7 +975,7 @@ const AudioPlayer = ({ currentSong, playlist = [], onNext, onPrevious, onClose, 
                       <button
                         onClick={() => { setShowQueue(false); openMonthlySongs(); }}
                         className="flex items-center gap-1.5 text-xs text-cyan-400 hover:text-cyan-300 transition-colors px-2.5 py-1.5 rounded-full border border-cyan-500/20 hover:bg-cyan-500/10"
-                        title="Sons publiés ce mois">
+                        title={t("player.monthSongs")}>
                         <Calendar className="w-3 h-3 flex-shrink-0" /><span>Ce mois</span>
                       </button>
                       {/* Bouton Ajouter à une playlist */}
@@ -981,7 +983,7 @@ const AudioPlayer = ({ currentSong, playlist = [], onNext, onPrevious, onClose, 
                         <button
                           onClick={() => { setShowQueue(false); setShowAddToPlaylist(true); }}
                           className="flex items-center gap-1.5 text-xs text-purple-400 hover:text-purple-300 transition-colors px-2.5 py-1.5 rounded-full border border-purple-500/20 hover:bg-purple-500/10"
-                          title="Ajouter à une playlist">
+                          title={t("player.addToPlaylist")}>
                           <Plus className="w-3 h-3 flex-shrink-0" /><span>Playlist</span>
                         </button>
                       )}
@@ -1018,7 +1020,7 @@ const AudioPlayer = ({ currentSong, playlist = [], onNext, onPrevious, onClose, 
                           </div>
                           <button onClick={() => removeFromQueue(i)}
                             className="opacity-0 group-hover:opacity-100 p-1.5 text-gray-600 hover:text-red-400 transition-all rounded-lg hover:bg-red-500/10"
-                            title="Retirer de la file">
+                            title={t("player.removeFromQueue")}>
                             <Trash2 className="w-3.5 h-3.5" />
                           </button>
                         </div>
@@ -1090,7 +1092,7 @@ const AudioPlayer = ({ currentSong, playlist = [], onNext, onPrevious, onClose, 
                     {isPlaying && <LottieAnimation animationData={playAnimation} style={{ width: 16, height: 16 }} loop autoplay className="flex-shrink-0" />}
                     {currentSong?.id && (
                       <a href={`/#/song/${currentSong.id}`} onClick={e => e.stopPropagation()}
-                        className="flex-shrink-0 text-gray-600 hover:text-cyan-400 transition-colors ml-1" title="Voir la page du son">
+                        className="flex-shrink-0 text-gray-600 hover:text-cyan-400 transition-colors ml-1" title={t("player.songPage")}>
                         <ExternalLink className="w-3 h-3" />
                       </a>
                     )}
@@ -1191,7 +1193,7 @@ const AudioPlayer = ({ currentSong, playlist = [], onNext, onPrevious, onClose, 
                     {isPlaying && <LottieAnimation animationData={playAnimation} style={{ width: 18, height: 18 }} loop autoplay className="flex-shrink-0 opacity-80" />}
                     {currentSong?.id && (
                       <a href={`/#/song/${currentSong.id}`} onClick={e => e.stopPropagation()}
-                        className="flex-shrink-0 text-gray-600 hover:text-cyan-400 transition-colors" title="Page du son">
+                        className="flex-shrink-0 text-gray-600 hover:text-cyan-400 transition-colors" title={t("player.songPage")}>
                         <ExternalLink className="w-3.5 h-3.5" />
                       </a>
                     )}
@@ -1225,7 +1227,7 @@ const AudioPlayer = ({ currentSong, playlist = [], onNext, onPrevious, onClose, 
                   <button onClick={handleDownload} className="p-1.5 rounded-full text-gray-700 hover:text-cyan-400 transition-colors">
                     <Download className="w-4 h-4" />
                   </button>
-                  <button onClick={closePlayer} className="p-1.5 rounded-full text-gray-700 hover:text-gray-400 hover:bg-gray-800 transition-all" title="Fermer">
+                  <button onClick={closePlayer} className="p-1.5 rounded-full text-gray-700 hover:text-gray-400 hover:bg-gray-800 transition-all" title={t("common.close")}>
                     <X className="w-3.5 h-3.5" />
                   </button>
                 </div>
@@ -1235,7 +1237,7 @@ const AudioPlayer = ({ currentSong, playlist = [], onNext, onPrevious, onClose, 
               <div className="flex flex-col items-center gap-1.5">
                 <div className="flex items-center gap-4">
                   <button onClick={(e) => { e.stopPropagation(); setShuffle(!shuffle); }}
-                    className={`transition-all ${shuffle ? 'text-cyan-400' : 'text-gray-600 hover:text-white'}`} title="Aléatoire">
+                    className={`transition-all ${shuffle ? 'text-cyan-400' : 'text-gray-600 hover:text-white'}`} title={t("player.shuffle")}>
                     <Shuffle className="w-4 h-4" />
                   </button>
                   <button onClick={(e) => { e.stopPropagation(); goPrevious(); }} className="text-gray-400 hover:text-white hover:scale-110 transition-all">

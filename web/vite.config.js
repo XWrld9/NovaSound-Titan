@@ -12,7 +12,6 @@ export default defineConfig({
   build: {
     outDir: 'dist',
     chunkSizeWarningLimit: 1000,
-    // Code splitting intelligent
     rollupOptions: {
       onwarn(warning, warn) {
         if (warning.code === 'EVAL' && warning.id?.includes('lottie')) return;
@@ -30,10 +29,11 @@ export default defineConfig({
           'vendor-lottie': ['lottie-react'],
           // Vendor : UI libs
           'vendor-ui': ['lucide-react', '@radix-ui/react-slider', '@radix-ui/react-slot'],
+          // Vendor : i18n
+          'vendor-i18n': ['i18next', 'react-i18next', 'i18next-browser-languagedetector'],
         }
       }
     },
-    // Minification agressive
     minify: 'esbuild',
     target: 'esnext',
   }

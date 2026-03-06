@@ -1,5 +1,5 @@
 /**
- * send-push-notification — NovaSound TITAN LUX V400001
+ * send-push-notification — NovaSound TITAN LUX V410000
  *
  * ✅ V400000 — Support complet de TOUS les types de notifications :
  *   like | comment | follow | new_song | repost | news
@@ -256,12 +256,19 @@ Deno.serve(async (req) => {
 
   const {
     user_id: userId,
-    title, body: bodyText, url, icon, image, actions, renotify, silent,
+    title, body: bodyText, url,
+    // Accept both `icon` (direct API calls) and `icon_url` (DB trigger)
+    icon, icon_url,
+    // Accept both `image` (direct API calls) and `image_url` (DB trigger)
+    image, image_url,
+    actions, renotify, silent,
     notif_id: notifId,
     type = "default",
     broadcast: isBroadcast = false,
   } = rec as {
-    user_id?: string; title: string; body: string; url?: string; icon?: string; image?: string;
+    user_id?: string; title: string; body: string; url?: string;
+    icon?: string; icon_url?: string;
+    image?: string; image_url?: string;
     actions?: { action: string; title: string }[]; renotify?: boolean; silent?: boolean;
     notif_id?: string; type?: string; broadcast?: boolean;
   };
@@ -305,9 +312,10 @@ Deno.serve(async (req) => {
   const urgency = typeCfg.urgency;
   const ttl     = typeCfg.ttl;
   
-  // Build icon: always use explicit icon URL or the app default PNG.
+  // Build icon: accept `icon` (direct API calls) OR `icon_url` (DB trigger). Must be a URL.
   // Note: Web Push `icon` must be a URL, not an emoji — emojis belong in title/body.
-  const finalIcon    = (icon as string) || "/icon-192.png";
+  const finalIcon    = icon || icon_url || "/icon-192.png";
+  const finalImage   = image || image_url;
   const finalActions = (actions as { action: string; title: string }[]) ?? typeCfg.actions;
 
   // ── Fetch subscriptions ──────────────────────────────────────────────────
@@ -333,7 +341,7 @@ Deno.serve(async (req) => {
     notifId,
     renotify: Boolean(renotify),
     silent:   Boolean(silent),
-    ...(image        ? { image }        : {}),
+    ...(finalImage  ? { image: finalImage }  : {}),
     ...(finalActions ? { actions: finalActions } : {}),
   };
 

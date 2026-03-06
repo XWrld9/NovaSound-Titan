@@ -33,14 +33,9 @@ ALTER TABLE public.notifications
     'achievement'
   ]));
 
--- ─── 2. Assurer que push_notification_logs.notif_id accepte bigint textualisé ─
--- notif_id est TEXT dans push_notification_logs mais notifications.id est BIGINT.
--- La conversion est faite côté Edge Function (notif_id::TEXT) donc pas de changement
--- de type nécessaire — on s'assure juste que l'index existe pour les lookups.
-
-CREATE INDEX IF NOT EXISTS idx_push_logs_notif_id_text
-  ON public.push_notification_logs (notif_id)
-  WHERE notif_id IS NOT NULL;
+-- ─── 2. Note : index sur push_notification_logs.notif_id ─────────────────────
+-- idx_push_logs_notif_id déjà créé en V400000 — aucune action requise ici.
+-- (doublon évité : même colonne, même condition WHERE notif_id IS NOT NULL)
 
 -- ─── 3. S'assurer que push_sent_at existe bien sur notifications ───────────────
 DO $$

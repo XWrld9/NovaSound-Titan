@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Mail, Music, Heart, X, ExternalLink, Smartphone, Globe, Info } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useTranslation } from 'react-i18next';
 
 // ── Modal soutien discret ───────────────────────────────────────────────────────
 const SupportModal = ({ onClose }) => (
@@ -129,7 +130,7 @@ const AboutModal = ({ onClose }) => (
         <div className="flex items-center justify-between text-xs">
           <span className="text-gray-700">© 2026 NovaSound TITAN LUX</span>
           <div className="flex gap-3">
-            <Link to="/privacy" onClick={onClose} className="text-gray-600 hover:text-cyan-400 transition-colors">Confidentialité</Link>
+            <Link to="/privacy" onClick={onClose} className="text-gray-600 hover:text-cyan-400 transition-colors">{t('footer.privacy')}</Link>
             <Link to="/terms"   onClick={onClose} className="text-gray-600 hover:text-cyan-400 transition-colors">CGU</Link>
           </div>
         </div>
@@ -140,6 +141,7 @@ const AboutModal = ({ onClose }) => (
 
 // ══════════════════════════════════════════════════════════════════════════════
 const Footer = () => {
+  const { t } = useTranslation();
   const [showSupport, setShowSupport] = useState(false);
   const [showAbout,   setShowAbout]   = useState(false);
 
@@ -163,29 +165,29 @@ const Footer = () => {
                 </span>
               </div>
               <p className="text-gray-500 text-xs max-w-xs leading-relaxed text-center md:text-left">
-                {'La plateforme musicale nouvelle génération. Streamez, uploadez et connectez-vous avec des artistes du monde entier.'}
+                {t('footer.description')}
               </p>
               {/* Soutenir — bouton discret */}
               <button onClick={() => setShowSupport(true)}
                 className="flex items-center gap-1.5 text-xs text-gray-600 hover:text-pink-400 transition-colors group">
                 <Heart className="w-3.5 h-3.5 group-hover:fill-pink-400 transition-all" />
-                <span>Soutenir le projet</span>
+                <span>{t('footer.support')}</span>
               </button>
             </div>
 
             {/* ── Découvrir ──────────────────────────────────────────────────── */}
             <div className="flex flex-col items-center md:items-start">
               <h3 className="text-white font-bold text-sm mb-4 relative">
-                Découvrir
+                {t('footer.discover')}
                 <span className="absolute -bottom-1 left-0 right-0 md:right-auto h-px bg-gradient-to-r from-cyan-500/50 to-transparent" />
               </h3>
               <ul className="space-y-2.5">
                 {[
-                  { to:'/explorer', label:'Explorer' },
-                  { to:'/trending', label:'Tendances' },
-                  { to:'/news',     label:'Actualités' },
-                  { to:'/upload',   label:'Uploader' },
-                  { to:'/local-player', label:'Lecteur hors-ligne' },
+                  { to:'/explorer', label:t('footer.explorer') },
+                  { to:'/trending', label:t('footer.trending') },
+                  { to:'/news',     label:t('footer.news') },
+                  { to:'/upload',   label:t('footer.uploader') },
+                  { to:'/local-player', label:t('footer.localPlayer') },
                 ].map(({ to, label }) => (
                   <li key={to}>
                     <Link to={to} className="text-gray-500 hover:text-cyan-400 transition-colors text-xs">{label}</Link>
@@ -197,7 +199,7 @@ const Footer = () => {
             {/* ── À propos & Légal ───────────────────────────────────────────── */}
             <div className="flex flex-col items-center md:items-start">
               <h3 className="text-white font-bold text-sm mb-4 relative">
-                À propos
+                {t('footer.about')}
                 <span className="absolute -bottom-1 left-0 right-0 md:right-auto h-px bg-gradient-to-r from-fuchsia-500/50 to-transparent" />
               </h3>
               <ul className="space-y-2.5">
@@ -207,9 +209,9 @@ const Footer = () => {
                   </button>
                 </li>
                 {[
-                  { to:'/privacy',   label:'Confidentialité' },
-                  { to:'/terms',     label:"Conditions d'utilisation" },
-                  { to:'/copyright', label:"Droits d'auteur" },
+                  { to:'/privacy',   label:'{t('footer.privacy')}' },
+                  { to:'/terms',     label:"{t('footer.terms')}" },
+                  { to:'/copyright', label:"{t('footer.copyright')}" },
                 ].map(({ to, label }) => (
                   <li key={to}>
                     <Link to={to} className="text-gray-500 hover:text-fuchsia-400 transition-colors text-xs">{label}</Link>
@@ -221,7 +223,7 @@ const Footer = () => {
             {/* ── Contact ────────────────────────────────────────────────────── */}
             <div className="flex flex-col items-center md:items-start">
               <h3 className="text-white font-bold text-sm mb-4 relative">
-                Contact
+                {t('footer.contact')}
                 <span className="absolute -bottom-1 left-0 right-0 md:right-auto h-px bg-gradient-to-r from-purple-500/50 to-transparent" />
               </h3>
               <div className="space-y-3 w-full">
@@ -243,15 +245,15 @@ const Footer = () => {
           {/* ── Bottom bar ──────────────────────────────────────────────────── */}
           <div className="border-t border-white/[0.05] mt-10 pt-6 flex flex-col sm:flex-row items-center justify-between gap-3">
             <p className="text-gray-700 text-xs font-mono">
-              © 2026 <span className="text-gray-600">NovaSound TITAN LUX</span> — ELOADXFAMILY · v400.0.0
+              {t('footer.copyright_text')} · v410.0.0
             </p>
             <div className="flex items-center gap-4">
               <button onClick={() => setShowAbout(true)} className="text-gray-700 hover:text-gray-500 text-xs transition-colors flex items-center gap-1">
-                <Globe className="w-3 h-3" />À propos
+                <Globe className="w-3 h-3" />{t('footer.about')}
               </button>
               <span className="text-gray-800">·</span>
               <button onClick={() => setShowSupport(true)} className="text-gray-700 hover:text-pink-400 text-xs transition-colors flex items-center gap-1">
-                <Heart className="w-3 h-3" />Soutenir
+                <Heart className="w-3 h-3" />{t('footer.support')}
               </button>
             </div>
           </div>

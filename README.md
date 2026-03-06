@@ -1,124 +1,231 @@
-# NovaSound TITAN LUX — V400000 (Patch V400001)
+# NovaSound TITAN LUX — V410000
 
-**Plateforme musicale nouvelle génération** — Streaming, upload, live rooms, chat, notifications push WebRTC.
-
----
-
-## 🚀 Déploiement Vercel
-
-1. Push sur `main` → déploiement automatique via Vercel CI.
-2. Node.js `20.x` requis (défini dans `package.json`).
+> **La plateforme musicale nouvelle génération.**  
+> Streamez, uploadez, découvrez — et maintenant dans votre langue, partout.
 
 ---
 
-## 🛠️ Corrections V400001 (Patch de Réparation)
+## 🚀 Nouveautés V410000
 
-### Bugs critiques résolus
+### 🌍 Internationalisation (i18n) — Complète et Totale
+La refonte i18n est la pièce maîtresse de cette version. **Chaque texte visible** de l'application passe désormais par le système de traduction `react-i18next` — sans exception.
 
-| Fichier | Problème | Fix |
-|---|---|---|
-| `ExplorerPage.jsx` | Nom de composant `const {t(...)}Page` invalide (crash build) | Renommé `const ExplorerPage` + `export default ExplorerPage` |
-| Tous les fichiers | `.select('...')` cassé en `.selec'...'` par le système i18n | 38 fichiers restaurés |
-| `TrendingPage.jsx` | `PERIODS` défini comme fonction `(t) =>` puis appelé sans `t` | Converti en tableau statique |
-| `BottomNav.jsx` | `labelKey` + `t(labelKey)` sans hook actif | Remplacé par `label` statique |
-| `NotificationsPage.jsx` | `t(tab.labelKey)` dynamique sans hook | Remplacé par `tab.label` statique |
-| `ArtistProfilePage.jsx` | `.select()` corrompu par substitution i18n | Restauré |
-| `UserProfilePage.jsx` | `.select()` corrompu | Restauré |
+| Composant | Avant V410000 | V410000 |
+|-----------|--------------|---------|
+| `Header` | Chaînes hardcodées | ✅ `useTranslation()` complet |
+| `Footer` | Chaînes hardcodées | ✅ `useTranslation()` complet |
+| `AudioPlayer` | Chaînes hardcodées | ✅ `useTranslation()` complet |
+| `LocalPlayerPage` | Chaînes hardcodées | ✅ `useTranslation()` complet |
+| `LanguageSwitcher` | Modes limités | ✅ 4 modes : `dropdown`, `inline`, `compact`, `grid` |
+| Locales (fr/en/es/it/pt) | ~120 clés | ✅ 200+ clés, sections `localPlayer.*` complètes |
 
-### Système i18n supprimé intégralement
+**Langues supportées :** Français 🇫🇷 · English 🇬🇧 · Español 🇪🇸 · Italiano 🇮🇹 · Português 🇧🇷
 
-- **Supprimé** : `i18next`, `i18next-browser-languagedetector`, `react-i18next` (package.json)
-- **Supprimé** : `LanguageSwitcher` composant et toutes ses occurrences (Header, LoginPage, SignupPage)
-- **Supprimé** : Tous les imports `useTranslation` + hooks `const { t } = useTranslation()`
-- **Remplacé** : Tous les appels `t('key')` par le texte français statique correspondant
-- **Conservés** : Tous les fichiers `locales/*.json` et `i18n.js` (non importés, peuvent être supprimés manuellement)
-- **Texte du site** : 100% français fixe, propre, sans dépendances
+**Détection automatique** : langue du navigateur → `localStorage` → fallback `fr`
 
-### Migration Supabase V400001
+**Admin Panel** : Les clés peuvent être surchargées en base via `i18n_overrides` sans redéploiement.
 
-Fichier : `supabase/migrations/novasound-v400001-reparatrice.sql`
+---
 
-**Appliquer dans Supabase SQL Editor :**
-1. Ouvre **Supabase Dashboard → SQL Editor**
-2. Colle le contenu de `novasound-v400001-reparatrice.sql`
-3. Exécute
+### 🎵 Lecteur Local — Refonte Desktop Totale
 
-**Ce que fait la migration :**
-- ✅ Élargit la contrainte `CHECK` sur `notifications.type` pour inclure `live_start`, `live_invite`, `queue_song`, `achievement` (types utilisés par l'Edge Function mais manquants dans le schéma)
-- ✅ Ajoute les colonnes `push_sent_at` et `image_url` si absentes
-- ✅ Recrée le trigger `on_notification_insert_push` avec la liste complète des types
-- ✅ Ajoute les index manquants sur `push_notification_logs` et `notifications`
-- ✅ Met à jour la vue `v_notification_stats`
+L'interface du Lecteur Local a été **entièrement repensée** pour PC. L'aspect "mobile étiré sur grand écran" est définitivement éliminé.
+
+#### Architecture 3 panneaux (desktop)
+```
+┌──────────────────┬──────────────────────────────────────────────┐
+│  Player Sidebar  │  Bibliothèque / Playlists                    │
+│  (380–420px)     │                                              │
+│                  │  ┌─ Onglets ─────────────────────────────┐   │
+│  ┌────────────┐  │  │ 🎵 Bibliothèque [42]  📁 Playlists [3]│   │
+│  │  Pochette  │  │  └───────────────────────────────────────┘   │
+│  │  340×340   │  │                                              │
+│  └────────────┘  │  ┌─ Recherche + Tri ──────────────────────┐  │
+│  Titre           │  │ 🔍 Filtrer les fichiers…  [Trier par ▼] │  │
+│  Artiste         │  └────────────────────────────────────────┘  │
+│  Album           │                                              │
+│                  │  # │ Cover │ Titre / Artiste │ Album │ ⏱ │ 🗑 │
+│  ══ SeekBar ══   │  ─────────────────────────────────────────   │
+│                  │  1 │  🎵  │ Midnight Pulse   │ Ablaze │ 3:24│  │
+│  ⏮  ⏭  ⏸  🔀  🔁 │  2 │  🎵  │ Hero             │ Local  │ 4:01│  │
+│                  │  …                                          │
+│  🔊 ─────── 80%  │                                              │
+│                  │  ┌─ Playlists ──────────────────────────┐    │
+│  ── Queue ──     │  │  [cover grid 2×2]  [cover grid 2×2]  │    │
+│  Next 3 tracks   │  │  My Mix (6)        Chill (12)         │    │
+└──────────────────┴──────────────────────────────────────────────┘
+```
+
+#### Fonctionnalités nouvelles
+- **Drag & Drop** : glissez vos fichiers audio directement dans la fenêtre
+- **Recherche/Filtre** : filtrez en temps réel par nom, artiste ou album
+- **Tri** : par nom, artiste (d'autres tris extensibles)
+- **Raccourcis clavier** :
+  - `Espace` — Lecture / Pause
+  - `←` / `→` — Reculer / Avancer de 10s
+  - `↑` / `↓` — Volume +5% / -5%
+  - `M` — Muet
+  - `N` — Piste suivante
+  - `P` — Piste précédente
+- **EQ animé** : barres d'égaliseur animées sur la piste active
+- **Hover reveal** : bouton play au survol d'un titre
+- **File size badge** : taille du fichier affiché sur la pochette
+- **Queue preview** : prochaines pistes visibles dans la sidebar
+- **Mode mobile préservé** : tabs navigation (🎵 / 📚 / 📁)
+
+---
+
+### 🔧 Corrections et améliorations techniques
+
+- **`LocalPlayerPage`** : `aler''` → bug JS corrigé (`return`)
+- **`LocalPlayerPage`** : `CustomEven'novasound:close-player'` → typo corrigée
+- **`Header`** : le `LanguageSwitcher` est maintenant intégré dans le dropdown "Plus" (desktop) et dans le footer du drawer mobile
+- **Locales** : clés `upload`, `song`, `artist`, `playlists` alignées entre fr/en/es/it/pt
+- **`AudioPlayer`** : import `useTranslation` ajouté
 
 ---
 
 ## 📦 Structure du projet
 
 ```
-web/
-├── src/
-│   ├── pages/          # 23 pages React
-│   ├── components/     # 40+ composants
-│   ├── contexts/       # Auth, Player, Chat, Notifications…
-│   ├── hooks/          # usePWAInstall, useGenreTheme
-│   └── lib/            # supabaseClient, notifUtils, utils
-├── public/             # Assets, SW, manifest PWA
-└── package.json
-supabase/
-├── functions/
-│   └── send-push-notification/index.ts   # Edge Function VAPID push
-└── migrations/
-    ├── 20260306_V400000.sql               # Migration principale
-    └── novasound-v400001-reparatrice.sql  # Migration corrective
+novasound_v410000/
+├── web/
+│   ├── src/
+│   │   ├── components/
+│   │   │   ├── AudioPlayer.jsx        ← useTranslation ajouté
+│   │   │   ├── Footer.jsx             ← Fully translated
+│   │   │   ├── Header.jsx             ← Fully translated + LanguageSwitcher intégré
+│   │   │   └── LanguageSwitcher.jsx   ← 4 modes (dropdown/inline/compact/grid)
+│   │   ├── locales/
+│   │   │   ├── fr.json                ← 200+ clés
+│   │   │   ├── en.json                ← 200+ clés
+│   │   │   ├── es.json                ← Mis à jour
+│   │   │   ├── it.json                ← Mis à jour
+│   │   │   └── pt.json                ← Mis à jour
+│   │   └── pages/
+│   │       └── LocalPlayerPage.jsx    ← Refonte desktop totale (1414 lignes)
+│   └── ...
+├── supabase/
+│   ├── functions/
+│   │   └── send-push-notification/
+│   │       └── index.ts               ← v410000 (inchangé fonctionnellement)
+│   └── migrations/
+│       └── 20260306_V410000.sql       ← Migration complète
+└── README.md
 ```
 
 ---
 
-## ⚙️ Variables d'environnement
+## 🗄️ Migration V410000
 
-### Vercel / Frontend (`.env`)
-```
-VITE_SUPABASE_URL=https://xxxx.supabase.co
-VITE_SUPABASE_ANON_KEY=eyJ...
-```
+**Fichier :** `supabase/migrations/20260306_V410000.sql`
 
-### Supabase Edge Function Secrets
-```
-VAPID_PUBLIC_KEY=...
-VAPID_PRIVATE_KEY=...
-VAPID_SUBJECT=mailto:admin@novasound.app
-PUSH_WEBHOOK_SECRET=...          # optionnel
-PUSH_BATCH_SIZE=10               # optionnel (défaut: 10)
-```
+### Ce que fait la migration :
 
-### Supabase Database Settings (pour le trigger auto-push)
-```sql
-ALTER DATABASE postgres SET app.supabase_url = 'https://xxxx.supabase.co';
-ALTER DATABASE postgres SET app.service_role_key = 'your-service-role-key';
-CREATE EXTENSION IF NOT EXISTS pg_net;
+1. **`i18n_overrides`** : table idempotente (re-créée si absente), peuplée avec les nouvelles clés `localPlayer.*`
+2. **`users.preferred_lang`** : nouvelle colonne pour synchroniser la langue préférée côté serveur
+3. **`local_player_sessions`** : nouvelle table de tracking anonyme des sessions locales (stats internes)
+4. **`get_i18n_overrides(lang)`** : fonction RPC pour charger les overrides côté client
+5. **`upsert_preferred_lang(lang)`** : fonction RPC pour sauvegarder la langue préférée
+6. **Index** : 3 index supplémentaires sur `songs` pour les performances
+
+### Appliquer la migration
+
+```bash
+# Via Supabase CLI
+supabase db push --db-url "postgresql://..."
+
+# Ou via le Dashboard Supabase
+# SQL Editor → coller le contenu de 20260306_V410000.sql → Run
 ```
 
 ---
 
-## 🔔 Système de Push Notifications
+## ⚡ Edge Function — send-push-notification
 
-L'Edge Function `send-push-notification` (Deno, Supabase Functions) gère :
-- Chiffrement VAPID + AES-GCM (Web Push standard)
-- Rate limiting : 60 push/heure/utilisateur
-- Idempotence sur `notif_id`
-- Retry x3 avec backoff exponentiel
-- Auto-purge des subscriptions expirées (404/410)
-- Broadcast mode pour notifications globales
-- 14 types de notifications avec urgence et TTL configurables
+**Version :** V410000 (hérite de V400001 sans changement fonctionnel)
+
+### Déployer
+
+```bash
+supabase functions deploy send-push-notification \
+  --project-ref <votre-ref> \
+  --no-verify-jwt
+```
+
+### Variables d'environnement requises
+
+```bash
+VAPID_PUBLIC_KEY=<votre-clé-publique>
+VAPID_PRIVATE_KEY=<votre-clé-privée>
+VAPID_SUBJECT=mailto:eloadxfamily@gmail.com
+SUPABASE_URL=<votre-url>
+SUPABASE_SERVICE_ROLE_KEY=<votre-service-role-key>
+```
 
 ---
 
-## 📱 PWA
+## 🛠 Installation & Développement
 
-- Manifest : `/public/manifest.json`
-- Service Worker : `/public/sw.js`
-- APK Android natif : `/public/NovaSound-TITAN-LUX.apk`
+```bash
+# 1. Cloner et installer
+cd web
+npm install
+
+# 2. Configurer les variables d'environnement
+cp .env.example .env
+# Remplir VITE_SUPABASE_URL et VITE_SUPABASE_ANON_KEY
+
+# 3. Lancer le dev server
+npm run dev
+
+# 4. Build production
+npm run build
+```
 
 ---
 
-*© 2026 NovaSound TITAN LUX — ELOADXFAMILY*
+## 🌐 Déploiement Vercel
+
+```bash
+# Build command
+npm run build
+
+# Output directory
+dist
+
+# Root directory
+web
+```
+
+Variables Vercel à configurer :
+```
+VITE_SUPABASE_URL=https://xxx.supabase.co
+VITE_SUPABASE_ANON_KEY=eyJhbGc...
+```
+
+---
+
+## 📝 Nom de commit recommandé
+
+```
+feat(v410000): full i18n, desktop local player redesign, drag&drop, keyboard shortcuts
+```
+
+---
+
+## 🗺 Roadmap
+
+| Version | Statut | Fonctionnalité |
+|---------|--------|----------------|
+| V400001 | ✅ Done | Migration réparatrice, push notifications |
+| **V410000** | **✅ Current** | **i18n complète, refonte Local Player desktop** |
+| V420000 | 🔜 Planned | Dark/Light mode, admin i18n editor en live |
+| V430000 | 🔜 Planned | Equalizer visuel, audio fingerprint |
+
+---
+
+## 📄 Licence
+
+© 2026 NovaSound TITAN LUX — ELOADXFAMILY  
+Tous droits réservés.
