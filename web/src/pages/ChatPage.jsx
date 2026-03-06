@@ -325,8 +325,8 @@ const ChatPage = () => {
   // ── ?highlight & ?tagger ──────────────────────────────────────────
   useEffect(() => {
     const params = new URLSearchParams(location.search);
-    const hlId   = params.ge'highlight';
-    const tagger = params.ge'tagger';
+    const hlId   = params.get('highlight');
+    const tagger = params.get('tagger');
 
     if (hlId) {
       setHighlightId(hlId);
