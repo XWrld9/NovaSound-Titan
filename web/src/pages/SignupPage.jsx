@@ -107,7 +107,7 @@ const SignupPage = () => {
             </div>
 
             <h1 className="text-2xl font-bold text-white mb-1">{'Crée ton compte 🎵'}</h1>
-            <p className="text-gray-400 text-sm mb-6">{'Rejoins la révolution musicale dès aujourd'hui'}</p>
+            <p className="text-gray-400 text-sm mb-6">{'Rejoins la révolution musicale dès aujourd\'hui'}</p>
 
             <div className="bg-gray-900/50 backdrop-blur-xl border border-fuchsia-500/20 rounded-2xl p-6 shadow-2xl">
               <form onSubmit={handleSubmit} className="space-y-4" autoComplete="on">
@@ -132,7 +132,7 @@ const SignupPage = () => {
 
                 {/* Username */}
                 <div>
-                  <label className="block text-xs font-medium text-gray-300 mb-1.5">{'Nom d'utilisateur'}</label>
+                  <label className="block text-xs font-medium text-gray-300 mb-1.5">{'Nom d\'utilisateur'}</label>
                   <div className="relative">
                     <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-fuchsia-400" />
                     <input type="text" id="username" name="username" value={formData.username}
