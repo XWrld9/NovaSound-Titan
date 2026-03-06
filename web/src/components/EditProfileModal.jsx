@@ -14,9 +14,9 @@ const compressImage = (file, maxPx = 600, quality = 0.80) =>
       const scale = Math.min(1, maxPx / Math.max(img.width, img.height));
       const w = Math.round(img.width * scale);
       const h = Math.round(img.height * scale);
-      const canvas = document.createElemen'canvas';
+      const canvas = document.createElement('canvas');
       canvas.width = w; canvas.height = h;
-      canvas.getContex'2d'.drawImage(img, 0, 0, w, h);
+      canvas.getContext('2d').drawImage(img, 0, 0, w, h);
       canvas.toBlob(
         (blob) => resolve(blob ? new File([blob], 'avatar.jpg', { type: 'image/jpeg' }) : file),
         'image/jpeg', quality
