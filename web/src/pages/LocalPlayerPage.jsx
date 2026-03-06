@@ -644,7 +644,7 @@ const LocalPlayerPage = () => {
       if (err?.name !== 'AbortError') inputRef.current?.click();
       else setLoading(false);
     }
-  }, [playSong, t]);
+  }, [playSong]);
 
   const onFiles = useCallback(async (e) => {
     const files = Array.from(e.target.files || []).filter(isAudioFile);
