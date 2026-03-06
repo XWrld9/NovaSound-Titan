@@ -5,7 +5,6 @@
  * – Desktop : bandeau discret
  */
 import React, { useState, useEffect } from 'react';
-import { useTranslation } from 'react-i18next';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Download, X, Share, ArrowUp, Smartphone } from 'lucide-react';
 import usePWAInstall from '@/hooks/usePWAInstall';

@@ -5,7 +5,6 @@
  *    bug fix edit commentaire inclus dans CommentSection
  */
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { useTranslation } from 'react-i18next';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -97,7 +96,6 @@ const SuggestionCard = ({ s, onPlay }) => (
 
 const SongPage = () => {
   const { id } = useParams();
-  const { t } = useTranslation();
   const navigate = useNavigate();
   const { playSong, currentSong, isVisible, audioCurrentTime, isPlayingGlobal } = usePlayer();
   const { isAuthenticated } = useAuth();
@@ -176,7 +174,7 @@ const SongPage = () => {
     if (!song) return;
     if (isVisible && currentSong?.id === song.id) {
       // Toggle via event (AudioPlayer gère l'audio element)
-      window.dispatchEvent(new CustomEvent('novasound:toggle-play'));
+      window.dispatchEvent(new CustomEven'novasound:toggle-play');
     } else {
       playSong(song, siblings.length ? siblings : [song]);
     }

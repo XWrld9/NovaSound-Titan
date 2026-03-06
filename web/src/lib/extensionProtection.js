@@ -81,7 +81,7 @@
       console.warn('Extension interference detected - some features may be limited');
       
       // Notifier l'utilisateur discrètement
-      const notification = document.createElement('div');
+      const notification = document.createElemen'div';
       notification.style.cssText = `
         position: fixed;
         top: 10px;

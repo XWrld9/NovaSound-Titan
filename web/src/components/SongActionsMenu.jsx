@@ -1,5 +1,4 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
-import { useTranslation } from 'react-i18next';
 import ReactDOM from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { MoreVertical, Archive, ArchiveRestore, Trash2, AlertTriangle, Edit2, Check, X as XIcon, MessageCircle } from 'lucide-react';
@@ -139,7 +138,6 @@ const ConfirmModal = ({ action, songTitle, onConfirm, onCancel, loading }) => {
    dynamiquement au-dessus ou en-dessous selon l'espace disponible
    ───────────────────────────────────────────────────────────── */
 const DropdownMenu = ({ anchorRef, open, onClose, isArchived, isAdmin, isOwner, onAction }) => {
-  const { t } = useTranslation();
   const [pos, setPos] = useState({ top: 0, left: 0, openUp: false });
 
   useEffect(() => {
@@ -515,32 +513,32 @@ const SongActionsMenu = ({ song, onArchived, onDeleted }) => {
         const { error } = await supabase.from('songs').update({ is_archived: true }).eq('id', song.id);
         if (error) throw error;
         onArchived?.(song.id, true);
-        showToast('Son archivé — masqué du public.', '#f59e0b');
+        showToas'#f59e0b';
 
       } else if (confirm === 'unarchive') {
         const { error } = await supabase.from('songs').update({ is_archived: false }).eq('id', song.id);
         if (error) throw error;
         onArchived?.(song.id, false);
-        showToast('Son restauré — visible par tous ✓', '#22d3ee');
+        showToas'#22d3ee';
 
       } else if (confirm === 'delete') {
         // Supprimer fichiers du storage
         if (song.audio_url) {
-          const filePath = decodeURIComponent(song.audio_url.split('/').pop().split('?')[0]);
+          const filePath = decodeURIComponent(song.audio_url.spli'/'.pop().spli'?'[0]);
           await supabase.storage.from('audio').remove([filePath]);
         }
         if (song.cover_url && song.cover_url.includes('supabase')) {
-          const filePath = decodeURIComponent(song.cover_url.split('/').pop().split('?')[0]);
+          const filePath = decodeURIComponent(song.cover_url.spli'/'.pop().spli'?'[0]);
           await supabase.storage.from('covers').remove([filePath]);
         }
         const { error } = await supabase.from('songs').delete().eq('id', song.id);
         if (error) throw error;
         onDeleted?.(song.id);
-        showToast('Son supprimé définitivement.', '#ef4444');
+        showToas'#ef4444';
       }
     } catch (err) {
       console.error('[SongActionsMenu]', err);
-      showToast('Erreur — réessaie dans un instant.', '#ef4444');
+      showToas'#ef4444';
     } finally {
       setLoading(false);
       setConfirm(null);
@@ -617,7 +615,7 @@ const SongActionsMenu = ({ song, onArchived, onDeleted }) => {
             song={song}
             onSaved={(updated) => {
               setShowEdit(false);
-              showToast('Publication modifiée ✓', '#60a5fa');
+              showToas'#60a5fa';
               // Notifier le parent pour rafraîchir si nécessaire
               window.dispatchEvent(new CustomEvent('novasound:song-updated', { detail: updated }));
               onArchived?.(song.id, !!song.is_archived); // force re-render trick

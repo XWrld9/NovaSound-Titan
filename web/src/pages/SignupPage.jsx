@@ -5,13 +5,10 @@ import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Mail, Lock, User, AlertCircle, CheckCircle, Eye, EyeOff, Clock } from 'lucide-react';
 import { motion } from 'framer-motion';
-import { useTranslation } from 'react-i18next';
-import LanguageSwitcher from '@/components/LanguageSwitcher';
 
 const SignupPage = () => {
   const navigate = useNavigate();
   const { signup } = useAuth();
-  const { t } = useTranslation();
 
   const [formData, setFormData] = useState({ email:'', username:'', password:'', passwordConfirm:'' });
   const [showPassword,        setShowPassword]        = useState(false);
@@ -60,7 +57,7 @@ const SignupPage = () => {
   return (
     <>
       <Helmet>
-        <title>{t('auth.signupBtn')} — NovaSound TITAN LUX</title>
+        <title>{'Créer mon compte'} — NovaSound TITAN LUX</title>
         <meta name="description" content="Crée ton compte NovaSound TITAN LUX" />
       </Helmet>
 
@@ -74,7 +71,8 @@ const SignupPage = () => {
             <div className="absolute bottom-1/3 right-1/3 w-72 h-72 rounded-full opacity-15 blur-3xl" style={{ background:'radial-gradient(circle,#06b6d4,transparent)' }} />
           </div>
           <div className="absolute inset-0 opacity-[0.025]" style={{ backgroundImage:'radial-gradient(circle,#fff 1px,transparent 1px)', backgroundSize:'28px 28px' }} />
-          <div className="absolute top-6 right-6 z-20"><LanguageSwitcher /></div>
+          <div className="absolute top-6 right-6 z-20">
+</div>
 
           <motion.div initial={{ opacity:0, x:-30 }} animate={{ opacity:1, x:0 }} transition={{ delay:0.2, duration:0.6 }}
             className="relative z-10 flex flex-col items-center text-center max-w-sm px-8">
@@ -96,7 +94,6 @@ const SignupPage = () => {
 
         {/* ══ PANNEAU DROIT : Formulaire ══ */}
         <div className="flex-1 flex flex-col items-center justify-center px-6 py-10 relative overflow-y-auto" style={{ scrollbarWidth:'none' }}>
-          <div className="absolute top-5 right-5 lg:hidden"><LanguageSwitcher compact /></div>
 
           <motion.div initial={{ opacity:0, y:20 }} animate={{ opacity:1, y:0 }} className="w-full max-w-sm">
 
@@ -109,8 +106,8 @@ const SignupPage = () => {
               </div>
             </div>
 
-            <h1 className="text-2xl font-bold text-white mb-1">{t('auth.signupTitle')}</h1>
-            <p className="text-gray-400 text-sm mb-6">{t('auth.signupSubtitle')}</p>
+            <h1 className="text-2xl font-bold text-white mb-1">{'Crée ton compte 🎵'}</h1>
+            <p className="text-gray-400 text-sm mb-6">{'Rejoins la révolution musicale dès aujourd'hui'}</p>
 
             <div className="bg-gray-900/50 backdrop-blur-xl border border-fuchsia-500/20 rounded-2xl p-6 shadow-2xl">
               <form onSubmit={handleSubmit} className="space-y-4" autoComplete="on">
@@ -119,7 +116,7 @@ const SignupPage = () => {
                     <AlertCircle className="w-4 h-4 text-red-400 flex-shrink-0 mt-0.5" />
                     <div>
                       <p className="text-red-400 text-sm">{error}</p>
-                      {cooldown > 0 && <p className="text-orange-400 text-xs mt-1 flex items-center gap-1"><Clock className="w-3 h-3" />{t('auth.wait')} {cooldown}s</p>}
+                      {cooldown > 0 && <p className="text-orange-400 text-xs mt-1 flex items-center gap-1"><Clock className="w-3 h-3" />{'Patienter'} {cooldown}s</p>}
                     </div>
                   </div>
                 )}
@@ -128,14 +125,14 @@ const SignupPage = () => {
                     <CheckCircle className="w-4 h-4 text-green-400 flex-shrink-0 mt-0.5" />
                     <div>
                       <p className="text-green-400 text-sm">{success}</p>
-                      <p className="text-gray-400 text-xs mt-0.5">{t('auth.redirecting')}</p>
+                      <p className="text-gray-400 text-xs mt-0.5">{'Redirection vers la connexion...'}</p>
                     </div>
                   </div>
                 )}
 
                 {/* Username */}
                 <div>
-                  <label className="block text-xs font-medium text-gray-300 mb-1.5">{t('auth.username')}</label>
+                  <label className="block text-xs font-medium text-gray-300 mb-1.5">{'Nom d'utilisateur'}</label>
                   <div className="relative">
                     <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-fuchsia-400" />
                     <input type="text" id="username" name="username" value={formData.username}
@@ -146,14 +143,14 @@ const SignupPage = () => {
                   </div>
                   <div className="mt-1.5 px-3 py-2 bg-gray-800/50 border border-gray-700/40 rounded-lg">
                     <p className="text-[11px] text-gray-400 leading-relaxed">
-                      <span className="text-amber-400 font-semibold">{t('auth.usernameHint')} :</span> {t('auth.usernameHintText')}
+                      <span className="text-amber-400 font-semibold">{'Conseil'} :</span> {'Pour les noms composés, remplace les espaces par des tirets (@ton-pseudo).'}
                     </p>
                   </div>
                 </div>
 
                 {/* Email */}
                 <div>
-                  <label className="block text-xs font-medium text-gray-300 mb-1.5">{t('auth.email')}</label>
+                  <label className="block text-xs font-medium text-gray-300 mb-1.5">{'Email'}</label>
                   <div className="relative">
                     <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-fuchsia-400" />
                     <input type="email" id="email" name="email" value={formData.email} onChange={handleChange}
@@ -165,7 +162,7 @@ const SignupPage = () => {
 
                 {/* Password */}
                 <div>
-                  <label className="block text-xs font-medium text-gray-300 mb-1.5">{t('auth.password')}</label>
+                  <label className="block text-xs font-medium text-gray-300 mb-1.5">{'Mot de passe'}</label>
                   <div className="relative">
                     <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-fuchsia-400" />
                     <input type={showPassword?"text":"password"} id="password" name="password" value={formData.password} onChange={handleChange}
@@ -176,12 +173,12 @@ const SignupPage = () => {
                       {showPassword ? <EyeOff className="w-4 h-4"/> : <Eye className="w-4 h-4"/>}
                     </button>
                   </div>
-                  <p className="text-xs text-gray-600 mt-1">{t('auth.minChars')}</p>
+                  <p className="text-xs text-gray-600 mt-1">{'Minimum 8 caractères'}</p>
                 </div>
 
                 {/* Confirm Password */}
                 <div>
-                  <label className="block text-xs font-medium text-gray-300 mb-1.5">{t('auth.confirmPassword')}</label>
+                  <label className="block text-xs font-medium text-gray-300 mb-1.5">{'Confirmer le mot de passe'}</label>
                   <div className="relative">
                     <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-fuchsia-400" />
                     <input type={showPasswordConfirm?"text":"password"} id="passwordConfirm" name="passwordConfirm" value={formData.passwordConfirm} onChange={handleChange}
@@ -196,12 +193,12 @@ const SignupPage = () => {
 
                 <Button type="submit" disabled={loading || !!success || cooldown > 0}
                   className="w-full bg-gradient-to-r from-fuchsia-500 to-cyan-500 hover:from-fuchsia-600 hover:to-cyan-600 text-white py-2.5 font-semibold rounded-xl shadow-lg shadow-fuchsia-500/20 disabled:opacity-50 mt-1">
-                  {loading ? t('auth.signingUp') : cooldown > 0 ? `${t('auth.wait')} ${cooldown}s...` : t('auth.signupBtn')}
+                  {loading ? 'Création en cours...' : cooldown > 0 ? `${'Patienter'} ${cooldown}s...` : 'Créer mon compte'}
                 </Button>
               </form>
 
               <div className="mt-5 text-center">
-                <p className="text-gray-400 text-sm">{t('auth.hasAccount')}{' '}<Link to="/login" className="text-fuchsia-400 hover:text-fuchsia-300 font-semibold">{t('auth.loginLink')}</Link></p>
+                <p className="text-gray-400 text-sm">{'Déjà un compte ?'}{' '}<Link to="/login" className="text-fuchsia-400 hover:text-fuchsia-300 font-semibold">{'Se connecter'}</Link></p>
               </div>
             </div>
           </motion.div>

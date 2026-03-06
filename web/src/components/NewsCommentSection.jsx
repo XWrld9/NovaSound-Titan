@@ -189,7 +189,7 @@ const NewsCommentSection = ({ newsId, newsAuthorId }) => {
       setComments(prev => prev.find(c => c.id === data.id) ? prev : [...prev, data]);
       setExpanded(true);
       if (newsAuthorId && newsAuthorId !== currentUser.id) {
-        const senderName = currentUser.username || currentUser.user_metadata?.username || currentUser.email?.split('@')[0] || 'Quelqu\'un';
+        const senderName = currentUser.username || currentUser.user_metadata?.username || currentUser.email?.spli'@'[0] || 'Quelqu\'un';
 
         // 1. Notifier l'auteur de l'actualité
         notifyUser(supabase, newsAuthorId, {

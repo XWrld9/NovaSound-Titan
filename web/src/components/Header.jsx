@@ -12,8 +12,6 @@ import { motion, AnimatePresence } from 'framer-motion';
 import usePWAInstall from '@/hooks/usePWAInstall';
 import NotificationBell from '@/components/NotificationBell';
 import AndroidInstallGuide from '@/components/AndroidInstallGuide';
-import LanguageSwitcher from '@/components/LanguageSwitcher';
-import { useTranslation } from 'react-i18next';
 import { useNotifications } from '@/contexts/NotificationContext';
 
 const isIOS = () =>
@@ -28,19 +26,19 @@ const isStandalone = () =>
 
 // Liens principaux (toujours visibles)
 const PRIMARY_LINKS = [
-  { to: '/',           labelKey: 'nav.home',     Icon: Music,      color: 'hover:text-cyan-400' },
-  { to: '/explorer',   labelKey: 'nav.explorer', Icon: Globe,      color: 'hover:text-cyan-400' },
-  { to: '/trending',   labelKey: 'nav.trending', Icon: TrendingUp, color: 'hover:text-cyan-400' },
-  { to: '/live',       labelKey: 'nav.live',     Icon: Radio,      color: 'hover:text-red-400', badge: true },
+  { to: '/',           label: 'Accueil',    Icon: Music,      color: 'hover:text-cyan-400' },
+  { to: '/explorer',   label: 'Explorer',   Icon: Globe,      color: 'hover:text-cyan-400' },
+  { to: '/trending',   label: 'Tendances',  Icon: TrendingUp, color: 'hover:text-cyan-400' },
+  { to: '/live',       label: 'Live',       Icon: Radio,      color: 'hover:text-red-400', badge: true },
 ];
 
 // Liens secondaires (dans le menu "Plus")
 const SECONDARY_LINKS = [
-  { to: '/artists',      labelKey: 'nav.artists',    Icon: Users,     color: 'hover:text-fuchsia-400' },
-  { to: '/news',         labelKey: 'nav.news',       Icon: Newspaper, color: 'hover:text-cyan-400' },
-  { to: '/chat',         labelKey: 'nav.chat',       Icon: Globe,     color: 'hover:text-cyan-400' },
-  { to: '/leaderboard',  labelKey: 'nav.leaderboard',Icon: Trophy,    color: 'hover:text-amber-400' },
-  { to: '/local-player', labelKey: 'nav.local',      Icon: HardDrive, color: 'hover:text-cyan-400' },
+  { to: '/artists',      label: 'Artistes',     Icon: Users,     color: 'hover:text-fuchsia-400' },
+  { to: '/news',         label: 'Actualités',   Icon: Newspaper, color: 'hover:text-cyan-400' },
+  { to: '/chat',         label: 'Chat',         Icon: Globe,     color: 'hover:text-cyan-400' },
+  { to: '/leaderboard',  label: 'Top',          Icon: Trophy,    color: 'hover:text-amber-400' },
+  { to: '/local-player', label: 'Local',        Icon: HardDrive, color: 'hover:text-cyan-400' },
 ];
 
 const Header = () => {
@@ -49,7 +47,6 @@ const Header = () => {
   const navigate                                 = useNavigate();
   const location                                 = useLocation();
   const { canInstall, install }                  = usePWAInstall();
-  const { t }                                    = useTranslation();
   const { unreadCount = 0 }                      = useNotifications();
 
   // Search state
@@ -190,12 +187,12 @@ const Header = () => {
 
             {/* ── Nav desktop (liens principaux) ── */}
             <nav className="hidden md:flex items-center gap-1 flex-shrink-0">
-              {PRIMARY_LINKS.map(({ to, labelKey, Icon, color, badge }) => (
+              {PRIMARY_LINKS.map(({ to, label, Icon, color, badge }) => (
                 <Link
                   key={to} to={to}
                   className={`relative text-gray-300 ${color} transition-colors flex items-center gap-1.5 font-medium px-3 py-2 rounded-lg hover:bg-white/5 text-sm`}
                 >
-                  <Icon className="w-4 h-4" />{t(labelKey)}
+                  <Icon className="w-4 h-4" />{label}
                   {badge && <span className="absolute top-1.5 right-1 w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse" />}
                 </Link>
               ))}
@@ -217,13 +214,13 @@ const Header = () => {
                       transition={{ duration: 0.15 }}
                       className="absolute left-0 top-full mt-2 w-44 bg-gray-900 border border-cyan-500/20 rounded-xl shadow-2xl overflow-hidden z-50"
                     >
-                      {SECONDARY_LINKS.map(({ to, labelKey, Icon, color }) => (
+                      {SECONDARY_LINKS.map(({ to, label, Icon, color }) => (
                         <Link
                           key={to} to={to}
                           onClick={() => setShowMoreMenu(false)}
                           className={`flex items-center gap-3 px-4 py-2.5 text-sm text-gray-300 ${color} hover:bg-white/5 transition-colors`}
                         >
-                          <Icon className="w-4 h-4" />{t(labelKey)}
+                          <Icon className="w-4 h-4" />{label}
                         </Link>
                       ))}
                     </motion.div>
@@ -246,13 +243,10 @@ const Header = () => {
               >
                 <Search className="w-4 h-4" />
                 <span className="hidden md:block text-xs text-gray-500 group-hover:text-gray-400 transition-colors pr-1">
-                  {t('nav.search')}
+                  {'Rechercher...'}
                 </span>
               </button>
-
-              {/* LanguageSwitcher — visible sur desktop */}
               <div className="hidden md:block">
-                <LanguageSwitcher />
               </div>
 
               {/* Installer PWA — mobile/tablet uniquement (pas sur PC) */}
@@ -262,7 +256,7 @@ const Header = () => {
                     onClick={handleInstallClick}
                     whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}
                     className="flex items-center gap-1.5 px-3 py-2 rounded-full border border-purple-500/40 text-purple-300 hover:bg-purple-500/10 hover:border-purple-400 hover:text-purple-200 transition-all text-sm font-medium"
-                    title={t('install.title')}
+                    title={'Installer NovaSound'}
                   >
                     <Download className="w-4 h-4" />
                   </motion.button>
@@ -274,7 +268,7 @@ const Header = () => {
                   <NotificationBell />
                   <Link to="/upload" className="hidden md:block">
                     <Button className="bg-gradient-to-r from-cyan-500 to-fuchsia-500 hover:from-cyan-600 hover:to-fuchsia-600 text-white rounded-full px-4 font-medium shadow-lg shadow-cyan-500/20 text-sm">
-                      <Upload className="w-4 h-4 mr-1.5" />{t('nav.upload')}
+                      <Upload className="w-4 h-4 mr-1.5" />{'Uploader un son'}
                     </Button>
                   </Link>
                   {/* Avatar + dropdown */}
@@ -288,13 +282,13 @@ const Header = () => {
                     </Link>
                     <div className="absolute right-0 top-full mt-2 w-48 bg-gray-900 border border-cyan-500/30 rounded-xl shadow-xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all translate-y-2 group-hover:translate-y-0 z-50">
                       <div className="p-2">
-                        <Link to="/profile" className="block px-4 py-2 text-sm text-gray-300 hover:bg-cyan-500/10 hover:text-cyan-400 rounded-lg">{ t("nav.profile") }</Link>
-                        <Link to="/playlists" className="flex items-center gap-2 px-4 py-2 text-sm text-gray-300 hover:bg-cyan-500/10 hover:text-cyan-400 rounded-lg"><ListMusic className="w-4 h-4" />{ t("nav.playlists") }</Link>
-                        <Link to="/stats" className="flex items-center gap-2 px-4 py-2 text-sm text-gray-300 hover:bg-cyan-500/10 hover:text-cyan-400 rounded-lg"><BarChart2 className="w-4 h-4" />{ t("nav.stats") }</Link>
+                        <Link to="/profile" className="block px-4 py-2 text-sm text-gray-300 hover:bg-cyan-500/10 hover:text-cyan-400 rounded-lg">{ 'Mon profil' }</Link>
+                        <Link to="/playlists" className="flex items-center gap-2 px-4 py-2 text-sm text-gray-300 hover:bg-cyan-500/10 hover:text-cyan-400 rounded-lg"><ListMusic className="w-4 h-4" />{ 'Mes playlists' }</Link>
+                        <Link to="/stats" className="flex items-center gap-2 px-4 py-2 text-sm text-gray-300 hover:bg-cyan-500/10 hover:text-cyan-400 rounded-lg"><BarChart2 className="w-4 h-4" />{ 'Mes stats' }</Link>
                         {isAdmin && (
-                          <Link to="/admin" className="flex items-center gap-2 px-4 py-2 text-sm text-red-400 hover:bg-red-500/10 rounded-lg"><Shield className="w-4 h-4" />{ t("nav.admin") }</Link>
+                          <Link to="/admin" className="flex items-center gap-2 px-4 py-2 text-sm text-red-400 hover:bg-red-500/10 rounded-lg"><Shield className="w-4 h-4" />{ 'Panneau Admin' }</Link>
                         )}
-                        <button onClick={handleLogout} className="w-full text-left flex items-center gap-2 px-4 py-2 text-sm text-red-400 hover:bg-red-500/10 rounded-lg"><LogOut className="w-4 h-4" />{ t("nav.logout") }</button>
+                        <button onClick={handleLogout} className="w-full text-left flex items-center gap-2 px-4 py-2 text-sm text-red-400 hover:bg-red-500/10 rounded-lg"><LogOut className="w-4 h-4" />{ 'Déconnexion' }</button>
                       </div>
                     </div>
                   </div>
@@ -304,12 +298,12 @@ const Header = () => {
                 <div className="hidden md:flex items-center gap-2">
                   <Link to="/login">
                     <Button variant="outline" className="border-cyan-500/40 text-cyan-400 hover:bg-cyan-500/10 hover:border-cyan-400 rounded-full text-sm px-4">
-                      { t("nav.login") }
+                      { 'Connexion' }
                     </Button>
                   </Link>
                   <Link to="/signup">
                     <Button className="bg-gradient-to-r from-cyan-500 to-fuchsia-500 hover:from-cyan-600 hover:to-fuchsia-600 text-white rounded-full text-sm px-4">
-                      { t("nav.signup") }
+                      { 'Inscription' }
                     </Button>
                   </Link>
                 </div>
@@ -472,12 +466,12 @@ const Header = () => {
               {/* Navigation mobile */}
               <div className="flex-1 overflow-y-auto p-4" style={{ scrollbarWidth:'none' }}>
                 <nav className="space-y-1">
-                  {[...PRIMARY_LINKS, ...SECONDARY_LINKS].map(({ to, labelKey, Icon, color, badge }) => (
+                  {[...PRIMARY_LINKS, ...SECONDARY_LINKS].map(({ to, label, Icon, color, badge }) => (
                     <Link
                       key={to} to={to} onClick={closeMenu}
                       className={`flex items-center gap-3 px-4 py-3 text-gray-300 ${color} hover:bg-white/5 rounded-lg transition-colors relative`}
                     >
-                      <Icon className="w-5 h-5" />{t(labelKey)}
+                      <Icon className="w-5 h-5" />{label}
                       {badge && <span className="ml-auto w-2 h-2 rounded-full bg-red-500 animate-pulse" />}
                     </Link>
                   ))}
@@ -485,7 +479,7 @@ const Header = () => {
                     <>
                       <div className="my-2 border-t border-gray-800" />
                       <Link to="/notifications" onClick={closeMenu} className="flex items-center gap-3 px-4 py-3 text-gray-300 hover:text-cyan-400 hover:bg-white/5 rounded-lg transition-colors relative">
-                        <Bell className="w-5 h-5 text-cyan-400" />{t('nav.notifications')}
+                        <Bell className="w-5 h-5 text-cyan-400" />{'Notifications'}
                         {unreadCount > 0 && (
                           <span className="ml-auto text-[10px] bg-red-500 text-white font-bold px-1.5 py-0.5 rounded-full min-w-[18px] text-center">
                             {unreadCount > 99 ? '99+' : unreadCount}
@@ -493,21 +487,21 @@ const Header = () => {
                         )}
                       </Link>
                       <Link to="/upload" onClick={closeMenu} className="flex items-center gap-3 px-4 py-3 text-gray-300 hover:text-cyan-400 hover:bg-white/5 rounded-lg transition-colors">
-                        <Upload className="w-5 h-5 text-cyan-400" />{t('nav.upload')}
+                        <Upload className="w-5 h-5 text-cyan-400" />{'Uploader un son'}
                       </Link>
                       <Link to="/playlists" onClick={closeMenu} className="flex items-center gap-3 px-4 py-3 text-gray-300 hover:text-cyan-400 hover:bg-white/5 rounded-lg transition-colors">
-                        <ListMusic className="w-5 h-5 text-cyan-400" />{t('nav.playlists')}
+                        <ListMusic className="w-5 h-5 text-cyan-400" />{'Mes playlists'}
                       </Link>
                       <Link to="/stats" onClick={closeMenu} className="flex items-center gap-3 px-4 py-3 text-gray-300 hover:text-cyan-400 hover:bg-white/5 rounded-lg transition-colors">
-                        <BarChart2 className="w-5 h-5 text-cyan-400" />{t('nav.stats')}
+                        <BarChart2 className="w-5 h-5 text-cyan-400" />{'Mes stats'}
                       </Link>
                       {isAdmin && (
                         <Link to="/admin" onClick={closeMenu} className="flex items-center gap-3 px-4 py-3 text-red-400 hover:bg-red-500/10 rounded-lg transition-colors">
-                          <Shield className="w-5 h-5" />{t('nav.admin')}
+                          <Shield className="w-5 h-5" />{'Panneau Admin'}
                         </Link>
                       )}
                       <Link to="/profile" onClick={closeMenu} className="flex items-center gap-3 px-4 py-3 text-gray-300 hover:text-fuchsia-400 hover:bg-white/5 rounded-lg transition-colors">
-                        <User className="w-5 h-5 text-fuchsia-400" />{t('nav.profile')}
+                        <User className="w-5 h-5 text-fuchsia-400" />{'Mon profil'}
                       </Link>
                     </>
                   )}
@@ -529,21 +523,19 @@ const Header = () => {
                 <div className="w-full py-2 border-t border-white/[0.06] mt-1">
                   <div className="flex items-center gap-2 mb-2">
                     <Globe className="w-4 h-4 text-gray-500 flex-shrink-0" />
-                    <span className="text-gray-400 text-xs font-semibold uppercase tracking-wider">{t('language.select')}</span>
                   </div>
-                  <LanguageSwitcher inline />
                 </div>
                 {isAuthenticated ? (
                   <Button onClick={handleLogout} variant="outline" className="w-full border-red-500/30 text-red-400 hover:bg-red-500/10 hover:text-red-300 justify-start">
-                    <LogOut className="w-4 h-4 mr-2" />{ t("nav.logout") }
+                    <LogOut className="w-4 h-4 mr-2" />{ 'Déconnexion' }
                   </Button>
                 ) : (
                   <div className="grid grid-cols-2 gap-3">
                     <Link to="/login" onClick={closeMenu}>
-                      <Button className="w-full bg-cyan-600 hover:bg-cyan-700 text-white rounded-full">{ t("nav.login") }</Button>
+                      <Button className="w-full bg-cyan-600 hover:bg-cyan-700 text-white rounded-full">{ 'Connexion' }</Button>
                     </Link>
                     <Link to="/signup" onClick={closeMenu}>
-                      <Button className="w-full bg-gradient-to-r from-cyan-500 to-fuchsia-500 text-white rounded-full">{ t("nav.signup") }</Button>
+                      <Button className="w-full bg-gradient-to-r from-cyan-500 to-fuchsia-500 text-white rounded-full">{ 'Inscription' }</Button>
                     </Link>
                   </div>
                 )}

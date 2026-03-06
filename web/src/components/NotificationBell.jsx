@@ -11,7 +11,6 @@
  * - Son/vibration natif sur nouvelle notif (si permission OK)
  */
 import React, { useState, useRef, useEffect, useCallback } from 'react';
-import { useTranslation } from 'react-i18next';
 import ReactDOM from 'react-dom';
 import { motion, AnimatePresence, useMotionValue, useTransform } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
@@ -273,7 +272,6 @@ const NotifItem = ({ notif, onRead, onDelete, onClick }) => {
 
 // ── Panel notifications ──────────────────────────────────────────────
 const NotifPanel = ({ panelRef, panelPos, onClose, mobile }) => {
-  const { t } = useTranslation();
   const navigate = useNavigate();
   const {
     notifications, unreadCount, permission, pushEnabled, loading,

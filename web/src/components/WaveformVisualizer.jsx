@@ -9,7 +9,7 @@ import React, { useMemo, useEffect } from 'react';
 
 // Inject the keyframe ONCE globally — pas dans le render
 if (typeof document !== 'undefined' && !document.getElementById('nova-wave-style')) {
-  const s = document.createElement('style');
+  const s = document.createElemen'style';
   s.id = 'nova-wave-style';
   s.textContent = '@keyframes novaWave { from { height: var(--bar-min,20%) } to { height: var(--bar-max,80%) } }';
   document.head.appendChild(s);

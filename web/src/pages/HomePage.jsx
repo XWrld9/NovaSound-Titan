@@ -8,7 +8,6 @@
  * (tout le reste inchangé depuis V40000)
  */
 import React, { useState, useEffect } from 'react';
-import { useTranslation } from 'react-i18next';
 import { usePlayer } from '@/contexts/PlayerContext';
 import { Link } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
@@ -49,7 +48,6 @@ const getListened = (uid) => {
 
 const HomePage = () => {
   const { isAuthenticated, currentUser } = useAuth();
-  const { t } = useTranslation();
   const [featuredSongs,    setFeaturedSongs]    = useState([]);
   const [listenedHistory,  setListenedHistory]  = useState([]);
   const [topSongs,         setTopSongs]         = useState([]);

@@ -11,7 +11,6 @@
  *  - Compteur badge rouge sur l'onglet "Mes messages" (notifications non lues)
  */
 import React, { useState, useEffect, useRef, useCallback, memo } from 'react';
-import { useTranslation } from 'react-i18next';
 import { Helmet } from 'react-helmet-async';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
@@ -283,7 +282,6 @@ const ChatMessage = memo(({
 const ChatPage = () => {
   const { currentUser } = useAuth();
   const currentUserEmail = currentUser?.email || '';
-  const { t } = useTranslation();
   const navigate  = useNavigate();
   const location  = useLocation();
   const chatCtx   = useChat();
@@ -327,8 +325,8 @@ const ChatPage = () => {
   // ── ?highlight & ?tagger ──────────────────────────────────────────
   useEffect(() => {
     const params = new URLSearchParams(location.search);
-    const hlId   = params.get('highlight');
-    const tagger = params.get('tagger');
+    const hlId   = params.ge'highlight';
+    const tagger = params.ge'tagger';
 
     if (hlId) {
       setHighlightId(hlId);
@@ -541,7 +539,7 @@ const ChatPage = () => {
     }
   }, [notifCtx, navigate]);
 
-  // ── {t('chat.clear')} les messages du chat (ADMIN ONLY) avec sélection de durée ─
+  // ── {'Nettoyer'} les messages du chat (ADMIN ONLY) avec sélection de durée ─
   const CLEAR_DURATIONS = [
     { key: '1h',   label: 'Dernière heure',   hours: 1 },
     { key: '24h',  label: 'Dernières 24h',    hours: 24 },
@@ -591,7 +589,7 @@ const ChatPage = () => {
   return (
     <>
       <Helmet>
-        <title>{t('chat.title')} — NovaSound TITAN LUX</title>
+        <title>{'Chat Global'} — NovaSound TITAN LUX</title>
         <meta name="description" content="Espace de conversation commun à toute la communauté NovaSound" />
       </Helmet>
 
@@ -621,8 +619,8 @@ const ChatPage = () => {
                     <Globe className="w-5 h-5 text-cyan-400" />
                   </div>
                   <div>
-                    <h1 className="text-white font-black text-base leading-none">{t('chat.title')}</h1>
-                    <p className="text-gray-600 text-[11px] mt-0.5">{t('chat.subtitle')}</p>
+                    <h1 className="text-white font-black text-base leading-none">{'Chat Global'}</h1>
+                    <p className="text-gray-600 text-[11px] mt-0.5">{'Communauté NovaSound · @tous pour mentionner tout le monde'}</p>
                   </div>
                 </div>
                 {onlineCount > 0 && (
@@ -642,10 +640,10 @@ const ChatPage = () => {
                   <button
                     onClick={() => setShowClearConfirm(true)}
                     className="flex items-center gap-1.5 px-2.5 py-1 bg-red-500/10 border border-red-500/20 rounded-full hover:bg-red-500/20 transition-colors"
-                    title="{t('chat.clear')} le chat (Admin)"
+                    title="{'Nettoyer'} le chat (Admin)"
                   >
                     <Trash2 className="w-3.5 h-3.5 text-red-400" />
-                    <span className="text-red-400 text-[11px] font-semibold hidden sm:inline">{t('chat.clear')}</span>
+                    <span className="text-red-400 text-[11px] font-semibold hidden sm:inline">{'Nettoyer'}</span>
                   </button>
                 )}
                 {/* Panel admin — utilisateurs connectés */}
@@ -847,7 +845,7 @@ const ChatPage = () => {
               </div>
             </div>
           )}
-          {/* ─── {t('chat.title')} ─────────────────────────────────────── */}
+          {/* ─── {'Chat Global'} ─────────────────────────────────────── */}
           {activeTab === 'global' && (
             <>
               <div ref={scrollRef} className="flex-1 overflow-y-auto relative z-10" style={{ WebkitOverflowScrolling: 'touch' }} onScroll={handleScroll}>
@@ -1050,7 +1048,7 @@ const ChatPage = () => {
                     <Trash2 className="w-9 h-9 text-red-400" />
                   </motion.div>
 
-                  <h2 className="text-white font-black text-xl mb-2">{t('chat.clear')} le Chat ?</h2>
+                  <h2 className="text-white font-black text-xl mb-2">{'Nettoyer'} le Chat ?</h2>
                   <p className="text-gray-400 text-sm leading-relaxed mb-3">
                     Sélectionne la période à supprimer :
                   </p>

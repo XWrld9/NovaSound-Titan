@@ -1,9 +1,8 @@
 /**
  * ArtistsPage — NovaSound TITAN LUX v1000
- * Vue artistes groupés : tous les artistes + leurs {t('artists.songs')} organisés ensemble
+ * Vue artistes groupés : tous les artistes + leurs {'sons'} organisés ensemble
  */
 import React, { useState, useEffect, useCallback } from 'react';
-import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -24,7 +23,7 @@ const ArtistsPage = () => {
   const fetchArtists = useCallback(async () => {
     setLoading(true);
     try {
-      // Récupère tous les artistes (uploader_id) + leurs infos + leurs {t('artists.songs')}
+      // Récupère tous les artistes (uploader_id) + leurs infos + leurs {'sons'}
       const { data: songs } = await supabase
         .from('songs')
         .select('id, title, artist, cover_url, audio_url, plays_count, created_at, uploader_id, uploader:users!uploader_id(id, username, avatar_url)')
@@ -96,7 +95,7 @@ const ArtistsPage = () => {
 
   return (
     <>
-      <Helmet><title>{t('artists.title')} — NovaSound TITAN LUX</title></Helmet>
+      <Helmet><title>{'Artistes'} — NovaSound TITAN LUX</title></Helmet>
       <div className="min-h-screen bg-gray-950">
         <Header />
         <main className="max-w-4xl mx-auto px-4 py-8 pb-32">
@@ -107,7 +106,7 @@ const ArtistsPage = () => {
               <Users className="w-5 h-5 text-fuchsia-400" />
             </div>
             <div>
-              <h1 className="text-white font-black text-2xl">{t('artists.title')}</h1>
+              <h1 className="text-white font-black text-2xl">{'Artistes'}</h1>
               <p className="text-gray-500 text-sm">{artists.length} artiste{artists.length > 1 ? 's' : ''} sur NovaSound</p>
             </div>
           </div>
@@ -120,7 +119,7 @@ const ArtistsPage = () => {
                 type="text"
                 value={search}
                 onChange={e => setSearch(e.target.value)}
-                placeholder={t("artists.search")}
+                placeholder={'search'}
                 className="w-full pl-11 pr-4 py-3 bg-white/[0.06] border border-white/[0.1] rounded-2xl text-white text-sm placeholder-gray-600 focus:outline-none focus:border-fuchsia-500/50 focus:bg-white/[0.08] transition-all"
               />
               {search && (
@@ -174,7 +173,7 @@ const ArtistsPage = () => {
                         {artist.id !== '__unknown__' && (
                           <Link to={`/artist/${artist.id}`}
                             className="text-[10px] text-fuchsia-400/70 hover:text-fuchsia-300 border border-fuchsia-500/20 px-1.5 py-0.5 rounded-full transition-all">
-                            {t('artists.profile')}
+                            {'Profil →'}
                           </Link>
                         )}
                       </div>
@@ -183,7 +182,7 @@ const ArtistsPage = () => {
                           <Music className="w-3 h-3" /> {artist.songs.length} son{artist.songs.length > 1 ? 's' : ''}
                         </span>
                         <span className="text-xs text-gray-500 flex items-center gap-1">
-                          <Headphones className="w-3 h-3" /> {formatPlays(artist.totalPlays)} {t('artists.plays')}
+                          <Headphones className="w-3 h-3" /> {formatPlays(artist.totalPlays)} {'écoutes'}
                         </span>
                       </div>
                     </div>

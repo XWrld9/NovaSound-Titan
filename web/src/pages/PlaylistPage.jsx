@@ -3,7 +3,6 @@
  * Page d'une playlist : liste des sons, lecture, gestion.
  */
 import React, { useState, useEffect } from 'react';
-import { useTranslation } from 'react-i18next';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
 import { motion, AnimatePresence } from 'framer-motion';

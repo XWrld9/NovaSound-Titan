@@ -7,7 +7,6 @@
  * - Podium + Top20 unifiés sur tous les onglets
  */
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { useTranslation } from 'react-i18next';
 import { Helmet } from 'react-helmet-async';
 import { motion, AnimatePresence } from 'framer-motion';
 import { supabase } from '@/lib/supabaseClient';
@@ -146,8 +145,6 @@ const SONG_PERIODS = [
 const LeaderboardPage = () => {
   const { currentUser } = useAuth();
   const { playSong }    = usePlayer();
-
-  const { t } = useTranslation();
   const [tab, setTab]               = useState('artists');
   const [songPeriod, setSongPeriod] = useState('trending_7d');
   const [streaks,    setStreaks]    = useState([]);

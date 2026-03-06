@@ -3,7 +3,6 @@
  * Page de gestion des playlists de l'utilisateur.
  */
 import React, { useState, useEffect } from 'react';
-import { useTranslation } from 'react-i18next';
 import { Link, useNavigate } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -17,7 +16,6 @@ import {
 } from 'lucide-react';
 
 const MyPlaylistsPage = () => {
-  const { t } = useTranslation();
   const navigate = useNavigate();
   const { currentUser } = useAuth();
   const { myPlaylists, loadingPl, fetchMyPlaylists, createPlaylist, deletePlaylist, updatePlaylist } = usePlaylist();

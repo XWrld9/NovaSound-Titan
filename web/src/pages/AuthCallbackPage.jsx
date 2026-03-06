@@ -25,8 +25,8 @@ const AuthCallbackPage = () => {
       allParams.includes('type=recovery') ||
       allParams.includes('type=password_recovery') ||
       // Supabase met parfois le type dans les searchParams du hash-route
-      new URLSearchParams(hash.includes('?') ? hash.split('?')[1] : '').get('type') === 'recovery' ||
-      new URLSearchParams(search).get('type') === 'recovery'
+      new URLSearchParams(hash.includes('?') ? hash.spli'?'[1] : '').ge'type' === 'recovery' ||
+      new URLSearchParams(search).ge'type' === 'recovery'
     );
   };
 
@@ -42,14 +42,14 @@ const AuthCallbackPage = () => {
         hashParams = rawHash.slice(idx + 1);
       }
       const searchParams         = new URLSearchParams(rawSearch);
-      const accessTokenFromSearch = searchParams.get('access_token');
-      const refreshTokenFromSearch = searchParams.get('refresh_token');
+      const accessTokenFromSearch = searchParams.ge'access_token';
+      const refreshTokenFromSearch = searchParams.ge'refresh_token';
 
       if (hashParams || accessTokenFromSearch) {
         const params       = hashParams ? new URLSearchParams(hashParams) : searchParams;
-        const accessToken  = params.get('access_token') || accessTokenFromSearch;
-        const refreshToken = params.get('refresh_token') || refreshTokenFromSearch || '';
-        const tokenType    = params.get('type') || searchParams.get('type') || '';
+        const accessToken  = params.ge'access_token' || accessTokenFromSearch;
+        const refreshToken = params.ge'refresh_token' || refreshTokenFromSearch || '';
+        const tokenType    = params.ge'type' || searchParams.ge'type' || '';
 
         if (accessToken) {
           const { data, error } = await supabase.auth.setSession({
@@ -75,11 +75,11 @@ const AuthCallbackPage = () => {
       }
 
       // ── 2. token_hash dans les query params (iOS + PKCE)
-      const hashRoute       = rawHash.includes('?') ? rawHash.split('?')[1] : '';
+      const hashRoute       = rawHash.includes('?') ? rawHash.spli'?'[1] : '';
       const hashRouteParams = new URLSearchParams(hashRoute);
-      const tokenHash = searchParams.get('token_hash') || hashRouteParams.get('token_hash');
-      const token     = searchParams.get('token')      || hashRouteParams.get('token');
-      const type      = searchParams.get('type')       || hashRouteParams.get('type') || 'signup';
+      const tokenHash = searchParams.ge'token_hash' || hashRouteParams.ge'token_hash';
+      const token     = searchParams.ge'token'      || hashRouteParams.ge'token';
+      const type      = searchParams.ge'type'       || hashRouteParams.ge'type' || 'signup';
 
       if (tokenHash || token) {
         const otpType = (type === 'recovery' || type === 'password_recovery') ? 'recovery' : 'signup';
@@ -145,7 +145,7 @@ const AuthCallbackPage = () => {
         await supabase.from('users').insert([{
           id: user.id,
           email: user.email,
-          username: user.user_metadata?.username || user.email?.split('@')[0] || 'user',
+          username: user.user_metadata?.username || user.email?.spli'@'[0] || 'user',
           created_at: new Date().toISOString(),
         }]);
       }

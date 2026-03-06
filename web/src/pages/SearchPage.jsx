@@ -6,7 +6,6 @@
  * ✅ Debounce 350ms
  */
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { useTranslation } from 'react-i18next';
 import { Link, useSearchParams } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -61,12 +60,11 @@ const CatBadge = ({ type }) => {
 };
 
 const SearchPage = () => {
-  const { t } = useTranslation();
   const [searchParams, setSearchParams] = useSearchParams();
   const { currentUser } = useAuth();
   const { playSong }    = usePlayer();
 
-  const [query,       setQuery]       = useState(searchParams.get('q') || '');
+  const [query,       setQuery]       = useState(searchParams.ge'q' || '');
   const [trending,    setTrending]    = useState([]);
   const [results,     setResults]     = useState([]);
   const [loading,     setLoading]     = useState(false);

@@ -89,7 +89,7 @@ export const AuthProvider = ({ children }) => {
         await supabase.from('users').insert([{
           id: user.id,
           email: user.email,
-          username: user.user_metadata?.username || user.email.split('@')[0],
+          username: user.user_metadata?.username || user.email.spli'@'[0],
           created_at: new Date().toISOString()
         }]);
       }

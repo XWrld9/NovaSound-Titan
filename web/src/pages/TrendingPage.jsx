@@ -7,7 +7,6 @@
  *  - Bouton "Tout lire" corrigé
  */
 import React, { useState, useEffect, useCallback } from 'react';
-import { useTranslation } from 'react-i18next';
 import { Helmet } from 'react-helmet-async';
 import { Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -21,10 +20,10 @@ import {
 } from 'lucide-react';
 import { formatPlays } from '@/lib/utils';
 
-const PERIODS = (t) => [
-  { id: '24h', label: t('trending.period24h'), icon: Clock,    view: 'trending_24h' },
-  { id: '7d',  label: t('trending.period7d'),  icon: Flame,    view: 'trending_7d'  },
-  { id: '30d', label: t('trending.period30d'), icon: Calendar, view: 'trending_30d' },
+const PERIODS = [
+  { id: '24h', label: '24h', icon: Clock,    view: 'trending_24h' },
+  { id: '7d',  label: '7 jours',  icon: Flame,    view: 'trending_7d'  },
+  { id: '30d', label: '30 jours', icon: Calendar, view: 'trending_30d' },
 ];
 
 const RankBadge = ({ rank }) => {
@@ -36,7 +35,6 @@ const RankBadge = ({ rank }) => {
 
 const TrendingPage = () => {
   const { playSong } = usePlayer();
-  const { t } = useTranslation();
   const [period,         setPeriod]         = useState('7d');
   const [activeTab,      setActiveTab]       = useState('songs');
   const [songs,          setSongs]           = useState([]);
@@ -76,7 +74,7 @@ const TrendingPage = () => {
   return (
     <div className="min-h-screen bg-gray-950 flex flex-col pb-36 md:pb-28">
       <Helmet>
-        <title>{t('trending.headline')} — NovaSound</title>
+        <title>{'TENDANCES'} — NovaSound</title>
         <meta name="description" content="Les sons et artistes en vogue sur NovaSound" />
       </Helmet>
       <Header />
@@ -91,16 +89,16 @@ const TrendingPage = () => {
         >
           <div className="inline-flex items-center gap-2 bg-gradient-to-r from-cyan-500/10 to-fuchsia-500/10 border border-cyan-500/20 px-4 py-1.5 rounded-full mb-4">
             <TrendingUp className="w-4 h-4 text-cyan-400" />
-            <span className="text-sm font-bold text-cyan-300 uppercase tracking-wider">{t('trending.headline')}</span>
+            <span className="text-sm font-bold text-cyan-300 uppercase tracking-wider">{'TENDANCES'}</span>
           </div>
-          <h1 className="text-3xl sm:text-4xl font-black text-white mb-2">{t('trending.title')}</h1>
-          <p className="text-gray-500 text-sm">{t('trending.subtitle')}</p>
+          <h1 className="text-3xl sm:text-4xl font-black text-white mb-2">{'Ce qui buzze sur NovaSound'}</h1>
+          <p className="text-gray-500 text-sm">{'Les sons et artistes les plus écoutés et likés'}</p>
         </motion.div>
 
         {/* Filtres période + tabs */}
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-6 gap-3">
           <div className="flex gap-2 bg-gray-900/60 border border-white/[0.08] rounded-2xl p-1">
-            {PERIODS(t).map(({ id, label, icon: Icon }) => (
+            {PERIODS.map(({ id, label, icon: Icon }) => (
               <button
                 key={id}
                 onClick={() => setPeriod(id)}
@@ -117,13 +115,13 @@ const TrendingPage = () => {
               onClick={() => setActiveTab('songs')}
               className={`flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-semibold transition-all ${activeTab === 'songs' ? 'bg-white/10 text-white' : 'text-gray-500 hover:text-white'}`}
             >
-              <Music className="w-3.5 h-3.5" /> {t('trending.tabSongs')}
+              <Music className="w-3.5 h-3.5" /> {'Sons'}
             </button>
             <button
               onClick={() => setActiveTab('artists')}
               className={`flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-semibold transition-all ${activeTab === 'artists' ? 'bg-white/10 text-white' : 'text-gray-500 hover:text-white'}`}
             >
-              <Users className="w-3.5 h-3.5" /> {t('trending.tabArtists')}
+              <Users className="w-3.5 h-3.5" /> {'Artistes'}
             </button>
           </div>
         </div>
@@ -145,8 +143,8 @@ const TrendingPage = () => {
               ) : songs.length === 0 ? (
                 <div className="text-center py-20 text-gray-600">
                   <Flame className="w-16 h-16 mx-auto mb-4 opacity-30" />
-                  <p className="font-medium">{t('trending.noTrends')}</p>
-                  <p className="text-sm mt-1 text-gray-700">{t('trending.comeBack')}</p>
+                  <p className="font-medium">{'Aucune tendance pour cette période'}</p>
+                  <p className="text-sm mt-1 text-gray-700">{'Reviens bientôt !'}</p>
                 </div>
               ) : (
                 <>

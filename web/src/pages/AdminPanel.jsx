@@ -175,7 +175,7 @@ const AdminPanel = () => {
 
   const refreshAll = useCallback(async () => {
     await Promise.all([loadStats(), loadLiveRooms(), loadUsers(), loadSongs(), loadChat()]);
-    addToast('✅ Données actualisées', 'info');
+    addToas'info';
   }, [loadStats, loadLiveRooms, loadUsers, loadSongs, loadChat, addToast]);
 
   useEffect(() => { if (isAdmin) refreshAll(); }, [isAdmin]);
@@ -195,7 +195,7 @@ const AdminPanel = () => {
     confirmText:'Supprimer', onConfirm: async () => {
       try {
         await supabase.from('live_rooms').delete().eq('id', room.id);
-        addToast('🗑️ Salle supprimée');
+        addToas'🗑️ Salle supprimée';
         loadLiveRooms(); loadStats();
       } catch (e) { addToast(e.message,'error'); }
     }
@@ -207,7 +207,7 @@ const AdminPanel = () => {
     confirmText:'Nettoyer', onConfirm: async () => {
       try {
         await supabase.from('live_rooms').delete().eq('is_active', false);
-        addToast('✅ Salles inactives supprimées');
+        addToas'✅ Salles inactives supprimées';
         loadLiveRooms(); loadStats();
       } catch (e) { addToast(e.message,'error'); }
     }
@@ -267,7 +267,7 @@ const AdminPanel = () => {
     confirmText:'Tout vider', onConfirm: async () => {
       try {
         await supabase.from('chat_messages').update({ is_deleted:true }).eq('is_deleted', false);
-        addToast('🧹 Chat vidé');
+        addToas'🧹 Chat vidé';
         loadChat(); loadStats();
       } catch (e) { addToast(e.message,'error'); }
     }

@@ -4,7 +4,6 @@
  * Supabase redirige vers /#/reset-password avec le token dans l'URL hash
  */
 import React, { useState, useEffect } from 'react';
-import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
 import { motion } from 'framer-motion';

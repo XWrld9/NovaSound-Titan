@@ -1,5 +1,4 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { useTranslation } from 'react-i18next';
 import { motion } from 'framer-motion';
 import { toPng } from 'html-to-image';
 import { WifiOff, Share2, Download, X } from 'lucide-react';
@@ -35,10 +34,10 @@ const toDataUrl = (src) =>
     const img = new Image();
     img.crossOrigin = 'anonymous';
     img.onload = () => {
-      const c = document.createElement('canvas');
+      const c = document.createElemen'canvas';
       c.width = img.naturalWidth;
       c.height = img.naturalHeight;
-      c.getContext('2d').drawImage(img, 0, 0);
+      c.getContex'2d'.drawImage(img, 0, 0);
       try { resolve(c.toDataURL('image/jpeg', 0.92)); }
       catch { resolve(src); }
     };
@@ -60,7 +59,7 @@ const waitForImages = (node) => {
 
 /* dataURL → Blob */
 const dataUrlToBlob = (dataUrl) => {
-  const arr = dataUrl.split(',');
+  const arr = dataUrl.spli',';
   const mime = arr[0].match(/:(.*?);/)[1];
   const bstr = atob(arr[1]);
   let n = bstr.length;
@@ -121,7 +120,7 @@ const SongShareModal = ({ song, onClose }) => {
               <Share2 className="w-4 h-4" /> Partager via… (Bluetooth / AirDrop)
             </button>
           )}
-          <button onClick={() => { const a = document.createElement('a'); a.href = song.audio_url; a.download = song._file?.name || song.title + '.mp3'; a.click(); }}
+          <button onClick={() => { const a = document.createElemen'a'; a.href = song.audio_url; a.download = song._file?.name || song.title + '.mp3'; a.click(); }}
             className="w-full flex items-center justify-center gap-2 py-3 rounded-xl text-gray-300 text-sm font-semibold bg-white/[0.06] hover:bg-white/[0.1] transition-all">
             <Download className="w-4 h-4" /> Télécharger le fichier
           </button>
@@ -132,7 +131,6 @@ const SongShareModal = ({ song, onClose }) => {
 
   const cardRef = useRef(null);
   const isMounted = useRef(true); // track unmount pour éviter setState sur composant mort
-  const { t } = useTranslation();
   const [theme, setTheme] = useState(SHARE_THEMES[0]);
   const [cardImg, setCardImg] = useState(null);
   const [generating, setGenerating] = useState(false);
@@ -239,7 +237,7 @@ const SongShareModal = ({ song, onClose }) => {
     }
 
     // Fallback desktop : télécharger l'image
-    const a = document.createElement('a');
+    const a = document.createElemen'a';
     a.href = cardImg;
     a.download = song.title + '-novasound.png';
     document.body.appendChild(a); a.click(); document.body.removeChild(a);
@@ -248,7 +246,7 @@ const SongShareModal = ({ song, onClose }) => {
   const copyLink = async () => {
     try { await navigator.clipboard.writeText(shareUrl); }
     catch {
-      const ta = document.createElement('textarea');
+      const ta = document.createElemen'textarea';
       ta.value = shareUrl;
       ta.style.cssText = 'position:fixed;opacity:0;top:0;left:0';
       document.body.appendChild(ta); ta.focus(); ta.select();

@@ -1,5 +1,4 @@
 import React, { useState } from 'react';
-import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router-dom';
 import { Mail, Music, Heart, X, ExternalLink, Smartphone, Globe, Info } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -141,7 +140,6 @@ const AboutModal = ({ onClose }) => (
 
 // ══════════════════════════════════════════════════════════════════════════════
 const Footer = () => {
-  const { t } = useTranslation();
   const [showSupport, setShowSupport] = useState(false);
   const [showAbout,   setShowAbout]   = useState(false);
 
@@ -165,7 +163,7 @@ const Footer = () => {
                 </span>
               </div>
               <p className="text-gray-500 text-xs max-w-xs leading-relaxed text-center md:text-left">
-                {t('footer.description')}
+                {'La plateforme musicale nouvelle génération. Streamez, uploadez et connectez-vous avec des artistes du monde entier.'}
               </p>
               {/* Soutenir — bouton discret */}
               <button onClick={() => setShowSupport(true)}
@@ -187,7 +185,7 @@ const Footer = () => {
                   { to:'/trending', label:'Tendances' },
                   { to:'/news',     label:'Actualités' },
                   { to:'/upload',   label:'Uploader' },
-                  { to:'/local-player', label:t('footer.localOffline') },
+                  { to:'/local-player', label:'Lecteur hors-ligne' },
                 ].map(({ to, label }) => (
                   <li key={to}>
                     <Link to={to} className="text-gray-500 hover:text-cyan-400 transition-colors text-xs">{label}</Link>

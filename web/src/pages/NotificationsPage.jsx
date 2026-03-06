@@ -5,7 +5,6 @@
  * ✅ i18n complet
  */
 import React, { useState, useMemo } from 'react';
-import { useTranslation } from 'react-i18next';
 import { Helmet } from 'react-helmet-async';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -31,6 +30,7 @@ const TYPE_CONFIG = {
   chat_mention_all: { icon: Zap,           color: '#fbbf24', bg: 'rgba(251,191,36,0.12)',  label: '@all'        },
   mood_vote:        { icon: Zap,           color: '#fb923c', bg: 'rgba(251,146,60,0.12)',  label: 'Vibe'        },
   live_start:       { icon: Radio,         color: '#f43f5e', bg: 'rgba(244,63,94,0.12)',   label: 'Live'        },
+  live_started:     { icon: Radio,         color: '#f43f5e', bg: 'rgba(244,63,94,0.12)',   label: 'Live'        },
   live_invite:      { icon: Radio,         color: '#fb7185', bg: 'rgba(251,113,133,0.12)', label: 'Invite'     },
   queue_song:       { icon: Music,         color: '#34d399', bg: 'rgba(52,211,153,0.12)',  label: 'Queue'       },
   achievement:      { icon: Trophy,        color: '#f59e0b', bg: 'rgba(245,158,11,0.12)',  label: 'Achievement' },
@@ -38,11 +38,11 @@ const TYPE_CONFIG = {
 const getCfg = (type) => TYPE_CONFIG[type] || { icon: Bell, color: '#94a3b8', bg: 'rgba(148,163,184,0.12)', label: 'Notification' };
 
 const TABS = [
-  { id: 'all',    labelKey: 'notifications.tabAll',    types: null },
-  { id: 'music',  labelKey: 'notifications.tabMusic',  types: ['like','new_song','repost','comment','queue_song','mood_vote'] },
-  { id: 'social', labelKey: 'notifications.tabSocial', types: ['follow','achievement'] },
-  { id: 'live',   labelKey: 'notifications.tabLive',   types: ['live_start','live_invite'] },
-  { id: 'chat',   labelKey: 'notifications.tabChat',   types: ['chat_reply','chat_mention','chat_mention_all','news'] },
+  { id: 'all',    label: 'Tout',    types: null },
+  { id: 'music',  label: '🎵 Sons',  types: ['like','new_song','repost','comment','queue_song','mood_vote'] },
+  { id: 'social', label: '👥 Social', types: ['follow','achievement'] },
+  { id: 'live',   label: '🔴 Live',   types: ['live_start','live_started','live_invite'] },
+  { id: 'chat',   label: '💬 Chat',   types: ['chat_reply','chat_mention','chat_mention_all','news'] },
 ];
 
 const timeAgo = (dateStr) => {
@@ -174,16 +174,15 @@ const EmptyState = ({ tab, t }) => {
         </div>
         <div className="absolute -top-2 -right-2 text-3xl">{icons[tab] || '🔔'}</div>
       </div>
-      <h3 className="text-lg font-bold text-gray-300 mb-2">{t('notifications.noNotifs')}</h3>
+      <h3 className="text-lg font-bold text-gray-300 mb-2">{'Aucune notification'}</h3>
       <p className="text-sm text-gray-600 max-w-xs leading-relaxed">
-        {tab === 'all' ? t('notifications.upToDate') : t('notifications.emptyTab', { tab })}
+        {tab === 'all' ? 'Tu es à jour 🎉' : 'Aucune notification dans cet onglet'}
       </p>
     </motion.div>
   );
 };
 
 const NotificationsPage = () => {
-  const { t } = useTranslation();
   const navigate = useNavigate();
   const { currentUser } = useAuth();
   const {
@@ -229,10 +228,10 @@ const NotificationsPage = () => {
             <div className="w-20 h-20 rounded-3xl bg-white/[0.04] border border-white/[0.08] flex items-center justify-center mx-auto mb-5">
               <Bell className="w-9 h-9 text-gray-600" />
             </div>
-            <p className="text-gray-400 font-semibold text-lg mb-4">{t('notifications.loginRequired')}</p>
+            <p className="text-gray-400 font-semibold text-lg mb-4">{'Connecte-toi pour voir tes notifications'}</p>
             <button onClick={() => navigate('/login')}
               className="px-6 py-2.5 bg-gradient-to-r from-cyan-500 to-fuchsia-500 text-white text-sm font-bold rounded-2xl">
-              {t('nav.login')}
+              {'Connexion'}
             </button>
           </motion.div>
         </div>
@@ -242,7 +241,7 @@ const NotificationsPage = () => {
 
   return (
     <>
-      <Helmet><title>{t('notifications.title')} — NovaSound TITAN LUX</title></Helmet>
+      <Helmet><title>{'Notifications'} — NovaSound TITAN LUX</title></Helmet>
       <div className="min-h-screen bg-[#060810] flex flex-col">
         <Header />
         <main className="flex-1 w-full max-w-3xl mx-auto px-4 sm:px-6 py-6 pb-28">
@@ -257,7 +256,7 @@ const NotificationsPage = () => {
               <div>
                 <h1 className="text-2xl font-black text-white flex items-center gap-2.5">
                   <Bell className="w-5 h-5 text-cyan-400" />
-                  {t('notifications.title')}
+                  {'Notifications'}
                   {unreadCount > 0 && (
                     <motion.span initial={{ scale: 0 }} animate={{ scale: 1 }}
                       className="text-xs bg-gradient-to-r from-red-500 to-pink-500 text-white font-black px-2.5 py-0.5 rounded-full shadow-lg shadow-red-500/30">
@@ -273,14 +272,14 @@ const NotificationsPage = () => {
                 <button onClick={markAllAsRead}
                   className="flex items-center gap-1.5 px-3 py-2 rounded-2xl bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 text-xs font-bold border border-emerald-500/20 transition-all">
                   <CheckCheck className="w-3.5 h-3.5" />
-                  <span className="hidden sm:inline">{t('notifications.markAllRead')}</span>
+                  <span className="hidden sm:inline">{'Tout marquer comme lu'}</span>
                 </button>
               )}
               {notifications.length > 0 && (
                 <button onClick={() => setClearConfirm(true)}
                   className="flex items-center gap-1.5 px-3 py-2 rounded-2xl bg-white/[0.04] hover:bg-red-500/10 text-gray-500 hover:text-red-400 text-xs font-bold border border-white/[0.06] hover:border-red-500/20 transition-all">
                   <Trash2 className="w-3.5 h-3.5" />
-                  <span className="hidden sm:inline">{t('notifications.clearAll')}</span>
+                  <span className="hidden sm:inline">{'Tout vider'}</span>
                 </button>
               )}
               <button onClick={() => setShowPush(s => !s)}
@@ -295,7 +294,7 @@ const NotificationsPage = () => {
             <div className="flex gap-3 mb-6 overflow-x-auto no-scrollbar">
               <StatCard icon={Bell} value={notifications.length} label="Total" color="#94a3b8" />
               {unreadCount > 0 && <StatCard icon={Sparkles} value={unreadCount} label="Non lus" color="#f43f5e" />}
-              <StatCard icon={pushEnabled ? ShieldCheck : BellOff} value={pushEnabled ? 'ON' : 'OFF'} label={t('notifications.pushNotifs')} color={pushEnabled ? '#10b981' : '#6b7280'} />
+              <StatCard icon={pushEnabled ? ShieldCheck : BellOff} value={pushEnabled ? 'ON' : 'OFF'} label={'Notifications push'} color={pushEnabled ? '#10b981' : '#6b7280'} />
             </div>
           )}
 
@@ -311,17 +310,17 @@ const NotificationsPage = () => {
                         {pushEnabled ? <Volume2 className="w-5 h-5 text-emerald-400" /> : <BellOff className="w-5 h-5 text-gray-500" />}
                       </div>
                       <div>
-                        <p className="text-sm font-bold text-white">{t('notifications.pushNotifs')}</p>
+                        <p className="text-sm font-bold text-white">{'Notifications push'}</p>
                         <p className="text-xs text-gray-500">
-                          {pushEnabled ? t('notifications.pushEnabled') : t('notifications.pushDisabled')}
-                          {permission === 'denied' && ` — ${t('notifications.pushBlocked')}`}
+                          {pushEnabled ? 'Activées sur cet appareil' : 'Désactivées'}
+                          {permission === 'denied' && ` — ${'Bloquées dans le navigateur'}`}
                         </p>
                       </div>
                     </div>
                     {permission !== 'denied' && (
                       <button onClick={pushEnabled ? disablePush : requestPermission} disabled={loading}
                         className={`px-4 py-2 rounded-2xl text-xs font-bold transition-all ${pushEnabled ? 'bg-red-500/10 text-red-400 border border-red-500/20 hover:bg-red-500/20' : 'bg-cyan-500/15 text-cyan-400 border border-cyan-500/30 hover:bg-cyan-500/25'}`}>
-                        {loading ? '…' : pushEnabled ? t('notifications.pushDisableBtn') : t('notifications.pushEnable')}
+                        {loading ? '…' : pushEnabled ? 'Désactiver' : 'Activer'}
                       </button>
                     )}
                   </div>
@@ -336,14 +335,14 @@ const NotificationsPage = () => {
               <motion.div initial={{ opacity: 0, scale: 0.97 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.97 }} className="mb-5">
                 <div className="bg-gradient-to-r from-red-950/80 to-red-900/40 border border-red-500/30 rounded-3xl p-4 flex items-center justify-between gap-4">
                   <div>
-                    <p className="text-sm text-red-200 font-bold">{t('notifications.confirmClear')}</p>
-                    <p className="text-xs text-red-400/70 mt-0.5">{t('notifications.confirmClearDesc')}</p>
+                    <p className="text-sm text-red-200 font-bold">{'Supprimer toutes les notifications ?'}</p>
+                    <p className="text-xs text-red-400/70 mt-0.5">{'Cette action est irréversible.'}</p>
                   </div>
                   <div className="flex gap-2 flex-shrink-0">
-                    <button onClick={() => setClearConfirm(false)} className="px-3 py-1.5 text-xs text-gray-400 hover:text-white transition-colors">{t('notifications.cancel')}</button>
+                    <button onClick={() => setClearConfirm(false)} className="px-3 py-1.5 text-xs text-gray-400 hover:text-white transition-colors">{'Annuler'}</button>
                     <button onClick={async () => { await clearAll(); setClearConfirm(false); }}
                       className="px-4 py-1.5 bg-red-500/20 hover:bg-red-500/30 text-red-300 text-xs font-bold rounded-xl border border-red-500/30 transition-all">
-                      {t('notifications.confirm')}
+                      {'Supprimer tout'}
                     </button>
                   </div>
                 </div>
@@ -363,7 +362,7 @@ const NotificationsPage = () => {
                       ? 'bg-gradient-to-r from-cyan-500/20 to-fuchsia-500/10 text-cyan-300 border border-cyan-500/30 shadow-lg shadow-cyan-500/10'
                       : 'bg-white/[0.04] text-gray-500 border border-white/[0.05] hover:text-gray-300 hover:bg-white/[0.06]'
                   }`}>
-                  {t(tab.labelKey)}
+                  {tab.label}
                   {count > 0 && (
                     <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-black ${isActive ? 'bg-cyan-500/30 text-cyan-200' : 'bg-white/[0.08] text-gray-400'}`}>
                       {count > 99 ? '99+' : count}
@@ -381,7 +380,7 @@ const NotificationsPage = () => {
             <AnimatePresence mode="popLayout">
               {groups.today.length > 0 && (
                 <motion.div key="today" layout>
-                  <DateHeader label={t('notifications.today')} count={groups.today.length} />
+                  <DateHeader label={'Aujourd'hui'} count={groups.today.length} />
                   <div className="bg-white/[0.015] border border-white/[0.05] rounded-3xl overflow-hidden divide-y divide-white/[0.04]">
                     {groups.today.map(n => <NotifRow key={n.id} notif={n} onRead={markAsRead} onDelete={deleteNotification} onNavigate={handleNavigate} />)}
                   </div>
@@ -389,7 +388,7 @@ const NotificationsPage = () => {
               )}
               {groups.yesterday.length > 0 && (
                 <motion.div key="yesterday" layout>
-                  <DateHeader label={t('notifications.yesterday')} count={groups.yesterday.length} />
+                  <DateHeader label={'Hier'} count={groups.yesterday.length} />
                   <div className="bg-white/[0.015] border border-white/[0.05] rounded-3xl overflow-hidden divide-y divide-white/[0.04]">
                     {groups.yesterday.map(n => <NotifRow key={n.id} notif={n} onRead={markAsRead} onDelete={deleteNotification} onNavigate={handleNavigate} />)}
                   </div>
@@ -397,7 +396,7 @@ const NotificationsPage = () => {
               )}
               {groups.older.length > 0 && (
                 <motion.div key="older" layout>
-                  <DateHeader label={t('notifications.older')} count={groups.older.length} />
+                  <DateHeader label={'Plus ancien'} count={groups.older.length} />
                   <div className="bg-white/[0.015] border border-white/[0.05] rounded-3xl overflow-hidden divide-y divide-white/[0.04]">
                     {groups.older.map(n => <NotifRow key={n.id} notif={n} onRead={markAsRead} onDelete={deleteNotification} onNavigate={handleNavigate} />)}
                   </div>

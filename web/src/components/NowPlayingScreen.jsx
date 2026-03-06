@@ -21,7 +21,6 @@ import {
   Volume2, VolumeX, Volume1,
 } from 'lucide-react';
 import SongShareModal from '@/components/SongShareModal';
-import { useTranslation } from 'react-i18next';
 
 const fmtTime = (s) => {
   if (!s || isNaN(s) || s < 0) return '0:00';
@@ -34,7 +33,7 @@ const IdleWave = ({ isPlaying, color }) => {
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
-    const ctx = canvas.getContext('2d');
+    const ctx = canvas.getContex'2d';
     const resize = () => {
       const dpr = window.devicePixelRatio || 1;
       canvas.width  = canvas.offsetWidth  * dpr;
@@ -164,7 +163,6 @@ const NowPlayingScreen = ({
 }) => {
   const { currentUser } = useAuth();
   const { currentSong, playlist, queue } = usePlayer();
-  const { t } = useTranslation();
 
   const [showQueue,  setShowQueue]  = useState(false);
   const [showShare,  setShowShare]  = useState(false);
@@ -246,7 +244,7 @@ const NowPlayingScreen = ({
 
   const handleDownload = () => {
     if (!currentSong?.audio_url) return;
-    const a = document.createElement('a');
+    const a = document.createElemen'a';
     a.href = currentSong.audio_url;
     a.download = (currentSong.title||'audio') + (currentSong.is_local ? '' : '.m4a');
     a.target = '_blank';
@@ -284,7 +282,7 @@ const NowPlayingScreen = ({
         </button>
         <div className="text-center">
           <p className="text-xs text-gray-400 uppercase tracking-widest font-medium">
-            {isLocal ? t('nowplaying.localPlayback') : t('nowplaying.nowPlaying')}
+            {isLocal ? '📁 Lecture locale' : 'En lecture'}
           </p>
           {currentSong.genre && <p className="text-[11px] font-bold mt-0.5" style={{color}}>{currentSong.genre}</p>}
         </div>
@@ -356,11 +354,11 @@ const NowPlayingScreen = ({
                     className="absolute inset-0 rounded-full bg-red-400/20 pointer-events-none" />}
                 </AnimatePresence>
                 <Heart className={`w-5 h-5 ${isLiked?'fill-current text-red-500':'text-gray-500 hover:text-gray-300'}`} />
-                <span className="text-[9px] text-gray-500">{t('nowplaying.like')}</span>
+                <span className="text-[9px] text-gray-500">{'Like'}</span>
               </motion.button>
               <motion.button onClick={()=>setShowShare(true)} whileTap={{scale:0.85}} className="flex flex-col items-center gap-0.5">
                 <Share2 className="w-5 h-5 text-gray-500 hover:text-cyan-400 transition-colors" />
-                <span className="text-[9px] text-gray-500">{t('nowplaying.share')}</span>
+                <span className="text-[9px] text-gray-500">{'Partager'}</span>
               </motion.button>
               <motion.button onClick={toggleRepost} whileTap={{scale:0.85}}
                 disabled={repostLoading||!currentUser}
@@ -370,22 +368,22 @@ const NowPlayingScreen = ({
                     className="absolute inset-0 rounded-full bg-green-400/20 pointer-events-none" />}
                 </AnimatePresence>
                 <Repeat2 className={`w-5 h-5 transition-colors ${hasReposted?'text-green-400':'text-gray-500 hover:text-green-400'}`} />
-                <span className="text-[9px] text-gray-500">{t('nowplaying.repost')}</span>
+                <span className="text-[9px] text-gray-500">{'Repost'}</span>
               </motion.button>
               <motion.button onClick={handleDownload} whileTap={{scale:0.85}} className="flex flex-col items-center gap-0.5">
                 <Download className="w-5 h-5 text-gray-500 hover:text-cyan-400 transition-colors" />
-                <span className="text-[9px] text-gray-500">{t('nowplaying.save')}</span>
+                <span className="text-[9px] text-gray-500">{'Sauver'}</span>
               </motion.button>
               {showFollowBtn ? (
                 <motion.button onClick={toggleFollow} whileTap={{scale:0.85}} disabled={followLoading} className="flex flex-col items-center gap-0.5 disabled:opacity-40">
                   {isFollowing ? <UserCheck className="w-5 h-5 text-cyan-400" /> : <UserPlus className="w-5 h-5 text-gray-500 hover:text-cyan-400 transition-colors" />}
-                  <span className="text-[9px] text-gray-500">{isFollowing ? t('nowplaying.subscribed') : t('nowplaying.subscribe')}</span>
+                  <span className="text-[9px] text-gray-500">{isFollowing ? 'Abonné' : 'Suivre'}</span>
                 </motion.button>
               ) : (
                 <button onClick={()=>{setShowLyrics(!showLyrics);setShowQueue(false);}} disabled={!lyricsContent}
                   className={`flex flex-col items-center gap-0.5 transition-all active:scale-90 ${showLyrics?'text-fuchsia-400':lyricsContent?'text-gray-400 hover:text-white':'text-gray-700 cursor-not-allowed opacity-40'}`}>
                   <Mic2 className="w-5 h-5" />
-                  <span className="text-[9px]">{t('nowplaying.lyrics')}</span>
+                  <span className="text-[9px]">{'Paroles'}</span>
                 </button>
               )}
             </div>
@@ -396,7 +394,7 @@ const NowPlayingScreen = ({
             <div className="flex items-center justify-center gap-8 mb-4 flex-shrink-0">
               <motion.button onClick={handleDownload} whileTap={{scale:0.85}} className="flex flex-col items-center gap-0.5">
                 <Download className="w-5 h-5 text-gray-500 hover:text-cyan-400 transition-colors" />
-                <span className="text-[9px] text-gray-500">{t('nowplaying.export')}</span>
+                <span className="text-[9px] text-gray-500">{'Exporter'}</span>
               </motion.button>
             </div>
           )}
@@ -405,16 +403,16 @@ const NowPlayingScreen = ({
           <div className="flex items-center justify-around mb-4 flex-shrink-0">
             <button onClick={onToggleShuffle}
               className={`flex flex-col items-center gap-1 text-xs transition-all active:scale-90 ${shuffle?'text-cyan-400':'text-gray-600 hover:text-gray-400'}`}>
-              <Shuffle className="w-5 h-5" /><span>{t('nowplaying.shuffle')}</span>
+              <Shuffle className="w-5 h-5" /><span>{'Aléat.'}</span>
             </button>
             <button onClick={()=>setShowVolume(v=>!v)}
               className={`flex flex-col items-center gap-1 text-xs transition-all active:scale-90 ${showVolume?'text-cyan-400':'text-gray-600 hover:text-gray-400'}`}>
-              <VolumeIcon className="w-5 h-5" /><span>{t('nowplaying.volume')}</span>
+              <VolumeIcon className="w-5 h-5" /><span>{'Volume'}</span>
             </button>
             <button onClick={onToggleRepeat}
               className={`flex flex-col items-center gap-1 text-xs transition-all active:scale-90 relative ${repeat!=='off'?'text-cyan-400':'text-gray-600 hover:text-gray-400'}`}>
               <Repeat className="w-5 h-5" />
-              <span>{repeat==='one' ? t('nowplaying.repeatOne') : t('nowplaying.repeat')}</span>
+              <span>{repeat==='one' ? '1×' : 'Répéter'}</span>
               {repeat==='one' && <span className="absolute -top-1 -right-1 text-[8px] bg-cyan-500 text-black font-black rounded-full w-3.5 h-3.5 flex items-center justify-center">1</span>}
             </button>
           </div>
@@ -465,9 +463,9 @@ const NowPlayingScreen = ({
                 className="overflow-hidden mb-4 flex-shrink-0">
                 <div className="bg-white/[0.06] backdrop-blur-sm rounded-2xl p-3 max-h-44 overflow-y-auto border border-white/[0.06]"
                   style={{ scrollbarWidth:'none' }}>
-                  <p className="text-[10px] text-gray-500 font-bold mb-2 uppercase tracking-widest">{t('nowplaying.next')}</p>
+                  <p className="text-[10px] text-gray-500 font-bold mb-2 uppercase tracking-widest">{'Suivants'}</p>
                   {upcoming.length === 0
-                    ? <p className="text-gray-600 text-xs text-center py-3">{t('nowplaying.queueEmpty')}</p>
+                    ? <p className="text-gray-600 text-xs text-center py-3">{'File vide'}</p>
                     : upcoming.map((s,i) => (
                       <div key={s.id} className="flex items-center gap-3 py-1.5">
                         <span className="text-gray-700 text-[10px] w-4 text-center flex-shrink-0">{i+1}</span>
@@ -499,14 +497,14 @@ const NowPlayingScreen = ({
             <div className="flex items-center justify-between mb-5">
               <div className="flex items-center gap-2">
                 <Mic2 className="w-4 h-4 text-fuchsia-400" />
-                <span className="text-sm font-bold text-white">{t('nowplaying.lyricsTitle')}</span>
+                <span className="text-sm font-bold text-white">{'Paroles'}</span>
               </div>
               <button onClick={()=>setShowLyrics(false)} className="p-1.5 rounded-full bg-white/10 text-gray-400 hover:text-white">
                 <X className="w-4 h-4" />
               </button>
             </div>
             <div className="space-y-3 text-center pb-12 max-w-2xl mx-auto">
-              {lyricsContent.split('\n').map((line,i) => (
+              {lyricsContent.spli'\n'.map((line,i) => (
                 <p key={i} className={line.trim()?'text-white text-base leading-relaxed':'py-2'}>{line||'\u00A0'}</p>
               ))}
             </div>

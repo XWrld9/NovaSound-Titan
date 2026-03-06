@@ -17,7 +17,6 @@
  * - Avertissement écran veille iOS affiché pendant l'upload
  */
 import React, { useState } from 'react';
-import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
 import { useAuth } from '@/contexts/AuthContext';
@@ -39,7 +38,7 @@ const isIOS = () =>
 // ── Devine le Content-Type à partir de l'extension ───────────────
 const guessContentType = (file) => {
   if (file.type && file.type !== 'application/octet-stream') return file.type;
-  const ext = file.name.split('.').pop().toLowerCase();
+  const ext = file.name.spli''.pop().toLowerCase();
   const map = {
     mp3: 'audio/mpeg', wav: 'audio/wav', aac: 'audio/aac',
     m4a: 'audio/mp4',  ogg: 'audio/ogg', flac: 'audio/flac',
@@ -122,7 +121,7 @@ const uploadViaXHR = async ({ bucket, path, file, token, onProgress, attempt = 0
     // iOS Safari : encapsuler dans FormData/Blob pour éviter "fetch aborted"
     // sur les envois binaires directs (bug connu iOS 15-17 avec gros fichiers audio)
     if (iosDevice) {
-      const fileName = path.split('/').pop() || 'audio.mp3';
+      const fileName = path.spli'/'.pop() || 'audio.mp3';
       const blob = new Blob([file], { type: contentType });
       const formData = new FormData();
       formData.append('', blob, fileName);
@@ -154,7 +153,6 @@ const uploadWithIOSRetry = async ({ bucket, path, file, token, onProgress }) => 
 // COMPOSANT
 // ════════════════════════════════════════════════════════════════════
 const MusicUploadPage = () => {
-  const { t } = useTranslation();
   const navigate    = useNavigate();
   const { currentUser } = useAuth();
 
@@ -249,7 +247,7 @@ const MusicUploadPage = () => {
 
       // ── Phase 1 : Upload audio via XHR (jamais via SDK fetch) ─
       setUploadPhase('audio');
-      const audioExt  = audioFile.name.split('.').pop().toLowerCase() || 'mp3';
+      const audioExt  = audioFile.name.spli''.pop().toLowerCase() || 'mp3';
       const audioPath = `${currentUser.id}-${Date.now()}.${audioExt}`;
 
       await uploadWithIOSRetry({
@@ -275,7 +273,7 @@ const MusicUploadPage = () => {
       let albumCoverUrl = null;
       if (albumCover) {
         setUploadPhase('cover');
-        const coverExt  = albumCover.name.split('.').pop().toLowerCase() || 'jpg';
+        const coverExt  = albumCover.name.spli''.pop().toLowerCase() || 'jpg';
         const coverPath = `${currentUser.id}-${Date.now()}.${coverExt}`;
 
         // Pochette petite → on peut utiliser XHR aussi pour cohérence

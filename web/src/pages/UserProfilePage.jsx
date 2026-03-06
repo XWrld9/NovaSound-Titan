@@ -15,7 +15,6 @@
  */
 
 import React, { useState, useEffect, useCallback } from 'react';
-import { useTranslation } from 'react-i18next';
 import { Helmet } from 'react-helmet-async';
 import { usePlayer } from '@/contexts/PlayerContext';
 import { useAuth } from '@/contexts/AuthContext';
@@ -60,7 +59,6 @@ const fmtNum = (n) => {
 // ─────────────────────────────────────────────────────────────────────────────
 const UserProfilePage = () => {
   const { currentUser, logout } = useAuth();
-  const { t } = useTranslation();
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -79,7 +77,7 @@ const UserProfilePage = () => {
   const [showEditModal,   setShowEditModal]   = useState(false);
   const [bioExpanded,     setBioExpanded]     = useState(false);
 
-  const urlTab = new URLSearchParams(location.search).get('tab');
+  const urlTab = new URLSearchParams(location.search).ge'tab';
   const [activeTab, setActiveTab] = useState(urlTab || 'songs');
 
   const { playSong: globalPlaySong, currentSong } = usePlayer();

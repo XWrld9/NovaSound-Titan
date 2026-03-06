@@ -1,5 +1,5 @@
 /**
- * send-push-notification — NovaSound TITAN LUX V400000
+ * send-push-notification — NovaSound TITAN LUX V400001
  *
  * ✅ V400000 — Support complet de TOUS les types de notifications :
  *   like | comment | follow | new_song | repost | news
@@ -23,7 +23,10 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 // ─── Crypto helpers ───────────────────────────────────────────────────────────
 function toB64Url(data: Uint8Array): string {
-  return btoa(String.fromCharCode(...data))
+  // Use loop instead of spread to avoid call stack overflow on large payloads
+  let binary = "";
+  for (let i = 0; i < data.length; i++) binary += String.fromCharCode(data[i]);
+  return btoa(binary)
     .replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
 }
 function fromB64Url(str: string): Uint8Array {
@@ -115,6 +118,7 @@ const TYPE_CONFIG: Record<string, { urgency: string; ttl: number; icon?: string;
   chat_mention_all: { urgency: "high",   ttl: 3600,     icon: "📢",  actions: [{ action: "view", title: "View chat" }] },
   mood_vote:        { urgency: "low",    ttl: 604800,   icon: "🎭"  },
   live_start:       { urgency: "high",   ttl: 3600,     icon: "🔴",  actions: [{ action: "join", title: "Join Live" }] },
+  live_started:     { urgency: "high",   ttl: 3600,     icon: "🔴",  actions: [{ action: "join", title: "Rejoindre" }] },
   live_invite:      { urgency: "high",   ttl: 3600,     icon: "🎙️", actions: [{ action: "join", title: "Join now" }] },
   queue_song:       { urgency: "normal", ttl: 3600,     icon: "🎵"  },
   achievement:      { urgency: "normal", ttl: 604800,   icon: "🏆",  actions: [{ action: "view", title: "View achievement" }] },
@@ -223,7 +227,7 @@ Deno.serve(async (req) => {
   const authHeader    = req.headers.get("Authorization") || "";
   const webhookSecret = req.headers.get("X-Webhook-Secret") || "";
   const isWebhook     = WEBHOOK_SECRET && webhookSecret === WEBHOOK_SECRET;
-  const isServiceRole = authHeader.includes(SERVICE_KEY);
+  const isServiceRole = authHeader === `Bearer ${SERVICE_KEY}`;
 
   // Allow: service_role key, webhook, or valid anon+JWT
   let db = createClient(SUPABASE_URL, SERVICE_KEY);
@@ -301,8 +305,9 @@ Deno.serve(async (req) => {
   const urgency = typeCfg.urgency;
   const ttl     = typeCfg.ttl;
   
-  // Build icon: prefer explicit icon, else type emoji, else default
-  const finalIcon  = (icon as string) || (typeCfg.icon ? undefined : "/icon-192.png");
+  // Build icon: always use explicit icon URL or the app default PNG.
+  // Note: Web Push `icon` must be a URL, not an emoji — emojis belong in title/body.
+  const finalIcon    = (icon as string) || "/icon-192.png";
   const finalActions = (actions as { action: string; title: string }[]) ?? typeCfg.actions;
 
   // ── Fetch subscriptions ──────────────────────────────────────────────────
@@ -321,7 +326,7 @@ Deno.serve(async (req) => {
   // ── Build payload ────────────────────────────────────────────────────────
   const payload: Payload = {
     title, body: bodyText,
-    icon:    finalIcon || "/icon-192.png",
+    icon:    finalIcon,
     badge:   "/notification-badge.png",
     url,
     tag:     `novasound-${type}-${notifId || Date.now()}`,
@@ -332,7 +337,7 @@ Deno.serve(async (req) => {
     ...(finalActions ? { actions: finalActions } : {}),
   };
 
-  console.log(`[Push V400000] type=${type} urgency=${urgency} ttl=${ttl}s subs=${subs.length} broadcast=${isBroadcast}`);
+  console.log(`[Push V400001] type=${type} urgency=${urgency} ttl=${ttl}s subs=${subs.length} broadcast=${isBroadcast}`);
 
   // ── Send ─────────────────────────────────────────────────────────────────
   const results = await sendBatch(subs as Sub[], payload, PUB, PRIV, SUBJ, urgency, ttl, BATCH_SIZE);
@@ -380,7 +385,7 @@ Deno.serve(async (req) => {
   } catch (_) {}
 
   const elapsed = Date.now() - t0;
-  console.log(`[Push V400000] Done ${elapsed}ms | sent=${sentCount}/${results.length} purged=${expired.length}`);
+  console.log(`[Push V400001] Done ${elapsed}ms | sent=${sentCount}/${results.length} purged=${expired.length}`);
 
   return new Response(
     JSON.stringify({ sent: sentCount, failed: results.length - sentCount, total: results.length, purged: expired.length, elapsed_ms: elapsed, type }),

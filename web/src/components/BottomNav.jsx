@@ -13,13 +13,12 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useNotifications } from '@/contexts/NotificationContext';
 import { supabase } from '@/lib/supabaseClient';
 import { motion } from 'framer-motion';
-import { useTranslation } from 'react-i18next';
 
 const NAV_ITEMS = [
-  { to: '/',            icon: Home,   labelKey: 'nav.home'        },
-  { to: '/explorer',    icon: Compass,labelKey: 'nav.explorer'    },
-  { to: '/live',        icon: Radio,  labelKey: 'nav.live', liveIndicator: true },
-  { to: '/leaderboard', icon: Trophy, labelKey: 'nav.leaderboard' },
+  { to: '/',            icon: Home,   label: 'Accueil'        },
+  { to: '/explorer',    icon: Compass,label: 'Explorer'    },
+  { to: '/live',        icon: Radio,  label: 'Live', liveIndicator: true },
+  { to: '/leaderboard', icon: Trophy, label: 'Top' },
 ];
 
 const BottomNav = () => {
@@ -27,7 +26,6 @@ const BottomNav = () => {
   const { currentUser, isAuthenticated } = useAuth();
   const { unreadCount } = useNotifications() || {};
   const [hasActiveLive, setHasActiveLive] = useState(false);
-  const { t } = useTranslation();
 
   /* Vérifier s'il y a des lives actifs — sondage léger toutes les 30s */
   useEffect(() => {
@@ -73,13 +71,13 @@ const BottomNav = () => {
     : '/login';
 
   const notifItem = isAuthenticated
-    ? { to: '/notifications', icon: Bell, labelKey: 'nav.notifications', badge: unreadCount > 0 ? (unreadCount > 9 ? '9+' : String(unreadCount)) : null }
+    ? { to: '/notifications', icon: Bell, label: 'Notifications', badge: unreadCount > 0 ? (unreadCount > 9 ? '9+' : String(unreadCount)) : null }
     : null;
 
   const allItems = [
     ...NAV_ITEMS,
     ...(notifItem ? [notifItem] : []),
-    { to: profileTo, icon: User, labelKey: 'nav.profile' },
+    { to: profileTo, icon: User, label: 'Mon profil' },
   ];
 
   return (
@@ -93,7 +91,7 @@ const BottomNav = () => {
         paddingBottom: 'env(safe-area-inset-bottom)',
       }}
     >
-      {allItems.map(({ to, icon: Icon, labelKey, liveIndicator, badge }) => {
+      {allItems.map(({ to, icon: Icon, label, liveIndicator, badge }) => {
         const active = isActive(to);
         return (
           <Link
@@ -137,7 +135,7 @@ const BottomNav = () => {
                 active ? 'text-cyan-400' : 'text-gray-600'
               }`}
             >
-              {t(labelKey)}
+              {label}
             </span>
           </Link>
         );

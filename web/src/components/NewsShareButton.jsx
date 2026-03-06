@@ -27,10 +27,10 @@ const NewsShareButton = ({ news }) => {
   // ─── Dessiner la card sur un Canvas 2D ───
   const generateImage = async () => {
     const W = 600, H = 400;
-    const canvas = document.createElement('canvas');
+    const canvas = document.createElemen'canvas';
     canvas.width  = W * 2; // retina
     canvas.height = H * 2;
-    const ctx = canvas.getContext('2d');
+    const ctx = canvas.getContex'2d';
     ctx.scale(2, 2);
 
     // Fond dégradé
@@ -171,7 +171,7 @@ const NewsShareButton = ({ news }) => {
   }
 
   function wrapText(ctx, text, maxWidth, fontSize) {
-    const words = text.split(' ');
+    const words = text.spli' ';
     const lines = [];
     let current = '';
     for (const word of words) {
@@ -202,7 +202,7 @@ const NewsShareButton = ({ news }) => {
 
   const handleDownload = () => {
     if (!imgDataUrl) return;
-    const a = document.createElement('a');
+    const a = document.createElemen'a';
     a.href = imgDataUrl;
     a.download = `novasound-news-${news?.id?.slice(0, 8) || 'post'}.png`;
     a.click();
@@ -328,7 +328,7 @@ const NewsShareButton = ({ news }) => {
                       try {
                         await navigator.clipboard.writeText(newsUrl);
                       } catch {
-                        const ta = document.createElement('textarea');
+                        const ta = document.createElemen'textarea';
                         ta.value = newsUrl;
                         ta.style.cssText = 'position:fixed;opacity:0';
                         document.body.appendChild(ta);

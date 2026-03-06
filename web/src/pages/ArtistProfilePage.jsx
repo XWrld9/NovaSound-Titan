@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from 'react';
-import { useTranslation } from 'react-i18next';
 import { usePlayer } from '@/contexts/PlayerContext';
 import { useParams, Link } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
@@ -38,9 +37,9 @@ const loadLocalLogo = () =>
 const toDataUrl = (src) => new Promise(resolve => {
   const img = new Image(); img.crossOrigin = 'anonymous';
   img.onload = () => {
-    const c = document.createElement('canvas');
+    const c = document.createElemen'canvas';
     c.width = img.naturalWidth; c.height = img.naturalHeight;
-    c.getContext('2d').drawImage(img, 0, 0);
+    c.getContex'2d'.drawImage(img, 0, 0);
     try { resolve(c.toDataURL('image/jpeg', 0.92)); } catch { resolve(src); }
   };
   img.onerror = () => resolve(null);
@@ -53,7 +52,7 @@ const waitForImages = (node) => {
 };
 
 const dataUrlToBlob = (dataUrl) => {
-  const arr = dataUrl.split(','); const mime = arr[0].match(/:(.*?);/)[1];
+  const arr = dataUrl.spli','; const mime = arr[0].match(/:(.*?);/)[1];
   const bstr = atob(arr[1]); let n = bstr.length; const u8 = new Uint8Array(n);
   while (n--) u8[n] = bstr.charCodeAt(n);
   return new Blob([u8], { type: mime });
@@ -61,7 +60,6 @@ const dataUrlToBlob = (dataUrl) => {
 
 const ArtistShareModal = ({ artist, onClose }) => {
   const cardRef = React.useRef(null);
-  const { t } = useTranslation();
   const [theme, setTheme] = useState(ARTIST_SHARE_THEMES[0]);
   const [cardImg, setCardImg] = useState(null);
   const [generating, setGenerating] = useState(false);
@@ -95,7 +93,7 @@ const ArtistShareModal = ({ artist, onClose }) => {
     if (navigator.canShare?.({ files: [file] })) {
       await navigator.share({ files: [file], text: `Découvre ${artist.username} sur NovaSound TITAN LUX`, url: shareUrl });
     } else {
-      const a = document.createElement('a'); a.href = cardImg;
+      const a = document.createElemen'a'; a.href = cardImg;
       a.download = `${artist.username}-novasound.png`; a.click();
     }
   };

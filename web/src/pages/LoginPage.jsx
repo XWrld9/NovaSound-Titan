@@ -5,14 +5,11 @@ import { motion } from 'framer-motion';
 import { Mail, Lock, Eye, EyeOff, AlertCircle, KeyRound } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
-import { useTranslation } from 'react-i18next';
-import LanguageSwitcher from '@/components/LanguageSwitcher';
 
 const LoginPage = () => {
   const navigate  = useNavigate();
   const location  = useLocation();
   const { login, resendVerification, sendPasswordReset } = useAuth();
-  const { t } = useTranslation();
 
   const [email,             setEmail]           = useState('');
   const [password,          setPassword]        = useState('');
@@ -60,7 +57,7 @@ const LoginPage = () => {
   return (
     <>
       <Helmet>
-        <title>{t('auth.loginBtn')} — NovaSound TITAN LUX</title>
+        <title>{'Se connecter'} — NovaSound TITAN LUX</title>
         <meta name="description" content="Connecte-toi à NovaSound TITAN LUX" />
       </Helmet>
 
@@ -74,7 +71,8 @@ const LoginPage = () => {
             <div className="absolute bottom-1/4 right-1/4 w-80 h-80 rounded-full opacity-15 blur-3xl" style={{ background:'radial-gradient(circle,#a855f7,transparent)' }} />
           </div>
           <div className="absolute inset-0 opacity-[0.025]" style={{ backgroundImage:'radial-gradient(circle,#fff 1px,transparent 1px)', backgroundSize:'28px 28px' }} />
-          <div className="absolute top-6 right-6 z-20"><LanguageSwitcher /></div>
+          <div className="absolute top-6 right-6 z-20">
+</div>
 
           <motion.div initial={{ opacity:0, x:-30 }} animate={{ opacity:1, x:0 }} transition={{ delay:0.2, duration:0.6 }}
             className="relative z-10 flex flex-col items-center text-center max-w-lg px-10">
@@ -95,7 +93,6 @@ const LoginPage = () => {
 
         {/* ══ PANNEAU DROIT : Formulaire ══ */}
         <div className="flex-1 flex flex-col items-center justify-center px-6 py-12 relative">
-          <div className="absolute top-5 right-5 lg:hidden"><LanguageSwitcher compact /></div>
 
           <motion.div initial={{ opacity:0, y:20 }} animate={{ opacity:1, y:0 }} className="w-full max-w-sm">
 
@@ -108,8 +105,8 @@ const LoginPage = () => {
               </div>
             </div>
 
-            <h1 className="text-2xl font-bold text-white mb-1">{t('auth.loginTitle')}</h1>
-            <p className="text-gray-400 text-sm mb-7">{t('auth.loginSubtitle')}</p>
+            <h1 className="text-2xl font-bold text-white mb-1">{'Bon retour 👋'}</h1>
+            <p className="text-gray-400 text-sm mb-7">{'Connecte-toi pour continuer ton aventure musicale'}</p>
 
             <div className="bg-gray-900/50 backdrop-blur-xl border border-cyan-500/20 rounded-2xl p-6 shadow-2xl">
               {forgotMode ? (
@@ -118,12 +115,12 @@ const LoginPage = () => {
                     <div className="w-11 h-11 rounded-2xl bg-cyan-500/15 border border-cyan-500/25 flex items-center justify-center mx-auto mb-3">
                       <KeyRound className="w-5 h-5 text-cyan-400" />
                     </div>
-                    <h2 className="text-white font-bold">{t('auth.forgotTitle')}</h2>
-                    <p className="text-gray-400 text-xs mt-1">{t('auth.forgotSubtitle')}</p>
+                    <h2 className="text-white font-bold">{'Mot de passe oublié'}</h2>
+                    <p className="text-gray-400 text-xs mt-1">{'Entrez votre email pour recevoir un lien de réinitialisation.'}</p>
                   </div>
                   {error && <div className="bg-red-500/10 border border-red-500/30 rounded-xl p-3 flex gap-2"><AlertCircle className="w-4 h-4 text-red-400 mt-0.5 flex-shrink-0"/><p className="text-red-400 text-sm">{error}</p></div>}
                   <div>
-                    <label className="block text-xs font-medium text-gray-300 mb-1.5">{t('auth.email')}</label>
+                    <label className="block text-xs font-medium text-gray-300 mb-1.5">{'Email'}</label>
                     <div className="relative">
                       <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-cyan-400" />
                       <input type="email" value={email} onChange={e=>setEmail(e.target.value)} required autoComplete="email" inputMode="email"
@@ -132,9 +129,9 @@ const LoginPage = () => {
                     </div>
                   </div>
                   <Button type="submit" disabled={loading} className="w-full bg-gradient-to-r from-cyan-500 to-fuchsia-500 text-white py-2.5 font-semibold rounded-xl">
-                    {loading ? t('auth.sending') : t('auth.sendReset')}
+                    {loading ? 'Envoi...' : '📧 Envoyer le lien de réinitialisation'}
                   </Button>
-                  <button type="button" onClick={()=>{setForgotMode(false);setError('');}} className="w-full text-xs text-gray-400 hover:text-cyan-400 transition-colors">{t('auth.backToLogin')}</button>
+                  <button type="button" onClick={()=>{setForgotMode(false);setError('');}} className="w-full text-xs text-gray-400 hover:text-cyan-400 transition-colors">{'← Retour à la connexion'}</button>
                 </form>
               ) : (
                 <form onSubmit={handleSubmit} className="space-y-5" autoComplete="on">
@@ -152,14 +149,14 @@ const LoginPage = () => {
                         {needsVerification && email && (
                           <button type="button" onClick={handleResendVerification} disabled={loading}
                             className="mt-2 w-full flex items-center justify-center gap-1.5 px-3 py-1.5 bg-cyan-500/10 border border-cyan-500/25 rounded-lg text-cyan-400 text-xs hover:bg-cyan-500/20">
-                            {t('auth.resendEmail')}
+                            {'📧 Renvoyer l'email de confirmation'}
                           </button>
                         )}
                       </div>
                     </div>
                   )}
                   <div>
-                    <label className="block text-xs font-medium text-gray-300 mb-1.5">{t('auth.email')}</label>
+                    <label className="block text-xs font-medium text-gray-300 mb-1.5">{'Email'}</label>
                     <div className="relative">
                       <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-cyan-400" />
                       <input type="email" id="email" name="email" value={email} onChange={e=>setEmail(e.target.value)}
@@ -169,7 +166,7 @@ const LoginPage = () => {
                     </div>
                   </div>
                   <div>
-                    <label className="block text-xs font-medium text-gray-300 mb-1.5">{t('auth.password')}</label>
+                    <label className="block text-xs font-medium text-gray-300 mb-1.5">{'Mot de passe'}</label>
                     <div className="relative">
                       <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-cyan-400" />
                       <input type={showPassword?"text":"password"} id="password" name="password" value={password} onChange={e=>setPassword(e.target.value)}
@@ -181,18 +178,18 @@ const LoginPage = () => {
                       </button>
                     </div>
                     <div className="flex justify-end mt-1">
-                      <button type="button" onClick={()=>{setForgotMode(true);setError('');setSuccessMessage('');}} className="text-xs text-cyan-500 hover:text-cyan-400">{t('auth.forgotPassword')}</button>
+                      <button type="button" onClick={()=>{setForgotMode(true);setError('');setSuccessMessage('');}} className="text-xs text-cyan-500 hover:text-cyan-400">{'Mot de passe oublié ?'}</button>
                     </div>
                   </div>
                   <Button type="submit" disabled={loading} className="w-full bg-gradient-to-r from-cyan-500 to-fuchsia-500 hover:from-cyan-600 hover:to-fuchsia-600 text-white py-2.5 font-semibold shadow-lg shadow-cyan-500/20 rounded-xl">
-                    {loading ? t('auth.signingIn') : t('auth.loginBtn')}
+                    {loading ? 'Connexion...' : 'Se connecter'}
                   </Button>
                 </form>
               )}
               {!forgotMode && (
                 <div className="mt-5 text-center space-y-2">
-                  <p className="text-gray-400 text-sm">{t('auth.noAccount')}{' '}<Link to="/signup" className="text-cyan-400 hover:text-cyan-300 font-semibold">{t('auth.registerLink')}</Link></p>
-                  <p className="text-gray-600 text-xs">{t('auth.spamNotice')}</p>
+                  <p className="text-gray-400 text-sm">{'Pas encore de compte ?'}{' '}<Link to="/signup" className="text-cyan-400 hover:text-cyan-300 font-semibold">{'S'inscrire'}</Link></p>
+                  <p className="text-gray-600 text-xs">{'Compte créé récemment ? Pensez à vérifier vos spams.'}</p>
                 </div>
               )}
             </div>

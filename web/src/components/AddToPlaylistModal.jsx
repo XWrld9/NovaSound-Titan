@@ -3,7 +3,6 @@
  * Modal pour ajouter un son à une playlist existante ou en créer une nouvelle.
  */
 import React, { useState, useEffect } from 'react';
-import { useTranslation } from 'react-i18next';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Plus, ListMusic, Check, Lock, Globe, Loader2, Music } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';

@@ -96,7 +96,7 @@ ${!isAuthenticated && !initialLoading ? '✅ État normal → Essayez de vous re
         <div className="flex justify-between">
           <span className="text-gray-400">User:</span>
           <span className="text-cyan-300 truncate max-w-[120px]">
-            {currentUser?.email?.split('@')[0] || 'Aucun'}
+            {currentUser?.email?.spli'@'[0] || 'Aucun'}
           </span>
         </div>
       </div>

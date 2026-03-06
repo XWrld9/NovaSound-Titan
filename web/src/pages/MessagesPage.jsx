@@ -4,7 +4,6 @@
  * → évite le re-montage à chaque frappe (clavier iOS qui disparaît, messages non envoyés)
  */
 import React, { useState, useEffect, useRef, useCallback, memo } from 'react';
-import { useTranslation } from 'react-i18next';
 import { Helmet } from 'react-helmet-async';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Link, useLocation } from 'react-router-dom';
