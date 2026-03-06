@@ -11,6 +11,7 @@
  *  - Compteur badge rouge sur l'onglet "Mes messages" (notifications non lues)
  */
 import React, { useState, useEffect, useRef, useCallback, memo } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Helmet } from 'react-helmet-async';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
@@ -282,6 +283,7 @@ const ChatMessage = memo(({
 const ChatPage = () => {
   const { currentUser } = useAuth();
   const currentUserEmail = currentUser?.email || '';
+  const { t } = useTranslation();
   const navigate  = useNavigate();
   const location  = useLocation();
   const chatCtx   = useChat();

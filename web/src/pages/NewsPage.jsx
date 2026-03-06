@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Helmet } from 'react-helmet-async';
 import { motion, AnimatePresence } from 'framer-motion';
 import { supabase } from '@/lib/supabaseClient';
@@ -47,7 +48,7 @@ const NewsPage = () => {
       <div className="min-h-screen bg-gray-950 flex flex-col pb-36 md:pb-32">
         <Header />
 
-        <main className="flex-1 container mx-auto px-4 py-8 max-w-4xl">
+        <main className="flex-1 w-full max-w-screen-2xl mx-auto px-4 md:px-8 lg:px-12 py-8">
           {/* Titre */}
           <div className="flex items-center gap-3 mb-8">
             <div className="w-1 h-8 bg-gradient-to-b from-fuchsia-500 to-purple-600 rounded-full" />

@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 import ReactDOM from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
@@ -79,6 +80,7 @@ const DeleteConfirm = ({ onConfirm, onCancel, loading }) =>
 
 /* ── Comment menu portal ────────────────────────────────────── */
 const CommentMenu = ({ anchorRef, open, onClose, isAuthor, isAdmin, onEdit, onDelete, onReport, onShare }) => {
+  const { t } = useTranslation();
   const [pos, setPos] = useState({ top: 0, left: 0 });
 
   useEffect(() => {

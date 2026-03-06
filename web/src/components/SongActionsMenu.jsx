@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 import ReactDOM from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { MoreVertical, Archive, ArchiveRestore, Trash2, AlertTriangle, Edit2, Check, X as XIcon, MessageCircle } from 'lucide-react';
@@ -138,6 +139,7 @@ const ConfirmModal = ({ action, songTitle, onConfirm, onCancel, loading }) => {
    dynamiquement au-dessus ou en-dessous selon l'espace disponible
    ───────────────────────────────────────────────────────────── */
 const DropdownMenu = ({ anchorRef, open, onClose, isArchived, isAdmin, isOwner, onAction }) => {
+  const { t } = useTranslation();
   const [pos, setPos] = useState({ top: 0, left: 0, openUp: false });
 
   useEffect(() => {

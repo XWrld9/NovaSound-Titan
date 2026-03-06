@@ -11,6 +11,7 @@
  */
 
 import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Helmet } from 'react-helmet-async';
 import { motion, AnimatePresence } from 'framer-motion';
 import { supabase } from '@/lib/supabaseClient';
@@ -272,6 +273,7 @@ const LiveRoomPage = () => {
   const { roomId: roomIdParam } = useParams();
   const { currentUser }        = useAuth();
   const { playSong, isVisible: playerVisible, currentSong: playerSong } = usePlayer();
+  const { t } = useTranslation();
   const navigate               = useNavigate();
 
   /* Phases */
@@ -859,7 +861,7 @@ const LiveRoomPage = () => {
       <Helmet><title>Live Rooms — NovaSound TITAN LUX</title></Helmet>
       <div className="min-h-screen bg-gray-950 flex flex-col">
         <Header />
-        <main className="flex-1 container mx-auto px-4 py-6 sm:py-8 max-w-5xl pb-28">
+        <main className="flex-1 w-full max-w-screen-2xl mx-auto px-4 md:px-8 lg:px-12 py-6 sm:py-8 max-w-5xl pb-28">
 
           {/* Hero */}
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="text-center mb-8 sm:mb-12">

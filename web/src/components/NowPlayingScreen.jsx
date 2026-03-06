@@ -21,6 +21,7 @@ import {
   Volume2, VolumeX, Volume1,
 } from 'lucide-react';
 import SongShareModal from '@/components/SongShareModal';
+import { useTranslation } from 'react-i18next';
 
 const fmtTime = (s) => {
   if (!s || isNaN(s) || s < 0) return '0:00';
@@ -163,6 +164,7 @@ const NowPlayingScreen = ({
 }) => {
   const { currentUser } = useAuth();
   const { currentSong, playlist, queue } = usePlayer();
+  const { t } = useTranslation();
 
   const [showQueue,  setShowQueue]  = useState(false);
   const [showShare,  setShowShare]  = useState(false);
@@ -266,6 +268,7 @@ const NowPlayingScreen = ({
       className="fixed inset-0 z-[300] flex flex-col overflow-hidden"
       style={{ background:'#050510' }}
     >
+      {/* Background blur */}
       {currentSong.cover_url && (
         <div className="absolute inset-0 opacity-20 scale-110 pointer-events-none"
           style={{ backgroundImage:`url(${currentSong.cover_url})`, backgroundSize:'cover', backgroundPosition:'center', filter:'blur(55px)' }} />
@@ -273,35 +276,39 @@ const NowPlayingScreen = ({
       <div className="absolute inset-0 bg-gradient-to-b from-black/50 via-transparent to-black/85 pointer-events-none" />
       <IdleWave isPlaying={isPlaying} color={color} />
 
-      <div className="relative flex flex-col h-full max-w-sm mx-auto w-full px-6 overflow-y-auto"
-        style={{ paddingTop:'env(safe-area-inset-top, 16px)', paddingBottom:'env(safe-area-inset-bottom, 24px)' }}>
-
-        {/* Top bar */}
-        <div className="flex items-center justify-between pt-5 pb-3 flex-shrink-0">
-          <button onClick={onClose} className="p-2 rounded-full bg-white/10 hover:bg-white/20 text-white transition-all active:scale-90">
-            <ChevronDown className="w-5 h-5" />
-          </button>
-          <div className="text-center">
-            <p className="text-xs text-gray-400 uppercase tracking-widest font-medium">
-              {isLocal ? '📁 Lecture locale' : 'En lecture'}
-            </p>
-            {currentSong.genre && <p className="text-[11px] font-bold mt-0.5" style={{color}}>{currentSong.genre}</p>}
-          </div>
-          <button onClick={()=>{setShowQueue(!showQueue);setShowLyrics(false);}}
-            className={`p-2 rounded-full transition-all active:scale-90 ${showQueue?'bg-white/20 text-white':'bg-white/10 text-gray-400 hover:text-white'}`}>
-            <List className="w-5 h-5" />
-          </button>
+      {/* ── TOP BAR (commun mobile + desktop) ── */}
+      <div className="relative flex-shrink-0 flex items-center justify-between px-5 md:px-10"
+        style={{ paddingTop:'max(20px, env(safe-area-inset-top, 20px))', paddingBottom:'12px', zIndex:10 }}>
+        <button onClick={onClose} className="p-2 rounded-full bg-white/10 hover:bg-white/20 text-white transition-all active:scale-90">
+          <ChevronDown className="w-5 h-5" />
+        </button>
+        <div className="text-center">
+          <p className="text-xs text-gray-400 uppercase tracking-widest font-medium">
+            {isLocal ? t('nowplaying.localPlayback') : t('nowplaying.nowPlaying')}
+          </p>
+          {currentSong.genre && <p className="text-[11px] font-bold mt-0.5" style={{color}}>{currentSong.genre}</p>}
         </div>
+        <button onClick={()=>{setShowQueue(!showQueue);setShowLyrics(false);}}
+          className={`p-2 rounded-full transition-all active:scale-90 ${showQueue?'bg-white/20 text-white':'bg-white/10 text-gray-400 hover:text-white'}`}>
+          <List className="w-5 h-5" />
+        </button>
+      </div>
 
-        {/* Pochette */}
-        <div className="flex-shrink-0 flex items-center justify-center py-2">
+      {/* ── CORPS : mobile (colonne) / desktop (2 colonnes) ── */}
+      <div className="relative flex-1 flex flex-col md:flex-row overflow-hidden"
+        style={{ zIndex:5 }}>
+
+        {/* ══ COLONNE GAUCHE : Pochette ══ */}
+        <div className="flex-shrink-0 flex items-center justify-center
+          px-6 pt-4 pb-2
+          md:w-1/2 md:px-10 md:py-6 md:items-center md:justify-center">
           <AnimatePresence mode="wait">
             <motion.div key={currentSong.id}
               initial={{ scale:0.82, opacity:0 }}
               animate={{ scale: isPlaying ? [1,1.025,1] : 0.96, opacity:1 }}
               exit={{ scale:0.82, opacity:0 }}
               transition={{ duration:isPlaying?2.5:0.4, repeat:isPlaying?Infinity:0, ease:'easeInOut' }}
-              className="w-full max-w-[240px] aspect-square rounded-3xl overflow-hidden"
+              className="w-full max-w-[240px] md:max-w-[360px] lg:max-w-[420px] xl:max-w-[460px] aspect-square rounded-3xl overflow-hidden flex-shrink-0"
               style={{ boxShadow:`0 0 80px ${color}45, 0 24px 60px rgba(0,0,0,0.8)` }}
             >
               {currentSong.cover_url
@@ -314,192 +321,191 @@ const NowPlayingScreen = ({
           </AnimatePresence>
         </div>
 
-        {/* Titre + artiste */}
-        <div className="mb-4 flex-shrink-0">
-          <AnimatePresence mode="wait">
-            <motion.p key={currentSong.title}
-              initial={{opacity:0,y:6}} animate={{opacity:1,y:0}} exit={{opacity:0,y:-6}}
-              className="text-white text-xl font-black truncate">{currentSong.title}</motion.p>
-          </AnimatePresence>
-          {isLocal
-            ? <p className="text-gray-400 text-sm mt-0.5">{currentSong.artist}</p>
-            : <Link to={`/artist/${currentSong.uploader_id}`} onClick={onClose}
-                className="text-gray-400 text-sm hover:text-white transition-colors mt-0.5 block">{currentSong.artist}</Link>
-          }
-        </div>
+        {/* ══ COLONNE DROITE : Contrôles ══ */}
+        <div className="flex-1 flex flex-col overflow-y-auto md:overflow-hidden md:justify-center
+          px-6 pb-4 md:px-10 md:py-6"
+          style={{ paddingBottom:'max(16px, env(safe-area-inset-bottom, 16px))' }}>
 
-        {/* ── SEEK BAR ── */}
-        <div className="mb-5 flex-shrink-0">
-          <SeekBar currentTime={currentTime} duration={duration} onSeek={onSeek} color={color} />
-        </div>
-
-        {/* Actions (online only) */}
-        {!isLocal && (
-          <div className="flex items-center justify-between mb-4 flex-shrink-0 px-1">
-            <motion.button onClick={toggleLike} whileTap={{scale:0.85}}
-              disabled={likeLoading||!currentUser}
-              className="relative flex flex-col items-center gap-0.5 disabled:opacity-40">
-              <AnimatePresence>
-                {likeBurst && <motion.span key="lb" initial={{scale:0.5,opacity:1}} animate={{scale:2.4,opacity:0}} exit={{opacity:0}} transition={{duration:0.6}}
-                  className="absolute inset-0 rounded-full bg-red-400/20 pointer-events-none" />}
-              </AnimatePresence>
-              <Heart className={`w-5 h-5 ${isLiked?'fill-current text-red-500':' text-gray-500 hover:text-gray-300'}`} />
-              <span className="text-[9px] text-gray-500">Like</span>
-            </motion.button>
-
-            <motion.button onClick={()=>setShowShare(true)} whileTap={{scale:0.85}} className="flex flex-col items-center gap-0.5">
-              <Share2 className="w-5 h-5 text-gray-500 hover:text-cyan-400 transition-colors" />
-              <span className="text-[9px] text-gray-500">Partager</span>
-            </motion.button>
-
-            <motion.button onClick={toggleRepost} whileTap={{scale:0.85}}
-              disabled={repostLoading||!currentUser}
-              className="relative flex flex-col items-center gap-0.5 disabled:opacity-40">
-              <AnimatePresence>
-                {repostBurst && <motion.span key="rb" initial={{scale:0.5,opacity:1}} animate={{scale:2.2,opacity:0}} exit={{opacity:0}} transition={{duration:0.5}}
-                  className="absolute inset-0 rounded-full bg-green-400/20 pointer-events-none" />}
-              </AnimatePresence>
-              <Repeat2 className={`w-5 h-5 transition-colors ${hasReposted?'text-green-400':'text-gray-500 hover:text-green-400'}`} />
-              <span className="text-[9px] text-gray-500">Repost</span>
-            </motion.button>
-
-            <motion.button onClick={handleDownload} whileTap={{scale:0.85}} className="flex flex-col items-center gap-0.5">
-              <Download className="w-5 h-5 text-gray-500 hover:text-cyan-400 transition-colors" />
-              <span className="text-[9px] text-gray-500">Sauver</span>
-            </motion.button>
-
-            {showFollowBtn ? (
-              <motion.button onClick={toggleFollow} whileTap={{scale:0.85}} disabled={followLoading} className="flex flex-col items-center gap-0.5 disabled:opacity-40">
-                {isFollowing ? <UserCheck className="w-5 h-5 text-cyan-400" /> : <UserPlus className="w-5 h-5 text-gray-500 hover:text-cyan-400 transition-colors" />}
-                <span className="text-[9px] text-gray-500">{isFollowing?'Abonné':'Suivre'}</span>
-              </motion.button>
-            ) : (
-              <button onClick={()=>{setShowLyrics(!showLyrics);setShowQueue(false);}} disabled={!lyricsContent}
-                className={`flex flex-col items-center gap-0.5 transition-all active:scale-90 ${showLyrics?'text-fuchsia-400':lyricsContent?'text-gray-400 hover:text-white':'text-gray-700 cursor-not-allowed opacity-40'}`}>
-                <Mic2 className="w-5 h-5" />
-                <span className="text-[9px]">Paroles</span>
-              </button>
-            )}
-          </div>
-        )}
-
-        {/* Actions locales */}
-        {isLocal && (
-          <div className="flex items-center justify-center gap-8 mb-4 flex-shrink-0">
-            <motion.button onClick={handleDownload} whileTap={{scale:0.85}} className="flex flex-col items-center gap-0.5">
-              <Download className="w-5 h-5 text-gray-500 hover:text-cyan-400 transition-colors" />
-              <span className="text-[9px] text-gray-500">Exporter</span>
-            </motion.button>
-          </div>
-        )}
-
-        {/* Options secondaires */}
-        <div className="flex items-center justify-around mb-4 flex-shrink-0">
-          <button onClick={onToggleShuffle}
-            className={`flex flex-col items-center gap-1 text-xs transition-all active:scale-90 ${shuffle?'text-cyan-400':'text-gray-600 hover:text-gray-400'}`}>
-            <Shuffle className="w-5 h-5" /><span>Aléat.</span>
-          </button>
-
-          <button onClick={()=>setShowVolume(v=>!v)}
-            className={`flex flex-col items-center gap-1 text-xs transition-all active:scale-90 ${showVolume?'text-cyan-400':'text-gray-600 hover:text-gray-400'}`}>
-            <VolumeIcon className="w-5 h-5" /><span>Volume</span>
-          </button>
-
-          <button onClick={onToggleRepeat}
-            className={`flex flex-col items-center gap-1 text-xs transition-all active:scale-90 relative ${repeat!=='off'?'text-cyan-400':'text-gray-600 hover:text-gray-400'}`}>
-            <Repeat className="w-5 h-5" />
-            <span>{repeat==='one'?'1×':'Répéter'}</span>
-            {repeat==='one' && <span className="absolute -top-1 -right-1 text-[8px] bg-cyan-500 text-black font-black rounded-full w-3.5 h-3.5 flex items-center justify-center">1</span>}
-          </button>
-        </div>
-
-        {/* Volume slider */}
-        <AnimatePresence>
-          {showVolume && (
-            <motion.div initial={{opacity:0,height:0}} animate={{opacity:1,height:'auto'}} exit={{opacity:0,height:0}}
-              className="mb-4 flex-shrink-0 overflow-hidden">
-              <div className="flex items-center gap-3 bg-white/[0.05] rounded-2xl px-4 py-3 border border-white/[0.06]">
-                <button onClick={onToggleMute} className="text-gray-400 hover:text-white transition-colors flex-shrink-0">
-                  <VolumeIcon className="w-4 h-4" />
-                </button>
-                <input
-                  type="range" min={0} max={100} step={1} value={isMuted ? 0 : volume}
-                  onChange={e => onVolumeChange?.(Number(e.target.value))}
-                  className="flex-1 h-1.5 rounded-full appearance-none cursor-pointer"
-                  style={{ accentColor: color }}
-                />
-                <span className="text-xs text-gray-500 w-8 text-right tabular-nums">{isMuted ? 0 : volume}%</span>
-              </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
-
-        {/* Contrôles transport */}
-        <div className="flex items-center justify-between mb-5 flex-shrink-0">
-          <motion.button whileTap={{scale:0.85}} onClick={onPrev} className="p-3 text-gray-300 hover:text-white transition-colors">
-            <SkipBack className="w-9 h-9 fill-current" />
-          </motion.button>
-          <motion.button whileTap={{scale:0.9}} onClick={onTogglePlay}
-            className="w-20 h-20 rounded-full flex items-center justify-center shadow-2xl"
-            style={{ background:`linear-gradient(135deg,${color},#a855f7)`, boxShadow:`0 0 50px ${color}50` }}>
-            {isBuffering
-              ? <div className="w-8 h-8 rounded-full border-2 border-white/30 border-t-white animate-spin" />
-              : isPlaying
-                ? <Pause className="w-9 h-9 text-white fill-current" />
-                : <Play  className="w-9 h-9 text-white fill-current ml-1" />
+          {/* Titre + artiste */}
+          <div className="mb-4 flex-shrink-0">
+            <AnimatePresence mode="wait">
+              <motion.p key={currentSong.title}
+                initial={{opacity:0,y:6}} animate={{opacity:1,y:0}} exit={{opacity:0,y:-6}}
+                className="text-white text-xl md:text-2xl lg:text-3xl font-black truncate">{currentSong.title}</motion.p>
+            </AnimatePresence>
+            {isLocal
+              ? <p className="text-gray-400 text-sm mt-0.5">{currentSong.artist}</p>
+              : <Link to={`/artist/${currentSong.uploader_id}`} onClick={onClose}
+                  className="text-gray-400 text-sm hover:text-white transition-colors mt-0.5 block">{currentSong.artist}</Link>
             }
-          </motion.button>
-          <motion.button whileTap={{scale:0.85}} onClick={onNext} className="p-3 text-gray-300 hover:text-white transition-colors">
-            <SkipForward className="w-9 h-9 fill-current" />
-          </motion.button>
-        </div>
+          </div>
 
-        {/* File d'attente */}
-        <AnimatePresence>
-          {showQueue && (
-            <motion.div initial={{height:0,opacity:0}} animate={{height:'auto',opacity:1}} exit={{height:0,opacity:0}}
-              className="overflow-hidden mb-4 flex-shrink-0">
-              <div className="bg-white/[0.06] backdrop-blur-sm rounded-2xl p-3 max-h-44 overflow-y-auto border border-white/[0.06]">
-                <p className="text-[10px] text-gray-500 font-bold mb-2 uppercase tracking-widest">Suivants</p>
-                {upcoming.length === 0
-                  ? <p className="text-gray-600 text-xs text-center py-3">File d'attente vide</p>
-                  : upcoming.map((s,i) => (
-                    <div key={s.id} className="flex items-center gap-3 py-1.5">
-                      <span className="text-gray-700 text-[10px] w-4 text-center flex-shrink-0">{i+1}</span>
-                      <div className="w-8 h-8 rounded-lg overflow-hidden bg-gray-800 flex-shrink-0">
-                        {s.cover_url ? <img src={s.cover_url} className="w-full h-full object-cover" alt={s.title} />
-                          : <div className="w-full h-full bg-gray-700 flex items-center justify-center"><Music className="w-3 h-3 text-gray-500" /></div>}
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-white text-xs font-medium truncate">{s.title}</p>
-                        <p className="text-gray-500 text-[10px] truncate">{s.artist}</p>
-                      </div>
-                    </div>
-                  ))
-                }
-              </div>
-            </motion.div>
+          {/* SEEK BAR */}
+          <div className="mb-5 flex-shrink-0">
+            <SeekBar currentTime={currentTime} duration={duration} onSeek={onSeek} color={color} />
+          </div>
+
+          {/* Actions (online only) */}
+          {!isLocal && (
+            <div className="flex items-center justify-between mb-4 flex-shrink-0 px-1">
+              <motion.button onClick={toggleLike} whileTap={{scale:0.85}}
+                disabled={likeLoading||!currentUser}
+                className="relative flex flex-col items-center gap-0.5 disabled:opacity-40">
+                <AnimatePresence>
+                  {likeBurst && <motion.span key="lb" initial={{scale:0.5,opacity:1}} animate={{scale:2.4,opacity:0}} exit={{opacity:0}} transition={{duration:0.6}}
+                    className="absolute inset-0 rounded-full bg-red-400/20 pointer-events-none" />}
+                </AnimatePresence>
+                <Heart className={`w-5 h-5 ${isLiked?'fill-current text-red-500':'text-gray-500 hover:text-gray-300'}`} />
+                <span className="text-[9px] text-gray-500">{t('nowplaying.like')}</span>
+              </motion.button>
+              <motion.button onClick={()=>setShowShare(true)} whileTap={{scale:0.85}} className="flex flex-col items-center gap-0.5">
+                <Share2 className="w-5 h-5 text-gray-500 hover:text-cyan-400 transition-colors" />
+                <span className="text-[9px] text-gray-500">{t('nowplaying.share')}</span>
+              </motion.button>
+              <motion.button onClick={toggleRepost} whileTap={{scale:0.85}}
+                disabled={repostLoading||!currentUser}
+                className="relative flex flex-col items-center gap-0.5 disabled:opacity-40">
+                <AnimatePresence>
+                  {repostBurst && <motion.span key="rb" initial={{scale:0.5,opacity:1}} animate={{scale:2.2,opacity:0}} exit={{opacity:0}} transition={{duration:0.5}}
+                    className="absolute inset-0 rounded-full bg-green-400/20 pointer-events-none" />}
+                </AnimatePresence>
+                <Repeat2 className={`w-5 h-5 transition-colors ${hasReposted?'text-green-400':'text-gray-500 hover:text-green-400'}`} />
+                <span className="text-[9px] text-gray-500">{t('nowplaying.repost')}</span>
+              </motion.button>
+              <motion.button onClick={handleDownload} whileTap={{scale:0.85}} className="flex flex-col items-center gap-0.5">
+                <Download className="w-5 h-5 text-gray-500 hover:text-cyan-400 transition-colors" />
+                <span className="text-[9px] text-gray-500">{t('nowplaying.save')}</span>
+              </motion.button>
+              {showFollowBtn ? (
+                <motion.button onClick={toggleFollow} whileTap={{scale:0.85}} disabled={followLoading} className="flex flex-col items-center gap-0.5 disabled:opacity-40">
+                  {isFollowing ? <UserCheck className="w-5 h-5 text-cyan-400" /> : <UserPlus className="w-5 h-5 text-gray-500 hover:text-cyan-400 transition-colors" />}
+                  <span className="text-[9px] text-gray-500">{isFollowing ? t('nowplaying.subscribed') : t('nowplaying.subscribe')}</span>
+                </motion.button>
+              ) : (
+                <button onClick={()=>{setShowLyrics(!showLyrics);setShowQueue(false);}} disabled={!lyricsContent}
+                  className={`flex flex-col items-center gap-0.5 transition-all active:scale-90 ${showLyrics?'text-fuchsia-400':lyricsContent?'text-gray-400 hover:text-white':'text-gray-700 cursor-not-allowed opacity-40'}`}>
+                  <Mic2 className="w-5 h-5" />
+                  <span className="text-[9px]">{t('nowplaying.lyrics')}</span>
+                </button>
+              )}
+            </div>
           )}
-        </AnimatePresence>
 
-        <div className="pb-4 flex-shrink-0" />
-      </div>
+          {/* Actions locales */}
+          {isLocal && (
+            <div className="flex items-center justify-center gap-8 mb-4 flex-shrink-0">
+              <motion.button onClick={handleDownload} whileTap={{scale:0.85}} className="flex flex-col items-center gap-0.5">
+                <Download className="w-5 h-5 text-gray-500 hover:text-cyan-400 transition-colors" />
+                <span className="text-[9px] text-gray-500">{t('nowplaying.export')}</span>
+              </motion.button>
+            </div>
+          )}
+
+          {/* Options secondaires */}
+          <div className="flex items-center justify-around mb-4 flex-shrink-0">
+            <button onClick={onToggleShuffle}
+              className={`flex flex-col items-center gap-1 text-xs transition-all active:scale-90 ${shuffle?'text-cyan-400':'text-gray-600 hover:text-gray-400'}`}>
+              <Shuffle className="w-5 h-5" /><span>{t('nowplaying.shuffle')}</span>
+            </button>
+            <button onClick={()=>setShowVolume(v=>!v)}
+              className={`flex flex-col items-center gap-1 text-xs transition-all active:scale-90 ${showVolume?'text-cyan-400':'text-gray-600 hover:text-gray-400'}`}>
+              <VolumeIcon className="w-5 h-5" /><span>{t('nowplaying.volume')}</span>
+            </button>
+            <button onClick={onToggleRepeat}
+              className={`flex flex-col items-center gap-1 text-xs transition-all active:scale-90 relative ${repeat!=='off'?'text-cyan-400':'text-gray-600 hover:text-gray-400'}`}>
+              <Repeat className="w-5 h-5" />
+              <span>{repeat==='one' ? t('nowplaying.repeatOne') : t('nowplaying.repeat')}</span>
+              {repeat==='one' && <span className="absolute -top-1 -right-1 text-[8px] bg-cyan-500 text-black font-black rounded-full w-3.5 h-3.5 flex items-center justify-center">1</span>}
+            </button>
+          </div>
+
+          {/* Volume slider */}
+          <AnimatePresence>
+            {showVolume && (
+              <motion.div initial={{opacity:0,height:0}} animate={{opacity:1,height:'auto'}} exit={{opacity:0,height:0}}
+                className="mb-4 flex-shrink-0 overflow-hidden">
+                <div className="flex items-center gap-3 bg-white/[0.05] rounded-2xl px-4 py-3 border border-white/[0.06]">
+                  <button onClick={onToggleMute} className="text-gray-400 hover:text-white transition-colors flex-shrink-0">
+                    <VolumeIcon className="w-4 h-4" />
+                  </button>
+                  <input type="range" min={0} max={100} step={1} value={isMuted ? 0 : volume}
+                    onChange={e => onVolumeChange?.(Number(e.target.value))}
+                    className="flex-1 h-1.5 rounded-full appearance-none cursor-pointer"
+                    style={{ accentColor: color }} />
+                  <span className="text-xs text-gray-500 w-8 text-right tabular-nums">{isMuted ? 0 : volume}%</span>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+
+          {/* Contrôles transport */}
+          <div className="flex items-center justify-between mb-5 flex-shrink-0">
+            <motion.button whileTap={{scale:0.85}} onClick={onPrev} className="p-3 text-gray-300 hover:text-white transition-colors">
+              <SkipBack className="w-9 h-9 md:w-11 md:h-11 fill-current" />
+            </motion.button>
+            <motion.button whileTap={{scale:0.9}} onClick={onTogglePlay}
+              className="w-20 h-20 md:w-24 md:h-24 rounded-full flex items-center justify-center shadow-2xl"
+              style={{ background:`linear-gradient(135deg,${color},#a855f7)`, boxShadow:`0 0 50px ${color}50` }}>
+              {isBuffering
+                ? <div className="w-8 h-8 rounded-full border-2 border-white/30 border-t-white animate-spin" />
+                : isPlaying
+                  ? <Pause className="w-9 h-9 md:w-11 md:h-11 text-white fill-current" />
+                  : <Play  className="w-9 h-9 md:w-11 md:h-11 text-white fill-current ml-1" />
+              }
+            </motion.button>
+            <motion.button whileTap={{scale:0.85}} onClick={onNext} className="p-3 text-gray-300 hover:text-white transition-colors">
+              <SkipForward className="w-9 h-9 md:w-11 md:h-11 fill-current" />
+            </motion.button>
+          </div>
+
+          {/* File d'attente */}
+          <AnimatePresence>
+            {showQueue && (
+              <motion.div initial={{height:0,opacity:0}} animate={{height:'auto',opacity:1}} exit={{height:0,opacity:0}}
+                className="overflow-hidden mb-4 flex-shrink-0">
+                <div className="bg-white/[0.06] backdrop-blur-sm rounded-2xl p-3 max-h-44 overflow-y-auto border border-white/[0.06]"
+                  style={{ scrollbarWidth:'none' }}>
+                  <p className="text-[10px] text-gray-500 font-bold mb-2 uppercase tracking-widest">{t('nowplaying.next')}</p>
+                  {upcoming.length === 0
+                    ? <p className="text-gray-600 text-xs text-center py-3">{t('nowplaying.queueEmpty')}</p>
+                    : upcoming.map((s,i) => (
+                      <div key={s.id} className="flex items-center gap-3 py-1.5">
+                        <span className="text-gray-700 text-[10px] w-4 text-center flex-shrink-0">{i+1}</span>
+                        <div className="w-8 h-8 rounded-lg overflow-hidden bg-gray-800 flex-shrink-0">
+                          {s.cover_url ? <img src={s.cover_url} className="w-full h-full object-cover" alt={s.title} />
+                            : <div className="w-full h-full bg-gray-700 flex items-center justify-center"><Music className="w-3 h-3 text-gray-500" /></div>}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-white text-xs font-medium truncate">{s.title}</p>
+                          <p className="text-gray-500 text-[10px] truncate">{s.artist}</p>
+                        </div>
+                      </div>
+                    ))
+                  }
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+
+        </div>{/* fin colonne droite */}
+      </div>{/* fin corps */}
 
       {/* Paroles overlay */}
       <AnimatePresence>
         {showLyrics && lyricsContent && (
           <motion.div initial={{opacity:0,y:20}} animate={{opacity:1,y:0}} exit={{opacity:0,y:20}}
-            className="absolute inset-x-0 bottom-0 top-20 bg-black/93 backdrop-blur-2xl rounded-t-3xl p-6 overflow-y-auto z-10">
+            className="absolute inset-x-0 bottom-0 top-20 bg-black/93 backdrop-blur-2xl rounded-t-3xl p-6 overflow-y-auto z-10"
+            style={{ scrollbarWidth:'none' }}>
             <div className="flex items-center justify-between mb-5">
               <div className="flex items-center gap-2">
                 <Mic2 className="w-4 h-4 text-fuchsia-400" />
-                <span className="text-sm font-bold text-white">Paroles</span>
+                <span className="text-sm font-bold text-white">{t('nowplaying.lyricsTitle')}</span>
               </div>
               <button onClick={()=>setShowLyrics(false)} className="p-1.5 rounded-full bg-white/10 text-gray-400 hover:text-white">
                 <X className="w-4 h-4" />
               </button>
             </div>
-            <div className="space-y-3 text-center pb-12">
+            <div className="space-y-3 text-center pb-12 max-w-2xl mx-auto">
               {lyricsContent.split('\n').map((line,i) => (
                 <p key={i} className={line.trim()?'text-white text-base leading-relaxed':'py-2'}>{line||'\u00A0'}</p>
               ))}

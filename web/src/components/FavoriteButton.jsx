@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 import { motion } from 'framer-motion';
 import { Bookmark, BookmarkCheck } from 'lucide-react';
 import { supabase } from '@/lib/supabaseClient';

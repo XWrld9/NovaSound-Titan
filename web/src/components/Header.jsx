@@ -27,19 +27,19 @@ const isStandalone = () =>
 
 // Liens principaux (toujours visibles)
 const PRIMARY_LINKS = [
-  { to: '/',           label: 'Accueil',     Icon: Music,      color: 'hover:text-cyan-400' },
-  { to: '/explorer',   label: 'Explorer',    Icon: Globe,      color: 'hover:text-cyan-400' },
-  { to: '/trending',   label: 'Tendances',   Icon: TrendingUp, color: 'hover:text-cyan-400' },
-  { to: '/live',       label: 'Live',        Icon: Radio,      color: 'hover:text-red-400', badge: true },
+  { to: '/',           labelKey: 'nav.home',     Icon: Music,      color: 'hover:text-cyan-400' },
+  { to: '/explorer',   labelKey: 'nav.explorer', Icon: Globe,      color: 'hover:text-cyan-400' },
+  { to: '/trending',   labelKey: 'nav.trending', Icon: TrendingUp, color: 'hover:text-cyan-400' },
+  { to: '/live',       labelKey: 'nav.live',     Icon: Radio,      color: 'hover:text-red-400', badge: true },
 ];
 
 // Liens secondaires (dans le menu "Plus")
 const SECONDARY_LINKS = [
-  { to: '/artists',      label: 'Artistes',    Icon: Users,     color: 'hover:text-fuchsia-400' },
-  { to: '/news',         label: 'Actualités',  Icon: Newspaper, color: 'hover:text-cyan-400' },
-  { to: '/chat',         label: 'Chat',        Icon: Globe,     color: 'hover:text-cyan-400' },
-  { to: '/leaderboard',  label: 'Top',         Icon: Trophy,    color: 'hover:text-amber-400' },
-  { to: '/local-player', label: 'Local',       Icon: HardDrive, color: 'hover:text-cyan-400' },
+  { to: '/artists',      labelKey: 'nav.artists',    Icon: Users,     color: 'hover:text-fuchsia-400' },
+  { to: '/news',         labelKey: 'nav.news',       Icon: Newspaper, color: 'hover:text-cyan-400' },
+  { to: '/chat',         labelKey: 'nav.chat',       Icon: Globe,     color: 'hover:text-cyan-400' },
+  { to: '/leaderboard',  labelKey: 'nav.leaderboard',Icon: Trophy,    color: 'hover:text-amber-400' },
+  { to: '/local-player', labelKey: 'nav.local',      Icon: HardDrive, color: 'hover:text-cyan-400' },
 ];
 
 const Header = () => {
@@ -168,7 +168,7 @@ const Header = () => {
         className="sticky top-0 z-40 bg-gray-950 border-b border-cyan-500/20 shadow-lg shadow-cyan-900/10"
         style={{ paddingTop: 'env(safe-area-inset-top, 0px)' }}
       >
-        <div className="container mx-auto px-4 py-3">
+        <div className="w-full max-w-screen-2xl mx-auto px-4 md:px-6 py-3">
           <div className="flex items-center gap-3">
 
             {/* ── Logo ── */}
@@ -188,12 +188,12 @@ const Header = () => {
 
             {/* ── Nav desktop (liens principaux) ── */}
             <nav className="hidden md:flex items-center gap-1 flex-shrink-0">
-              {PRIMARY_LINKS.map(({ to, label, Icon, color, badge }) => (
+              {PRIMARY_LINKS.map(({ to, labelKey, Icon, color, badge }) => (
                 <Link
                   key={to} to={to}
                   className={`relative text-gray-300 ${color} transition-colors flex items-center gap-1.5 font-medium px-3 py-2 rounded-lg hover:bg-white/5 text-sm`}
                 >
-                  <Icon className="w-4 h-4" />{label}
+                  <Icon className="w-4 h-4" />{t(labelKey)}
                   {badge && <span className="absolute top-1.5 right-1 w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse" />}
                 </Link>
               ))}
@@ -215,13 +215,13 @@ const Header = () => {
                       transition={{ duration: 0.15 }}
                       className="absolute left-0 top-full mt-2 w-44 bg-gray-900 border border-cyan-500/20 rounded-xl shadow-2xl overflow-hidden z-50"
                     >
-                      {SECONDARY_LINKS.map(({ to, label, Icon, color }) => (
+                      {SECONDARY_LINKS.map(({ to, labelKey, Icon, color }) => (
                         <Link
                           key={to} to={to}
                           onClick={() => setShowMoreMenu(false)}
                           className={`flex items-center gap-3 px-4 py-2.5 text-sm text-gray-300 ${color} hover:bg-white/5 transition-colors`}
                         >
-                          <Icon className="w-4 h-4" />{label}
+                          <Icon className="w-4 h-4" />{t(labelKey)}
                         </Link>
                       ))}
                     </motion.div>
@@ -286,13 +286,13 @@ const Header = () => {
                     </Link>
                     <div className="absolute right-0 top-full mt-2 w-48 bg-gray-900 border border-cyan-500/30 rounded-xl shadow-xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all translate-y-2 group-hover:translate-y-0 z-50">
                       <div className="p-2">
-                        <Link to="/profile" className="block px-4 py-2 text-sm text-gray-300 hover:bg-cyan-500/10 hover:text-cyan-400 rounded-lg">Mon profil</Link>
-                        <Link to="/playlists" className="flex items-center gap-2 px-4 py-2 text-sm text-gray-300 hover:bg-cyan-500/10 hover:text-cyan-400 rounded-lg"><ListMusic className="w-4 h-4" />Mes playlists</Link>
-                        <Link to="/stats" className="flex items-center gap-2 px-4 py-2 text-sm text-gray-300 hover:bg-cyan-500/10 hover:text-cyan-400 rounded-lg"><BarChart2 className="w-4 h-4" />Mes stats</Link>
+                        <Link to="/profile" className="block px-4 py-2 text-sm text-gray-300 hover:bg-cyan-500/10 hover:text-cyan-400 rounded-lg">{ t("nav.profile") }</Link>
+                        <Link to="/playlists" className="flex items-center gap-2 px-4 py-2 text-sm text-gray-300 hover:bg-cyan-500/10 hover:text-cyan-400 rounded-lg"><ListMusic className="w-4 h-4" />{ t("nav.playlists") }</Link>
+                        <Link to="/stats" className="flex items-center gap-2 px-4 py-2 text-sm text-gray-300 hover:bg-cyan-500/10 hover:text-cyan-400 rounded-lg"><BarChart2 className="w-4 h-4" />{ t("nav.stats") }</Link>
                         {isAdmin && (
-                          <Link to="/admin" className="flex items-center gap-2 px-4 py-2 text-sm text-red-400 hover:bg-red-500/10 rounded-lg"><Shield className="w-4 h-4" />Panneau Admin</Link>
+                          <Link to="/admin" className="flex items-center gap-2 px-4 py-2 text-sm text-red-400 hover:bg-red-500/10 rounded-lg"><Shield className="w-4 h-4" />{ t("nav.admin") }</Link>
                         )}
-                        <button onClick={handleLogout} className="w-full text-left flex items-center gap-2 px-4 py-2 text-sm text-red-400 hover:bg-red-500/10 rounded-lg"><LogOut className="w-4 h-4" />Déconnexion</button>
+                        <button onClick={handleLogout} className="w-full text-left flex items-center gap-2 px-4 py-2 text-sm text-red-400 hover:bg-red-500/10 rounded-lg"><LogOut className="w-4 h-4" />{ t("nav.logout") }</button>
                       </div>
                     </div>
                   </div>
@@ -302,12 +302,12 @@ const Header = () => {
                 <div className="hidden md:flex items-center gap-2">
                   <Link to="/login">
                     <Button variant="outline" className="border-cyan-500/40 text-cyan-400 hover:bg-cyan-500/10 hover:border-cyan-400 rounded-full text-sm px-4">
-                      Connexion
+                      { t("nav.login") }
                     </Button>
                   </Link>
                   <Link to="/signup">
                     <Button className="bg-gradient-to-r from-cyan-500 to-fuchsia-500 hover:from-cyan-600 hover:to-fuchsia-600 text-white rounded-full text-sm px-4">
-                      Inscription
+                      { t("nav.signup") }
                     </Button>
                   </Link>
                 </div>
@@ -468,14 +468,14 @@ const Header = () => {
               </div>
 
               {/* Navigation mobile */}
-              <div className="flex-1 overflow-y-auto p-4">
+              <div className="flex-1 overflow-y-auto p-4" style={{ scrollbarWidth:'none' }}>
                 <nav className="space-y-1">
-                  {[...PRIMARY_LINKS, ...SECONDARY_LINKS].map(({ to, label, Icon, color, badge }) => (
+                  {[...PRIMARY_LINKS, ...SECONDARY_LINKS].map(({ to, labelKey, Icon, color, badge }) => (
                     <Link
                       key={to} to={to} onClick={closeMenu}
                       className={`flex items-center gap-3 px-4 py-3 text-gray-300 ${color} hover:bg-white/5 rounded-lg transition-colors relative`}
                     >
-                      <Icon className="w-5 h-5" />{label}
+                      <Icon className="w-5 h-5" />{t(labelKey)}
                       {badge && <span className="ml-auto w-2 h-2 rounded-full bg-red-500 animate-pulse" />}
                     </Link>
                   ))}
@@ -484,21 +484,21 @@ const Header = () => {
                       <div className="my-2 border-t border-gray-800" />
                       <NotificationBell mobile closeMenu={closeMenu} />
                       <Link to="/upload" onClick={closeMenu} className="flex items-center gap-3 px-4 py-3 text-gray-300 hover:text-cyan-400 hover:bg-white/5 rounded-lg transition-colors">
-                        <Upload className="w-5 h-5 text-cyan-400" />Uploader un son
+                        <Upload className="w-5 h-5 text-cyan-400" />{t('nav.upload')}
                       </Link>
                       <Link to="/playlists" onClick={closeMenu} className="flex items-center gap-3 px-4 py-3 text-gray-300 hover:text-cyan-400 hover:bg-white/5 rounded-lg transition-colors">
-                        <ListMusic className="w-5 h-5 text-cyan-400" />Mes playlists
+                        <ListMusic className="w-5 h-5 text-cyan-400" />{t('nav.playlists')}
                       </Link>
                       <Link to="/stats" onClick={closeMenu} className="flex items-center gap-3 px-4 py-3 text-gray-300 hover:text-cyan-400 hover:bg-white/5 rounded-lg transition-colors">
-                        <BarChart2 className="w-5 h-5 text-cyan-400" />Mes stats
+                        <BarChart2 className="w-5 h-5 text-cyan-400" />{t('nav.stats')}
                       </Link>
                       {isAdmin && (
                         <Link to="/admin" onClick={closeMenu} className="flex items-center gap-3 px-4 py-3 text-red-400 hover:bg-red-500/10 rounded-lg transition-colors">
-                          <Shield className="w-5 h-5" />Panneau Admin
+                          <Shield className="w-5 h-5" />{t('nav.admin')}
                         </Link>
                       )}
                       <Link to="/profile" onClick={closeMenu} className="flex items-center gap-3 px-4 py-3 text-gray-300 hover:text-fuchsia-400 hover:bg-white/5 rounded-lg transition-colors">
-                        <User className="w-5 h-5 text-fuchsia-400" />Mon profil
+                        <User className="w-5 h-5 text-fuchsia-400" />{t('nav.profile')}
                       </Link>
                     </>
                   )}
@@ -516,23 +516,25 @@ const Header = () => {
                     {ios ? "Comment installer sur iPhone" : "Télécharger NovaST LUX"}
                   </button>
                 )}
-                {/* Language Switcher mobile */}
-                <div className="w-full flex items-center gap-2 py-2">
-                  <Globe className="w-4 h-4 text-gray-500 flex-shrink-0" />
-                  <span className="text-gray-400 text-sm flex-shrink-0">{t('language.select')} :</span>
-                  <LanguageSwitcher compact={false} />
+                {/* Language Switcher mobile — mode inline (toujours visible) */}
+                <div className="w-full py-2 border-t border-white/[0.06] mt-1">
+                  <div className="flex items-center gap-2 mb-2">
+                    <Globe className="w-4 h-4 text-gray-500 flex-shrink-0" />
+                    <span className="text-gray-400 text-xs font-semibold uppercase tracking-wider">{t('language.select')}</span>
+                  </div>
+                  <LanguageSwitcher inline />
                 </div>
                 {isAuthenticated ? (
                   <Button onClick={handleLogout} variant="outline" className="w-full border-red-500/30 text-red-400 hover:bg-red-500/10 hover:text-red-300 justify-start">
-                    <LogOut className="w-4 h-4 mr-2" />Déconnexion
+                    <LogOut className="w-4 h-4 mr-2" />{ t("nav.logout") }
                   </Button>
                 ) : (
                   <div className="grid grid-cols-2 gap-3">
                     <Link to="/login" onClick={closeMenu}>
-                      <Button className="w-full bg-cyan-600 hover:bg-cyan-700 text-white rounded-full">Connexion</Button>
+                      <Button className="w-full bg-cyan-600 hover:bg-cyan-700 text-white rounded-full">{ t("nav.login") }</Button>
                     </Link>
                     <Link to="/signup" onClick={closeMenu}>
-                      <Button className="w-full bg-gradient-to-r from-cyan-500 to-fuchsia-500 text-white rounded-full">Inscription</Button>
+                      <Button className="w-full bg-gradient-to-r from-cyan-500 to-fuchsia-500 text-white rounded-full">{ t("nav.signup") }</Button>
                     </Link>
                   </div>
                 )}

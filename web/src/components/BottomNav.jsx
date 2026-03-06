@@ -16,10 +16,10 @@ import { motion } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
 
 const NAV_ITEMS = [
-  { to: '/',            icon: Home,   label: 'Accueil'  },
-  { to: '/explorer',    icon: Compass,label: 'Explorer' },
-  { to: '/live',        icon: Radio,  label: 'Live', liveIndicator: true },
-  { to: '/leaderboard', icon: Trophy, label: 'Top'      },
+  { to: '/',            icon: Home,   labelKey: 'nav.home'        },
+  { to: '/explorer',    icon: Compass,labelKey: 'nav.explorer'    },
+  { to: '/live',        icon: Radio,  labelKey: 'nav.live', liveIndicator: true },
+  { to: '/leaderboard', icon: Trophy, labelKey: 'nav.leaderboard' },
 ];
 
 const BottomNav = () => {
@@ -73,13 +73,13 @@ const BottomNav = () => {
     : '/login';
 
   const notifItem = isAuthenticated
-    ? { to: '/notifications', icon: Bell, label: 'Notifs', badge: unreadCount > 0 ? (unreadCount > 9 ? '9+' : String(unreadCount)) : null }
+    ? { to: '/notifications', icon: Bell, labelKey: 'nav.notifications', badge: unreadCount > 0 ? (unreadCount > 9 ? '9+' : String(unreadCount)) : null }
     : null;
 
   const allItems = [
     ...NAV_ITEMS,
     ...(notifItem ? [notifItem] : []),
-    { to: profileTo, icon: User, label: 'Profil' },
+    { to: profileTo, icon: User, labelKey: 'nav.profile' },
   ];
 
   return (
@@ -93,7 +93,7 @@ const BottomNav = () => {
         paddingBottom: 'env(safe-area-inset-bottom)',
       }}
     >
-      {allItems.map(({ to, icon: Icon, label, liveIndicator, badge }) => {
+      {allItems.map(({ to, icon: Icon, labelKey, liveIndicator, badge }) => {
         const active = isActive(to);
         return (
           <Link
@@ -137,7 +137,7 @@ const BottomNav = () => {
                 active ? 'text-cyan-400' : 'text-gray-600'
               }`}
             >
-              {label}
+              {t(labelKey)}
             </span>
           </Link>
         );

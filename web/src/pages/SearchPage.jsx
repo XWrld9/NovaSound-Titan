@@ -6,6 +6,7 @@
  * ✅ Debounce 350ms
  */
 import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Link, useSearchParams } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -60,6 +61,7 @@ const CatBadge = ({ type }) => {
 };
 
 const SearchPage = () => {
+  const { t } = useTranslation();
   const [searchParams, setSearchParams] = useSearchParams();
   const { currentUser } = useAuth();
   const { playSong }    = usePlayer();
@@ -174,7 +176,7 @@ const SearchPage = () => {
       <div className="min-h-screen bg-gray-950 flex flex-col pb-32">
         <Header />
 
-        <main className="flex-1 container mx-auto px-4 py-8 max-w-5xl">
+        <main className="flex-1 w-full max-w-screen-2xl mx-auto px-4 md:px-8 lg:px-12 py-8">
 
           {/* Titre */}
           <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className="mb-6">

@@ -13,6 +13,7 @@ import { usePlayer } from '@/contexts/PlayerContext';
 import LottieAnimation from '@/components/LottieAnimation';
 import playAnimation from '@/animations/play-animation.json';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { useToast } from '@/components/ui/Toast';
 import { useGenreTheme } from '@/hooks/useGenreTheme';
 import WaveformVisualizer from '@/components/WaveformVisualizer';
@@ -87,6 +88,7 @@ const AudioPlayer = ({ currentSong, playlist = [], onNext, onPrevious, onClose, 
   const navigate = useNavigate();
   const toast = useToast();
   const audioRef = useRef(null);
+  const { t } = useTranslation();
 
   // Queue & Sleep timer depuis PlayerContext
   const {
@@ -757,7 +759,7 @@ const AudioPlayer = ({ currentSong, playlist = [], onNext, onPrevious, onClose, 
             </div>
 
             {/* CONTENU */}
-            <div className="flex-1 flex flex-col md:flex-row items-center justify-center gap-6 md:gap-10 lg:gap-16 px-5 md:px-10 lg:px-20 pb-4 md:pb-8 z-10 overflow-y-auto">
+            <div className="flex-1 flex flex-col md:flex-row items-center justify-center gap-6 md:gap-12 lg:gap-20 px-5 md:px-14 lg:px-24 xl:px-32 pb-4 md:pb-8 z-10 overflow-y-auto" style={{ scrollbarWidth:'none' }}>
               {/* Pochette */}
               <motion.div
                 initial={{ scale: 0.88, opacity: 0 }}
@@ -772,7 +774,7 @@ const AudioPlayer = ({ currentSong, playlist = [], onNext, onPrevious, onClose, 
               </motion.div>
 
               {/* Controles */}
-              <div className="flex flex-col gap-4 w-full max-w-sm sm:max-w-md md:max-w-md lg:max-w-lg">
+              <div className="flex flex-col gap-4 w-full max-w-xl lg:max-w-2xl xl:max-w-3xl">
                 {/* Titre + artiste + actions */}
                 <div className="flex items-start justify-between gap-3">
                   <div className="min-w-0 flex-1">

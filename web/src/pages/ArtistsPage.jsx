@@ -3,6 +3,7 @@
  * Vue artistes groupés : tous les artistes + leurs sons organisés ensemble
  */
 import React, { useState, useEffect, useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
 import { motion, AnimatePresence } from 'framer-motion';

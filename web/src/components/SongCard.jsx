@@ -1,4 +1,5 @@
 import React, { useState, memo, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Play, Download, Share2, Music, Headphones, ExternalLink, Plus, Check, MessageCircle, ListMusic, X as XIcon } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { AnimatePresence, motion } from 'framer-motion';
@@ -29,6 +30,7 @@ const SongCard = memo(({ song: initialSong, onPlay, isPlaying: isPlayingProp, se
   const { addToQueue, currentSong: playerCurrentSong, isVisible: playerVisible } = usePlayer();
   // Priorité au PlayerContext pour la synchronisation universelle
   const isPlaying = playerVisible && playerCurrentSong?.id === initialSong?.id;
+  const { t } = useTranslation();
   const [song, setSong] = useState(initialSong);
   const [isHovered, setIsHovered] = useState(false);
   const [showShare, setShowShare] = useState(false);

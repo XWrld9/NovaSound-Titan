@@ -41,12 +41,31 @@ img, video, iframe {
 }
 
 /* Masquer la scrollbar tout en gardant le scroll fonctionnel */
-.scrollbar-hide {
+.scrollbar-hide,
+*[style*="scrollbar-width: none"],
+*[style*="scrollbarWidth: none"] {
   -ms-overflow-style: none;
   scrollbar-width: none;
 }
 .scrollbar-hide::-webkit-scrollbar {
   display: none;
+}
+
+/* Masquer TOUTES les scrollbars par défaut — elles restent fonctionnelles */
+::-webkit-scrollbar {
+  width: 0px;
+  height: 0px;
+  background: transparent;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: transparent;
+}
+* {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
 }
 
 /* ── Animation marquee pour titres longs dans le player ──────────────────── */

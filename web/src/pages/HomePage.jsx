@@ -8,6 +8,7 @@
  * (tout le reste inchangé depuis V40000)
  */
 import React, { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { usePlayer } from '@/contexts/PlayerContext';
 import { Link } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
@@ -48,6 +49,7 @@ const getListened = (uid) => {
 
 const HomePage = () => {
   const { isAuthenticated, currentUser } = useAuth();
+  const { t } = useTranslation();
   const [featuredSongs,    setFeaturedSongs]    = useState([]);
   const [listenedHistory,  setListenedHistory]  = useState([]);
   const [topSongs,         setTopSongs]         = useState([]);
@@ -207,7 +209,7 @@ const HomePage = () => {
               style={{ backgroundImage: 'url(https://horizons-cdn.hostinger.com/83c37f40-fa54-4cc6-8247-95b1353f3eba/e8ebebbd32c0e37f6ab462c275dd560a.jpg)' }} />
             <div className="absolute inset-0 bg-gradient-to-b from-gray-950/80 via-gray-950/60 to-gray-950" />
             <div className="absolute inset-0 bg-gradient-to-r from-cyan-500/20 to-fuchsia-500/20" />
-            <div className="relative container mx-auto px-4 h-full flex items-center justify-center md:justify-start text-center md:text-left">
+            <div className="relative w-full max-w-screen-2xl mx-auto px-4 md:px-8 lg:px-12 h-full flex items-center justify-center md:justify-start text-center md:text-left">
               <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }} className="max-w-3xl">
                 <h1 className="text-4xl sm:text-5xl md:text-7xl font-bold mb-4 md:mb-6 bg-gradient-to-r from-cyan-400 via-white to-fuchsia-500 bg-clip-text text-transparent leading-tight">
                   Ressens la vague sonore
@@ -235,13 +237,13 @@ const HomePage = () => {
 
           {/* ── SPOTLIGHT CARROUSEL ── */}
           {spotlightSongs.length > 0 && (
-            <section className="container mx-auto px-4 -mt-6 relative z-10 mb-4">
+            <section className="w-full max-w-screen-2xl mx-auto px-4 md:px-8 lg:px-12 -mt-6 relative z-10 mb-4">
               <SpotlightCarousel songs={spotlightSongs} onPlay={playSong} currentSong={currentSong} />
             </section>
           )}
 
           {/* ── SALONS EN DIRECT ── */}
-          <section className="container mx-auto px-4 py-6 relative z-10">
+          <section className="w-full max-w-screen-2xl mx-auto px-4 md:px-8 lg:px-12 py-6 relative z-10">
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-lg font-bold text-white flex items-center gap-2">
                 <Radio className="w-5 h-5 text-red-400" />
@@ -256,7 +258,7 @@ const HomePage = () => {
 
           {/* ── NOUVELLES SORTIES des artistes suivis ── */}
           {isAuthenticated && (
-            <section className="container mx-auto px-4 py-4 relative z-10">
+            <section className="w-full max-w-screen-2xl mx-auto px-4 md:px-8 lg:px-12 py-4 relative z-10">
               <div className="flex items-center justify-between mb-4">
                 <h2 className="text-lg font-bold text-white flex items-center gap-2">
                   <UserCheck className="w-5 h-5 text-fuchsia-400" />
@@ -288,7 +290,7 @@ const HomePage = () => {
 
           {/* ── CONTINUER L'ÉCOUTE ── */}
           {isAuthenticated && listenedHistory.length > 0 && (
-            <section className="container mx-auto px-4 py-6 relative z-10">
+            <section className="w-full max-w-screen-2xl mx-auto px-4 md:px-8 lg:px-12 py-6 relative z-10">
               <div className="flex items-center justify-between mb-4">
                 <h2 className="text-lg font-bold text-white flex items-center gap-2">
                   <History className="w-5 h-5 text-cyan-400" />
@@ -308,7 +310,7 @@ const HomePage = () => {
             <section className="relative py-10 overflow-hidden">
               <div className="absolute inset-0 bg-gradient-to-b from-transparent via-amber-950/20 to-transparent pointer-events-none" />
               <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-amber-500/30 to-transparent" />
-              <div className="container mx-auto px-4 relative">
+              <div className="w-full max-w-screen-2xl mx-auto px-4 md:px-8 lg:px-12 relative">
                 <div className="flex items-center gap-3 mb-6">
                   <div className="w-1 h-8 bg-gradient-to-b from-amber-400 to-amber-600 rounded-full" />
                   <h2 className="text-2xl md:text-3xl font-bold text-white flex items-center gap-3">
@@ -362,7 +364,7 @@ const HomePage = () => {
           <section className="relative py-12 md:py-16 overflow-hidden">
             <div className="absolute inset-0 bg-gradient-to-b from-transparent via-cyan-950/20 to-transparent pointer-events-none" />
             <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-cyan-500/40 to-transparent" />
-            <div className="container mx-auto px-4 relative">
+            <div className="w-full max-w-screen-2xl mx-auto px-4 md:px-8 lg:px-12 relative">
               <div className="flex items-center justify-between mb-8">
                 <div className="flex items-center gap-3">
                   <div className="w-1 h-8 bg-gradient-to-b from-cyan-400 to-cyan-600 rounded-full" />
@@ -447,7 +449,7 @@ const HomePage = () => {
             <div className="absolute inset-0 bg-gradient-to-b from-transparent via-fuchsia-950/25 to-transparent pointer-events-none" />
             <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-fuchsia-500/40 to-transparent" />
             <div className="absolute bottom-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-fuchsia-500/40 to-transparent" />
-            <div className="container mx-auto px-4 relative">
+            <div className="w-full max-w-screen-2xl mx-auto px-4 md:px-8 lg:px-12 relative">
               <div className="flex items-center justify-between mb-8">
                 <div className="flex items-center gap-3">
                   <div className="w-1 h-8 bg-gradient-to-b from-fuchsia-400 to-purple-600 rounded-full" />

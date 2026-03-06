@@ -1,30 +1,28 @@
 /**
- * LanguageSwitcher — NovaSound TITAN LUX v200000
- * Bouton discret de changement de langue.
- * Se place dans le Header, dropdown avec drapeau + nom.
+ * LanguageSwitcher — NovaSound TITAN LUX v300000
+ * Dropdown intelligent : positionné correctement sur mobile ET desktop.
  */
 import React, { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Globe, Check } from 'lucide-react';
+import { Globe, Check, ChevronDown } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 
 const LANGUAGES = [
-  { code: 'fr', label: 'Français',   flag: '🇫🇷' },
-  { code: 'en', label: 'English',    flag: '🇬🇧' },
-  { code: 'it', label: 'Italiano',   flag: '🇮🇹' },
-  { code: 'es', label: 'Español',    flag: '🇪🇸' },
-  { code: 'pt', label: 'Português',  flag: '🇧🇷' },
+  { code: 'fr', label: 'Français',  flag: '🇫🇷' },
+  { code: 'en', label: 'English',   flag: '🇬🇧' },
+  { code: 'it', label: 'Italiano',  flag: '🇮🇹' },
+  { code: 'es', label: 'Español',   flag: '🇪🇸' },
+  { code: 'pt', label: 'Português', flag: '🇧🇷' },
 ];
 
-const LanguageSwitcher = ({ compact = false }) => {
+const LanguageSwitcher = ({ compact = false, inline = false }) => {
   const { i18n } = useTranslation();
   const [open, setOpen] = useState(false);
   const ref = useRef(null);
 
-  const currentLang = LANGUAGES.find(l => l.code === i18n.language?.slice(0, 2))
+  const currentLang = LANGUAGES.find(l => l.code === (i18n.language || 'fr').slice(0, 2))
     || LANGUAGES[0];
 
-  // Fermer si clic en dehors
   useEffect(() => {
     const handler = (e) => {
       if (ref.current && !ref.current.contains(e.target)) setOpen(false);
@@ -37,6 +35,29 @@ const LanguageSwitcher = ({ compact = false }) => {
     i18n.changeLanguage(code);
     setOpen(false);
   };
+
+  // Mode inline : affiche directement les boutons (pour le menu mobile)
+  if (inline) {
+    return (
+      <div className="flex flex-wrap gap-2 mt-1">
+        {LANGUAGES.map(lang => (
+          <button
+            key={lang.code}
+            onClick={() => changeLang(lang.code)}
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium transition-all border
+              ${currentLang.code === lang.code
+                ? 'bg-cyan-500/20 border-cyan-500/40 text-cyan-300'
+                : 'border-white/10 text-gray-400 hover:border-white/25 hover:text-white'
+              }`}
+          >
+            <span className="text-base leading-none">{lang.flag}</span>
+            <span>{lang.label}</span>
+            {currentLang.code === lang.code && <Check className="w-3 h-3 ml-0.5 text-cyan-400" />}
+          </button>
+        ))}
+      </div>
+    );
+  }
 
   return (
     <div className="relative" ref={ref}>
@@ -59,9 +80,10 @@ const LanguageSwitcher = ({ compact = false }) => {
           </span>
         )}
         <span className="text-sm leading-none">{currentLang.flag}</span>
+        {!compact && <ChevronDown className={`w-3 h-3 transition-transform ${open ? 'rotate-180' : ''}`} />}
       </button>
 
-      {/* Dropdown */}
+      {/* Dropdown — toujours visible, positionné vers le bas sur desktop */}
       <AnimatePresence>
         {open && (
           <motion.div
@@ -69,7 +91,7 @@ const LanguageSwitcher = ({ compact = false }) => {
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.9, y: -4 }}
             transition={{ duration: 0.15 }}
-            className="absolute right-0 top-full mt-2 z-[200] bg-gray-900 border border-white/10 rounded-2xl shadow-2xl shadow-black/60 p-1.5 w-40 overflow-hidden"
+            className="absolute right-0 top-full mt-2 z-[300] bg-gray-900 border border-white/10 rounded-2xl shadow-2xl shadow-black/60 p-1.5 w-44 overflow-hidden"
           >
             <p className="text-[10px] text-gray-600 font-semibold uppercase tracking-wider px-2.5 py-1">
               Langue / Language

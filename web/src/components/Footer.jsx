@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router-dom';
 import { Mail, Music, Heart, X, ExternalLink, Smartphone, Globe, Info } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -86,7 +87,7 @@ const AboutModal = ({ onClose }) => (
               alt="Logo" className="w-10 h-10 rounded-2xl border border-cyan-400/30 object-cover" />
             <div>
               <h3 className="text-white font-black text-base leading-tight">NovaSound TITAN LUX</h3>
-              <p className="text-cyan-400/70 text-xs">v25.0.0 — 2026</p>
+              <p className="text-cyan-400/70 text-xs">v300.0.0 — 2026</p>
             </div>
           </div>
           <button onClick={onClose} className="w-8 h-8 rounded-full bg-white/[0.07] flex items-center justify-center text-gray-500 hover:text-white transition-colors">
@@ -140,6 +141,7 @@ const AboutModal = ({ onClose }) => (
 
 // ══════════════════════════════════════════════════════════════════════════════
 const Footer = () => {
+  const { t } = useTranslation();
   const [showSupport, setShowSupport] = useState(false);
   const [showAbout,   setShowAbout]   = useState(false);
 
@@ -243,7 +245,7 @@ const Footer = () => {
           {/* ── Bottom bar ──────────────────────────────────────────────────── */}
           <div className="border-t border-white/[0.05] mt-10 pt-6 flex flex-col sm:flex-row items-center justify-between gap-3">
             <p className="text-gray-700 text-xs font-mono">
-              © 2026 <span className="text-gray-600">NovaSound TITAN LUX</span> — ELOADXFAMILY · v25.0.0
+              © 2026 <span className="text-gray-600">NovaSound TITAN LUX</span> — ELOADXFAMILY · v300.0.0
             </p>
             <div className="flex items-center gap-4">
               <button onClick={() => setShowAbout(true)} className="text-gray-700 hover:text-gray-500 text-xs transition-colors flex items-center gap-1">

@@ -7,6 +7,7 @@
  *  - Bouton "Tout lire" corrigé
  */
 import React, { useState, useEffect, useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Helmet } from 'react-helmet-async';
 import { Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -35,6 +36,7 @@ const RankBadge = ({ rank }) => {
 
 const TrendingPage = () => {
   const { playSong } = usePlayer();
+  const { t } = useTranslation();
   const [period,         setPeriod]         = useState('7d');
   const [activeTab,      setActiveTab]       = useState('songs');
   const [songs,          setSongs]           = useState([]);

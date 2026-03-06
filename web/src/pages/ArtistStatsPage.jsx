@@ -8,6 +8,7 @@
  * - Insight cards: meilleur jour, meilleure semaine
  */
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Helmet } from 'react-helmet-async';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
@@ -214,7 +215,7 @@ const ArtistStatsPage = () => {
       <div className="min-h-screen bg-gray-950 flex flex-col pb-36 md:pb-28">
         <Header />
 
-        <main className="flex-1 container mx-auto px-4 py-8 max-w-4xl">
+        <main className="flex-1 w-full max-w-screen-2xl mx-auto px-4 md:px-8 lg:px-12 py-8 max-w-4xl">
           {/* Retour */}
           <Link to="/profile" className="inline-flex items-center gap-2 text-gray-500 hover:text-white text-sm mb-6 transition-colors group">
             <ArrowLeft className="w-4 h-4 group-hover:-translate-x-0.5 transition-transform" />

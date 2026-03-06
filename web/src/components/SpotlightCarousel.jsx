@@ -5,6 +5,7 @@
  * Auto-défile toutes les 5 secondes. Cliquable → lecture directe.
  */
 import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Play, ChevronLeft, ChevronRight, Headphones } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 

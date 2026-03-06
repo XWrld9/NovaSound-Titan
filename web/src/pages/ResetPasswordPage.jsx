@@ -4,6 +4,7 @@
  * Supabase redirige vers /#/reset-password avec le token dans l'URL hash
  */
 import React, { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
 import { motion } from 'framer-motion';
@@ -117,7 +118,23 @@ const ResetPasswordPage = () => {
       <Helmet>
         <title>Réinitialiser le mot de passe — NovaSound TITAN LUX</title>
       </Helmet>
-      <div className="min-h-screen bg-gray-950 flex items-center justify-center px-4 py-12">
+      <div className="min-h-screen bg-gray-950 flex overflow-hidden">
+        {/* Panneau gauche décoratif (desktop) */}
+        <div className="hidden lg:flex lg:w-1/2 xl:w-3/5 relative items-center justify-center"
+          style={{ background:'linear-gradient(135deg,#050510,#0a0a1f,#0e1a2e)' }}>
+          <div className="absolute inset-0 opacity-[0.025]" style={{ backgroundImage:'radial-gradient(circle,#fff 1px,transparent 1px)', backgroundSize:'28px 28px' }} />
+          <div className="absolute top-1/3 left-1/3 w-80 h-80 rounded-full opacity-20 blur-3xl" style={{ background:'radial-gradient(circle,#06b6d4,transparent)' }} />
+          <motion.div initial={{ opacity:0, x:-20 }} animate={{ opacity:1, x:0 }} transition={{ delay:0.2 }}
+            className="relative z-10 text-center max-w-sm px-8">
+            <img src="https://horizons-cdn.hostinger.com/83c37f40-fa54-4cc6-8247-95b1353f3eba/a4885bba5290b1958f05bcdb82731c39.jpg"
+              alt="NovaSound" className="w-20 h-20 rounded-full border-2 border-cyan-400 shadow-2xl shadow-cyan-500/30 mx-auto mb-6" />
+            <h2 className="text-4xl font-black text-white mb-2">Nova<span className="bg-gradient-to-r from-cyan-400 to-fuchsia-500 bg-clip-text text-transparent">Sound</span></h2>
+            <p className="text-gray-500 tracking-widest uppercase text-sm mb-4">TITAN LUX</p>
+            <p className="text-gray-400 text-sm leading-relaxed">Réinitialise ton mot de passe en toute sécurité.</p>
+          </motion.div>
+        </div>
+        {/* Formulaire */}
+        <div className="flex-1 flex items-center justify-center px-6 py-12">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -295,6 +312,7 @@ const ResetPasswordPage = () => {
             )}
           </div>
         </motion.div>
+        </div>{/* fin panneau droit */}
       </div>
     </>
   );

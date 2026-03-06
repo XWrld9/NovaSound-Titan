@@ -713,13 +713,72 @@ const LocalPlayerPage = () => {
       <input ref={inputRef}    type="file" accept="*/*" multiple onChange={onFiles}         className="hidden" />
       <input ref={reimportRef} type="file" accept="*/*" multiple onChange={onReimportFiles} className="hidden" />
 
-      <div className="flex-1 max-w-xl md:max-w-3xl lg:max-w-5xl xl:max-w-6xl mx-auto w-full px-4 pt-4 pb-8 flex flex-col gap-4">
+      {/* ── Layout PC : sidebar gauche (player fixe) + panneau droit (fichiers/playlists) ── */}
+      <div className="flex-1 flex flex-col md:flex-row overflow-hidden" style={{ minHeight: 0 }}>
 
+        {/* ══ SIDEBAR GAUCHE (PC) : Player toujours visible ══ */}
+        {activeSong && (
+          <div className="hidden md:flex md:flex-col md:w-72 lg:w-80 xl:w-96 flex-shrink-0 border-r border-white/[0.06] overflow-y-auto"
+            style={{ scrollbarWidth:'none', background:'linear-gradient(180deg,rgba(6,182,212,0.04),rgba(124,58,237,0.03))' }}>
+            <motion.div initial={{ opacity:0, x:-12 }} animate={{ opacity:1, x:0 }}
+              className="p-5 flex flex-col gap-4">
+              {/* Pochette grande */}
+              <div className="w-full aspect-square rounded-2xl overflow-hidden flex-shrink-0"
+                style={{ boxShadow:'0 0 40px rgba(6,182,212,0.3)' }}>
+                <img src={activeSong.cover_svg || activeSong.cover_url} alt={activeSong.title} className="w-full h-full object-cover" />
+              </div>
+              {/* Info */}
+              <div>
+                <p className="text-white font-bold text-lg truncate leading-tight">{activeSong.title}</p>
+                <p className="text-cyan-400/80 text-sm truncate mt-0.5">{activeSong.artist}</p>
+                {activeSong.album && <p className="text-gray-600 text-xs truncate mt-0.5">{activeSong.album}</p>}
+              </div>
+              {/* SeekBar */}
+              <SeekBar currentTime={ct} duration={duration} onSeek={seekTo} color="#22d3ee" />
+              {/* Transport */}
+              <div className="flex items-center justify-between">
+                <button onClick={toggleShuffle} className={`p-2 rounded-full transition-all ${shuffle?'text-cyan-400':'text-gray-600 hover:text-gray-400'}`}>
+                  <Shuffle className="w-5 h-5" />
+                </button>
+                <motion.button whileTap={{ scale:.88 }} onClick={() => handlePrevious?.()}
+                  className="p-2 text-gray-300 hover:text-white transition-colors">
+                  <SkipBack className="w-8 h-8 fill-current" />
+                </motion.button>
+                <motion.button whileTap={{ scale:.9 }}
+                  onClick={isLocalPlaying ? togglePlayPause : () => playSong(songs[0], songs)}
+                  className="w-16 h-16 rounded-full flex items-center justify-center shadow-xl"
+                  style={{ background:'linear-gradient(135deg,#0e7490,#7c3aed)', boxShadow:'0 0 40px rgba(6,182,212,0.4)' }}>
+                  {isPlayingGlobal ? <Pause className="w-8 h-8 text-white fill-current" /> : <Play className="w-8 h-8 text-white fill-current ml-0.5" />}
+                </motion.button>
+                <motion.button whileTap={{ scale:.88 }} onClick={() => handleNext?.()}
+                  className="p-2 text-gray-300 hover:text-white transition-colors">
+                  <SkipForward className="w-8 h-8 fill-current" />
+                </motion.button>
+                <button onClick={cycleRepeat} className={`p-2 rounded-full transition-all relative ${repeat!=='off'?'text-cyan-400':'text-gray-600 hover:text-gray-400'}`}>
+                  <Repeat className="w-5 h-5" />
+                  {repeat==='one' && <span className="absolute -top-0.5 -right-0.5 text-[8px] bg-cyan-500 text-black font-black rounded-full w-3.5 h-3.5 flex items-center justify-center">1</span>}
+                </button>
+              </div>
+              {/* Volume */}
+              <div className="flex items-center gap-3">
+                <VolumeIcon className="w-4 h-4 text-gray-500" />
+                <input type="range" min={0} max={100} step={1} value={volume} onChange={e => setVolume(Number(e.target.value))}
+                  className="flex-1 h-1.5 rounded-full appearance-none cursor-pointer" style={{ accentColor:'#22d3ee' }} />
+                <span className="text-xs text-gray-600 w-8 text-right tabular-nums">{volume}%</span>
+              </div>
+            </motion.div>
+          </div>
+        )}
+
+        {/* ══ PANNEAU PRINCIPAL : mobile colonne / desktop côté droit ══ */}
+        <div className="flex-1 overflow-y-auto px-4 pt-4 pb-24 md:pb-8 flex flex-col gap-4" style={{ scrollbarWidth:'none' }}>
+
+        {/* Player mobile uniquement (caché sur desktop si sidebar visible) */}
         {activeSection === 'player' && (
           <div className="flex flex-col gap-4">
             {activeSong && (
               <motion.div initial={{ opacity:0, y:-8 }} animate={{ opacity:1, y:0 }}
-                className="rounded-2xl overflow-hidden border border-cyan-500/20"
+                className="md:hidden rounded-2xl overflow-hidden border border-cyan-500/20"
                 style={{ background:'linear-gradient(135deg,rgba(6,182,212,0.08),rgba(124,58,237,0.06))' }}>
                 <div className="flex flex-col md:flex-row gap-0">
                   {/* Colonne gauche : pochette + info */}
@@ -950,7 +1009,8 @@ const LocalPlayerPage = () => {
             </button>
           </div>
         )}
-      </div>
+      </div>{/* fin panneau principal */}
+      </div>{/* fin layout flex PC */}
 
       <AnimatePresence>
         {showSaveModal && (

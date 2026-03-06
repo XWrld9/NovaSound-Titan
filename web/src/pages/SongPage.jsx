@@ -5,6 +5,7 @@
  *    bug fix edit commentaire inclus dans CommentSection
  */
 import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -96,6 +97,7 @@ const SuggestionCard = ({ s, onPlay }) => (
 
 const SongPage = () => {
   const { id } = useParams();
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const { playSong, currentSong, isVisible, audioCurrentTime, isPlayingGlobal } = usePlayer();
   const { isAuthenticated } = useAuth();
@@ -188,7 +190,7 @@ const SongPage = () => {
 
   if (loading) return (
     <div className="min-h-screen bg-gray-950 flex flex-col pb-36"><Header />
-      <main className="flex-1 container mx-auto px-4 py-8 max-w-5xl">
+      <main className="flex-1 w-full max-w-screen-2xl mx-auto px-4 md:px-8 lg:px-12 py-8">
         <div className="animate-pulse flex flex-col md:flex-row gap-8">
           <div className="w-full md:w-64 aspect-square bg-gray-800 rounded-2xl flex-shrink-0" />
           <div className="flex-1 space-y-4 pt-2">
@@ -201,7 +203,7 @@ const SongPage = () => {
 
   if (error||!song) return (
     <div className="min-h-screen bg-gray-950 flex flex-col pb-36"><Header />
-      <main className="flex-1 container mx-auto px-4 py-16 flex flex-col items-center justify-center">
+      <main className="flex-1 w-full max-w-screen-2xl mx-auto px-4 md:px-8 lg:px-12 py-16 flex flex-col items-center justify-center">
         <Music className="w-16 h-16 text-gray-700 mb-4" />
         <h2 className="text-xl font-bold text-white mb-2">Son introuvable</h2>
         <p className="text-gray-500 mb-6">Ce morceau n'existe pas ou a été supprimé.</p>
@@ -250,7 +252,7 @@ const SongPage = () => {
 
       <div className="min-h-screen bg-gray-950 flex flex-col pb-36 md:pb-32">
         <Header />
-        <main className="flex-1 container mx-auto px-4 py-6 max-w-5xl">
+        <main className="flex-1 w-full max-w-screen-2xl mx-auto px-4 md:px-8 lg:px-12 py-6">
 
           {/* Top nav */}
           <div className="flex items-center justify-between mb-6">

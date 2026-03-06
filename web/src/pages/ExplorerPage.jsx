@@ -7,6 +7,7 @@
  * - Mémorisation de la préférence vue (localStorage)
  */
 import React, { useState, useEffect, useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 import { usePlayer } from '@/contexts/PlayerContext';
 import { Helmet } from 'react-helmet-async';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -69,6 +70,7 @@ const fmtDur = (s) => {
 };
 
 const SongRow = ({ song, index, onPlay, isPlaying, currentUser }) => {
+  const { t } = useTranslation();
   const [qFlash,   setQFlash]   = useState(false);
   const [showPL,   setShowPL]   = useState(false);
   const { addToQueue } = usePlayer();
@@ -303,7 +305,7 @@ const ExplorerPage = () => {
       <div className="min-h-screen bg-gray-950 flex flex-col pb-32">
         <Header />
 
-        <main className="flex-1 container mx-auto px-4 py-8">
+        <main className="flex-1 w-full max-w-screen-2xl mx-auto px-4 md:px-8 lg:px-12 py-8">
 
           {/* Barre filtres + toggle vue */}
           <div className="mb-6">

@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { useTranslation } from 'react-i18next';
 import { motion } from 'framer-motion';
 import { toPng } from 'html-to-image';
 import { WifiOff, Share2, Download, X } from 'lucide-react';
@@ -131,6 +132,7 @@ const SongShareModal = ({ song, onClose }) => {
 
   const cardRef = useRef(null);
   const isMounted = useRef(true); // track unmount pour éviter setState sur composant mort
+  const { t } = useTranslation();
   const [theme, setTheme] = useState(SHARE_THEMES[0]);
   const [cardImg, setCardImg] = useState(null);
   const [generating, setGenerating] = useState(false);

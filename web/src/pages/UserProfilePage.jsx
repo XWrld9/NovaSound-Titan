@@ -15,6 +15,7 @@
  */
 
 import React, { useState, useEffect, useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Helmet } from 'react-helmet-async';
 import { usePlayer } from '@/contexts/PlayerContext';
 import { useAuth } from '@/contexts/AuthContext';
@@ -59,6 +60,7 @@ const fmtNum = (n) => {
 // ─────────────────────────────────────────────────────────────────────────────
 const UserProfilePage = () => {
   const { currentUser, logout } = useAuth();
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -202,7 +204,7 @@ const UserProfilePage = () => {
 
       <div className="min-h-screen bg-gray-950 pb-36 md:pb-32 overflow-x-hidden">
         <Header />
-        <main className="container mx-auto px-4 py-8">
+        <main className="w-full max-w-screen-2xl mx-auto px-4 md:px-8 lg:px-12 py-8">
 
           {/* ── Header profil ── */}
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}

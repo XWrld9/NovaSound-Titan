@@ -7,6 +7,7 @@
  * - Podium + Top20 unifiés sur tous les onglets
  */
 import React, { useState, useEffect, useCallback, useRef } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Helmet } from 'react-helmet-async';
 import { motion, AnimatePresence } from 'framer-motion';
 import { supabase } from '@/lib/supabaseClient';
@@ -146,6 +147,7 @@ const LeaderboardPage = () => {
   const { currentUser } = useAuth();
   const { playSong }    = usePlayer();
 
+  const { t } = useTranslation();
   const [tab, setTab]               = useState('artists');
   const [songPeriod, setSongPeriod] = useState('trending_7d');
   const [streaks,    setStreaks]    = useState([]);
@@ -291,7 +293,7 @@ const LeaderboardPage = () => {
       <Helmet><title>Classement — NovaSound TITAN LUX</title></Helmet>
       <div className="min-h-screen bg-gray-950 flex flex-col">
         <Header />
-        <main className="flex-1 container mx-auto px-4 py-8 max-w-5xl pb-32">
+        <main className="flex-1 w-full max-w-screen-2xl mx-auto px-4 md:px-8 lg:px-12 py-8 pb-32">
 
           {/* Hero */}
           <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} className="text-center mb-10">

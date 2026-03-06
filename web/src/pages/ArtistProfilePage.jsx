@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { usePlayer } from '@/contexts/PlayerContext';
 import { useParams, Link } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
@@ -60,6 +61,7 @@ const dataUrlToBlob = (dataUrl) => {
 
 const ArtistShareModal = ({ artist, onClose }) => {
   const cardRef = React.useRef(null);
+  const { t } = useTranslation();
   const [theme, setTheme] = useState(ARTIST_SHARE_THEMES[0]);
   const [cardImg, setCardImg] = useState(null);
   const [generating, setGenerating] = useState(false);
@@ -326,7 +328,7 @@ const ArtistProfilePage = () => {
       <div className="min-h-screen bg-gray-950 flex flex-col pb-40 md:pb-32">
         <Header />
 
-        <main className="flex-1 max-w-5xl mx-auto w-full px-0 sm:px-4 pb-8">
+        <main className="flex-1 mx-auto w-full px-0 sm:px-4 pb-8">
 
           {/* ── BANNER ───────────────────────────────── */}
           <div className="relative h-36 sm:h-48 md:h-64 overflow-hidden md:rounded-b-3xl mb-0">

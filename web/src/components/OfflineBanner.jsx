@@ -3,6 +3,7 @@
  * Bannière offline avec raccourci vers le lecteur local
  */
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import { motion, AnimatePresence } from 'framer-motion';
 import { WifiOff, Wifi, RefreshCw, HardDrive } from 'lucide-react';
 import { useOnline } from '@/contexts/OnlineContext';

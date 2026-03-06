@@ -17,6 +17,7 @@
  * - Avertissement écran veille iOS affiché pendant l'upload
  */
 import React, { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
 import { useAuth } from '@/contexts/AuthContext';
@@ -153,6 +154,7 @@ const uploadWithIOSRetry = async ({ bucket, path, file, token, onProgress }) => 
 // COMPOSANT
 // ════════════════════════════════════════════════════════════════════
 const MusicUploadPage = () => {
+  const { t } = useTranslation();
   const navigate    = useNavigate();
   const { currentUser } = useAuth();
 
@@ -381,7 +383,7 @@ const MusicUploadPage = () => {
       <div className="min-h-screen bg-gray-950 flex flex-col pb-36 md:pb-32">
         <Header />
 
-        <main className="flex-1 container mx-auto px-4 py-12">
+        <main className="flex-1 w-full max-w-screen-2xl mx-auto px-4 md:px-8 lg:px-12 py-12">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}

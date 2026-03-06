@@ -5,6 +5,7 @@
  * ✅ Tooltip natif amélioré
  */
 import React, { useState, useEffect, useRef } from 'react';
+import { useTranslation } from 'react-i18next';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Repeat2, Check, UserCircle2, ExternalLink } from 'lucide-react';
 import { Link } from 'react-router-dom';

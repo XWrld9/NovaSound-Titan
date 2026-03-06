@@ -12,6 +12,7 @@
  * ✅ Date grouping (Aujourd'hui / Hier / Plus ancien)
  */
 import React, { useState, useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Helmet } from 'react-helmet-async';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -190,6 +191,7 @@ const EmptyState = ({ tab }) => (
 
 // ════════════════════════════════════════════════════════════
 const NotificationsPage = () => {
+  const { t } = useTranslation();
   const navigate   = useNavigate();
   const { currentUser } = useAuth();
   const {
