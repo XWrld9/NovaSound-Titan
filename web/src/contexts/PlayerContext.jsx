@@ -130,7 +130,7 @@ export const PlayerProvider = ({ children }) => {
       if (remaining <= 0) {
         clearInterval(sleepIntervalRef.current);
         setSleepTimerVal(null);
-        window.dispatchEvent(new CustomEven'novasound:sleep-end');
+        window.dispatchEvent(new CustomEvent('novasound:sleep-end'));
       }
     }, 1000);
   }, []);
@@ -145,7 +145,7 @@ export const PlayerProvider = ({ children }) => {
 
   // ── togglePlayPause depuis l'extérieur ──────────────────────────
   const togglePlayPause = useCallback(() => {
-    window.dispatchEvent(new CustomEven'novasound:toggle-play');
+    window.dispatchEvent(new CustomEvent('novasound:toggle-play'));
   }, []);
 
   // ── playSong ────────────────────────────────────────────────────
@@ -254,7 +254,7 @@ export const PlayerProvider = ({ children }) => {
     playlistRef.current    = [];
     currentSongRef.current = null;
     queueRef.current       = [];
-    window.dispatchEvent(new CustomEven'novasound:close-player');
+    window.dispatchEvent(new CustomEvent('novasound:close-player'));
   }, [clearSleepTimer]);
 
   // ── Queue management ────────────────────────────────────────────
