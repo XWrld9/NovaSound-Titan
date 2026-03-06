@@ -9,6 +9,7 @@
  * ✅ Toutes les corrections v20000 conservées
  */
 import React, { useState, useRef, useCallback, useEffect, memo } from 'react';
+import { useTranslation } from 'react-i18next';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   FolderOpen, HardDrive, WifiOff, ListMusic, Trash2, Plus,
@@ -356,6 +357,7 @@ const PlaylistCard = ({ pl, onLoad, onDelete, onReimport, liveSongs }) => {
 
 // ══════════════════════════════════════════════════════════════════════════════
 const LocalPlayerPage = () => {
+  const { t } = useTranslation();
   const inputRef    = useRef(null);
   const reimportRef = useRef(null);
 
@@ -597,8 +599,8 @@ const LocalPlayerPage = () => {
             <ArrowLeft className="w-5 h-5" />
           </button>
           <div className="flex-1 min-w-0">
-            <p className="text-white font-black text-base leading-none">Lecteur Local</p>
-            <p className="text-gray-600 text-[10px] mt-0.5">100% hors-ligne</p>
+            <p className="text-white font-black text-base leading-none">{t('localPlayer.title')}</p>
+            <p className="text-gray-600 text-[10px] mt-0.5">{t('localPlayer.offline')}</p>
           </div>
           <Link to="/" className="w-9 h-9 rounded-xl bg-white/[0.07] hover:bg-cyan-500/20 text-gray-400 hover:text-cyan-400 transition-all flex items-center justify-center">
             <Home className="w-4 h-4" />
@@ -606,57 +608,87 @@ const LocalPlayerPage = () => {
         </div>
         <input ref={inputRef}    type="file" accept="*/*" multiple onChange={onFiles}         className="hidden" />
         <input ref={reimportRef} type="file" accept="*/*" multiple onChange={onReimportFiles} className="hidden" />
-        <div className="flex-1 flex items-center justify-center px-5 py-10">
+        <div className="flex-1 flex flex-col items-center justify-center px-5 py-10 relative overflow-hidden">
+          {/* Background glow effect */}
+          <div className="absolute inset-0 pointer-events-none">
+            <div className="absolute top-1/4 left-1/2 -translate-x-1/2 w-80 h-80 rounded-full bg-cyan-500/5 blur-3xl" />
+            <div className="absolute top-1/3 left-1/3 w-60 h-60 rounded-full bg-fuchsia-500/5 blur-3xl" />
+          </div>
           <motion.div initial={{ opacity:0, y:24 }} animate={{ opacity:1, y:0 }}
-            className="w-full max-w-sm flex flex-col items-center gap-6 text-center">
-            <div className="relative w-24 h-24 rounded-3xl flex items-center justify-center"
-              style={{ background:'linear-gradient(135deg,#0e7490,#7c3aed)', boxShadow:'0 0 60px rgba(6,182,212,0.3)' }}>
-              {loading ? <div className="w-9 h-9 rounded-full border-2 border-white/30 border-t-white animate-spin" /> : <HardDrive className="w-12 h-12 text-white" />}
-            </div>
-            <div>
-              <div className="flex items-center justify-center gap-2 mb-2">
-                <WifiOff className="w-4 h-4 text-cyan-400" />
-                <h1 className="text-white text-2xl font-black">Lecteur Local</h1>
+            className="w-full max-w-md flex flex-col items-center gap-7 text-center relative z-10">
+            
+            {/* Icon hero */}
+            <div className="relative">
+              <div className="w-28 h-28 rounded-3xl flex items-center justify-center relative"
+                style={{ background:'linear-gradient(135deg,#0e7490,#7c3aed)', boxShadow:'0 0 80px rgba(6,182,212,0.35), 0 0 40px rgba(124,58,237,0.2)' }}>
+                {loading
+                  ? <div className="w-10 h-10 rounded-full border-3 border-white/30 border-t-white animate-spin" />
+                  : <HardDrive className="w-13 h-13 text-white drop-shadow-lg" style={{ width: 52, height: 52 }} />
+                }
               </div>
-              <p className="text-gray-400 text-sm leading-relaxed">Écoute tes fichiers audio directement depuis ton appareil, sans connexion.</p>
+              {/* Orbiting dot */}
+              <motion.div animate={{ rotate: 360 }} transition={{ duration: 8, repeat: Infinity, ease: 'linear' }}
+                className="absolute inset-0 pointer-events-none">
+                <div className="absolute -top-1 left-1/2 -translate-x-1/2 w-2.5 h-2.5 rounded-full bg-cyan-400 shadow-lg shadow-cyan-400/50" />
+              </motion.div>
             </div>
+
+            {/* Title */}
+            <div>
+              <div className="flex items-center justify-center gap-2.5 mb-3">
+                <WifiOff className="w-4 h-4 text-cyan-400" />
+                <h1 className="text-white text-3xl font-black tracking-tight">{t('localPlayer.title')}</h1>
+              </div>
+              <p className="text-gray-400 text-sm leading-relaxed max-w-xs">{t('localPlayer.subtitle')}</p>
+            </div>
+
+            {/* CTA button */}
             <motion.button onClick={FS_ACCESS_SUPPORTED ? openPickerFSA : () => inputRef.current?.click()}
-              whileTap={{ scale:.95 }} disabled={loading}
-              className="w-full flex items-center justify-center gap-3 py-4 rounded-2xl text-white font-bold text-base disabled:opacity-60"
-              style={{ background:'linear-gradient(135deg,#0e7490,#7c3aed)', boxShadow:'0 4px 24px rgba(6,182,212,0.25)' }}>
+              whileTap={{ scale:.96 }} whileHover={{ scale: 1.02 }} disabled={loading}
+              className="w-full flex items-center justify-center gap-3 py-4 rounded-2xl text-white font-bold text-base disabled:opacity-60 transition-shadow"
+              style={{ background:'linear-gradient(135deg,#0e7490,#7c3aed)', boxShadow:'0 8px 32px rgba(6,182,212,0.3)' }}>
               <FolderOpen className="w-5 h-5" />
-              {loading ? 'Chargement…' : FS_ACCESS_SUPPORTED ? 'Ouvrir (fichiers persistants)' : "Ouvrir depuis l'appareil"}
+              {loading ? t('common.loading') : t('localPlayer.openFiles')}
             </motion.button>
+
+            {/* Saved playlists */}
             {savedPlaylists.length > 0 && (
               <div className="w-full">
-                <p className="text-gray-600 text-xs mb-3 text-left font-semibold uppercase tracking-wider">
-                  Playlists sauvegardées ({savedPlaylists.length})
+                <p className="text-gray-500 text-xs mb-3 text-left font-bold uppercase tracking-[0.12em]">
+                  {t('localPlayer.playlists')} <span className="text-fuchsia-400">({savedPlaylists.length})</span>
                 </p>
                 <div className="grid grid-cols-2 gap-2">
                   {savedPlaylists.map(pl => (
                     <button key={pl.id} onClick={() => loadPlaylist(pl)}
-                      className="flex items-center gap-2 px-3 py-3 rounded-xl bg-white/[0.05] hover:bg-white/[0.09] border border-white/[0.07] transition-all text-left">
-                      <div className="w-8 h-8 rounded-lg overflow-hidden flex-shrink-0">
+                      className="flex items-center gap-2.5 px-3 py-3 rounded-2xl bg-white/[0.04] hover:bg-white/[0.08] border border-white/[0.07] hover:border-fuchsia-500/30 transition-all text-left group">
+                      <div className="w-9 h-9 rounded-xl overflow-hidden flex-shrink-0">
                         <img src={pl.songs[0]?.cover_svg || pl.songs[0]?.cover_url || makeCoverSvg(pl.name, '')} alt="" className="w-full h-full object-cover" />
                       </div>
                       <div className="flex-1 min-w-0">
-                        <p className="text-white text-xs font-semibold truncate">{pl.name}</p>
-                        <p className="text-gray-600 text-[10px]">{pl.songs.length} sons</p>
+                        <p className="text-white text-xs font-semibold truncate group-hover:text-fuchsia-300 transition-colors">{pl.name}</p>
+                        <p className="text-gray-600 text-[10px]">{pl.songs.length} {t('localPlayer.files')}</p>
                       </div>
                     </button>
                   ))}
                 </div>
               </div>
             )}
-            <div className="bg-amber-500/10 border border-amber-500/20 rounded-xl px-4 py-3 w-full text-left">
-              <p className="text-amber-300 text-xs font-semibold mb-1">💡 Astuce</p>
-              <p className="text-amber-200/70 text-xs leading-relaxed">
-                {FS_ACCESS_SUPPORTED
-                  ? 'Sur PC, les fichiers sont mémorisés. Tes playlists se rechargent automatiquement sans re-sélectionner.'
-                  : "Tous les fichiers sont visibles. Sélectionne depuis n'importe quel dossier (WhatsApp, Xender, SD card…)."}
-              </p>
+
+            {/* Tip card */}
+            <div className="bg-amber-500/8 border border-amber-500/20 rounded-2xl px-4 py-4 w-full text-left">
+              <div className="flex items-start gap-3">
+                <span className="text-lg flex-shrink-0">💡</span>
+                <div>
+                  <p className="text-amber-300 text-xs font-bold mb-1">{t('localPlayer.tip')}</p>
+                  <p className="text-amber-200/60 text-xs leading-relaxed">
+                    {FS_ACCESS_SUPPORTED ? t('localPlayer.tipDesc') : "Sélectionne depuis n'importe quel dossier (WhatsApp, Xender, SD card…)."}
+                  </p>
+                </div>
+              </div>
             </div>
-            <p className="text-gray-700 text-[11px]">MP3 · M4A · WAV · FLAC · AAC · OGG · OPUS · WMA</p>
+
+            {/* Formats */}
+            <p className="text-gray-700 text-[11px] tracking-wide">{t('localPlayer.formats')}</p>
           </motion.div>
         </div>
         <Footer />
@@ -672,8 +704,8 @@ const LocalPlayerPage = () => {
           <ArrowLeft className="w-5 h-5" />
         </button>
         <div className="flex-1 min-w-0">
-          <p className="text-white font-black text-base leading-none">Lecteur Local</p>
-          <p className="text-gray-600 text-[10px] mt-0.5">100% hors-ligne · {songs.length} son{songs.length>1?'s':''}</p>
+          <p className="text-white font-black text-base leading-none">{t('localPlayer.title')}</p>
+          <p className="text-gray-600 text-[10px] mt-0.5">{t('localPlayer.offline')} · {songs.length} {t('localPlayer.files')}</p>
         </div>
         {restoringHandles && (
           <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-cyan-500/15 border border-cyan-500/25">
@@ -897,7 +929,7 @@ const LocalPlayerPage = () => {
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <Folder className="w-4 h-4 text-fuchsia-400" />
-                <span className="text-white font-black text-base">Mes Playlists</span>
+                <span className="text-white font-black text-base">{t('localPlayer.playlists')}</span>
                 {savedPlaylists.length > 0 && (
                   <span className="text-[10px] bg-fuchsia-500/15 text-fuchsia-400 px-2 py-0.5 rounded-full font-bold">{savedPlaylists.length}</span>
                 )}
@@ -905,7 +937,7 @@ const LocalPlayerPage = () => {
               <button onClick={() => { setSelectionMode(true); setActiveSection('player'); }}
                 className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold text-white"
                 style={{ background:'linear-gradient(135deg,#0e7490,#7c3aed)' }}>
-                <Plus className="w-3 h-3" /> Nouvelle
+                <Plus className="w-3 h-3" /> {t('localPlayer.newPlaylist')}
               </button>
             </div>
             {savedPlaylists.length === 0 ? (
@@ -915,8 +947,8 @@ const LocalPlayerPage = () => {
                   <Folder className="w-8 h-8 text-gray-600" />
                 </div>
                 <div>
-                  <p className="text-gray-400 font-semibold text-sm">Aucune playlist</p>
-                  <p className="text-gray-600 text-xs mt-1">Sélectionne des sons dans l'onglet Lecteur et crée une playlist !</p>
+                  <p className="text-gray-400 font-semibold text-sm">{t('localPlayer.noPlaylists')}</p>
+                  <p className="text-gray-600 text-xs mt-1">{t('localPlayer.createFirst')}</p>
                 </div>
               </motion.div>
             ) : (
@@ -955,7 +987,7 @@ const LocalPlayerPage = () => {
                 </div>
                 <button onClick={() => { setSelectionMode(true); setActiveSection('player'); }}
                   className="flex items-center justify-center gap-2 py-3 rounded-2xl border border-dashed border-white/[0.12] text-gray-500 hover:text-cyan-400 hover:border-cyan-500/30 transition-all text-sm font-semibold">
-                  <Plus className="w-4 h-4" /> Créer une nouvelle playlist
+                  <Plus className="w-4 h-4" /> {t('localPlayer.newPlaylist')}
                 </button>
               </>
             )}
@@ -967,12 +999,12 @@ const LocalPlayerPage = () => {
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <ListMusic className="w-4 h-4 text-cyan-400" />
-                <span className="text-white font-black text-base">Fichiers</span>
+                <span className="text-white font-black text-base">{t('localPlayer.files')}</span>
                 <span className="text-[10px] bg-cyan-500/15 text-cyan-400 px-2 py-0.5 rounded-full font-bold">{songs.length}</span>
               </div>
               <button onClick={FS_ACCESS_SUPPORTED ? openPickerFSA : () => inputRef.current?.click()} disabled={loading}
                 className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold bg-white/[0.07] text-gray-300 hover:text-white transition-all">
-                <FolderOpen className="w-3.5 h-3.5" />Ajouter
+                <FolderOpen className="w-3.5 h-3.5" />{t('localPlayer.addFiles')}
               </button>
             </div>
             <div className="flex items-center gap-2 flex-wrap">
@@ -1005,7 +1037,7 @@ const LocalPlayerPage = () => {
               </div>
             </div>
             <button onClick={clearAll} className="text-xs text-gray-700 hover:text-red-400 transition-colors flex items-center justify-center gap-1.5 py-2">
-              <Trash2 className="w-3.5 h-3.5" /> Vider tous les fichiers
+              <Trash2 className="w-3.5 h-3.5" /> {t('common.delete')}
             </button>
           </div>
         )}

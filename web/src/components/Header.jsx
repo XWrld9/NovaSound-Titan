@@ -14,6 +14,7 @@ import NotificationBell from '@/components/NotificationBell';
 import AndroidInstallGuide from '@/components/AndroidInstallGuide';
 import LanguageSwitcher from '@/components/LanguageSwitcher';
 import { useTranslation } from 'react-i18next';
+import { useNotifications } from '@/contexts/NotificationContext';
 
 const isIOS = () =>
   typeof navigator !== 'undefined' &&
@@ -49,6 +50,7 @@ const Header = () => {
   const location                                 = useLocation();
   const { canInstall, install }                  = usePWAInstall();
   const { t }                                    = useTranslation();
+  const { unreadCount = 0 }                      = useNotifications();
 
   // Search state
   const [searchOpen, setSearchOpen]             = useState(false);
@@ -482,7 +484,14 @@ const Header = () => {
                   {isAuthenticated && (
                     <>
                       <div className="my-2 border-t border-gray-800" />
-                      <NotificationBell mobile closeMenu={closeMenu} />
+                      <Link to="/notifications" onClick={closeMenu} className="flex items-center gap-3 px-4 py-3 text-gray-300 hover:text-cyan-400 hover:bg-white/5 rounded-lg transition-colors relative">
+                        <Bell className="w-5 h-5 text-cyan-400" />{t('nav.notifications')}
+                        {unreadCount > 0 && (
+                          <span className="ml-auto text-[10px] bg-red-500 text-white font-bold px-1.5 py-0.5 rounded-full min-w-[18px] text-center">
+                            {unreadCount > 99 ? '99+' : unreadCount}
+                          </span>
+                        )}
+                      </Link>
                       <Link to="/upload" onClick={closeMenu} className="flex items-center gap-3 px-4 py-3 text-gray-300 hover:text-cyan-400 hover:bg-white/5 rounded-lg transition-colors">
                         <Upload className="w-5 h-5 text-cyan-400" />{t('nav.upload')}
                       </Link>

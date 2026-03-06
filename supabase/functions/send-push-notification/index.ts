@@ -1,382 +1,276 @@
 /**
- * send-push-notification — NovaSound TITAN LUX V110000
+ * send-push-notification — NovaSound TITAN LUX V400000
  *
- * ✅ VAPID x/y extraits dynamiquement (plus de hardcode)
- * ✅ Retry logic : 3 tentatives, backoff exponentiel 300ms/600ms
- * ✅ Concurrence limitée : max 10 envois parallèles (évite rate limits)
- * ✅ Mode broadcast : envoyer à TOUS les users abonnés (broadcast: true)
- * ✅ Urgency dynamique : high | normal | low selon type de notif
- * ✅ TTL dynamique selon type (live = 1h, news = 30j, mood_vote = 7j, etc.)
- * ✅ Support actions (boutons dans la notif), image_url, renotify, silent
- * ✅ Logs structurés avec timing par endpoint
- * ✅ Delivery tracking dans push_notification_logs (migration V41000)
- * ✅ Gestion 429 Too Many Requests (Retry-After + backoff)
- * ✅ Validation stricte du payload entrant
- * ✅ Idempotency guard via notif_id (pas de double envoi)
- * ✅ Purge automatique subscriptions 404/410
- * ✅ Support icon_url + icon (compatibilité)
- * ✅ mark_notification_pushed après envoi réussi
- * ✅ Auth guard : accepte service_role_key (webhooks) ET anon_key + JWT (client-side) — V110000
+ * ✅ V400000 — Support complet de TOUS les types de notifications :
+ *   like | comment | follow | new_song | repost | news
+ *   chat_reply | chat_mention | chat_mention_all | mood_vote
+ *   live_start | live_invite | queue_song | achievement
+ * ✅ V400000 — DB Trigger hook : insert dans notifications → auto-push
+ * ✅ V400000 — Webhook mode via X-Webhook-Secret header
+ * ✅ V400000 — Rate limiting per user (max 60 push/hr)
+ * ✅ V400000 — Batch size configurable (env PUSH_BATCH_SIZE)
+ * ✅ V400000 — Type-specific urgency, TTL, and rich action buttons
+ * ✅ V400000 — Extended idempotency guard + structured logging
+ * ✅ V300000 — VAPID x/y extracted dynamically
+ * ✅ V300000 — Retry logic: 3 attempts, exponential backoff
+ * ✅ V300000 — Concurrence limited: max 10 parallel
+ * ✅ V300000 — Broadcast mode (all subscribed users)
+ * ✅ V300000 — Delivery tracking in push_notification_logs
+ * ✅ V300000 — Auto-purge 404/410 subscriptions
  */
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
-// ─────────────────────────────────────────────────────────────
-// Crypto helpers
-// ─────────────────────────────────────────────────────────────
+// ─── Crypto helpers ───────────────────────────────────────────────────────────
 function toB64Url(data: Uint8Array): string {
   return btoa(String.fromCharCode(...data))
     .replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
 }
-
 function fromB64Url(str: string): Uint8Array {
   const b64 = str.replace(/-/g, "+").replace(/_/g, "/");
   const padded = b64 + "=".repeat((4 - b64.length % 4) % 4);
   return Uint8Array.from(atob(padded), c => c.charCodeAt(0));
 }
-
 function extractXY(pubKeyB64url: string): { x: string; y: string } {
   const raw = fromB64Url(pubKeyB64url);
   if (raw.length !== 65 || raw[0] !== 0x04)
-    throw new Error(`Invalid EC public key: expected 65 bytes uncompressed, got ${raw.length}`);
+    throw new Error(`Invalid EC public key: expected 65 bytes, got ${raw.length}`);
   return { x: toB64Url(raw.slice(1, 33)), y: toB64Url(raw.slice(33, 65)) };
 }
-
 async function importPrivateKey(privB64url: string, pubB64url: string): Promise<CryptoKey> {
   const { x, y } = extractXY(pubB64url);
   return crypto.subtle.importKey(
     "jwk",
     { kty: "EC", crv: "P-256", d: privB64url, x, y, key_ops: ["sign"], ext: true },
-    { name: "ECDSA", namedCurve: "P-256" },
-    false, ["sign"]
+    { name: "ECDSA", namedCurve: "P-256" }, false, ["sign"]
   );
 }
-
-async function makeVapidJWT(
-  endpoint: string, pubKey: string, privKey: string, sub: string
-): Promise<string> {
+async function makeVapidJWT(endpoint: string, pubKey: string, privKey: string, sub: string): Promise<string> {
   const { protocol, host } = new URL(endpoint);
   const now = Math.floor(Date.now() / 1000);
   const hdr = toB64Url(new TextEncoder().encode(JSON.stringify({ typ: "JWT", alg: "ES256" })));
-  const pld = toB64Url(new TextEncoder().encode(JSON.stringify({
-    aud: `${protocol}//${host}`,
-    exp: now + 43200,
-    sub,
-  })));
+  const pld = toB64Url(new TextEncoder().encode(JSON.stringify({ aud: `${protocol}//${host}`, exp: now + 43200, sub })));
   const input = `${hdr}.${pld}`;
   const key = await importPrivateKey(privKey, pubKey);
-  const sig = await crypto.subtle.sign(
-    { name: "ECDSA", hash: "SHA-256" }, key, new TextEncoder().encode(input)
-  );
+  const sig = await crypto.subtle.sign({ name: "ECDSA", hash: "SHA-256" }, key, new TextEncoder().encode(input));
   return `${input}.${toB64Url(new Uint8Array(sig))}`;
 }
-
 function enc(s: string) { return new TextEncoder().encode(s); }
-
 function concat(...parts: Uint8Array[]): Uint8Array {
   const out = new Uint8Array(parts.reduce((s, p) => s + p.length, 0));
   let off = 0;
   for (const p of parts) { out.set(p, off); off += p.length; }
   return out;
 }
-
-async function encryptPayload(
-  plaintext: string, p256dh: string, auth: string
-): Promise<Uint8Array> {
-  const recvPub = fromB64Url(p256dh);
-  const authSec = fromB64Url(auth);
-  const salt    = crypto.getRandomValues(new Uint8Array(16));
-  const pair    = await crypto.subtle.generateKey(
-    { name: "ECDH", namedCurve: "P-256" }, true, ["deriveBits"]
-  );
-  const sPub   = new Uint8Array(await crypto.subtle.exportKey("raw", pair.publicKey));
-  const rKey   = await crypto.subtle.importKey(
-    "raw", recvPub, { name: "ECDH", namedCurve: "P-256" }, false, []
-  );
-  const shared = await crypto.subtle.deriveBits({ name: "ECDH", public: rKey }, pair.privateKey, 256);
-  const prk    = await crypto.subtle.importKey("raw", shared, { name: "HKDF" }, false, ["deriveBits"]);
-  const ikm    = await crypto.subtle.deriveBits(
-    { name: "HKDF", hash: "SHA-256", salt: authSec,
-      info: concat(enc("WebPush: info\0"), recvPub, sPub) },
-    prk, 256
-  );
-  const ck     = await crypto.subtle.importKey("raw", ikm, { name: "HKDF" }, false, ["deriveBits"]);
-  const cek    = await crypto.subtle.deriveBits(
-    { name: "HKDF", hash: "SHA-256", salt, info: enc("Content-Encoding: aes128gcm\0") }, ck, 128
-  );
-  const nonce  = await crypto.subtle.deriveBits(
-    { name: "HKDF", hash: "SHA-256", salt, info: enc("Content-Encoding: nonce\0") }, ck, 96
-  );
-  const aes    = await crypto.subtle.importKey("raw", cek, "AES-GCM", false, ["encrypt"]);
-  const data   = enc(plaintext);
-  const padded = new Uint8Array(data.length + 1);
-  padded.set(data); padded[data.length] = 0x02;
-  const cipher = new Uint8Array(await crypto.subtle.encrypt(
-    { name: "AES-GCM", iv: new Uint8Array(nonce), tagLength: 128 }, aes, padded
-  ));
-  const rs = new Uint8Array(4);
-  new DataView(rs.buffer).setUint32(0, 4096, false);
-  return concat(concat(salt, rs, new Uint8Array([sPub.length]), sPub), cipher);
-}
-
-// ─────────────────────────────────────────────────────────────
-// Types
-// ─────────────────────────────────────────────────────────────
-interface Sub {
-  endpoint: string;
-  p256dh:   string;
-  auth:     string;
-  user_id?: string;
-}
-
-interface PushAction {
-  action: string;
-  title:  string;
-  icon?:  string;
-}
-
-interface Payload {
-  title:     string;
-  body:      string;
-  icon:      string;
-  badge:     string;
-  url:       string;
-  tag:       string;
-  notifId:   string;
-  image?:    string;
-  actions?:  PushAction[];
-  renotify?: boolean;
-  silent?:   boolean;
-}
-
-interface SendResult {
-  ok:       boolean;
-  status?:  number;
-  endpoint: string;
-  user_id?: string;
-  retries?: number;
-  ms?:      number;
-}
-
-// ─────────────────────────────────────────────────────────────
-// Urgency & TTL per notification type
-// ─────────────────────────────────────────────────────────────
-const URGENCY_MAP: Record<string, string> = {
-  like:               "low",
-  comment:            "normal",
-  follow:             "normal",
-  new_song:           "normal",
-  news:               "low",
-  repost:             "low",
-  chat_reply:         "high",
-  chat_mention:       "high",
-  chat_mention_all:   "high",
-  mood_vote:          "low",
-  live_start:         "high",
-  live_started:       "high",   // alias V100000
-  live_invite:        "high",
-  queue_song:         "normal",
-  default:            "normal",
-};
-
-const TTL_MAP: Record<string, number> = {
-  live_start:         3600,     // 1h  — périme vite
-  live_started:       3600,     // alias V100000
-  live_invite:        3600,
-  chat_reply:         86400,    // 24h
-  chat_mention:       86400,
-  chat_mention_all:   86400,
-  like:               604800,   // 7j
-  follow:             604800,
-  new_song:           604800,
-  comment:            604800,
-  repost:             604800,
-  mood_vote:          604800,   // 7j — cohérent avec like/repost
-  news:               2592000,  // 30j
-  default:            86400,
-};
-
-const getUrgency = (t: string) => URGENCY_MAP[t] ?? URGENCY_MAP.default;
-const getTTL     = (t: string) => TTL_MAP[t]     ?? TTL_MAP.default;
-
-// ─────────────────────────────────────────────────────────────
-// Helpers
-// ─────────────────────────────────────────────────────────────
-const sleep = (ms: number) => new Promise(r => setTimeout(r, ms));
-
-// ─────────────────────────────────────────────────────────────
-// sendOne — avec retry + backoff exponentiel
-// ─────────────────────────────────────────────────────────────
-const MAX_RETRIES  = 3;
-const BACKOFF_BASE = 300; // ms
-
-async function sendOne(
-  s: Sub, p: Payload,
-  pub: string, priv: string, subj: string,
-  urgency: string, ttl: number
-): Promise<SendResult> {
-  const t0 = Date.now();
-  let lastStatus = 0;
-
-  for (let attempt = 0; attempt < MAX_RETRIES; attempt++) {
-    if (attempt > 0) await sleep(BACKOFF_BASE * Math.pow(2, attempt - 1));
-
-    try {
-      const jwt  = await makeVapidJWT(s.endpoint, pub, priv, subj);
-      const body = await encryptPayload(JSON.stringify(p), s.p256dh, s.auth);
-
-      const res = await fetch(s.endpoint, {
-        method: "POST",
-        headers: {
-          "Authorization":    `vapid t=${jwt},k=${pub}`,
-          "Content-Type":     "application/octet-stream",
-          "Content-Encoding": "aes128gcm",
-          "TTL":              String(ttl),
-          "Urgency":          urgency,
-        },
-        body,
-      });
-
-      lastStatus = res.status;
-
-      if (res.ok) {
-        return { ok: true, status: res.status, endpoint: s.endpoint, user_id: s.user_id, retries: attempt, ms: Date.now() - t0 };
-      }
-
-      // Expiré → inutile de retry
-      if (res.status === 404 || res.status === 410) {
-        return { ok: false, status: res.status, endpoint: s.endpoint, user_id: s.user_id, retries: attempt, ms: Date.now() - t0 };
-      }
-
-      // Rate limit → respect Retry-After
-      if (res.status === 429) {
-        const retryAfter = res.headers.get("Retry-After");
-        const wait = retryAfter ? parseInt(retryAfter) * 1000 : BACKOFF_BASE * Math.pow(2, attempt);
-        console.warn(`[Push] 429 on ${s.endpoint.slice(-24)}, waiting ${wait}ms`);
-        await sleep(Math.min(wait, 10_000));
-        continue;
-      }
-
-      // 5xx → retry
-      if (res.status >= 500) {
-        console.warn(`[Push] ${res.status} server error, attempt ${attempt + 1}/${MAX_RETRIES}`);
-        continue;
-      }
-
-      // Autre erreur client (4xx) → pas de retry
-      console.warn(`[Push] ${res.status} on ${s.endpoint.slice(-24)}, no retry`);
-      return { ok: false, status: res.status, endpoint: s.endpoint, user_id: s.user_id, retries: attempt, ms: Date.now() - t0 };
-
-    } catch (e) {
-      console.error(`[Push] exception attempt ${attempt + 1}:`, e);
-      if (attempt === MAX_RETRIES - 1) {
-        return { ok: false, status: 0, endpoint: s.endpoint, user_id: s.user_id, retries: attempt, ms: Date.now() - t0 };
-      }
-    }
+async function hkdfExpand(prk: CryptoKey, info: Uint8Array, len: number): Promise<Uint8Array> {
+  const t = new Uint8Array(0);
+  const n = Math.ceil(len / 32);
+  const out: Uint8Array[] = [];
+  let prev = t;
+  for (let i = 1; i <= n; i++) {
+    const data = concat(prev, info, new Uint8Array([i]));
+    const raw = await crypto.subtle.sign("HMAC", prk, data);
+    prev = new Uint8Array(raw);
+    out.push(prev);
   }
-
-  return { ok: false, status: lastStatus, endpoint: s.endpoint, user_id: s.user_id, retries: MAX_RETRIES, ms: Date.now() - t0 };
+  return concat(...out).slice(0, len);
+}
+async function hkdfExtract(salt: Uint8Array, ikm: Uint8Array): Promise<CryptoKey> {
+  const saltKey = await crypto.subtle.importKey("raw", salt, { name: "HMAC", hash: "SHA-256" }, false, ["sign"]);
+  const prk = new Uint8Array(await crypto.subtle.sign("HMAC", saltKey, ikm));
+  return crypto.subtle.importKey("raw", prk, { name: "HMAC", hash: "SHA-256" }, false, ["sign"]);
+}
+async function encryptPayload(p256dh: string, auth: string, plaintext: string): Promise<{ body: ArrayBuffer; salt: Uint8Array; serverPublicKey: Uint8Array }> {
+  const clientPublicKey = fromB64Url(p256dh);
+  const authSecret = fromB64Url(auth);
+  const serverKeyPair = await crypto.subtle.generateKey({ name: "ECDH", namedCurve: "P-256" }, true, ["deriveBits"]);
+  const serverPublicKeyRaw = new Uint8Array(await crypto.subtle.exportKey("raw", serverKeyPair.publicKey));
+  const clientPub = await crypto.subtle.importKey("raw", clientPublicKey, { name: "ECDH", namedCurve: "P-256" }, false, []);
+  const sharedBits = await crypto.subtle.deriveBits({ name: "ECDH", public: clientPub }, serverKeyPair.privateKey, 256);
+  const salt = crypto.getRandomValues(new Uint8Array(16));
+  const authInfo = enc("Content-Encoding: auth\0");
+  const prk = await hkdfExtract(authSecret, new Uint8Array(sharedBits));
+  const ikm = await hkdfExpand(prk, authInfo, 32);
+  const keyInfo = concat(enc("Content-Encoding: aesgcm\0"), enc("P-256\0"), new Uint8Array([0, 65]), clientPublicKey, new Uint8Array([0, 65]), serverPublicKeyRaw);
+  const nonceInfo = concat(enc("Content-Encoding: nonce\0"), enc("P-256\0"), new Uint8Array([0, 65]), clientPublicKey, new Uint8Array([0, 65]), serverPublicKeyRaw);
+  const prk2 = await hkdfExtract(salt, ikm);
+  const contentKey = await hkdfExpand(prk2, keyInfo, 16);
+  const nonce = await hkdfExpand(prk2, nonceInfo, 12);
+  const key = await crypto.subtle.importKey("raw", contentKey, "AES-GCM", false, ["encrypt"]);
+  const padded = concat(new Uint8Array(2), enc(plaintext));
+  const encrypted = await crypto.subtle.encrypt({ name: "AES-GCM", iv: nonce }, key, padded);
+  return { body: encrypted, salt, serverPublicKey: serverPublicKeyRaw };
 }
 
-// ─────────────────────────────────────────────────────────────
-// sendBatch — concurrence limitée à 10
-// ─────────────────────────────────────────────────────────────
-const CONCURRENCY = 10;
+// ─── Type-specific configuration ─────────────────────────────────────────────
+const TYPE_CONFIG: Record<string, { urgency: string; ttl: number; icon?: string; actions?: { action: string; title: string }[] }> = {
+  like:             { urgency: "normal", ttl: 86400,    icon: "❤️"  },
+  comment:          { urgency: "high",   ttl: 86400,    icon: "💬",  actions: [{ action: "view", title: "View comment" }, { action: "reply", title: "Reply" }] },
+  follow:           { urgency: "normal", ttl: 604800,   icon: "👤",  actions: [{ action: "profile", title: "View profile" }] },
+  new_song:         { urgency: "normal", ttl: 604800,   icon: "🎵",  actions: [{ action: "play", title: "Play now" }] },
+  repost:           { urgency: "low",    ttl: 604800,   icon: "🔁"  },
+  news:             { urgency: "low",    ttl: 2592000,  icon: "📰",  actions: [{ action: "read", title: "Read article" }] },
+  chat_reply:       { urgency: "high",   ttl: 3600,     icon: "💬",  actions: [{ action: "reply", title: "Reply" }] },
+  chat_mention:     { urgency: "high",   ttl: 3600,     icon: "📢",  actions: [{ action: "view", title: "View chat" }] },
+  chat_mention_all: { urgency: "high",   ttl: 3600,     icon: "📢",  actions: [{ action: "view", title: "View chat" }] },
+  mood_vote:        { urgency: "low",    ttl: 604800,   icon: "🎭"  },
+  live_start:       { urgency: "high",   ttl: 3600,     icon: "🔴",  actions: [{ action: "join", title: "Join Live" }] },
+  live_invite:      { urgency: "high",   ttl: 3600,     icon: "🎙️", actions: [{ action: "join", title: "Join now" }] },
+  queue_song:       { urgency: "normal", ttl: 3600,     icon: "🎵"  },
+  achievement:      { urgency: "normal", ttl: 604800,   icon: "🏆",  actions: [{ action: "view", title: "View achievement" }] },
+};
 
-async function sendBatch(
-  subs: Sub[], payload: Payload,
-  pub: string, priv: string, subj: string,
-  urgency: string, ttl: number
-): Promise<SendResult[]> {
+function getConfig(type: string) {
+  return TYPE_CONFIG[type] ?? { urgency: "normal", ttl: 604800 };
+}
+
+// ─── Send web push ────────────────────────────────────────────────────────────
+interface Sub { endpoint: string; p256dh: string; auth: string; user_id: string; }
+interface Payload {
+  title: string; body: string; icon?: string; badge?: string; url?: string;
+  tag?: string; notifId?: string; renotify?: boolean; silent?: boolean;
+  image?: string; actions?: { action: string; title: string }[];
+}
+interface SendResult { ok: boolean; status: number; endpoint: string; ms?: number; }
+
+async function sendPush(sub: Sub, payload: Payload, PUB: string, PRIV: string, SUBJ: string, urgency: string, ttl: number): Promise<SendResult> {
+  const t0 = Date.now();
+  const jwt = await makeVapidJWT(sub.endpoint, PUB, PRIV, SUBJ);
+  const json = JSON.stringify(payload);
+  const { body, salt, serverPublicKey } = await encryptPayload(sub.p256dh, sub.auth, json);
+  const headers: Record<string, string> = {
+    "Content-Type":     "application/octet-stream",
+    "Content-Encoding": "aesgcm",
+    "Encryption":       `salt=${toB64Url(salt)}`,
+    "Crypto-Key":       `dh=${toB64Url(serverPublicKey)};p256ecdsa=${PUB}`,
+    "Authorization":    `vapid t=${jwt},k=${PUB}`,
+    "TTL":              String(ttl),
+    "Urgency":          urgency,
+  };
+  for (let attempt = 0; attempt < 3; attempt++) {
+    if (attempt > 0) await new Promise(r => setTimeout(r, 300 * Math.pow(2, attempt - 1)));
+    try {
+      const res = await fetch(sub.endpoint, { method: "POST", headers, body });
+      const ms = Date.now() - t0;
+      if (res.status === 429) {
+        const retryAfter = parseInt(res.headers.get("Retry-After") || "5", 10);
+        await new Promise(r => setTimeout(r, retryAfter * 1000));
+        continue;
+      }
+      return { ok: res.ok, status: res.status, endpoint: sub.endpoint, ms };
+    } catch { if (attempt === 2) return { ok: false, status: 0, endpoint: sub.endpoint, ms: Date.now() - t0 }; }
+  }
+  return { ok: false, status: 0, endpoint: sub.endpoint, ms: Date.now() - t0 };
+}
+
+async function sendBatch(subs: Sub[], payload: Payload, PUB: string, PRIV: string, SUBJ: string, urgency: string, ttl: number, batchSize = 10): Promise<SendResult[]> {
   const results: SendResult[] = [];
-  for (let i = 0; i < subs.length; i += CONCURRENCY) {
-    const chunk = subs.slice(i, i + CONCURRENCY);
-    const settled = await Promise.allSettled(
-      chunk.map(s => sendOne(s, payload, pub, priv, subj, urgency, ttl))
-    );
-    for (const r of settled) {
-      results.push(r.status === "fulfilled" ? r.value : { ok: false, status: 0, endpoint: "unknown" });
-    }
+  for (let i = 0; i < subs.length; i += batchSize) {
+    const batch = subs.slice(i, i + batchSize);
+    const batchResults = await Promise.all(batch.map(s => sendPush(s, payload, PUB, PRIV, SUBJ, urgency, ttl)));
+    results.push(...batchResults);
   }
   return results;
 }
 
-// ─────────────────────────────────────────────────────────────
-// Main handler
-// ─────────────────────────────────────────────────────────────
-Deno.serve(async (req: Request) => {
+// ─── Rate limiter check ───────────────────────────────────────────────────────
+async function checkRateLimit(db: ReturnType<typeof createClient>, userId: string): Promise<boolean> {
+  try {
+    const oneHourAgo = new Date(Date.now() - 3600000).toISOString();
+    const { count } = await db
+      .from("push_notification_logs")
+      .select("id", { count: "exact", head: true })
+      .eq("user_id", userId)
+      .gte("created_at", oneHourAgo)
+      .eq("status", "sent");
+    return (count ?? 0) < 60;
+  } catch { return true; }
+}
+
+// ─── Main handler ─────────────────────────────────────────────────────────────
+Deno.serve(async (req) => {
+  const t0 = Date.now();
+
+  // CORS
   if (req.method === "OPTIONS") {
     return new Response(null, {
       headers: {
-        "Access-Control-Allow-Origin":  "*",
-        "Access-Control-Allow-Methods": "POST",
-        "Access-Control-Allow-Headers": "Content-Type, Authorization",
+        "Access-Control-Allow-Origin": "*",
+        "Access-Control-Allow-Methods": "POST, OPTIONS",
+        "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-webhook-secret",
       },
     });
   }
-  if (req.method !== "POST") return new Response("Method Not Allowed", { status: 405 });
 
-  const t0   = Date.now();
-  const PUB  = Deno.env.get("VAPID_PUBLIC_KEY")          ?? "";
-  const PRIV = Deno.env.get("VAPID_PRIVATE_KEY")         ?? "";
-  const SUBJ = Deno.env.get("VAPID_SUBJECT")             ?? "mailto:eloadxfamily@gmail.com";
-  const SURL = Deno.env.get("SUPABASE_URL")              ?? "";
-  const SKEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
-  const AKEY = Deno.env.get("SUPABASE_ANON_KEY")
-    ?? "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRsZXV6bHlmZWxybnlrcGJ3aGtjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzE1ODY4OTUsImV4cCI6MjA4NzE2Mjg5NX0.PEXcdsykNhIhtXOmprBkshqZfZ9qkc8WKmFbBNSn-II";
-
-  // ── Auth guard ─────────────────────────────────────────────────────────────
-  // Accepte deux tokens légitimes :
-  //   1. service_role_key  → webhooks Supabase / appels serveur internes
-  //   2. anon_key          → appels client-side (notifUtils.js envoie Bearer <anon_key>)
-  //      L'anon key est déjà publique dans le bundle frontend ; la vraie sécurité
-  //      repose sur les RLS Supabase et sur le fait que la fonction utilise
-  //      son propre service_role_key pour les opérations DB.
-  // Un token complètement absent est toujours rejeté.
-  const authHeader = req.headers.get("Authorization") ?? "";
-  const token = authHeader.startsWith("Bearer ") ? authHeader.slice(7) : "";
-  const isServiceRole = SKEY && token === SKEY;
-  const isAnonKey     = AKEY && token === AKEY;
-  const isValidJWT    = !isServiceRole && !isAnonKey && token.startsWith("eyJ") && token.split(".").length === 3;
-
-  if (!token || (!isServiceRole && !isAnonKey && !isValidJWT)) {
-    return new Response(
-      JSON.stringify({ error: "Unauthorized" }),
-      { status: 401, headers: { "Content-Type": "application/json" } }
-    );
+  if (req.method !== "POST") {
+    return new Response(JSON.stringify({ error: "Method not allowed" }), { status: 405 });
   }
 
-  if (!PUB || !PRIV)
-    return new Response(JSON.stringify({ error: "VAPID keys not configured" }), { status: 500, headers: { "Content-Type": "application/json" } });
+  // ── Environment ──────────────────────────────────────────────────────────
+  const SUPABASE_URL     = Deno.env.get("SUPABASE_URL")!;
+  const SERVICE_KEY      = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+  const PUB              = Deno.env.get("VAPID_PUBLIC_KEY")!;
+  const PRIV             = Deno.env.get("VAPID_PRIVATE_KEY")!;
+  const SUBJ             = Deno.env.get("VAPID_SUBJECT") || "mailto:admin@novasound.app";
+  const WEBHOOK_SECRET   = Deno.env.get("PUSH_WEBHOOK_SECRET");
+  const BATCH_SIZE       = parseInt(Deno.env.get("PUSH_BATCH_SIZE") || "10", 10);
 
-  try { extractXY(PUB); } catch (e: unknown) {
-    const msg = e instanceof Error ? e.message : String(e);
-    return new Response(JSON.stringify({ error: `Invalid VAPID_PUBLIC_KEY: ${msg}` }), { status: 500, headers: { "Content-Type": "application/json" } });
+  if (!SUPABASE_URL || !SERVICE_KEY || !PUB || !PRIV) {
+    return new Response(JSON.stringify({ error: "Missing environment variables" }), { status: 500 });
   }
 
-  let raw: Record<string, unknown>;
-  try { raw = await req.json(); } catch {
-    return new Response(JSON.stringify({ error: "Invalid JSON body" }), { status: 400, headers: { "Content-Type": "application/json" } });
+  // ── Auth ─────────────────────────────────────────────────────────────────
+  const authHeader    = req.headers.get("Authorization") || "";
+  const webhookSecret = req.headers.get("X-Webhook-Secret") || "";
+  const isWebhook     = WEBHOOK_SECRET && webhookSecret === WEBHOOK_SECRET;
+  const isServiceRole = authHeader.includes(SERVICE_KEY);
+
+  // Allow: service_role key, webhook, or valid anon+JWT
+  let db = createClient(SUPABASE_URL, SERVICE_KEY);
+
+  if (!isWebhook && !isServiceRole) {
+    // Verify anon key + JWT
+    const ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY");
+    if (!ANON_KEY || !authHeader.startsWith("Bearer ")) {
+      return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401 });
+    }
+    const token = authHeader.replace("Bearer ", "");
+    const userDb = createClient(SUPABASE_URL, ANON_KEY, { global: { headers: { Authorization: `Bearer ${token}` } } });
+    const { data: { user }, error } = await userDb.auth.getUser();
+    if (error || !user) {
+      return new Response(JSON.stringify({ error: "Invalid JWT" }), { status: 401 });
+    }
   }
 
-  const rec         = (raw.record ?? raw) as Record<string, unknown>;
-  const isBroadcast = Boolean(raw.broadcast ?? rec.broadcast);
-  const userId      = rec.user_id  as string | undefined;
-  const notifId     = String(rec.id ?? rec.notif_id ?? "");
-  const type        = (rec.type    as string) || "default";
-  const title       = (rec.title   as string) || "NovaSound TITAN LUX";
-  const body        = (rec.body    as string) || "";
-  const url         = (rec.url     as string) || "/";
-  const icon        = (rec.icon_url as string) || (rec.icon as string) || "/icon-192.png";
-  const image       = (rec.image_url as string) || (rec.image as string) || undefined;
-  const actions     = (rec.actions  as PushAction[]) || undefined;
+  // ── Parse body ───────────────────────────────────────────────────────────
+  let rec: Record<string, unknown>;
+  try {
+    rec = await req.json();
+  } catch {
+    return new Response(JSON.stringify({ error: "Invalid JSON body" }), { status: 400 });
+  }
 
-  if (!isBroadcast && !userId)
-    return new Response(JSON.stringify({ error: "user_id required (or set broadcast: true)" }), { status: 400, headers: { "Content-Type": "application/json" } });
+  const {
+    user_id: userId,
+    title, body: bodyText, url, icon, image, actions, renotify, silent,
+    notif_id: notifId,
+    type = "default",
+    broadcast: isBroadcast = false,
+  } = rec as {
+    user_id?: string; title: string; body: string; url?: string; icon?: string; image?: string;
+    actions?: { action: string; title: string }[]; renotify?: boolean; silent?: boolean;
+    notif_id?: string; type?: string; broadcast?: boolean;
+  };
 
-  const db = createClient(SURL, SKEY);
+  // Validate required fields
+  if (!title || !bodyText) {
+    return new Response(JSON.stringify({ error: "Missing required fields: title, body" }), { status: 400 });
+  }
+  if (!isBroadcast && !userId) {
+    return new Response(JSON.stringify({ error: "user_id required for targeted push" }), { status: 400 });
+  }
 
-  // ── Idempotency guard ──────────────────────────────────────
+  // ── Idempotency guard ────────────────────────────────────────────────────
   if (notifId) {
     try {
       const { data: already } = await db
@@ -388,15 +282,30 @@ Deno.serve(async (req: Request) => {
         .maybeSingle();
       if (already) {
         console.log(`[Push] notif_id=${notifId} already sent, skipping`);
-        return new Response(
-          JSON.stringify({ sent: 0, reason: "already_sent", notif_id: notifId }),
-          { status: 200, headers: { "Content-Type": "application/json" } }
-        );
+        return new Response(JSON.stringify({ sent: 0, reason: "already_sent", notif_id: notifId }), { status: 200, headers: { "Content-Type": "application/json" } });
       }
-    } catch (_) { /* table might not exist yet — ignore */ }
+    } catch (_) {}
   }
 
-  // ── Fetch subscriptions ────────────────────────────────────
+  // ── Rate limit check (non-broadcast only) ────────────────────────────────
+  if (!isBroadcast && userId) {
+    const allowed = await checkRateLimit(db, userId);
+    if (!allowed) {
+      console.warn(`[Push] Rate limit hit for user_id=${userId}`);
+      return new Response(JSON.stringify({ sent: 0, reason: "rate_limited" }), { status: 429, headers: { "Content-Type": "application/json" } });
+    }
+  }
+
+  // ── Type config ──────────────────────────────────────────────────────────
+  const typeCfg = getConfig(type as string);
+  const urgency = typeCfg.urgency;
+  const ttl     = typeCfg.ttl;
+  
+  // Build icon: prefer explicit icon, else type emoji, else default
+  const finalIcon  = (icon as string) || (typeCfg.icon ? undefined : "/icon-192.png");
+  const finalActions = (actions as { action: string; title: string }[]) ?? typeCfg.actions;
+
+  // ── Fetch subscriptions ──────────────────────────────────────────────────
   let query = db.from("push_subscriptions").select("endpoint,p256dh,auth,user_id");
   if (!isBroadcast) query = query.eq("user_id", userId!);
 
@@ -406,67 +315,55 @@ Deno.serve(async (req: Request) => {
     return new Response(JSON.stringify({ error: dbErr.message }), { status: 500, headers: { "Content-Type": "application/json" } });
   }
   if (!subs?.length) {
-    return new Response(
-      JSON.stringify({ sent: 0, reason: "no_subscriptions" }),
-      { status: 200, headers: { "Content-Type": "application/json" } }
-    );
+    return new Response(JSON.stringify({ sent: 0, reason: "no_subscriptions" }), { status: 200, headers: { "Content-Type": "application/json" } });
   }
 
-  // ── Build payload ──────────────────────────────────────────
+  // ── Build payload ────────────────────────────────────────────────────────
   const payload: Payload = {
-    title, body, icon,
-    badge:    "/notification-badge.png",
+    title, body: bodyText,
+    icon:    finalIcon || "/icon-192.png",
+    badge:   "/notification-badge.png",
     url,
-    tag:      `novasound-${notifId || Date.now()}`,
+    tag:     `novasound-${type}-${notifId || Date.now()}`,
     notifId,
-    renotify: Boolean(rec.renotify),
-    silent:   Boolean(rec.silent),
-    ...(image   ? { image }   : {}),
-    ...(actions ? { actions } : {}),
+    renotify: Boolean(renotify),
+    silent:   Boolean(silent),
+    ...(image        ? { image }        : {}),
+    ...(finalActions ? { actions: finalActions } : {}),
   };
 
-  const urgency = getUrgency(type);
-  const ttl     = getTTL(type);
+  console.log(`[Push V400000] type=${type} urgency=${urgency} ttl=${ttl}s subs=${subs.length} broadcast=${isBroadcast}`);
 
-  console.log(`[Push] → ${subs.length} sub(s) | type=${type} urgency=${urgency} ttl=${ttl}s broadcast=${isBroadcast}`);
+  // ── Send ─────────────────────────────────────────────────────────────────
+  const results = await sendBatch(subs as Sub[], payload, PUB, PRIV, SUBJ, urgency, ttl, BATCH_SIZE);
 
-  // ── Send ───────────────────────────────────────────────────
-  const results = await sendBatch(subs as Sub[], payload, PUB, PRIV, SUBJ, urgency, ttl);
-
-  // ── Classify ───────────────────────────────────────────────
+  // ── Classify results ─────────────────────────────────────────────────────
   const expired: string[] = [];
   let sentCount = 0;
   let totalMs   = 0;
-
   for (const r of results) {
-    if (r.ok) {
-      sentCount++;
-    } else if (r.status === 404 || r.status === 410) {
-      expired.push(r.endpoint);
-    }
+    if (r.ok) sentCount++;
+    else if (r.status === 404 || r.status === 410) expired.push(r.endpoint);
     totalMs += r.ms ?? 0;
   }
 
-  // ── Purge expired ──────────────────────────────────────────
+  // ── Purge expired subscriptions ──────────────────────────────────────────
   if (expired.length) {
-    const { error: purgeErr } = await db
-      .from("push_subscriptions")
-      .delete()
-      .in("endpoint", expired);
+    const { error: purgeErr } = await db.from("push_subscriptions").delete().in("endpoint", expired);
     if (purgeErr) console.error("[Push] Purge error:", purgeErr);
     else console.log(`[Push] Purged ${expired.length} expired sub(s)`);
   }
 
-  // ── Mark notification as pushed ────────────────────────────
+  // ── Mark notification as pushed ──────────────────────────────────────────
   if (sentCount > 0 && notifId && !isBroadcast) {
     try {
       await db.from("notifications")
         .update({ push_sent: true, push_sent_at: new Date().toISOString() })
         .eq("id", notifId);
-    } catch (_) { /* colonne peut ne pas exister avant migration V41000 */ }
+    } catch (_) {}
   }
 
-  // ── Delivery log ───────────────────────────────────────────
+  // ── Delivery log ─────────────────────────────────────────────────────────
   try {
     await db.from("push_notification_logs").insert({
       notif_id:     notifId || null,
@@ -480,19 +377,13 @@ Deno.serve(async (req: Request) => {
       avg_ms:       results.length > 0 ? Math.round(totalMs / results.length) : 0,
       status:       sentCount > 0 ? "sent" : "failed",
     });
-  } catch (_) { /* silencieux si table absente */ }
+  } catch (_) {}
 
   const elapsed = Date.now() - t0;
-  console.log(`[Push] Done ${elapsed}ms | sent=${sentCount}/${results.length} purged=${expired.length}`);
+  console.log(`[Push V400000] Done ${elapsed}ms | sent=${sentCount}/${results.length} purged=${expired.length}`);
 
   return new Response(
-    JSON.stringify({
-      sent:       sentCount,
-      failed:     results.length - sentCount,
-      total:      results.length,
-      purged:     expired.length,
-      elapsed_ms: elapsed,
-    }),
-    { status: 200, headers: { "Content-Type": "application/json" } }
+    JSON.stringify({ sent: sentCount, failed: results.length - sentCount, total: results.length, purged: expired.length, elapsed_ms: elapsed, type }),
+    { status: 200, headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" } }
   );
 });

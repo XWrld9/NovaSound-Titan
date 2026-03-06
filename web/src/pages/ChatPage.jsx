@@ -541,7 +541,7 @@ const ChatPage = () => {
     }
   }, [notifCtx, navigate]);
 
-  // ── Nettoyer les messages du chat (ADMIN ONLY) avec sélection de durée ─
+  // ── {t('chat.clear')} les messages du chat (ADMIN ONLY) avec sélection de durée ─
   const CLEAR_DURATIONS = [
     { key: '1h',   label: 'Dernière heure',   hours: 1 },
     { key: '24h',  label: 'Dernières 24h',    hours: 24 },
@@ -591,7 +591,7 @@ const ChatPage = () => {
   return (
     <>
       <Helmet>
-        <title>Chat Global — NovaSound TITAN LUX</title>
+        <title>{t('chat.title')} — NovaSound TITAN LUX</title>
         <meta name="description" content="Espace de conversation commun à toute la communauté NovaSound" />
       </Helmet>
 
@@ -621,8 +621,8 @@ const ChatPage = () => {
                     <Globe className="w-5 h-5 text-cyan-400" />
                   </div>
                   <div>
-                    <h1 className="text-white font-black text-base leading-none">Chat Global</h1>
-                    <p className="text-gray-600 text-[11px] mt-0.5">Communauté NovaSound · @tous pour mentionner tout le monde</p>
+                    <h1 className="text-white font-black text-base leading-none">{t('chat.title')}</h1>
+                    <p className="text-gray-600 text-[11px] mt-0.5">{t('chat.subtitle')}</p>
                   </div>
                 </div>
                 {onlineCount > 0 && (
@@ -642,10 +642,10 @@ const ChatPage = () => {
                   <button
                     onClick={() => setShowClearConfirm(true)}
                     className="flex items-center gap-1.5 px-2.5 py-1 bg-red-500/10 border border-red-500/20 rounded-full hover:bg-red-500/20 transition-colors"
-                    title="Nettoyer le chat (Admin)"
+                    title="{t('chat.clear')} le chat (Admin)"
                   >
                     <Trash2 className="w-3.5 h-3.5 text-red-400" />
-                    <span className="text-red-400 text-[11px] font-semibold hidden sm:inline">Nettoyer</span>
+                    <span className="text-red-400 text-[11px] font-semibold hidden sm:inline">{t('chat.clear')}</span>
                   </button>
                 )}
                 {/* Panel admin — utilisateurs connectés */}
@@ -847,7 +847,7 @@ const ChatPage = () => {
               </div>
             </div>
           )}
-          {/* ─── Chat Global ─────────────────────────────────────── */}
+          {/* ─── {t('chat.title')} ─────────────────────────────────────── */}
           {activeTab === 'global' && (
             <>
               <div ref={scrollRef} className="flex-1 overflow-y-auto relative z-10" style={{ WebkitOverflowScrolling: 'touch' }} onScroll={handleScroll}>
@@ -1050,7 +1050,7 @@ const ChatPage = () => {
                     <Trash2 className="w-9 h-9 text-red-400" />
                   </motion.div>
 
-                  <h2 className="text-white font-black text-xl mb-2">Nettoyer le Chat ?</h2>
+                  <h2 className="text-white font-black text-xl mb-2">{t('chat.clear')} le Chat ?</h2>
                   <p className="text-gray-400 text-sm leading-relaxed mb-3">
                     Sélectionne la période à supprimer :
                   </p>

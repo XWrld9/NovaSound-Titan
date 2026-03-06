@@ -841,11 +841,11 @@ const LiveRoomPage = () => {
   if (phase === 'error') return (
     <div className="min-h-screen bg-gray-950 flex flex-col items-center justify-center gap-6 px-4">
       <div className="w-16 h-16 rounded-2xl bg-red-500/10 border border-red-500/30 flex items-center justify-center"><WifiOff className="w-8 h-8 text-red-400" /></div>
-      <div className="text-center"><p className="text-white font-bold text-xl mb-2">Impossible de rejoindre</p><p className="text-gray-400 text-sm max-w-sm">{joinError}</p></div>
+      <div className="text-center"><p className="text-white font-bold text-xl mb-2">{t('live.joinError')}</p><p className="text-gray-400 text-sm max-w-sm">{joinError}</p></div>
       <div className="flex gap-3">
         <button onClick={() => { setPhase('lobby'); hasJoined.current = false; navigate('/live'); }}
           className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-gray-800 text-gray-300 hover:bg-gray-700 text-sm">
-          <ArrowLeft className="w-4 h-4" />Retour
+          <ArrowLeft className="w-4 h-4" />{t('common.back')}
         </button>
         {roomIdParam && <button onClick={() => { hasJoined.current = false; setPhase('joining'); joinRoom(roomIdParam); }}
           className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-cyan-600 hover:bg-cyan-700 text-white text-sm">
@@ -861,7 +861,7 @@ const LiveRoomPage = () => {
       <Helmet><title>Live Rooms — NovaSound TITAN LUX</title></Helmet>
       <div className="min-h-screen bg-gray-950 flex flex-col">
         <Header />
-        <main className="flex-1 w-full max-w-screen-2xl mx-auto px-4 md:px-8 lg:px-12 py-6 sm:py-8 max-w-5xl pb-28">
+        <main className="flex-1 w-full max-w-screen-xl mx-auto px-4 md:px-8 lg:px-12 py-6 sm:py-8 pb-28">
 
           {/* Hero */}
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="text-center mb-8 sm:mb-12">
@@ -873,18 +873,18 @@ const LiveRoomPage = () => {
               LIVE ROOMS
             </div>
             <h1 className="text-3xl sm:text-4xl md:text-6xl font-black text-white mb-4 tracking-tight">
-              Écoute <span className="bg-gradient-to-r from-cyan-400 via-fuchsia-400 to-cyan-400 bg-clip-text text-transparent">ensemble</span>
+              {t('live.title', 'Écoute')} <span className="bg-gradient-to-r from-cyan-400 via-fuchsia-400 to-cyan-400 bg-clip-text text-transparent">{t('live.titleBold', 'ensemble')}</span>
             </h1>
-            <p className="text-gray-400 text-base sm:text-lg max-w-lg mx-auto leading-relaxed">Crée une salle, invite tes amis et partagez la même vibe musicale en temps réel.</p>
+            <p className="text-gray-400 text-base sm:text-lg max-w-lg mx-auto leading-relaxed">{t('live.subtitle')}</p>
           </motion.div>
 
           {/* Créer */}
           <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}
             className="bg-gray-900/80 backdrop-blur border border-gray-800 rounded-2xl p-5 sm:p-6 mb-6 sm:mb-8">
-            <h2 className="text-sm font-bold text-white mb-4 flex items-center gap-2"><Plus className="w-4 h-4 text-green-400" />Créer une salle</h2>
+            <h2 className="text-sm font-bold text-white mb-4 flex items-center gap-2"><Plus className="w-4 h-4 text-green-400" />{t('liveRoom.createRoom')}</h2>
             <div className="flex gap-3 flex-wrap">
               <input value={roomName} onChange={e => setRoomName(e.target.value)} onKeyDown={e => e.key === 'Enter' && createRoom()}
-                placeholder="Nom de ta salle…" maxLength={60}
+                placeholder={t("liveRoom.roomName", "Nom de ta salle…")} maxLength={60}
                 className="flex-1 min-w-[160px] bg-gray-800 border border-gray-700 text-white rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-green-500 placeholder-gray-500 transition-colors" />
               <button onClick={() => setIsPrivate(!isPrivate)}
                 className={`flex items-center gap-2 px-4 py-2.5 rounded-xl border text-sm font-medium transition-all ${isPrivate ? 'bg-amber-500/15 border-amber-500/40 text-amber-400' : 'bg-gray-800 border-gray-700 text-gray-400 hover:border-gray-600'}`}>
@@ -892,7 +892,7 @@ const LiveRoomPage = () => {
               </button>
               <button onClick={createRoom} disabled={!roomName.trim() || creatingRoom || !currentUser}
                 className="bg-gradient-to-r from-green-500 to-cyan-500 hover:from-green-600 hover:to-cyan-600 disabled:opacity-40 text-white font-semibold px-6 py-2.5 rounded-xl text-sm transition-all shadow-lg shadow-green-500/20 flex items-center gap-2">
-                {creatingRoom ? <><Loader2 className="w-4 h-4 animate-spin" />Création…</> : <><Zap className="w-4 h-4" />Créer</>}
+                {creatingRoom ? <><Loader2 className="w-4 h-4 animate-spin" />Création…</> : <><Zap className="w-4 h-4" />{t('liveRoom.createBtn')}</>}
               </button>
             </div>
             {!currentUser && <p className="text-xs text-amber-400 mt-3 flex items-center gap-1.5"><AlertCircle className="w-3.5 h-3.5" /><Link to="/login" className="underline hover:text-amber-300">Connecte-toi</Link> pour créer une salle.</p>}
@@ -902,11 +902,11 @@ const LiveRoomPage = () => {
           <div>
             <div className="flex items-center justify-between mb-4 sm:mb-5">
               <h2 className="text-sm font-bold text-white flex items-center gap-2">
-                <Radio className="w-4 h-4 text-green-400" />Salles en direct
+                <Radio className="w-4 h-4 text-green-400" />{t('live.title', 'Salles en direct')}
                 <span className="text-xs text-gray-600 font-normal bg-gray-800 px-2 py-0.5 rounded-full">{rooms.length}</span>
               </h2>
               <button onClick={fetchRooms} className="text-xs text-gray-500 hover:text-gray-300 flex items-center gap-1.5 transition-colors">
-                <RefreshCw className="w-3.5 h-3.5" />Actualiser
+                <RefreshCw className="w-3.5 h-3.5" />{t('common.retry', 'Actualiser')}
               </button>
             </div>
             {loadingRooms
@@ -914,8 +914,8 @@ const LiveRoomPage = () => {
               : rooms.length === 0
                 ? <div className="text-center py-16 sm:py-20">
                     <div className="w-16 h-16 rounded-2xl bg-gray-900 border border-gray-800 flex items-center justify-center mx-auto mb-4"><Radio className="w-8 h-8 text-gray-700" /></div>
-                    <p className="text-gray-500 font-medium mb-1">Aucune salle active</p>
-                    <p className="text-gray-700 text-sm">Sois le premier à en créer une !</p>
+                    <p className="text-gray-500 font-medium mb-1">{t('liveRoom.noRooms')}</p>
+                    <p className="text-gray-700 text-sm">{t('liveRoom.noRoomsDesc')}</p>
                   </div>
                 : <div className="grid gap-3 sm:gap-4 sm:grid-cols-2 lg:grid-cols-3">
                     {rooms.map((r, i) => (
@@ -995,7 +995,7 @@ const LiveRoomPage = () => {
               {isHost && (
                 <button onClick={togglePause}
                   className={`flex items-center gap-1.5 text-xs px-2.5 py-1.5 rounded-lg transition-all ${liveIsPaused ? 'bg-amber-500/20 text-amber-400 border border-amber-500/30' : 'bg-gray-800 text-gray-400 hover:text-white hover:bg-gray-700'}`}>
-                  {liveIsPaused ? <><Play className="w-3.5 h-3.5" /><span className="hidden sm:inline">Reprendre</span></> : <><Pause className="w-3.5 h-3.5" /><span className="hidden sm:inline">Pause</span></>}
+                  {liveIsPaused ? <><Play className="w-3.5 h-3.5" /><span className="hidden sm:inline">{t('liveRoom.resume')}</span></> : <><Pause className="w-3.5 h-3.5" /><span className="hidden sm:inline">{t('liveRoom.pause')}</span></>}
                 </button>
               )}
               <button onClick={copyLink} className="flex items-center gap-1.5 text-xs text-gray-400 hover:text-white bg-gray-800 hover:bg-gray-700 px-2.5 sm:px-3 py-1.5 rounded-lg transition-all">
@@ -1069,8 +1069,8 @@ const LiveRoomPage = () => {
                   {messages.length === 0 ? (
                     <div className="flex flex-col items-center justify-center h-full text-center py-12">
                       <div className="w-14 h-14 rounded-2xl bg-gray-900 border border-gray-800 flex items-center justify-center mb-4"><Headphones className="w-7 h-7 text-gray-700" /></div>
-                      <p className="text-gray-500 text-sm font-medium">Aucun message</p>
-                      <p className="text-gray-700 text-xs mt-1">Commence la conversation !</p>
+                      <p className="text-gray-500 text-sm font-medium">{t('liveRoom.noMessages')}</p>
+                      <p className="text-gray-700 text-xs mt-1">{t('liveRoom.startConvo')}</p>
                     </div>
                   ) : (
                     <AnimatePresence initial={false}>
@@ -1128,7 +1128,7 @@ const LiveRoomPage = () => {
                 <div className="flex gap-2 items-center">
                   <input value={msgInput} onChange={e => { setMsgInput(e.target.value); broadcastTyping(); }}
                     onKeyDown={e => e.key === 'Enter' && !e.shiftKey && sendMessage()}
-                    placeholder="Tape ton message…" maxLength={500}
+                    placeholder={t("liveRoom.typeMessage")} maxLength={500}
                     className="flex-1 bg-gray-800 border border-gray-700 text-white rounded-xl px-3 sm:px-4 py-2.5 text-sm focus:outline-none focus:border-cyan-500 placeholder-gray-500 transition-colors" />
                   <button onClick={() => setShowReactions(!showReactions)}
                     className={`p-2.5 rounded-xl transition-all flex-shrink-0 ${showReactions ? 'bg-fuchsia-500/20 text-fuchsia-400' : 'bg-gray-800 text-gray-400 hover:text-white hover:bg-gray-700'}`}>
@@ -1158,7 +1158,7 @@ const LiveRoomPage = () => {
                 {sideTab === 'participants' && (
                   <div className="space-y-1">
                     <div className="flex items-center justify-between mb-3">
-                      <h3 className="text-white font-bold text-sm flex items-center gap-2"><Users className="w-4 h-4 text-green-400" />Participants</h3>
+                      <h3 className="text-white font-bold text-sm flex items-center gap-2"><Users className="w-4 h-4 text-green-400" />{t('liveRoom.participants')}</h3>
                       <span className="text-xs text-gray-600 bg-gray-800 px-2 py-0.5 rounded-full">{participants.length}/{MAX_PARTICIPANTS}</span>
                     </div>
                     {participants.length === 0
@@ -1186,7 +1186,7 @@ const LiveRoomPage = () => {
                 {sideTab === 'queue' && (
                   <div>
                     <div className="flex items-center justify-between mb-3">
-                      <h3 className="text-white font-bold text-sm flex items-center gap-2"><ListMusic className="w-4 h-4 text-cyan-400" />File d'attente</h3>
+                      <h3 className="text-white font-bold text-sm flex items-center gap-2"><ListMusic className="w-4 h-4 text-cyan-400" />{t('liveRoom.queue')}</h3>
                       {queue.length > 0 && <span className="text-xs text-gray-600 bg-gray-800 px-2 py-0.5 rounded-full">{queue.length}</span>}
                     </div>
                     {queue.length === 0

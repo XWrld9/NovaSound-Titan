@@ -1,5 +1,5 @@
 /**
- * LanguageSwitcher — NovaSound TITAN LUX v300000
+ * LanguageSwitcher — NovaSound TITAN LUX v400000
  * Dropdown intelligent : positionné correctement sur mobile ET desktop.
  */
 import React, { useState, useRef, useEffect } from 'react';

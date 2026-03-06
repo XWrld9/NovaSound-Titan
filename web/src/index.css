@@ -186,3 +186,36 @@ button {
 .admin-scroll::-webkit-scrollbar { width: 4px; }
 .admin-scroll::-webkit-scrollbar-track { background: transparent; }
 .admin-scroll::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.08); border-radius: 2px; }
+
+/* ── V400000 Responsive Improvements ─────────────────────────── */
+/* Ensure content uses full width on large screens */
+.page-container {
+  width: 100%;
+  max-width: 1400px;
+  margin-left: auto;
+  margin-right: auto;
+  padding-left: 1rem;
+  padding-right: 1rem;
+}
+
+@media (min-width: 640px) {
+  .page-container { padding-left: 1.5rem; padding-right: 1.5rem; }
+}
+
+@media (min-width: 1024px) {
+  .page-container { padding-left: 2rem; padding-right: 2rem; }
+}
+
+@media (min-width: 1280px) {
+  .page-container { padding-left: 3rem; padding-right: 3rem; }
+}
+
+/* Notifications page improvements */
+.notif-stats-bar {
+  display: flex;
+  gap: 0.75rem;
+  overflow-x: auto;
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+.notif-stats-bar::-webkit-scrollbar { display: none; }

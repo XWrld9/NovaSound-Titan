@@ -87,7 +87,7 @@ const AboutModal = ({ onClose }) => (
               alt="Logo" className="w-10 h-10 rounded-2xl border border-cyan-400/30 object-cover" />
             <div>
               <h3 className="text-white font-black text-base leading-tight">NovaSound TITAN LUX</h3>
-              <p className="text-cyan-400/70 text-xs">v300.0.0 — 2026</p>
+              <p className="text-cyan-400/70 text-xs">v400.0.0 — 2026</p>
             </div>
           </div>
           <button onClick={onClose} className="w-8 h-8 rounded-full bg-white/[0.07] flex items-center justify-center text-gray-500 hover:text-white transition-colors">
@@ -165,7 +165,7 @@ const Footer = () => {
                 </span>
               </div>
               <p className="text-gray-500 text-xs max-w-xs leading-relaxed text-center md:text-left">
-                La plateforme musicale nouvelle génération. Streamez, uploadez et connectez-vous avec des artistes du monde entier.
+                {t('footer.description')}
               </p>
               {/* Soutenir — bouton discret */}
               <button onClick={() => setShowSupport(true)}
@@ -187,7 +187,7 @@ const Footer = () => {
                   { to:'/trending', label:'Tendances' },
                   { to:'/news',     label:'Actualités' },
                   { to:'/upload',   label:'Uploader' },
-                  { to:'/local-player', label:'Lecteur hors-ligne' },
+                  { to:'/local-player', label:t('footer.localOffline') },
                 ].map(({ to, label }) => (
                   <li key={to}>
                     <Link to={to} className="text-gray-500 hover:text-cyan-400 transition-colors text-xs">{label}</Link>
@@ -245,7 +245,7 @@ const Footer = () => {
           {/* ── Bottom bar ──────────────────────────────────────────────────── */}
           <div className="border-t border-white/[0.05] mt-10 pt-6 flex flex-col sm:flex-row items-center justify-between gap-3">
             <p className="text-gray-700 text-xs font-mono">
-              © 2026 <span className="text-gray-600">NovaSound TITAN LUX</span> — ELOADXFAMILY · v300.0.0
+              © 2026 <span className="text-gray-600">NovaSound TITAN LUX</span> — ELOADXFAMILY · v400.0.0
             </p>
             <div className="flex items-center gap-4">
               <button onClick={() => setShowAbout(true)} className="text-gray-700 hover:text-gray-500 text-xs transition-colors flex items-center gap-1">

@@ -1,5 +1,5 @@
 /**
- * ExplorerPage — NovaSound TITAN LUX v70
+ * {t('explorer.title')}Page — NovaSound TITAN LUX v70
  * Redesign complet :
  * - Toggle vue grille / vue liste compacte
  * - Vue liste : SongRow inline avec play direct, actions, genre badge
@@ -199,7 +199,7 @@ const SongRow = ({ song, index, onPlay, isPlaying, currentUser }) => {
 };
 
 // ════════════════════════════════════════════════════════════════════
-const ExplorerPage = () => {
+const {t('explorer.title')}Page = () => {
   const [songs,         setSongs]         = useState([]);
   const [loading,       setLoading]       = useState(true);
   const [initialLoad,   setInitialLoad]   = useState(true);
@@ -298,7 +298,7 @@ const ExplorerPage = () => {
   return (
     <>
       <Helmet>
-        <title>Explorer — NovaSound TITAN LUX</title>
+        <title>{t('explorer.title')} — NovaSound TITAN LUX</title>
         <meta name="description" content="Explore toute la bibliothèque musicale NovaSound TITAN LUX" />
       </Helmet>
 
@@ -311,7 +311,7 @@ const ExplorerPage = () => {
           <div className="mb-6">
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-4">
               <div>
-                <h1 className="text-3xl font-bold text-white">Explorer</h1>
+                <h1 className="text-3xl font-bold text-white">{t('explorer.title')}</h1>
                 {!loading && totalCount !== null && (
                   <p className="text-sm text-gray-600 mt-0.5">
                     {totalCount} morceau{totalCount > 1 ? 'x' : ''}
@@ -324,7 +324,7 @@ const ExplorerPage = () => {
                 {/* Recherche */}
                 <div className="relative flex-1 md:w-64">
                   <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
-                  <input id="explorer-search" name="explorer-search" type="text" placeholder="Rechercher…" value={searchQuery}
+                  <input id="explorer-search" name="explorer-search" type="text" placeholder={t("explorer.searchPlaceholder")} value={searchQuery}
                     onChange={e => setSearchQuery(e.target.value)} autoComplete="off"
                     className="w-full pl-9 pr-8 py-2 bg-gray-900 border border-gray-800 rounded-lg text-white placeholder-gray-600 focus:border-cyan-500 focus:outline-none text-sm" />
                   {searchQuery && (
@@ -465,4 +465,4 @@ const ExplorerPage = () => {
   );
 };
 
-export default ExplorerPage;
+export default {t('explorer.title')}Page;
