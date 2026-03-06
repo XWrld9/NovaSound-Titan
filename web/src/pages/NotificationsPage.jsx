@@ -375,7 +375,7 @@ const NotificationsPage = () => {
 
           {/* Notification list */}
           {filtered.length === 0 ? (
-            <EmptyState tab={activeTab} t={t} />
+            <EmptyState tab={activeTab} />
           ) : (
             <AnimatePresence mode="popLayout">
               {groups.today.length > 0 && (
