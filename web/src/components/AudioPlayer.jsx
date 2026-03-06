@@ -237,9 +237,9 @@ const AudioPlayer = ({ currentSong, playlist = [], onNext, onPrevious, onClose, 
     img.crossOrigin = 'anonymous';
     img.onload = () => {
       try {
-        const c = document.createElemen'canvas';
+        const c = document.createElement('canvas');
         c.width = 80; c.height = 80;
-        c.getContex'2d'.drawImage(img, 0, 0, 80, 80);
+        c.getContext('2d').drawImage(img, 0, 0, 80, 80);
         setBlurBg(c.toDataURL('image/jpeg', 0.6));
       } catch { setBlurBg(currentSong.cover_url); }
     };
@@ -464,7 +464,7 @@ const AudioPlayer = ({ currentSong, playlist = [], onNext, onPrevious, onClose, 
   const handleDownload = (e) => {
     e?.stopPropagation();
     if (!currentSong.audio_url) return;
-    const a = document.createElemen'a'; a.href = currentSong.audio_url; a.download = currentSong.title;
+    const a = document.createElement('a'); a.href = currentSong.audio_url; a.download = currentSong.title;
     document.body.appendChild(a); a.click(); document.body.removeChild(a);
   };
 
@@ -583,7 +583,7 @@ const AudioPlayer = ({ currentSong, playlist = [], onNext, onPrevious, onClose, 
     e?.stopPropagation();
     setIsCoverMode(false);
     if (isNativeFS) { try { document.exitFullscreen?.(); } catch {} try { document.webkitExitFullscreen?.(); } catch {} }
-    if (onClose) onClose(); else window.dispatchEvent(new CustomEven'novasound:close-player');
+    if (onClose) onClose(); else window.dispatchEvent(new CustomEvent('novasound:close-player'));
   };
 
   // ── Swipe-to-close mini player ──────────────────────────────────
