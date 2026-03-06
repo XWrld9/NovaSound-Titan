@@ -52,6 +52,7 @@ const AdminPanel        = lazy(() => import('@/pages/AdminPanel'));
 const ResetPasswordPage = lazy(() => import('@/pages/ResetPasswordPage'));
 const ArtistsPage       = lazy(() => import('@/pages/ArtistsPage'));
 const NotFoundPage      = lazy(() => import('@/pages/NotFoundPage'));
+const NotificationsPage  = lazy(() => import('@/pages/NotificationsPage'));
 
 /* ── Player global — monté UNE SEULE FOIS, survit à toute navigation ── */
 const GlobalPlayer = () => {
