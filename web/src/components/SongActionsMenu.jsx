@@ -513,32 +513,32 @@ const SongActionsMenu = ({ song, onArchived, onDeleted }) => {
         const { error } = await supabase.from('songs').update({ is_archived: true }).eq('id', song.id);
         if (error) throw error;
         onArchived?.(song.id, true);
-        showToas'#f59e0b';
+        showToast('#f59e0b');
 
       } else if (confirm === 'unarchive') {
         const { error } = await supabase.from('songs').update({ is_archived: false }).eq('id', song.id);
         if (error) throw error;
         onArchived?.(song.id, false);
-        showToas'#22d3ee';
+        showToast('#22d3ee');
 
       } else if (confirm === 'delete') {
         // Supprimer fichiers du storage
         if (song.audio_url) {
-          const filePath = decodeURIComponent(song.audio_url.spli'/'.pop().spli'?'[0]);
+          const filePath = decodeURIComponent(song.audio_url.split('/').pop().split('?')[0]);
           await supabase.storage.from('audio').remove([filePath]);
         }
         if (song.cover_url && song.cover_url.includes('supabase')) {
-          const filePath = decodeURIComponent(song.cover_url.spli'/'.pop().spli'?'[0]);
+          const filePath = decodeURIComponent(song.cover_url.split('/').pop().split('?')[0]);
           await supabase.storage.from('covers').remove([filePath]);
         }
         const { error } = await supabase.from('songs').delete().eq('id', song.id);
         if (error) throw error;
         onDeleted?.(song.id);
-        showToas'#ef4444';
+        showToast('#ef4444');
       }
     } catch (err) {
       console.error('[SongActionsMenu]', err);
-      showToas'#ef4444';
+      showToast('#ef4444');
     } finally {
       setLoading(false);
       setConfirm(null);
@@ -615,7 +615,7 @@ const SongActionsMenu = ({ song, onArchived, onDeleted }) => {
             song={song}
             onSaved={(updated) => {
               setShowEdit(false);
-              showToas'#60a5fa';
+              showToast('#60a5fa');
               // Notifier le parent pour rafraîchir si nécessaire
               window.dispatchEvent(new CustomEvent('novasound:song-updated', { detail: updated }));
               onArchived?.(song.id, !!song.is_archived); // force re-render trick
