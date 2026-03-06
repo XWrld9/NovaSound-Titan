@@ -64,7 +64,7 @@ const SearchPage = () => {
   const { currentUser } = useAuth();
   const { playSong }    = usePlayer();
 
-  const [query,       setQuery]       = useState(searchParams.ge'q' || '');
+  const [query,       setQuery]       = useState(searchParams.get('q') || '');
   const [trending,    setTrending]    = useState([]);
   const [results,     setResults]     = useState([]);
   const [loading,     setLoading]     = useState(false);
