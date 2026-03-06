@@ -362,7 +362,7 @@ const SongRow = memo(({ song, index, isActive, isSelected, onPlay, onRemove, sel
 });
 
 // ── PlaylistCard ───────────────────────────────────────────────────────────────
-const PlaylistCard = ({ pl, onLoad, onDelete, onReimport, liveSongs, t }) => {
+const PlaylistCard = ({ pl, onLoad, onDelete, onReimport, liveSongs }) => {
   const needsReimport = pl.songs.some(s => {
     const live = liveSongs.find(l => l.id === s.id);
     return s._needsReimport && !(live && !live._needsReimport);
