@@ -209,7 +209,7 @@ const Footer = () => {
                   </button>
                 </li>
                 {[
-                  { to:'/privacy',   label:'{t('footer.privacy')}' },
+                  { to:'/privacy',   label:"{t('footer.privacy')}" },
                   { to:'/terms',     label:"{t('footer.terms')}" },
                   { to:'/copyright', label:"{t('footer.copyright')}" },
                 ].map(({ to, label }) => (
