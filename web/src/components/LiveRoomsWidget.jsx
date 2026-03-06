@@ -71,7 +71,7 @@ const LiveRoomsWidget = () => {
   return (
     <div className="flex gap-3 overflow-x-auto pb-1 scrollbar-hide">
       {rooms.map((room, i) => {
-        const pct = Math.round((room.participant_count || 0) / MAX_PARTICIPANTS * 100);
+        const pct = Math.round((room.participants_count || 0) / MAX_PARTICIPANTS * 100);
         return (
           <motion.div
             key={room.id}
@@ -94,7 +94,7 @@ const LiveRoomsWidget = () => {
                 </div>
                 <div className="flex items-center gap-1 text-gray-500">
                   <Users className="w-3 h-3" />
-                  <span className="text-[10px] font-bold">{room.participant_count || 0}/{MAX_PARTICIPANTS}</span>
+                  <span className="text-[10px] font-bold">{room.participants_count || 0}/{MAX_PARTICIPANTS}</span>
                 </div>
               </div>
 

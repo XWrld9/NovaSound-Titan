@@ -513,13 +513,13 @@ const SongActionsMenu = ({ song, onArchived, onDeleted }) => {
         const { error } = await supabase.from('songs').update({ is_archived: true }).eq('id', song.id);
         if (error) throw error;
         onArchived?.(song.id, true);
-        showToast('#f59e0b');
+        showToast('📦 Son archivé', '#f59e0b');
 
       } else if (confirm === 'unarchive') {
         const { error } = await supabase.from('songs').update({ is_archived: false }).eq('id', song.id);
         if (error) throw error;
         onArchived?.(song.id, false);
-        showToast('#22d3ee');
+        showToast('✅ Son restauré', '#22d3ee');
 
       } else if (confirm === 'delete') {
         // Supprimer fichiers du storage
@@ -534,11 +534,11 @@ const SongActionsMenu = ({ song, onArchived, onDeleted }) => {
         const { error } = await supabase.from('songs').delete().eq('id', song.id);
         if (error) throw error;
         onDeleted?.(song.id);
-        showToast('#ef4444');
+        showToast('🗑️ Son supprimé', '#ef4444');
       }
     } catch (err) {
       console.error('[SongActionsMenu]', err);
-      showToast('#ef4444');
+      showToast('❌ Une erreur est survenue', '#ef4444');
     } finally {
       setLoading(false);
       setConfirm(null);
@@ -615,7 +615,7 @@ const SongActionsMenu = ({ song, onArchived, onDeleted }) => {
             song={song}
             onSaved={(updated) => {
               setShowEdit(false);
-              showToast('#60a5fa');
+              showToast('✏️ Modifications enregistrées', '#60a5fa');
               // Notifier le parent pour rafraîchir si nécessaire
               window.dispatchEvent(new CustomEvent('novasound:song-updated', { detail: updated }));
               onArchived?.(song.id, !!song.is_archived); // force re-render trick

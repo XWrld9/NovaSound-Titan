@@ -9,23 +9,23 @@ export const ExtensionSafeComponent = ({ children, fallback = null, onExtensionB
 
   useEffect(() => {
     // Détecter si des extensions bloquent des fonctionnalités
-    const checkExtensionInterference = () => {
+    const checkExtensionInterference = async () => {
       try {
         // Test localStorage
         localStorage.setItem('test', 'test');
         localStorage.removeItem('test');
-        
-        // Test fetch
-        return fetch('/api/health', { method: 'HEAD' }).catch(() => null);
+        return false; // pas bloqué
       } catch (e) {
         return true; // Extension bloque l'accès
       }
     };
 
-    if (checkExtensionInterference()) {
-      setIsBlocked(true);
-      onExtensionBlock?.();
-    }
+    checkExtensionInterference().then(blocked => {
+      if (blocked) {
+        setIsBlocked(true);
+        onExtensionBlock?.();
+      }
+    });
   }, [onExtensionBlock]);
 
   // Gérer les erreurs causées par des extensions

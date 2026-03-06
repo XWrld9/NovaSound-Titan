@@ -2,7 +2,6 @@
  * LocalPlayerPage — NovaSound TITAN LUX v410000
  *
  * ✅ Refonte complète desktop-first (v410000)
- * ✅ Traduction intégrale via i18n (useTranslation)
  * ✅ Layout 3-colonnes desktop : Sidebar player | Bibliothèque | Playlists
  * ✅ Drag & Drop natif
  * ✅ Raccourcis clavier (Space, ←→ seek, ↑↓ volume, M mute, N next, P prev)
@@ -24,7 +23,6 @@ import {
 } from 'lucide-react';
 import { useNavigate, Link } from 'react-router-dom';
 import { usePlayer } from '@/contexts/PlayerContext';
-import { useTranslation } from 'react-i18next';
 import Footer from '@/components/Footer';
 
 const AUDIO_EXTS = /\.(mp3|m4a|wav|flac|ogg|aac|opus|webm|mp4|3gp|caf|aiff|wma|amr|ape|mka)$/i;
@@ -404,7 +402,7 @@ const PlaylistCard = ({ pl, onLoad, onDelete, onReimport, liveSongs, t }) => {
         )}
         <div className="absolute bottom-0 left-0 right-0 p-3">
           <p className="text-white text-sm font-bold truncate drop-shadow">{pl.name}</p>
-          <p className="text-gray-400/80 text-[11px]">{pl.songs.length} {pl.songs.length > 1 ? t('localPlayer.filesCount_plural', { count: pl.songs.length }) : t('localPlayer.filesCount', { count: pl.songs.length })}</p>
+          <p className="text-gray-400/80 text-[11px]">{pl.songs.length} {pl.songs.length > 1 ? `${pl.songs.length} fichiers` : `${pl.songs.length} fichier`}</p>
         </div>
       </div>
 
@@ -413,10 +411,10 @@ const PlaylistCard = ({ pl, onLoad, onDelete, onReimport, liveSongs, t }) => {
         <button onClick={() => onLoad(pl)}
           className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-xl text-xs font-bold text-white transition-opacity hover:opacity-90"
           style={{ background: 'linear-gradient(135deg,#0e7490,#7c3aed)' }}>
-          <Play className="w-3.5 h-3.5 fill-current" />{t('localPlayer.listen')}
+          <Play className="w-3.5 h-3.5 fill-current" />{'Écouter'}
         </button>
         {needsReimport && !FS_ACCESS_SUPPORTED && (
-          <button onClick={() => onReimport(pl)} title={t('localPlayer.reimport')}
+          <button onClick={() => onReimport(pl)} title={'Recharger les fichiers'}
             className="flex items-center justify-center w-8 h-8 rounded-xl bg-amber-500/15 text-amber-400 border border-amber-500/25 hover:bg-amber-500/25 transition-all">
             <RefreshCw className="w-3.5 h-3.5" />
           </button>
@@ -439,18 +437,18 @@ const SavePlaylistModal = ({ count, onSave, onClose, t }) => {
       onClick={e => e.target === e.currentTarget && onClose()}>
       <motion.div initial={{ scale: 0.9, y: 16 }} animate={{ scale: 1, y: 0 }}
         className="w-full max-w-sm bg-[#0a0a1a] border border-white/10 rounded-2xl p-6 shadow-2xl">
-        <h3 className="text-white font-bold text-lg mb-1">{t('localPlayer.newPlaylist')}</h3>
-        <p className="text-gray-500 text-sm mb-4">{count} {count > 1 ? t('localPlayer.filesCount_plural', { count }) : t('localPlayer.filesCount', { count })}</p>
+        <h3 className="text-white font-bold text-lg mb-1">{'Nouvelle playlist'}</h3>
+        <p className="text-gray-500 text-sm mb-4">{count} {count > 1 ? `${count} fichiers` : `${count} fichier`}</p>
         <input type="text" value={name} onChange={e => setName(e.target.value)}
-          placeholder={t('localPlayer.playlistName')} autoFocus
+          placeholder={'Nom de la playlist…'} autoFocus
           onKeyDown={e => e.key === 'Enter' && name.trim() && onSave(name.trim())}
           className="w-full bg-white/[0.06] border border-white/[0.1] rounded-xl px-4 py-3 text-white text-sm placeholder-gray-600 focus:outline-none focus:border-cyan-500/50 mb-4" />
         <div className="flex gap-2">
-          <button onClick={onClose} className="flex-1 py-2.5 rounded-xl bg-white/5 text-gray-400 text-sm font-semibold hover:bg-white/10 transition-all">{t('common.cancel')}</button>
+          <button onClick={onClose} className="flex-1 py-2.5 rounded-xl bg-white/5 text-gray-400 text-sm font-semibold hover:bg-white/10 transition-all">{'Annuler'}</button>
           <button onClick={() => name.trim() && onSave(name.trim())} disabled={!name.trim()}
             className="flex-1 py-2.5 rounded-xl text-white text-sm font-bold disabled:opacity-40"
             style={{ background: 'linear-gradient(135deg,#0e7490,#7c3aed)' }}>
-            <Save className="w-3.5 h-3.5 inline mr-1.5" />{t('localPlayer.savePlaylist')}
+            <Save className="w-3.5 h-3.5 inline mr-1.5" />{'Sauvegarder'}
           </button>
         </div>
       </motion.div>
@@ -462,7 +460,6 @@ const SavePlaylistModal = ({ count, onSave, onClose, t }) => {
 // MAIN COMPONENT
 // ══════════════════════════════════════════════════════════════════════════════
 const LocalPlayerPage = () => {
-  const { t } = useTranslation();
   const inputRef    = useRef(null);
   const reimportRef = useRef(null);
   const dropZoneRef = useRef(null);
@@ -619,7 +616,7 @@ const LocalPlayerPage = () => {
     if (!FS_ACCESS_SUPPORTED) { inputRef.current?.click(); return; }
     try {
       const handles = await window.showOpenFilePicker({
-        types: [{ description: t('localPlayer.title'), accept: { 'audio/*': ['.mp3','.m4a','.wav','.flac','.ogg','.aac','.opus','.wma','.webm'] } }],
+        types: [{ description: 'Lecteur Local', accept: { 'audio/*': ['.mp3','.m4a','.wav','.flac','.ogg','.aac','.opus','.wma','.webm'] } }],
         multiple: true,
       });
       setLoading(true);
@@ -811,10 +808,10 @@ const LocalPlayerPage = () => {
             <ArrowLeft className="w-5 h-5" />
           </button>
           <div className="flex-1 min-w-0">
-            <p className="text-white font-black text-base leading-none">{t('localPlayer.title')}</p>
+            <p className="text-white font-black text-base leading-none">{'Lecteur Local'}</p>
             <div className="flex items-center gap-2 mt-0.5">
               <WifiOff className="w-3 h-3 text-cyan-500" />
-              <p className="text-gray-500 text-[10px]">{t('localPlayer.offline')}</p>
+              <p className="text-gray-500 text-[10px]">{'100% hors-ligne'}</p>
             </div>
           </div>
           <Link to="/" className="w-9 h-9 rounded-xl bg-white/[0.06] hover:bg-cyan-500/15 text-gray-400 hover:text-cyan-400 transition-all flex items-center justify-center">
@@ -832,7 +829,7 @@ const LocalPlayerPage = () => {
               className="fixed inset-0 z-50 flex items-center justify-center bg-cyan-500/10 border-2 border-cyan-400 border-dashed backdrop-blur-sm pointer-events-none">
               <div className="text-center">
                 <Music2 className="w-16 h-16 text-cyan-400 mx-auto mb-4" />
-                <p className="text-cyan-300 text-2xl font-black">{t('localPlayer.dropHere')}</p>
+                <p className="text-cyan-300 text-2xl font-black">{'Dépose ici'}</p>
               </div>
             </motion.div>
           )}
@@ -863,9 +860,9 @@ const LocalPlayerPage = () => {
               <div>
                 <div className="flex items-center gap-2.5 mb-3 justify-center lg:justify-start">
                   <WifiOff className="w-5 h-5 text-cyan-400" />
-                  <h1 className="text-white text-4xl font-black tracking-tight">{t('localPlayer.title')}</h1>
+                  <h1 className="text-white text-4xl font-black tracking-tight">{'Lecteur Local'}</h1>
                 </div>
-                <p className="text-gray-400 text-base leading-relaxed max-w-md">{t('localPlayer.subtitle')}</p>
+                <p className="text-gray-400 text-base leading-relaxed max-w-md">{'Écoute tes fichiers audio directement depuis ton appareil, sans connexion.'}</p>
               </div>
 
               {/* CTA */}
@@ -874,17 +871,17 @@ const LocalPlayerPage = () => {
                 className="flex items-center justify-center gap-3 px-8 py-4 rounded-2xl text-white font-bold text-base disabled:opacity-60 w-full lg:w-auto"
                 style={{ background: 'linear-gradient(135deg,#0e7490,#7c3aed)', boxShadow: '0 8px 32px rgba(6,182,212,0.25)' }}>
                 <FolderOpen className="w-5 h-5" />
-                {loading ? t('common.loading') : t('localPlayer.openFiles')}
+                {loading ? 'Chargement…' : 'Ouvrir des fichiers (persistants)'}
               </motion.button>
 
               {/* Drag hint */}
               <div className="flex items-center gap-2 text-gray-600 text-sm">
                 <GripVertical className="w-4 h-4" />
-                <span>{t('localPlayer.dragDrop')}</span>
+                <span>{'Glisse tes fichiers audio ici'}</span>
               </div>
 
               {/* Formats */}
-              <p className="text-gray-700 text-xs">{t('localPlayer.formats')}</p>
+              <p className="text-gray-700 text-xs">{'Formats supportés : MP3 · M4A · WAV · FLAC · AAC · OGG · OPUS · WMA'}</p>
             </motion.div>
 
             {/* Right — Saved playlists + Tip */}
@@ -895,7 +892,7 @@ const LocalPlayerPage = () => {
               {savedPlaylists.length > 0 && (
                 <div>
                   <p className="text-gray-500 text-xs mb-3 font-bold uppercase tracking-[0.12em]">
-                    {t('localPlayer.playlists')}
+                    {'Playlists sauvegardées'}
                     <span className="ml-2 text-fuchsia-400">({savedPlaylists.length})</span>
                   </p>
                   <div className="grid grid-cols-2 gap-2">
@@ -920,9 +917,9 @@ const LocalPlayerPage = () => {
                 <div className="flex items-start gap-3">
                   <span className="text-xl flex-shrink-0">💡</span>
                   <div>
-                    <p className="text-amber-300 text-sm font-bold mb-1">{t('localPlayer.tip')}</p>
+                    <p className="text-amber-300 text-sm font-bold mb-1">{'Astuce'}</p>
                     <p className="text-amber-200/60 text-sm leading-relaxed">
-                      {FS_ACCESS_SUPPORTED ? t('localPlayer.tipDescPC') : t('localPlayer.tipDescMobile')}
+                      {FS_ACCESS_SUPPORTED ? 'Sur PC, les fichiers sont mémorisés. Tes playlists se rechargent automatiquement sans re-sélectionner.' : 'Sélectionne depuis n\'importe quel dossier (WhatsApp, Xender, SD card…).'}
                     </p>
                   </div>
                 </div>
@@ -932,7 +929,7 @@ const LocalPlayerPage = () => {
               <button onClick={() => setShowShortcuts(v => !v)}
                 className="flex items-center gap-2 text-gray-600 hover:text-gray-400 text-xs transition-colors self-start">
                 <Keyboard className="w-3.5 h-3.5" />
-                {t('localPlayer.keyboardShortcuts')}
+                {'Raccourcis clavier'}
                 <ChevronDown className={`w-3 h-3 transition-transform ${showShortcuts ? 'rotate-180' : ''}`} />
               </button>
               <AnimatePresence>
@@ -941,12 +938,12 @@ const LocalPlayerPage = () => {
                     className="overflow-hidden">
                     <div className="grid grid-cols-2 gap-x-4 gap-y-1.5 bg-white/[0.03] rounded-xl p-3 border border-white/[0.06]">
                       {[
-                        ['Space', t('localPlayer.shortcutSpace')],
-                        ['←  →', t('localPlayer.shortcutLeft') + ' / ' + t('localPlayer.shortcutRight').replace('Avancer', '+')],
-                        ['↑  ↓', t('localPlayer.shortcutUp') + ' / ' + t('localPlayer.shortcutDown').replace('Volume -', '-')],
-                        ['M', t('localPlayer.shortcutM')],
-                        ['N', t('localPlayer.shortcutN')],
-                        ['P', t('localPlayer.shortcutP')],
+                        ['Space', 'Lecture / Pause'],
+                        ['←  →', 'Reculer 10s' + ' / ' + 'Avancer 10s'.replace('Avancer', '+')],
+                        ['↑  ↓', 'Volume +' + ' / ' + 'Volume -'.replace('Volume -', '-')],
+                        ['M', 'Muet'],
+                        ['N', 'Suivant'],
+                        ['P', 'Précédent'],
                       ].map(([key, desc]) => (
                         <div key={key} className="flex items-center gap-2">
                           <kbd className="px-1.5 py-0.5 bg-white/[0.08] border border-white/[0.12] rounded text-[10px] text-gray-400 font-mono flex-shrink-0">{key}</kbd>
@@ -979,14 +976,14 @@ const LocalPlayerPage = () => {
           <ArrowLeft className="w-5 h-5" />
         </button>
         <div className="flex-1 min-w-0">
-          <p className="text-white font-black text-base leading-none">{t('localPlayer.title')}</p>
+          <p className="text-white font-black text-base leading-none">{'Lecteur Local'}</p>
           <div className="flex items-center gap-2 mt-0.5">
             <WifiOff className="w-3 h-3 text-cyan-500" />
-            <p className="text-gray-500 text-[10px]">{t('localPlayer.offline')} · {songs.length} {songs.length > 1 ? t('localPlayer.filesCount_plural', { count: songs.length }) : t('localPlayer.filesCount', { count: songs.length })}</p>
+            <p className="text-gray-500 text-[10px]">{'100% hors-ligne'} · {songs.length} {songs.length > 1 ? `${songs.length} fichiers` : `${songs.length} fichier`}</p>
             {restoringHandles && (
               <div className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-cyan-500/15 border border-cyan-500/20">
                 <RefreshCcw className="w-2.5 h-2.5 text-cyan-400 animate-spin" />
-                <span className="text-cyan-400 text-[9px] font-semibold">{t('localPlayer.restoring')}</span>
+                <span className="text-cyan-400 text-[9px] font-semibold">{'Restauration…'}</span>
               </div>
             )}
           </div>
@@ -997,7 +994,7 @@ const LocalPlayerPage = () => {
           <button onClick={FS_ACCESS_SUPPORTED ? openPickerFSA : () => inputRef.current?.click()} disabled={loading}
             className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold bg-white/[0.06] text-gray-300 hover:text-white hover:bg-white/[0.1] transition-all disabled:opacity-50 border border-white/[0.07]">
             {loading ? <div className="w-4 h-4 rounded-full border border-gray-500 border-t-cyan-400 animate-spin" /> : <Plus className="w-4 h-4" />}
-            {t('localPlayer.addFiles')}
+            {'Ajouter des fichiers'}
           </button>
         </div>
 
@@ -1030,7 +1027,7 @@ const LocalPlayerPage = () => {
             className="fixed inset-0 z-50 flex items-center justify-center bg-cyan-500/10 border-2 border-cyan-400 border-dashed backdrop-blur-sm pointer-events-none">
             <div className="text-center">
               <Music2 className="w-16 h-16 text-cyan-400 mx-auto mb-4" />
-              <p className="text-cyan-300 text-2xl font-black">{t('localPlayer.dropHere')}</p>
+              <p className="text-cyan-300 text-2xl font-black">{'Dépose ici'}</p>
             </div>
           </motion.div>
         )}
@@ -1076,11 +1073,11 @@ const LocalPlayerPage = () => {
                 )}
                 <div className="flex items-center gap-1.5 mt-2">
                   <span className="text-[10px] bg-white/[0.06] border border-white/[0.08] px-2 py-0.5 rounded-full text-gray-500">
-                    {t('localPlayer.local')}
+                    {'Fichier local'}
                   </span>
                   {isLocalPlaying && (
                     <span className="text-[10px] bg-cyan-500/15 border border-cyan-500/25 px-2 py-0.5 rounded-full text-cyan-400 flex items-center gap-1">
-                      <EQBars active bars={3} /> {t('localPlayer.playing')}
+                      <EQBars active bars={3} /> {'En lecture'}
                     </span>
                   )}
                 </div>
@@ -1095,30 +1092,30 @@ const LocalPlayerPage = () => {
               <div className="flex-shrink-0 flex items-center justify-between">
                 <button onClick={toggleShuffle}
                   className={`p-2.5 rounded-full transition-all ${shuffle ? 'text-cyan-400 bg-cyan-500/15' : 'text-gray-600 hover:text-gray-400 hover:bg-white/5'}`}
-                  title={t('player.shuffle')}>
+                  title={'Aléatoire'}>
                   <Shuffle className="w-5 h-5" />
                 </button>
                 <motion.button whileTap={{ scale: .88 }} onClick={() => handlePrevious?.()}
-                  className="p-2.5 text-gray-300 hover:text-white transition-colors" title={t('player.previous')}>
+                  className="p-2.5 text-gray-300 hover:text-white transition-colors" title={'Précédent'}>
                   <SkipBack className="w-8 h-8 fill-current" />
                 </motion.button>
                 <motion.button whileTap={{ scale: .88 }}
                   onClick={isLocalPlaying ? togglePlayPause : () => playSong(songs[0], songs)}
                   className="w-16 h-16 rounded-full flex items-center justify-center shadow-2xl flex-shrink-0"
                   style={{ background: 'linear-gradient(135deg,#0e7490,#7c3aed)', boxShadow: '0 0 40px rgba(6,182,212,0.35)' }}
-                  title={isPlayingGlobal ? t('player.pause') : t('player.play')}>
+                  title={isPlayingGlobal ? 'Pause' : 'Lecture'}>
                   {isPlayingGlobal
                     ? <Pause className="w-8 h-8 text-white fill-current" />
                     : <Play className="w-8 h-8 text-white fill-current ml-0.5" />
                   }
                 </motion.button>
                 <motion.button whileTap={{ scale: .88 }} onClick={() => handleNext?.()}
-                  className="p-2.5 text-gray-300 hover:text-white transition-colors" title={t('player.next')}>
+                  className="p-2.5 text-gray-300 hover:text-white transition-colors" title={'Suivant'}>
                   <SkipForward className="w-8 h-8 fill-current" />
                 </motion.button>
                 <button onClick={cycleRepeat}
                   className={`relative p-2.5 rounded-full transition-all ${repeat !== 'off' ? 'text-cyan-400 bg-cyan-500/15' : 'text-gray-600 hover:text-gray-400 hover:bg-white/5'}`}
-                  title={t('player.repeat')}>
+                  title={'Répétition'}>
                   <Repeat className="w-5 h-5" />
                   {repeat === 'one' && (
                     <span className="absolute -top-0.5 -right-0.5 text-[8px] bg-cyan-500 text-black font-black rounded-full w-3.5 h-3.5 flex items-center justify-center">1</span>
@@ -1128,7 +1125,7 @@ const LocalPlayerPage = () => {
 
               {/* ── Volume ── */}
               <div className="flex-shrink-0 flex items-center gap-3">
-                <button onClick={() => setIsMuted(v => !v)} className="text-gray-500 hover:text-gray-300 transition-colors flex-shrink-0" title={t('player.mute')}>
+                <button onClick={() => setIsMuted(v => !v)} className="text-gray-500 hover:text-gray-300 transition-colors flex-shrink-0" title={'Muet'}>
                   <VolumeIcon className="w-4 h-4" />
                 </button>
                 <div className="flex-1 relative group/vol">
@@ -1152,10 +1149,10 @@ const LocalPlayerPage = () => {
               {songs.length > 1 && (
                 <div className="flex-shrink-0 mt-auto">
                   <div className="flex items-center justify-between mb-2">
-                    <span className="text-gray-600 text-xs font-semibold uppercase tracking-widest">{t('player.queue')}</span>
+                    <span className="text-gray-600 text-xs font-semibold uppercase tracking-widest">{'File d\'attente'}</span>
                     <button onClick={() => { setMobileView('library'); setActiveTab('library'); }}
                       className="text-[10px] text-gray-600 hover:text-cyan-400 transition-colors hidden md:block">
-                      {t('common.seeMore')} →
+                      {'Voir plus'} →
                     </button>
                   </div>
                   <div className="flex flex-col gap-1">
@@ -1179,7 +1176,7 @@ const LocalPlayerPage = () => {
             <div className="flex-1 flex items-center justify-center text-gray-700">
               <div className="text-center">
                 <HardDrive className="w-12 h-12 mx-auto mb-3" />
-                <p className="text-sm">{t('localPlayer.startPlaying')}</p>
+                <p className="text-sm">{'Appuie sur ▶ pour démarrer'}</p>
               </div>
             </div>
           )}
@@ -1196,14 +1193,14 @@ const LocalPlayerPage = () => {
                 className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-semibold transition-all ${
                   activeTab === 'library' ? 'bg-gradient-to-r from-cyan-500/20 to-purple-600/20 text-white border border-cyan-500/30' : 'text-gray-500 hover:text-gray-300'
                 }`}>
-                <Music2 className="w-3.5 h-3.5" />{t('localPlayer.files')}
+                <Music2 className="w-3.5 h-3.5" />{'Bibliothèque'}
                 <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-bold ${activeTab === 'library' ? 'bg-cyan-500/25 text-cyan-300' : 'bg-white/8 text-gray-600'}`}>{songs.length}</span>
               </button>
               <button onClick={() => setActiveTab('playlists')}
                 className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-semibold transition-all ${
                   activeTab === 'playlists' ? 'bg-gradient-to-r from-fuchsia-500/20 to-purple-600/20 text-white border border-fuchsia-500/30' : 'text-gray-500 hover:text-gray-300'
                 }`}>
-                <Folder className="w-3.5 h-3.5" />{t('localPlayer.playlists')}
+                <Folder className="w-3.5 h-3.5" />{'Playlists sauvegardées'}
                 {savedPlaylists.length > 0 && (
                   <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-bold ${activeTab === 'playlists' ? 'bg-fuchsia-500/25 text-fuchsia-300' : 'bg-white/8 text-gray-600'}`}>{savedPlaylists.length}</span>
                 )}
@@ -1220,7 +1217,7 @@ const LocalPlayerPage = () => {
                   className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold transition-all ${
                     selectionMode ? 'bg-violet-500/20 text-violet-300 border border-violet-500/30' : 'bg-white/[0.05] text-gray-500 hover:text-gray-300 border border-white/[0.07]'
                   }`}>
-                  <CheckSquare className="w-3.5 h-3.5" />{t('localPlayer.selection')}
+                  <CheckSquare className="w-3.5 h-3.5" />{'Sélection'}
                 </button>
                 {/* Add files */}
                 <button onClick={FS_ACCESS_SUPPORTED ? openPickerFSA : () => inputRef.current?.click()} disabled={loading}
@@ -1230,7 +1227,7 @@ const LocalPlayerPage = () => {
                 {/* Clear */}
                 <button onClick={clearAll}
                   className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold bg-white/[0.05] text-gray-500 hover:text-red-400 hover:bg-red-500/10 border border-white/[0.07] transition-all">
-                  <Trash2 className="w-3.5 h-3.5" />{t('localPlayer.clear')}
+                  <Trash2 className="w-3.5 h-3.5" />{'Vider'}
                 </button>
               </div>
             )}
@@ -1238,7 +1235,7 @@ const LocalPlayerPage = () => {
               <button onClick={() => { setSelectionMode(true); setActiveTab('library'); }}
                 className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold text-white transition-all hover:opacity-90"
                 style={{ background: 'linear-gradient(135deg,#0e7490,#7c3aed)' }}>
-                <Plus className="w-3.5 h-3.5" />{t('localPlayer.newPlaylist')}
+                <Plus className="w-3.5 h-3.5" />{'Nouvelle playlist'}
               </button>
             )}
           </div>
@@ -1248,15 +1245,15 @@ const LocalPlayerPage = () => {
             {selectionMode && activeTab === 'library' && (
               <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }}
                 className="flex-shrink-0 flex items-center gap-3 px-4 py-2 bg-violet-500/10 border-b border-violet-500/20 overflow-hidden">
-                <span className="text-violet-300 text-sm font-bold">{selectedIds.size} {selectedIds.size > 1 ? t('localPlayer.selected_plural') : t('localPlayer.selected')}</span>
-                <button onClick={selectAll} className="text-xs text-violet-400/70 hover:text-violet-400">{t('localPlayer.selectAll')}</button>
-                <button onClick={deselectAll} className="text-xs text-gray-600 hover:text-gray-400">{t('localPlayer.selectNone')}</button>
+                <span className="text-violet-300 text-sm font-bold">{selectedIds.size} {selectedIds.size > 1 ? 'sélectionnés' : 'sélectionné'}</span>
+                <button onClick={selectAll} className="text-xs text-violet-400/70 hover:text-violet-400">{'Tout'}</button>
+                <button onClick={deselectAll} className="text-xs text-gray-600 hover:text-gray-400">{'Aucun'}</button>
                 <div className="flex-1" />
                 {selectedIds.size > 0 && (
                   <button onClick={() => setShowSaveModal(true)}
                     className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold text-white"
                     style={{ background: 'linear-gradient(135deg,#0e7490,#7c3aed)' }}>
-                    <Save className="w-3 h-3" />{t('localPlayer.createPlaylist')} ({selectedIds.size})
+                    <Save className="w-3 h-3" />{'Créer playlist'} ({selectedIds.size})
                   </button>
                 )}
                 <button onClick={() => { setSelectionMode(false); setSelectedIds(new Set()); }}
@@ -1276,7 +1273,7 @@ const LocalPlayerPage = () => {
                   type="text"
                   value={searchQuery}
                   onChange={e => setSearchQuery(e.target.value)}
-                  placeholder={t('localPlayer.searchFiles')}
+                  placeholder={'Filtrer les fichiers…'}
                   className="w-full pl-9 pr-3 py-2 bg-white/[0.04] border border-white/[0.07] rounded-xl text-sm text-white placeholder-gray-600 focus:outline-none focus:border-cyan-500/30 transition-all"
                 />
                 {searchQuery && (
@@ -1289,9 +1286,9 @@ const LocalPlayerPage = () => {
               <div className="relative">
                 <select value={sortBy} onChange={e => setSortBy(e.target.value)}
                   className="appearance-none pl-3 pr-8 py-2 bg-white/[0.04] border border-white/[0.07] rounded-xl text-xs text-gray-400 focus:outline-none focus:border-cyan-500/30 cursor-pointer">
-                  <option value="default">{t('localPlayer.sortBy')}</option>
-                  <option value="name">{t('localPlayer.sortName')}</option>
-                  <option value="artist">{t('localPlayer.sortArtist')}</option>
+                  <option value="default">{'Trier par'}</option>
+                  <option value="name">{'Nom'}</option>
+                  <option value="artist">{'Artiste'}</option>
                 </select>
                 <SlidersHorizontal className="absolute right-2.5 top-1/2 -translate-y-1/2 w-3 h-3 text-gray-600 pointer-events-none" />
               </div>
@@ -1305,8 +1302,8 @@ const LocalPlayerPage = () => {
               <div className="hidden md:grid grid-cols-[24px_36px_1fr_128px_48px_36px] gap-3 px-3 py-2 mb-1 text-[10px] text-gray-700 uppercase tracking-widest font-semibold sticky top-0 bg-[#050510]/90 z-10 rounded-lg">
                 <div>#</div>
                 <div></div>
-                <div>{t('localPlayer.sortName')}</div>
-                <div className="hidden lg:block">{t('localPlayer.sortArtist')}</div>
+                <div>{'Nom'}</div>
+                <div className="hidden lg:block">{'Artiste'}</div>
                 <div className="text-right">⏱</div>
                 <div></div>
               </div>
@@ -1314,7 +1311,7 @@ const LocalPlayerPage = () => {
               {filteredSongs.length === 0 && (
                 <div className="flex flex-col items-center justify-center py-16 text-center">
                   <Search className="w-10 h-10 text-gray-700 mb-3" />
-                  <p className="text-gray-500 text-sm">{t('localPlayer.noFilesMatch')}</p>
+                  <p className="text-gray-500 text-sm">{'Aucun fichier trouvé'}</p>
                 </div>
               )}
 
@@ -1345,7 +1342,7 @@ const LocalPlayerPage = () => {
                 <div className="bg-amber-500/10 border border-amber-500/20 rounded-xl px-4 py-3 mb-4">
                   <div className="flex items-start gap-3">
                     <AlertTriangle className="w-4 h-4 text-amber-400 flex-shrink-0 mt-0.5" />
-                    <p className="text-amber-200/80 text-xs leading-relaxed">{t('localPlayer.mobileWarning')}</p>
+                    <p className="text-amber-200/80 text-xs leading-relaxed">{'Sur mobile, les fichiers audio ne peuvent pas être sauvegardés entre les sessions. Appuie sur Écouter puis re-sélectionne tes fichiers — la playlist est conservée.'}</p>
                   </div>
                 </div>
               )}
@@ -1353,7 +1350,7 @@ const LocalPlayerPage = () => {
                 <div className="bg-cyan-500/10 border border-cyan-500/20 rounded-xl px-4 py-3 mb-4">
                   <div className="flex items-start gap-3">
                     <RefreshCcw className="w-4 h-4 text-cyan-400 flex-shrink-0 mt-0.5" />
-                    <p className="text-cyan-200/80 text-xs leading-relaxed">{t('localPlayer.pcAutoRestore')}</p>
+                    <p className="text-cyan-200/80 text-xs leading-relaxed">{'Clique sur Écouter — les fichiers seront restaurés automatiquement.'}</p>
                   </div>
                 </div>
               )}
@@ -1365,13 +1362,13 @@ const LocalPlayerPage = () => {
                     <Folder className="w-10 h-10 text-gray-600" />
                   </div>
                   <div>
-                    <p className="text-gray-400 font-semibold">{t('localPlayer.noPlaylists')}</p>
-                    <p className="text-gray-600 text-sm mt-1">{t('localPlayer.createFirst')}</p>
+                    <p className="text-gray-400 font-semibold">{'Aucune playlist sauvegardée'}</p>
+                    <p className="text-gray-600 text-sm mt-1">{'Crée ta première playlist pour organiser tes fichiers'}</p>
                   </div>
                   <button onClick={() => { setSelectionMode(true); setActiveTab('library'); }}
                     className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-bold text-white"
                     style={{ background: 'linear-gradient(135deg,#0e7490,#7c3aed)' }}>
-                    <Plus className="w-4 h-4" />{t('localPlayer.newPlaylist')}
+                    <Plus className="w-4 h-4" />{'Nouvelle playlist'}
                   </button>
                 </motion.div>
               ) : (
@@ -1391,7 +1388,7 @@ const LocalPlayerPage = () => {
                       <div className="w-12 h-12 rounded-xl border border-dashed border-current flex items-center justify-center group-hover:bg-cyan-500/10 transition-all">
                         <Plus className="w-6 h-6" />
                       </div>
-                      <span className="text-xs font-semibold">{t('localPlayer.newPlaylist')}</span>
+                      <span className="text-xs font-semibold">{'Nouvelle playlist'}</span>
                     </motion.button>
                   </div>
                 </>

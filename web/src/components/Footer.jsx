@@ -1,8 +1,7 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Mail, Music, Heart, X, ExternalLink, Smartphone, Globe, Info } from 'lucide-react';
+import { Mail, Heart, X, ExternalLink, Smartphone, Globe, Info } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { useTranslation } from 'react-i18next';
 
 // ── Modal soutien discret ───────────────────────────────────────────────────────
 const SupportModal = ({ onClose }) => (
@@ -13,7 +12,6 @@ const SupportModal = ({ onClose }) => (
       className="w-full max-w-sm rounded-3xl overflow-hidden"
       style={{ background:'linear-gradient(145deg,#0a0a1a,#0f0f22)', border:'1px solid rgba(255,255,255,0.08)' }}>
 
-      {/* Header */}
       <div className="relative px-6 pt-6 pb-4" style={{ background:'linear-gradient(135deg,rgba(6,182,212,0.1),rgba(124,58,237,0.08))' }}>
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
@@ -35,8 +33,6 @@ const SupportModal = ({ onClose }) => (
         <p className="text-gray-400 text-sm leading-relaxed">
           NovaSound est un projet indépendant, développé avec passion. Si la plateforme te plaît, tu peux soutenir son développement.
         </p>
-
-        {/* PayPal */}
         <a href="https://paypal.me/tetangtanekoumorel" target="_blank" rel="noopener noreferrer"
           className="flex items-center gap-4 p-4 rounded-2xl transition-all hover:scale-[1.02] group"
           style={{ background:'rgba(0,112,243,0.12)', border:'1px solid rgba(0,112,243,0.25)' }}>
@@ -50,8 +46,6 @@ const SupportModal = ({ onClose }) => (
           </div>
           <ExternalLink className="w-4 h-4 text-blue-400/50 group-hover:text-blue-400 transition-colors" />
         </a>
-
-        {/* Orange Money */}
         <div className="flex items-center gap-4 p-4 rounded-2xl"
           style={{ background:'rgba(255,100,0,0.1)', border:'1px solid rgba(255,100,0,0.2)' }}>
           <div className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0"
@@ -64,7 +58,6 @@ const SupportModal = ({ onClose }) => (
           </div>
           <span className="text-[10px] bg-orange-500/15 text-orange-400 border border-orange-500/25 px-2 py-0.5 rounded-full font-bold">CM</span>
         </div>
-
         <p className="text-center text-gray-700 text-[11px] pt-1">Toute contribution, même modeste, est précieuse ❤️</p>
       </div>
     </motion.div>
@@ -83,11 +76,10 @@ const AboutModal = ({ onClose }) => (
       <div className="relative px-6 pt-6 pb-4" style={{ background:'linear-gradient(135deg,rgba(6,182,212,0.1),rgba(124,58,237,0.08))' }}>
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <img src="/icon-512.png"
-              alt="Logo" className="w-10 h-10 rounded-2xl border border-cyan-400/30 object-cover" />
+            <img src="/icon-512.png" alt="Logo" className="w-10 h-10 rounded-2xl border border-cyan-400/30 object-cover" />
             <div>
               <h3 className="text-white font-black text-base leading-tight">NovaSound TITAN LUX</h3>
-              <p className="text-cyan-400/70 text-xs">v400.0.0 — 2026</p>
+              <p className="text-cyan-400/70 text-xs">v410.0.0 — 2026</p>
             </div>
           </div>
           <button onClick={onClose} className="w-8 h-8 rounded-full bg-white/[0.07] flex items-center justify-center text-gray-500 hover:text-white transition-colors">
@@ -100,13 +92,12 @@ const AboutModal = ({ onClose }) => (
         <p className="text-gray-300 text-sm leading-relaxed">
           <strong className="text-white">NovaSound TITAN LUX</strong> est une plateforme musicale nouvelle génération conçue pour streamer, partager et découvrir de la musique — même hors-ligne.
         </p>
-
         <div className="grid grid-cols-2 gap-3">
           {[
-            { label:'Streaming',    val:'Haute qualité' },
-            { label:'Hors-ligne',   val:'Lecteur local' },
-            { label:'Live rooms',   val:'Temps réel' },
-            { label:'Communauté',   val:'Chat & partage' },
+            { label:'Streaming',  val:'Haute qualité' },
+            { label:'Hors-ligne', val:'Lecteur local' },
+            { label:'Live rooms', val:'Temps réel' },
+            { label:'Communauté', val:'Chat & partage' },
           ].map(({ label, val }) => (
             <div key={label} className="bg-white/[0.04] rounded-xl px-3 py-2.5 border border-white/[0.06]">
               <p className="text-gray-600 text-[10px] font-semibold uppercase tracking-wider">{label}</p>
@@ -114,23 +105,20 @@ const AboutModal = ({ onClose }) => (
             </div>
           ))}
         </div>
-
         <div className="bg-white/[0.04] rounded-2xl p-4 border border-white/[0.06] space-y-2">
           <p className="text-gray-500 text-xs font-semibold uppercase tracking-wider">Créateur</p>
           <div className="flex items-center gap-3">
-            <img src="/logo_eloadxfamily.png"
-              alt="Logo ELOADXFAMILY" className="w-9 h-9 rounded-full border border-cyan-400/30 object-cover" />
+            <img src="/logo_eloadxfamily.png" alt="Logo ELOADXFAMILY" className="w-9 h-9 rounded-full border border-cyan-400/30 object-cover" />
             <div>
               <p className="text-white text-sm font-bold">ELOADXFAMILY</p>
               <p className="text-gray-600 text-xs">Développeur & fondateur</p>
             </div>
           </div>
         </div>
-
         <div className="flex items-center justify-between text-xs">
           <span className="text-gray-700">© 2026 NovaSound TITAN LUX</span>
           <div className="flex gap-3">
-            <Link to="/privacy" onClick={onClose} className="text-gray-600 hover:text-cyan-400 transition-colors">{t('footer.privacy')}</Link>
+            <Link to="/privacy" onClick={onClose} className="text-gray-600 hover:text-cyan-400 transition-colors">Confidentialité</Link>
             <Link to="/terms"   onClick={onClose} className="text-gray-600 hover:text-cyan-400 transition-colors">CGU</Link>
           </div>
         </div>
@@ -141,53 +129,49 @@ const AboutModal = ({ onClose }) => (
 
 // ══════════════════════════════════════════════════════════════════════════════
 const Footer = () => {
-  const { t } = useTranslation();
   const [showSupport, setShowSupport] = useState(false);
   const [showAbout,   setShowAbout]   = useState(false);
 
   return (
     <>
       <footer className="bg-gray-950 border-t border-white/[0.06] mt-auto relative overflow-hidden">
-        {/* Glow bg */}
         <div className="absolute top-0 left-1/4 w-96 h-48 bg-cyan-500/[0.04] rounded-full blur-3xl pointer-events-none" />
         <div className="absolute bottom-0 right-1/4 w-96 h-48 bg-fuchsia-500/[0.04] rounded-full blur-3xl pointer-events-none" />
 
         <div className="max-w-6xl mx-auto px-5 py-10 relative z-10">
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-8 text-center md:text-left">
 
-            {/* ── Brand ─────────────────────────────────────────────────────── */}
+            {/* Brand */}
             <div className="flex flex-col items-center md:items-start space-y-3 sm:col-span-2 md:col-span-1">
               <div className="flex items-center gap-2.5">
-                <img src="/icon-512.png"
-                  alt="Logo NovaSound" className="w-9 h-9 rounded-xl border border-cyan-400/30 object-cover" />
+                <img src="/icon-512.png" alt="Logo NovaSound" className="w-9 h-9 rounded-xl border border-cyan-400/30 object-cover" />
                 <span className="text-base font-black bg-gradient-to-r from-cyan-400 to-fuchsia-500 bg-clip-text text-transparent">
                   NovaSound TITAN LUX
                 </span>
               </div>
               <p className="text-gray-500 text-xs max-w-xs leading-relaxed text-center md:text-left">
-                {t('footer.description')}
+                La plateforme musicale nouvelle génération. Streamez, uploadez et connectez-vous avec des artistes du monde entier.
               </p>
-              {/* Soutenir — bouton discret */}
               <button onClick={() => setShowSupport(true)}
                 className="flex items-center gap-1.5 text-xs text-gray-600 hover:text-pink-400 transition-colors group">
                 <Heart className="w-3.5 h-3.5 group-hover:fill-pink-400 transition-all" />
-                <span>{t('footer.support')}</span>
+                <span>Soutenir le projet</span>
               </button>
             </div>
 
-            {/* ── Découvrir ──────────────────────────────────────────────────── */}
+            {/* Découvrir */}
             <div className="flex flex-col items-center md:items-start">
               <h3 className="text-white font-bold text-sm mb-4 relative">
-                {t('footer.discover')}
+                Découvrir
                 <span className="absolute -bottom-1 left-0 right-0 md:right-auto h-px bg-gradient-to-r from-cyan-500/50 to-transparent" />
               </h3>
               <ul className="space-y-2.5">
                 {[
-                  { to:'/explorer', label:t('footer.explorer') },
-                  { to:'/trending', label:t('footer.trending') },
-                  { to:'/news',     label:t('footer.news') },
-                  { to:'/upload',   label:t('footer.uploader') },
-                  { to:'/local-player', label:t('footer.localPlayer') },
+                  { to:'/explorer',     label:'Explorer' },
+                  { to:'/trending',     label:'Tendances' },
+                  { to:'/news',         label:'Actualités' },
+                  { to:'/upload',       label:'Uploader un son' },
+                  { to:'/local-player', label:'Lecteur hors-ligne' },
                 ].map(({ to, label }) => (
                   <li key={to}>
                     <Link to={to} className="text-gray-500 hover:text-cyan-400 transition-colors text-xs">{label}</Link>
@@ -196,10 +180,10 @@ const Footer = () => {
               </ul>
             </div>
 
-            {/* ── À propos & Légal ───────────────────────────────────────────── */}
+            {/* À propos & Légal */}
             <div className="flex flex-col items-center md:items-start">
               <h3 className="text-white font-bold text-sm mb-4 relative">
-                {t('footer.about')}
+                À propos
                 <span className="absolute -bottom-1 left-0 right-0 md:right-auto h-px bg-gradient-to-r from-fuchsia-500/50 to-transparent" />
               </h3>
               <ul className="space-y-2.5">
@@ -209,9 +193,9 @@ const Footer = () => {
                   </button>
                 </li>
                 {[
-                  { to:'/privacy',   label:"{t('footer.privacy')}" },
-                  { to:'/terms',     label:"{t('footer.terms')}" },
-                  { to:'/copyright', label:"{t('footer.copyright')}" },
+                  { to:'/privacy',   label:'Confidentialité' },
+                  { to:'/terms',     label:"Conditions d'utilisation" },
+                  { to:'/copyright', label:"Droits d'auteur" },
                 ].map(({ to, label }) => (
                   <li key={to}>
                     <Link to={to} className="text-gray-500 hover:text-fuchsia-400 transition-colors text-xs">{label}</Link>
@@ -220,10 +204,10 @@ const Footer = () => {
               </ul>
             </div>
 
-            {/* ── Contact ────────────────────────────────────────────────────── */}
+            {/* Contact */}
             <div className="flex flex-col items-center md:items-start">
               <h3 className="text-white font-bold text-sm mb-4 relative">
-                {t('footer.contact')}
+                Contact
                 <span className="absolute -bottom-1 left-0 right-0 md:right-auto h-px bg-gradient-to-r from-purple-500/50 to-transparent" />
               </h3>
               <div className="space-y-3 w-full">
@@ -242,25 +226,24 @@ const Footer = () => {
             </div>
           </div>
 
-          {/* ── Bottom bar ──────────────────────────────────────────────────── */}
+          {/* Bottom bar */}
           <div className="border-t border-white/[0.05] mt-10 pt-6 flex flex-col sm:flex-row items-center justify-between gap-3">
             <p className="text-gray-700 text-xs font-mono">
-              {t('footer.copyright_text')} · v410.0.0
+              © 2026 NovaSound TITAN LUX — ELOADXFAMILY · v410.0.0
             </p>
             <div className="flex items-center gap-4">
               <button onClick={() => setShowAbout(true)} className="text-gray-700 hover:text-gray-500 text-xs transition-colors flex items-center gap-1">
-                <Globe className="w-3 h-3" />{t('footer.about')}
+                <Globe className="w-3 h-3" />À propos
               </button>
               <span className="text-gray-800">·</span>
               <button onClick={() => setShowSupport(true)} className="text-gray-700 hover:text-pink-400 text-xs transition-colors flex items-center gap-1">
-                <Heart className="w-3 h-3" />{t('footer.support')}
+                <Heart className="w-3 h-3" />Soutenir le projet
               </button>
             </div>
           </div>
         </div>
       </footer>
 
-      {/* Modals */}
       <AnimatePresence>
         {showSupport && <SupportModal onClose={() => setShowSupport(false)} />}
         {showAbout   && <AboutModal   onClose={() => setShowAbout(false)} />}

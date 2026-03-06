@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 class ErrorBoundary extends React.Component {
   constructor(props) {
     super(props);
-    this.state = { hasError: false, error: null, errorInfo: null };
+    this.state = { hasError: false, error: null, errorInfo: null, resetKey: 0 };
   }
 
   static getDerivedStateFromError(error) {
@@ -18,14 +18,11 @@ class ErrorBoundary extends React.Component {
   }
 
   handleReset = () => {
-    this.setState({ hasError: false, error: null, errorInfo: null });
-    // Si erreur persistante, recharger la page
-    if ((window.__ebResets || 0) >= 1) {
-      window.location.reload();
-    } else {
-      window.__ebResets = (window.__ebResets || 0) + 1;
-      setTimeout(() => { window.__ebResets = 0; }, 5000);
-    }
+    // Recharge la page entière — la méthode la plus fiable.
+    // resetKey seul ne suffit pas : si le composant enfant re-crash immédiatement,
+    // l'utilisateur voit la page d'erreur réapparaître sans changement visible
+    // et pense que le bouton "Réessayer" est cassé.
+    window.location.reload();
   };
 
   handleGoHome = () => {
@@ -116,7 +113,12 @@ class ErrorBoundary extends React.Component {
       );
     }
 
-    return this.props.children;
+    // Key forces complete child remount when resetKey changes — prevents re-throw on retry
+    return (
+      <React.Fragment key={this.state.resetKey}>
+        {this.props.children}
+      </React.Fragment>
+    );
   }
 }
 

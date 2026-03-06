@@ -8,7 +8,6 @@ const AuthDebugger = () => {
     currentUser, 
     initialLoading, 
     clearCorruptedSession, 
-    diagnoseConnection,
     isAuthenticated 
   } = useAuth();
 
@@ -20,38 +19,15 @@ const AuthDebugger = () => {
   };
 
   const handleDiagnose = async () => {
-    const diagnosis = await diagnoseConnection();
-    
     const diagnosisText = `
-🔍 DIAGNOSTIC COMPLET SUPABASE
+🔍 DIAGNOSTIC AUTH
 
 📊 ÉTAT ACTUEL:
 - Connecté: ${isAuthenticated ? '✅ OUI' : '❌ NON'}
 - Loading: ${initialLoading ? '⏳ OUI' : '✅ NON'}
 - Email: ${currentUser?.email || 'Non connecté'}
 - User ID: ${currentUser?.id || 'N/A'}
-
-🌐 RÉSEAU:
-- URL: ${diagnosis.supabaseUrl}
-- Connecté: ${diagnosis.networkConnected ? '✅' : '❌'}
-- Latence: ${diagnosis.latency}ms
-- Erreur: ${diagnosis.networkError || 'Aucune'}
-
-🔐 AUTHENTIFICATION:
-- Session active: ${diagnosis.hasSession ? '✅' : '❌'}
-- Erreur session: ${diagnosis.sessionError || 'Aucune'}
-
-💾 BASE DE DONNÉES:
-- Connexion: ${diagnosis.databaseConnection ? '✅' : '❌'}
-- Erreur DB: ${diagnosis.databaseError || 'Aucune'}
-
-🧹 SOLUTIONS:
-${initialLoading ? '⚠️ Loading infini détecté → Essayez "Nettoyer Session"' : ''}
-${!diagnosis.networkConnected ? '❌ Problème réseau → Vérifiez votre connexion' : ''}
-${!diagnosis.databaseConnection ? '❌ Base inaccessible → Vérifiez Supabase' : ''}
-${!isAuthenticated && !initialLoading ? '✅ État normal → Essayez de vous reconnecter' : ''}
     `.trim();
-
     alert(diagnosisText);
   };
 
@@ -96,7 +72,7 @@ ${!isAuthenticated && !initialLoading ? '✅ État normal → Essayez de vous re
         <div className="flex justify-between">
           <span className="text-gray-400">User:</span>
           <span className="text-cyan-300 truncate max-w-[120px]">
-            {currentUser?.email?.spli'@'[0] || 'Aucun'}
+            {currentUser?.email?.split('@')[0] || 'Aucun'}
           </span>
         </div>
       </div>

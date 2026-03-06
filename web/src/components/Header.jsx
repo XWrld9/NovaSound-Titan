@@ -13,8 +13,7 @@ import usePWAInstall from '@/hooks/usePWAInstall';
 import NotificationBell from '@/components/NotificationBell';
 import AndroidInstallGuide from '@/components/AndroidInstallGuide';
 import { useNotifications } from '@/contexts/NotificationContext';
-import { useTranslation } from 'react-i18next';
-import LanguageSwitcher from '@/components/LanguageSwitcher';
+
 
 const isIOS = () =>
   typeof navigator !== 'undefined' &&
@@ -27,7 +26,6 @@ const isStandalone = () =>
     window.navigator.standalone === true);
 
 const Header = () => {
-  const { t } = useTranslation();
   const { currentUser, isAuthenticated, logout } = useAuth();
   const [isAdmin, setIsAdmin]                   = useState(false);
   const navigate                                 = useNavigate();
@@ -57,19 +55,19 @@ const Header = () => {
 
   // Primary navigation links
   const PRIMARY_LINKS = [
-    { to: '/',           label: t('nav.home'),     Icon: Music,      color: 'hover:text-cyan-400' },
-    { to: '/explorer',   label: t('nav.explorer'), Icon: Globe,      color: 'hover:text-cyan-400' },
-    { to: '/trending',   label: t('nav.trending'), Icon: TrendingUp, color: 'hover:text-cyan-400' },
-    { to: '/live',       label: t('nav.live'),      Icon: Radio,      color: 'hover:text-red-400', badge: true },
+    { to: '/',           label: 'Accueil',     Icon: Music,      color: 'hover:text-cyan-400' },
+    { to: '/explorer',   label: 'Explorer', Icon: Globe,      color: 'hover:text-cyan-400' },
+    { to: '/trending',   label: 'Tendances', Icon: TrendingUp, color: 'hover:text-cyan-400' },
+    { to: '/live',       label: 'Live',      Icon: Radio,      color: 'hover:text-red-400', badge: true },
   ];
 
   // Secondary navigation links (in "More" dropdown)
   const SECONDARY_LINKS = [
-    { to: '/artists',      label: t('nav.artists'),  Icon: Users,     color: 'hover:text-fuchsia-400' },
-    { to: '/news',         label: t('nav.news'),     Icon: Newspaper, color: 'hover:text-cyan-400' },
-    { to: '/chat',         label: t('nav.chat'),     Icon: Globe,     color: 'hover:text-cyan-400' },
-    { to: '/leaderboard',  label: t('nav.leaderboard'), Icon: Trophy, color: 'hover:text-amber-400' },
-    { to: '/local-player', label: t('nav.local'),   Icon: HardDrive, color: 'hover:text-cyan-400' },
+    { to: '/artists',      label: 'Artistes',  Icon: Users,     color: 'hover:text-fuchsia-400' },
+    { to: '/news',         label: 'Actualités',     Icon: Newspaper, color: 'hover:text-cyan-400' },
+    { to: '/chat',         label: 'Chat',     Icon: Globe,     color: 'hover:text-cyan-400' },
+    { to: '/leaderboard',  label: 'Top', Icon: Trophy, color: 'hover:text-amber-400' },
+    { to: '/local-player', label: 'Local',   Icon: HardDrive, color: 'hover:text-cyan-400' },
   ];
 
   useEffect(() => {
@@ -197,7 +195,7 @@ const Header = () => {
                   onClick={() => setShowMoreMenu(v => !v)}
                   className="flex items-center gap-1 text-gray-300 hover:text-cyan-400 transition-colors font-medium px-3 py-2 rounded-lg hover:bg-white/5 text-sm"
                 >
-                  {t('nav.more')} <ChevronDown className={`w-3.5 h-3.5 transition-transform duration-200 ${showMoreMenu ? 'rotate-180' : ''}`} />
+                  {'Plus'} <ChevronDown className={`w-3.5 h-3.5 transition-transform duration-200 ${showMoreMenu ? 'rotate-180' : ''}`} />
                 </button>
                 <AnimatePresence>
                   {showMoreMenu && (
@@ -217,10 +215,6 @@ const Header = () => {
                           <Icon className="w-4 h-4" />{label}
                         </Link>
                       ))}
-                      {/* Language switcher in dropdown */}
-                      <div className="border-t border-white/[0.07] px-4 py-2">
-                        <LanguageSwitcher mode="inline" />
-                      </div>
                     </motion.div>
                   )}
                 </AnimatePresence>
@@ -236,11 +230,11 @@ const Header = () => {
               <button
                 onClick={() => setSearchOpen(true)}
                 className="flex items-center gap-2 px-3 py-2 rounded-xl bg-gray-900/80 border border-cyan-500/20 text-gray-400 hover:text-cyan-400 hover:border-cyan-500/50 transition-all text-sm group"
-                aria-label={t('nav.search')}
+                aria-label={'Rechercher'}
               >
                 <Search className="w-4 h-4" />
                 <span className="hidden md:block text-xs text-gray-500 group-hover:text-gray-400 transition-colors pr-1">
-                  {t('nav.search')}
+                  {'Rechercher'}
                 </span>
               </button>
 
@@ -251,7 +245,7 @@ const Header = () => {
                     onClick={handleInstallClick}
                     whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}
                     className="flex items-center gap-1.5 px-3 py-2 rounded-full border border-purple-500/40 text-purple-300 hover:bg-purple-500/10 hover:border-purple-400 hover:text-purple-200 transition-all text-sm font-medium"
-                    title={t('install.title')}
+                    title={'Installer NovaSound'}
                   >
                     <Download className="w-4 h-4" />
                   </motion.button>
@@ -263,16 +257,16 @@ const Header = () => {
                   <NotificationBell />
                   <Link to="/upload" className="hidden md:block">
                     <Button className="bg-gradient-to-r from-cyan-500 to-fuchsia-500 hover:from-cyan-600 hover:to-fuchsia-600 text-white rounded-full px-4 font-medium shadow-lg shadow-cyan-500/20 text-sm">
-                      <Upload className="w-4 h-4 mr-1.5" />{t('nav.upload')}
+                      <Upload className="w-4 h-4 mr-1.5" />{'Uploader un son'}
                     </Button>
                   </Link>
                   {/* Avatar + dropdown */}
                   <div className="relative group hidden md:block">
                     <Link to="/profile" className="flex items-center gap-2 pl-3 border-l border-gray-800">
                       {avatarSrc ? (
-                        <img key={avatarSrc} src={avatarSrc} alt={t('nav.profile')} className="w-8 h-8 rounded-full border border-cyan-500/50 object-cover" />
+                        <img key={avatarSrc} src={avatarSrc} alt={'Mon profil'} className="w-8 h-8 rounded-full border border-cyan-500/50 object-cover" />
                       ) : (
-                        <img src="/profil par defaut.png" alt={t('nav.profile')} className="w-8 h-8 rounded-full border border-cyan-500/50" />
+                        <img src="/profil par defaut.png" alt={'Mon profil'} className="w-8 h-8 rounded-full border border-cyan-500/50" />
                       )}
                     </Link>
                     <div className="absolute right-0 top-full mt-2 w-52 bg-gray-900 border border-cyan-500/30 rounded-xl shadow-xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all translate-y-2 group-hover:translate-y-0 z-50">
@@ -281,16 +275,13 @@ const Header = () => {
                           <p className="text-white text-sm font-semibold truncate">{currentUser?.username || '—'}</p>
                           <p className="text-gray-600 text-xs truncate">{currentUser?.email}</p>
                         </div>
-                        <Link to="/profile" className="block px-4 py-2 text-sm text-gray-300 hover:bg-cyan-500/10 hover:text-cyan-400 rounded-lg">{t('nav.profile')}</Link>
-                        <Link to="/playlists" className="flex items-center gap-2 px-4 py-2 text-sm text-gray-300 hover:bg-cyan-500/10 hover:text-cyan-400 rounded-lg"><ListMusic className="w-4 h-4" />{t('nav.playlists')}</Link>
-                        <Link to="/stats" className="flex items-center gap-2 px-4 py-2 text-sm text-gray-300 hover:bg-cyan-500/10 hover:text-cyan-400 rounded-lg"><BarChart2 className="w-4 h-4" />{t('nav.stats')}</Link>
+                        <Link to="/profile" className="block px-4 py-2 text-sm text-gray-300 hover:bg-cyan-500/10 hover:text-cyan-400 rounded-lg">{'Mon profil'}</Link>
+                        <Link to="/playlists" className="flex items-center gap-2 px-4 py-2 text-sm text-gray-300 hover:bg-cyan-500/10 hover:text-cyan-400 rounded-lg"><ListMusic className="w-4 h-4" />{'Mes playlists'}</Link>
+                        <Link to="/stats" className="flex items-center gap-2 px-4 py-2 text-sm text-gray-300 hover:bg-cyan-500/10 hover:text-cyan-400 rounded-lg"><BarChart2 className="w-4 h-4" />{'Mes stats'}</Link>
                         {isAdmin && (
-                          <Link to="/admin" className="flex items-center gap-2 px-4 py-2 text-sm text-red-400 hover:bg-red-500/10 rounded-lg"><Shield className="w-4 h-4" />{t('nav.admin')}</Link>
+                          <Link to="/admin" className="flex items-center gap-2 px-4 py-2 text-sm text-red-400 hover:bg-red-500/10 rounded-lg"><Shield className="w-4 h-4" />{'Panneau Admin'}</Link>
                         )}
-                        <div className="border-t border-white/[0.07] my-1 px-2">
-                          <LanguageSwitcher mode="compact" />
-                        </div>
-                        <button onClick={handleLogout} className="w-full text-left flex items-center gap-2 px-4 py-2 text-sm text-red-400 hover:bg-red-500/10 rounded-lg"><LogOut className="w-4 h-4" />{t('nav.logout')}</button>
+                        <button onClick={handleLogout} className="w-full text-left flex items-center gap-2 px-4 py-2 text-sm text-red-400 hover:bg-red-500/10 rounded-lg"><LogOut className="w-4 h-4" />{'Déconnexion'}</button>
                       </div>
                     </div>
                   </div>
@@ -299,12 +290,12 @@ const Header = () => {
                 <div className="hidden md:flex items-center gap-2">
                   <Link to="/login">
                     <Button variant="outline" className="border-cyan-500/40 text-cyan-400 hover:bg-cyan-500/10 hover:border-cyan-400 rounded-full text-sm px-4">
-                      {t('nav.login')}
+                      {'Connexion'}
                     </Button>
                   </Link>
                   <Link to="/signup">
                     <Button className="bg-gradient-to-r from-cyan-500 to-fuchsia-500 hover:from-cyan-600 hover:to-fuchsia-600 text-white rounded-full text-sm px-4">
-                      {t('nav.signup')}
+                      {'Inscription'}
                     </Button>
                   </Link>
                 </div>
@@ -347,7 +338,7 @@ const Header = () => {
                     <input
                       ref={searchInputRef}
                       type="text"
-                      placeholder={t('nav.searchPlaceholder')}
+                      placeholder={'Rechercher des sons, des artistes...'}
                       value={searchQuery}
                       onChange={(e) => setSearchQuery(e.target.value)}
                       autoComplete="off"
@@ -366,7 +357,7 @@ const Header = () => {
                     onClick={() => setSearchOpen(false)}
                     className="flex-shrink-0 px-4 py-3 text-sm text-gray-400 hover:text-white transition-colors rounded-xl hover:bg-white/5"
                   >
-                    {t('nav.cancel')}
+                    {'Annuler'}
                   </button>
                 </div>
                 <AnimatePresence>
@@ -379,7 +370,7 @@ const Header = () => {
                       className="mt-3 overflow-hidden"
                     >
                       {isSearching ? (
-                        <div className="py-6 text-center text-gray-400 text-sm">{t('search.searching')}</div>
+                        <div className="py-6 text-center text-gray-400 text-sm">{'Recherche en cours…'}</div>
                       ) : searchResults.length > 0 ? (
                         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-2 max-h-[60vh] overflow-y-auto pb-2 pr-1">
                           {searchResults.map((song) => (
@@ -405,7 +396,7 @@ const Header = () => {
                         </div>
                       ) : searchQuery.trim().length > 0 ? (
                         <div className="py-6 text-center text-gray-500 text-sm">
-                          {t('search.noResults')} <span className="text-gray-300">"{searchQuery}"</span>
+                          {'Aucun résultat pour'} <span className="text-gray-300">"{searchQuery}"</span>
                         </div>
                       ) : null}
                     </motion.div>
@@ -472,7 +463,7 @@ const Header = () => {
                     <>
                       <div className="my-2 border-t border-gray-800" />
                       <Link to="/notifications" onClick={closeMenu} className="flex items-center gap-3 px-4 py-3 text-gray-300 hover:text-cyan-400 hover:bg-white/5 rounded-lg transition-colors relative">
-                        <Bell className="w-5 h-5 text-cyan-400" />{t('nav.notifications')}
+                        <Bell className="w-5 h-5 text-cyan-400" />{'Notifications'}
                         {unreadCount > 0 && (
                           <span className="ml-auto text-[10px] bg-red-500 text-white font-bold px-1.5 py-0.5 rounded-full min-w-[18px] text-center">
                             {unreadCount > 99 ? '99+' : unreadCount}
@@ -480,21 +471,21 @@ const Header = () => {
                         )}
                       </Link>
                       <Link to="/upload" onClick={closeMenu} className="flex items-center gap-3 px-4 py-3 text-gray-300 hover:text-cyan-400 hover:bg-white/5 rounded-lg transition-colors">
-                        <Upload className="w-5 h-5 text-cyan-400" />{t('nav.upload')}
+                        <Upload className="w-5 h-5 text-cyan-400" />{'Uploader un son'}
                       </Link>
                       <Link to="/playlists" onClick={closeMenu} className="flex items-center gap-3 px-4 py-3 text-gray-300 hover:text-cyan-400 hover:bg-white/5 rounded-lg transition-colors">
-                        <ListMusic className="w-5 h-5 text-cyan-400" />{t('nav.playlists')}
+                        <ListMusic className="w-5 h-5 text-cyan-400" />{'Mes playlists'}
                       </Link>
                       <Link to="/stats" onClick={closeMenu} className="flex items-center gap-3 px-4 py-3 text-gray-300 hover:text-cyan-400 hover:bg-white/5 rounded-lg transition-colors">
-                        <BarChart2 className="w-5 h-5 text-cyan-400" />{t('nav.stats')}
+                        <BarChart2 className="w-5 h-5 text-cyan-400" />{'Mes stats'}
                       </Link>
                       {isAdmin && (
                         <Link to="/admin" onClick={closeMenu} className="flex items-center gap-3 px-4 py-3 text-red-400 hover:bg-red-500/10 rounded-lg transition-colors">
-                          <Shield className="w-5 h-5" />{t('nav.admin')}
+                          <Shield className="w-5 h-5" />{'Panneau Admin'}
                         </Link>
                       )}
                       <Link to="/profile" onClick={closeMenu} className="flex items-center gap-3 px-4 py-3 text-gray-300 hover:text-fuchsia-400 hover:bg-white/5 rounded-lg transition-colors">
-                        <User className="w-5 h-5 text-fuchsia-400" />{t('nav.profile')}
+                        <User className="w-5 h-5 text-fuchsia-400" />{'Mon profil'}
                       </Link>
                     </>
                   )}
@@ -514,24 +505,21 @@ const Header = () => {
                     className="w-full flex items-center justify-center gap-2 py-3 rounded-xl border border-purple-500/40 text-purple-300 hover:bg-purple-500/10 transition-all text-sm font-medium"
                   >
                     <Download className="w-4 h-4" />
-                    {ios ? t('nav.installIOS') : t('nav.installAndroid')}
+                    {ios ? 'Comment installer sur iPhone' : 'Télécharger NovaSound'}
                   </button>
                 )}
                 {/* Language switcher mobile */}
-                <div className="border-t border-white/[0.06] pt-3">
-                  <LanguageSwitcher mode="grid" />
-                </div>
                 {isAuthenticated ? (
                   <Button onClick={handleLogout} variant="outline" className="w-full border-red-500/30 text-red-400 hover:bg-red-500/10 hover:text-red-300 justify-start">
-                    <LogOut className="w-4 h-4 mr-2" />{t('nav.logout')}
+                    <LogOut className="w-4 h-4 mr-2" />{'Déconnexion'}
                   </Button>
                 ) : (
                   <div className="grid grid-cols-2 gap-3">
                     <Link to="/login" onClick={closeMenu}>
-                      <Button className="w-full bg-cyan-600 hover:bg-cyan-700 text-white rounded-full">{t('nav.login')}</Button>
+                      <Button className="w-full bg-cyan-600 hover:bg-cyan-700 text-white rounded-full">{'Connexion'}</Button>
                     </Link>
                     <Link to="/signup" onClick={closeMenu}>
-                      <Button className="w-full bg-gradient-to-r from-cyan-500 to-fuchsia-500 text-white rounded-full">{t('nav.signup')}</Button>
+                      <Button className="w-full bg-gradient-to-r from-cyan-500 to-fuchsia-500 text-white rounded-full">{'Inscription'}</Button>
                     </Link>
                   </div>
                 )}

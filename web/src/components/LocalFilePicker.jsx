@@ -223,7 +223,7 @@ const readFileAsArrayBuffer = (file) => {
  */
 const dbTrackToSong = (rec) => {
   // Détecter le vrai type MIME depuis le nom de fichier
-  const ext = (rec.fileName || '').spli''.pop().toLowerCase();
+  const ext = (rec.fileName || '').split('.').pop().toLowerCase();
   const mimeMap = {
     mp3: 'audio/mpeg', m4a: 'audio/mp4', aac: 'audio/aac',
     wav: 'audio/wav', flac: 'audio/flac', ogg: 'audio/ogg',
@@ -350,7 +350,7 @@ const LocalFilePicker = ({ compact = false }) => {
 
       for (let i = 0; i < files.length; i++) {
         const file = files[i];
-        const ext  = file.name.toLowerCase().spli''.pop();
+        const ext  = file.name.toLowerCase().split('.').pop();
         const isAudio = /audio/.test(file.type) || supportedExt.has(ext);
         if (!isAudio) continue;
 

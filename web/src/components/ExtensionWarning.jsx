@@ -3,11 +3,10 @@
  */
 import React from 'react';
 import { AlertTriangle, X } from 'lucide-react';
-import { useAuth } from '@/contexts/AuthContext';
 
 const ExtensionWarning = () => {
-  const { extensionWarning } = useAuth();
   const [dismissed, setDismissed] = React.useState(false);
+  const extensionWarning = false; // Feature not active
 
   if (!extensionWarning || dismissed) return null;
 
