@@ -174,7 +174,7 @@ const SongPage = () => {
     if (!song) return;
     if (isVisible && currentSong?.id === song.id) {
       // Toggle via event (AudioPlayer gère l'audio element)
-      window.dispatchEvent(new CustomEven'novasound:toggle-play');
+      window.dispatchEvent(new CustomEvent('novasound:toggle-play'));
     } else {
       playSong(song, siblings.length ? siblings : [song]);
     }
