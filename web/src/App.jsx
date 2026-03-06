@@ -27,31 +27,31 @@ import LoginPage from '@/pages/LoginPage';
 import SignupPage from '@/pages/SignupPage';
 
 // Pages chargées à la demande (lazy)
-const MusicUploadPage   = lazy(() => impor'@/pages/MusicUploadPage');
-const UserProfilePage   = lazy(() => impor'@/pages/UserProfilePage');
-const ExplorerPage      = lazy(() => impor'@/pages/ExplorerPage');
-const SongPage          = lazy(() => impor'@/pages/SongPage');
-const NewsPage          = lazy(() => impor'@/pages/NewsPage');
-const ArtistProfilePage = lazy(() => impor'@/pages/ArtistProfilePage');
-const PrivacyPolicy     = lazy(() => impor'@/pages/PrivacyPolicy');
-const TermsOfService    = lazy(() => impor'@/pages/TermsOfService');
-const CopyrightInfo     = lazy(() => impor'@/pages/CopyrightInfo');
-const ModerationPanel   = lazy(() => impor'@/pages/ModerationPanel');
-const AuthCallbackPage  = lazy(() => impor'@/pages/AuthCallbackPage');
-const TrendingPage      = lazy(() => impor'@/pages/TrendingPage');
-const PlaylistPage      = lazy(() => impor'@/pages/PlaylistPage');
-const MyPlaylistsPage   = lazy(() => impor'@/pages/MyPlaylistsPage');
-const ChatPage          = lazy(() => impor'@/pages/ChatPage');
-const MessagesPage      = lazy(() => impor'@/pages/MessagesPage');
-const ArtistStatsPage   = lazy(() => impor'@/pages/ArtistStatsPage');
-const SearchPage        = lazy(() => impor'@/pages/SearchPage');
-const LiveRoomPage      = lazy(() => impor'@/pages/LiveRoomPage');
-const LeaderboardPage   = lazy(() => impor'@/pages/LeaderboardPage');
-const LocalPlayerPage   = lazy(() => impor'@/pages/LocalPlayerPage');
-const AdminPanel        = lazy(() => impor'@/pages/AdminPanel');
-const ResetPasswordPage = lazy(() => impor'@/pages/ResetPasswordPage');
-const ArtistsPage       = lazy(() => impor'@/pages/ArtistsPage');
-const NotificationsPage = lazy(() => impor'@/pages/NotificationsPage');
+const MusicUploadPage   = lazy(() => import('@/pages/MusicUploadPage'));
+const UserProfilePage   = lazy(() => import('@/pages/UserProfilePage'));
+const ExplorerPage      = lazy(() => import('@/pages/ExplorerPage'));
+const SongPage          = lazy(() => import('@/pages/SongPage'));
+const NewsPage          = lazy(() => import('@/pages/NewsPage'));
+const ArtistProfilePage = lazy(() => import('@/pages/ArtistProfilePage'));
+const PrivacyPolicy     = lazy(() => import('@/pages/PrivacyPolicy'));
+const TermsOfService    = lazy(() => import('@/pages/TermsOfService'));
+const CopyrightInfo     = lazy(() => import('@/pages/CopyrightInfo'));
+const ModerationPanel   = lazy(() => import('@/pages/ModerationPanel'));
+const AuthCallbackPage  = lazy(() => import('@/pages/AuthCallbackPage'));
+const TrendingPage      = lazy(() => import('@/pages/TrendingPage'));
+const PlaylistPage      = lazy(() => import('@/pages/PlaylistPage'));
+const MyPlaylistsPage   = lazy(() => import('@/pages/MyPlaylistsPage'));
+const ChatPage          = lazy(() => import('@/pages/ChatPage'));
+const MessagesPage      = lazy(() => import('@/pages/MessagesPage'));
+const ArtistStatsPage   = lazy(() => import('@/pages/ArtistStatsPage'));
+const SearchPage        = lazy(() => import('@/pages/SearchPage'));
+const LiveRoomPage      = lazy(() => import('@/pages/LiveRoomPage'));
+const LeaderboardPage   = lazy(() => import('@/pages/LeaderboardPage'));
+const LocalPlayerPage   = lazy(() => import('@/pages/LocalPlayerPage'));
+const AdminPanel        = lazy(() => import('@/pages/AdminPanel'));
+const ResetPasswordPage = lazy(() => import('@/pages/ResetPasswordPage'));
+const ArtistsPage       = lazy(() => import('@/pages/ArtistsPage'));
+const NotificationsPage = lazy(() => import('@/pages/NotificationsPage'));
 
 /* ── Player global — monté UNE SEULE FOIS, survit à toute navigation ── */
 const GlobalPlayer = () => {
