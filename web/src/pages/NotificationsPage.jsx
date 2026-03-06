@@ -380,7 +380,7 @@ const NotificationsPage = () => {
             <AnimatePresence mode="popLayout">
               {groups.today.length > 0 && (
                 <motion.div key="today" layout>
-                  <DateHeader label={'Aujourd'hui'} count={groups.today.length} />
+                  <DateHeader label={'Aujourd\'hui'} count={groups.today.length} />
                   <div className="bg-white/[0.015] border border-white/[0.05] rounded-3xl overflow-hidden divide-y divide-white/[0.04]">
                     {groups.today.map(n => <NotifRow key={n.id} notif={n} onRead={markAsRead} onDelete={deleteNotification} onNavigate={handleNavigate} />)}
                   </div>
