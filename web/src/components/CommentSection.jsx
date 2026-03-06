@@ -150,7 +150,7 @@ const CommentRow = ({ comment, currentUser, songUploaderEmail, onDeleted, onUpda
 
   const handleLike = async (e) => {
     e.stopPropagation();
-    if (!currentUser) { showToas'#6366f1'; return; }
+    if (!currentUser) { showToast('#6366f1'); return; }
     const was = liked;
     setLiked(!was); setLikes(l => Math.max(0, was ? l - 1 : l + 1));
     if (was) await supabase.from('comment_likes').delete().eq('user_id', currentUser.id).eq('comment_id', comment.id);
@@ -160,7 +160,7 @@ const CommentRow = ({ comment, currentUser, songUploaderEmail, onDeleted, onUpda
   const handleEdit = async () => {
     const trimmed = editVal.trim();
     if (!trimmed || trimmed === comment.content) { setEditing(false); return; }
-    if (!currentUser?.id) { showToas'#6366f1'; return; }
+    if (!currentUser?.id) { showToast('#6366f1'); return; }
     setEditLoading(true);
     try {
       // IMPORTANT: .eq('user_id', ...) est requis pour que la RLS laisse passer l'UPDATE
@@ -175,7 +175,7 @@ const CommentRow = ({ comment, currentUser, songUploaderEmail, onDeleted, onUpda
       if (!data) throw new Error('no_row'); // RLS a bloqué sans erreur (0 rows)
       onUpdated(comment.id, trimmed);
       setEditing(false);
-      showToas'#22d3ee';
+      showToast('#22d3ee');
     } catch (err) {
       console.error('[handleEdit]', err);
       showToast(
@@ -194,19 +194,19 @@ const CommentRow = ({ comment, currentUser, songUploaderEmail, onDeleted, onUpda
     const { error } = await supabase.from('song_comments').delete().eq('id', comment.id);
     setDeleteLoading(false);
     setConfirmDelete(false);
-    if (!error) { onDeleted(comment.id); showToas'#ef4444'; }
-    else showToas'#ef4444';
+    if (!error) { onDeleted(comment.id); showToast('#ef4444'); }
+    else showToast('#ef4444');
   };
 
   const handleReport = async () => {
     if (reported || !currentUser) return;
     await supabase.from('reports').insert({ reporter_id: currentUser.id, content_type: 'comment', content_id: String(comment.id), reason: 'Contenu inapproprié' });
-    setReported(true); showToas'#f59e0b';
+    setReported(true); showToast('#f59e0b');
   };
 
   const handleShare = () => {
     const url = `${window.location.origin}${window.location.pathname}#comment-${comment.id}`;
-    navigator.clipboard?.writeText(url).then(() => showToas'#22d3ee').catch(() => showToas'#ef4444');
+    navigator.clipboard?.writeText(url).then(() => showToast('#22d3ee')).catch(() => showToast('#ef4444'));
   };
 
   const authorName = comment.user?.username || comment._username || 'Utilisateur';
@@ -456,11 +456,11 @@ const CommentSection = ({ songId, songUploaderEmail, onCommentChange }) => {
       is_edited: false,
       created_at: new Date().toISOString(),
       _liked: false,
-      _username: currentUser.username || currentUser.email?.spli'@'[0] || 'Moi',
+      _username: currentUser.username || currentUser.email?.split('@')[0] || 'Moi',
       _avatar: currentUser.avatar_url || null,
       user: {
         id: currentUser.id,
-        username: currentUser.username || currentUser.email?.spli'@'[0] || 'Moi',
+        username: currentUser.username || currentUser.email?.split('@')[0] || 'Moi',
         avatar_url: currentUser.avatar_url || null,
       },
     };
@@ -499,7 +499,7 @@ const CommentSection = ({ songId, songUploaderEmail, onCommentChange }) => {
         // Ne pas bloquer l'expérience utilisateur
       }
 
-      showToas'#22d3ee';
+      showToast('#22d3ee');
       onCommentChange?.(); // Notifier le parent qu'un commentaire a été ajouté
     } else {
       // Rollback
