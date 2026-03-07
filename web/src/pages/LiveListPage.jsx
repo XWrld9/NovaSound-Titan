@@ -69,7 +69,6 @@ const LiveListPage = () => {
           live_room_participants(count)
         `)
         .eq('is_active', true)
-        .eq('is_public', true)
         .order('created_at', { ascending: false });
 
       if (error) throw error;
@@ -276,6 +275,9 @@ const LiveListPage = () => {
                         <div className="flex-1">
                           <h3 className="text-white font-bold text-lg truncate">{room.name}</h3>
                           <p className="text-white/80 text-sm">par @{room.host?.username}</p>
+                        </div>
+                        <div className="px-2 py-1 bg-green-500/20 border border-green-500/30 rounded-full">
+                          <span className="text-green-400 text-xs font-medium">🌐 Publique</span>
                         </div>
                         {room.is_host_live && (
                           <div className="flex items-center gap-1 px-2 py-1 bg-red-500 rounded-full">
