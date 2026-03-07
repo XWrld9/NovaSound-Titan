@@ -10,6 +10,7 @@ import { supabase } from '@/lib/supabaseClient';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '@/contexts/AuthContext';
 import { usePlayer } from '@/contexts/PlayerContext';
+import { usePlayerTime } from '@/contexts/PlayerTimeContext';
 import LottieAnimation from '@/components/LottieAnimation';
 import playAnimation from '@/animations/play-animation.json';
 import { useNavigate } from 'react-router-dom';
@@ -93,12 +94,13 @@ const AudioPlayer = ({ currentSong, playlist = [], onNext, onPrevious, onClose, 
     queue, addToQueue, removeFromQueue, clearQueue,
     sleepTimer, setSleepTimer, clearSleepTimer,
     radioMode, radioLoading, toggleRadio,
-    setAudioCurrentTime,
-    setAudioDuration,
     setIsPlayingGlobal,
     shuffle, setShuffle, toggleShuffle,
     repeat, setRepeat, cycleRepeat,
   } = usePlayer();
+
+  // Temps de lecture dans contexte séparé pour éviter re-renders en masse
+  const { setAudioCurrentTime, setAudioDuration } = usePlayerTime();
 
   const [isPlaying,      setIsPlaying]      = useState(false);
   const [isBuffering,    setIsBuffering]    = useState(false);

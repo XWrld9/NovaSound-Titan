@@ -910,7 +910,7 @@ const ChatPage = () => {
               <div
                 className="flex-shrink-0 border-t border-white/[0.06] bg-gray-950/95 backdrop-blur-xl px-3 pt-2 relative z-10"
                 style={{
-                  paddingBottom: `calc(${playerVisible ? '72px + ' : ''}56px + env(safe-area-inset-bottom, 8px) + 6px)`,
+                  paddingBottom: `calc(${playerVisible ? '72px + ' : ''}${window.innerWidth < 768 ? '56px + ' : ''}env(safe-area-inset-bottom, 8px) + 8px)`,
                 }}
               >
                 <div className="max-w-3xl mx-auto">

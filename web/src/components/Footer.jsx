@@ -138,7 +138,7 @@ const Footer = () => {
         <div className="absolute top-0 left-1/4 w-96 h-48 bg-cyan-500/[0.04] rounded-full blur-3xl pointer-events-none" />
         <div className="absolute bottom-0 right-1/4 w-96 h-48 bg-fuchsia-500/[0.04] rounded-full blur-3xl pointer-events-none" />
 
-        <div className="max-w-6xl mx-auto px-5 py-10 relative z-10">
+        <div className="max-w-7xl mx-auto px-5 py-10 relative z-10">
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-8 text-center md:text-left">
 
             {/* Brand */}

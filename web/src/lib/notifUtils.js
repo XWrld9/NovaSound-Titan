@@ -36,7 +36,7 @@ const _triggerPush = (supabase, userId, notifId, payload) => {
     headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${key}` },
     body: JSON.stringify({
       user_id:  userId,
-      id:       notifId,
+      notif_id: notifId,
       title:    payload.title,
       body:     (payload.body || '').slice(0, 200),
       url:      payload.url || '/',

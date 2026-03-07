@@ -1094,21 +1094,15 @@ const LiveRoomPage = () => {
 
               {/* Input chat */}
               <div
-                className="flex-shrink-0 p-2.5 sm:p-3 bg-gray-900/95 border-t border-gray-800"
+                className="flex-shrink-0 px-3 pt-2.5 pb-3 bg-gray-900/98 border-t border-gray-800"
                 style={{
-                  /* Mobile : on remonte au-dessus du BottomNav (56px) + mini-player si actif + safe-area */
-                  paddingBottom: `calc(
-                    env(safe-area-inset-bottom, 8px)
-                    + 10px
-                    ${playerVisible && playerSong ? ' + 72px' : ''}
-                  )`,
+                  paddingBottom: `calc(env(safe-area-inset-bottom, 10px) + 10px${playerVisible && playerSong ? ' + 72px' : ''})`,
                 }}
               >
                 <AnimatePresence>
                   {showReactions && (
                     <motion.div initial={{ opacity: 0, y: 8, scale: 0.95 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, y: 8, scale: 0.95 }}
                       className="flex flex-wrap gap-2 mb-2.5 p-3 bg-gray-800 rounded-xl relative">
-                      {/* V110000 — Bouton fermeture manuelle */}
                       <button
                         onClick={() => setShowReactions(false)}
                         className="absolute top-1.5 right-1.5 w-5 h-5 flex items-center justify-center rounded-full bg-gray-700 hover:bg-gray-600 text-gray-400 hover:text-white transition-colors"
@@ -1123,17 +1117,24 @@ const LiveRoomPage = () => {
                     </motion.div>
                   )}
                 </AnimatePresence>
-                <div className="flex gap-2 items-center">
-                  <input value={msgInput} onChange={e => { setMsgInput(e.target.value); broadcastTyping(); }}
-                    onKeyDown={e => e.key === 'Enter' && !e.shiftKey && sendMessage()}
-                    placeholder={'typeMessage'} maxLength={500}
-                    className="flex-1 bg-gray-800 border border-gray-700 text-white rounded-xl px-3 sm:px-4 py-2.5 text-sm focus:outline-none focus:border-cyan-500 placeholder-gray-500 transition-colors" />
+                <div className="flex gap-2 items-end">
+                  <textarea
+                    value={msgInput}
+                    onChange={e => { setMsgInput(e.target.value); broadcastTyping(); }}
+                    onKeyDown={e => e.key === 'Enter' && !e.shiftKey && (e.preventDefault(), sendMessage())}
+                    placeholder="Écrire un message…"
+                    maxLength={500}
+                    rows={1}
+                    style={{ resize: 'none', minHeight: 44, maxHeight: 120 }}
+                    onInput={e => { e.target.style.height = 'auto'; e.target.style.height = Math.min(e.target.scrollHeight, 120) + 'px'; }}
+                    className="flex-1 bg-gray-800 border border-gray-700 text-white rounded-xl px-3 sm:px-4 py-3 text-sm focus:outline-none focus:border-cyan-500 placeholder-gray-500 transition-colors leading-relaxed overflow-y-auto"
+                  />
                   <button onClick={() => setShowReactions(!showReactions)}
-                    className={`p-2.5 rounded-xl transition-all flex-shrink-0 ${showReactions ? 'bg-fuchsia-500/20 text-fuchsia-400' : 'bg-gray-800 text-gray-400 hover:text-white hover:bg-gray-700'}`}>
+                    className={`p-2.5 rounded-xl transition-all flex-shrink-0 mb-0.5 ${showReactions ? 'bg-fuchsia-500/20 text-fuchsia-400' : 'bg-gray-800 text-gray-400 hover:text-white hover:bg-gray-700'}`}>
                     <Smile className="w-4 h-4" />
                   </button>
                   <button onClick={sendMessage} disabled={!msgInput.trim()}
-                    className="bg-gradient-to-r from-cyan-500 to-fuchsia-500 hover:from-cyan-600 hover:to-fuchsia-600 disabled:opacity-40 text-white p-2.5 rounded-xl transition-all flex-shrink-0 shadow-lg shadow-cyan-500/20">
+                    className="bg-gradient-to-r from-cyan-500 to-fuchsia-500 hover:from-cyan-600 hover:to-fuchsia-600 disabled:opacity-40 text-white p-2.5 rounded-xl transition-all flex-shrink-0 shadow-lg shadow-cyan-500/20 mb-0.5">
                     <Send className="w-4 h-4" />
                   </button>
                 </div>

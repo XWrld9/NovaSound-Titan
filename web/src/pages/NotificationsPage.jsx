@@ -244,7 +244,7 @@ const NotificationsPage = () => {
       <Helmet><title>{'Notifications'} — NovaSound TITAN LUX</title></Helmet>
       <div className="min-h-screen bg-[#060810] flex flex-col">
         <Header />
-        <main className="flex-1 w-full max-w-3xl mx-auto px-4 sm:px-6 py-6 pb-28">
+        <main className="flex-1 w-full max-w-5xl mx-auto px-4 sm:px-6 py-6 pb-28">
 
           {/* Header */}
           <div className="flex items-center justify-between mb-6">

@@ -25,8 +25,6 @@ export const PlayerProvider = ({ children }) => {
   const [radioLoading,      setRadioLoading]       = useState(false);
   const [currentPlaylistId, setCurrentPlaylistId]  = useState(null);
   const [shouldAutoPlay,    setShouldAutoPlay]     = useState(false);
-  const [audioCurrentTime,  setAudioCurrentTime]   = useState(0);
-  const [audioDuration,     setAudioDuration]      = useState(0);
   // ── État lecture global (synchronisé par AudioPlayer) ──────────
   const [isPlayingGlobal,   setIsPlayingGlobal]   = useState(false);
   // ── Shuffle & Repeat — partagés entre AudioPlayer + LocalPlayerPage ──
@@ -290,8 +288,6 @@ export const PlayerProvider = ({ children }) => {
     <PlayerContext.Provider value={{
       currentSong, playlist, queue, isVisible, sleepTimer,
       radioMode, radioLoading, currentPlaylistId, shouldAutoPlay,
-      audioCurrentTime, setAudioCurrentTime,
-      audioDuration, setAudioDuration,
       isPlayingGlobal, setIsPlayingGlobal,
       seekTo, togglePlayPause,
       playSong, handleNext, handlePrevious, closePlayer,

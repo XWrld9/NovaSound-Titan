@@ -1,9 +1,10 @@
-import React, { lazy, Suspense, useEffect } from 'react';
+import React, { lazy, Suspense, useEffect, useLayoutEffect } from 'react';
 import { Route, Routes, HashRouter as Router, useNavigate, useLocation } from 'react-router-dom';
 import { AuthProvider } from '@/contexts/AuthContext';
 import { NotificationProvider } from '@/contexts/NotificationContext';
 import { NotificationToast } from '@/components/NotificationBell';
 import { PlayerProvider, usePlayer } from '@/contexts/PlayerContext';
+import { PlayerTimeProvider } from '@/contexts/PlayerTimeContext';
 import { PlaylistProvider } from '@/contexts/PlaylistContext';
 import { ChatProvider } from '@/contexts/ChatContext';
 import { MessageProvider } from '@/contexts/MessageContext';
@@ -77,25 +78,23 @@ const OfflineRedirect = () => {
   const navigate = useNavigate();
   const location = useLocation();
 
-  useEffect(() => {
-    // Pages accessibles sans connexion
-    const OFFLINE_OK = ['/local-player', '/login', '/signup', '/privacy', '/terms', '/copyright', '/auth', '/reset-password'];
-    const isOfflineOk = OFFLINE_OK.some(p => location.pathname === p || location.pathname.startsWith(p + '/'));
+  const OFFLINE_OK = ['/local-player', '/login', '/signup', '/privacy', '/terms', '/copyright', '/auth', '/reset-password'];
+  const checkAndRedirect = (pathname) => {
+    const isOfflineOk = OFFLINE_OK.some(p => pathname === p || pathname.startsWith(p + '/'));
+    if (!isOfflineOk) navigate('/local-player', { replace: true });
+  };
 
-    if (!isOnline && !isOfflineOk) {
-      navigate('/local-player', { replace: true });
-    }
-  }, [isOnline, location.pathname, navigate]);
-
-  // Aussi vérifier au montage initial (cas : ouverture directe hors-ligne)
-  useEffect(() => {
-    if (!navigator.onLine) {
-      const OFFLINE_OK = ['/local-player', '/login', '/signup', '/privacy', '/terms', '/copyright', '/auth', '/reset-password'];
-      const isOfflineOk = OFFLINE_OK.some(p => location.pathname === p || location.pathname.startsWith(p + '/'));
-      if (!isOfflineOk) navigate('/local-player', { replace: true });
-    }
+  // Vérification synchrone au montage (évite le flash de la page normale)
+  useLayoutEffect(() => {
+    if (!navigator.onLine) checkAndRedirect(location.pathname);
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // Vérification sur changement d'état réseau ou de route
+  useEffect(() => {
+    if (!isOnline) checkAndRedirect(location.pathname);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isOnline, location.pathname]);
 
   return null;
 };
@@ -115,6 +114,7 @@ function App() {
       <DialogProvider>
         <ToastProvider>
           <OnlineProvider><AuthProvider>
+            <PlayerTimeProvider>
             <PlayerProvider>
               <PlaylistProvider>
                 <ChatProvider>
@@ -175,6 +175,7 @@ function App() {
                 </ChatProvider>
               </PlaylistProvider>
             </PlayerProvider>
+            </PlayerTimeProvider>
           </AuthProvider></OnlineProvider>
         </ToastProvider>
       </DialogProvider>

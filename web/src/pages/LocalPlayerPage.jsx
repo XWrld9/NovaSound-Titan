@@ -23,6 +23,7 @@ import {
 } from 'lucide-react';
 import { useNavigate, Link } from 'react-router-dom';
 import { usePlayer } from '@/contexts/PlayerContext';
+import { usePlayerTime } from '@/contexts/PlayerTimeContext';
 import Footer from '@/components/Footer';
 
 const AUDIO_EXTS = /\.(mp3|m4a|wav|flac|ogg|aac|opus|webm|mp4|3gp|caf|aiff|wma|amr|ape|mka)$/i;
@@ -467,10 +468,12 @@ const LocalPlayerPage = () => {
 
   const {
     playSong, currentSong,
-    audioCurrentTime, audioDuration, isPlayingGlobal,
+    isPlayingGlobal,
     seekTo, togglePlayPause, handleNext, handlePrevious,
     shuffle, toggleShuffle, repeat, cycleRepeat,
   } = usePlayer();
+
+  const { audioCurrentTime, audioDuration } = usePlayerTime();
 
   const navigate = useNavigate();
 

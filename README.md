@@ -1,231 +1,203 @@
-# NovaSound TITAN LUX — V410000
+# NovaSound TITAN LUX — v500000
 
-> **La plateforme musicale nouvelle génération.**  
-> Streamez, uploadez, découvrez — et maintenant dans votre langue, partout.
-
----
-
-## 🚀 Nouveautés V410000
-
-### 🌍 Internationalisation (i18n) — Complète et Totale
-La refonte i18n est la pièce maîtresse de cette version. **Chaque texte visible** de l'application passe désormais par le système de traduction `react-i18next` — sans exception.
-
-| Composant | Avant V410000 | V410000 |
-|-----------|--------------|---------|
-| `Header` | Chaînes hardcodées | ✅ `useTranslation()` complet |
-| `Footer` | Chaînes hardcodées | ✅ `useTranslation()` complet |
-| `AudioPlayer` | Chaînes hardcodées | ✅ `useTranslation()` complet |
-| `LocalPlayerPage` | Chaînes hardcodées | ✅ `useTranslation()` complet |
-| `LanguageSwitcher` | Modes limités | ✅ 4 modes : `dropdown`, `inline`, `compact`, `grid` |
-| Locales (fr/en/es/it/pt) | ~120 clés | ✅ 200+ clés, sections `localPlayer.*` complètes |
-
-**Langues supportées :** Français 🇫🇷 · English 🇬🇧 · Español 🇪🇸 · Italiano 🇮🇹 · Português 🇧🇷
-
-**Détection automatique** : langue du navigateur → `localStorage` → fallback `fr`
-
-**Admin Panel** : Les clés peuvent être surchargées en base via `i18n_overrides` sans redéploiement.
+> **La plateforme musicale nouvelle génération.** Streamez, uploadez et connectez-vous avec des artistes du monde entier.  
+> © 2026 NovaSound TITAN LUX — ELOADXFAMILY · [eloadxfamily@gmail.com](mailto:eloadxfamily@gmail.com)
 
 ---
 
-### 🎵 Lecteur Local — Refonte Desktop Totale
+## ✨ Nouveautés v500000
 
-L'interface du Lecteur Local a été **entièrement repensée** pour PC. L'aspect "mobile étiré sur grand écran" est définitivement éliminé.
+### 🐛 Correctifs critiques
+| Zone | Bug | Correction |
+|------|-----|------------|
+| **Offline** | La redirection vers `/local-player` échouait au chargement initial | `useLayoutEffect` synchrone + guard `navigator.onLine` avant le premier render |
+| **Lecture musicale** | Toutes les SongCard clignotaient excessivement pendant la lecture | `audioCurrentTime`/`audioDuration` isolés dans un `PlayerTimeContext` dédié — les cartes ne souscrivent plus à ces états haute fréquence |
+| **Live Room (mobile)** | Zone de saisie trop petite, trop basse, placeholder "typeMessage" brut | `<textarea>` auto-expandable, padding corrigé, placeholder traduit |
+| **Chat (mobile)** | Zone de saisie masquée par la BottomNav + AudioPlayer | calcul `paddingBottom` conditionnel selon la largeur d'écran |
+| **Push notifications** | Notifications push et in-app n'arrivaient pas | `notifUtils.js` envoyait `id` au lieu de `notif_id` — corrigé + DB Trigger automatique |
+| **Responsivité** | Pages `Artistes`, `Notifications`, `Lecteur Local`, `Upload`, pied de page trop étroits | `max-w-4xl/3xl` → `max-w-6xl/5xl/7xl` selon la page |
 
-#### Architecture 3 panneaux (desktop)
-```
-┌──────────────────┬──────────────────────────────────────────────┐
-│  Player Sidebar  │  Bibliothèque / Playlists                    │
-│  (380–420px)     │                                              │
-│                  │  ┌─ Onglets ─────────────────────────────┐   │
-│  ┌────────────┐  │  │ 🎵 Bibliothèque [42]  📁 Playlists [3]│   │
-│  │  Pochette  │  │  └───────────────────────────────────────┘   │
-│  │  340×340   │  │                                              │
-│  └────────────┘  │  ┌─ Recherche + Tri ──────────────────────┐  │
-│  Titre           │  │ 🔍 Filtrer les fichiers…  [Trier par ▼] │  │
-│  Artiste         │  └────────────────────────────────────────┘  │
-│  Album           │                                              │
-│                  │  # │ Cover │ Titre / Artiste │ Album │ ⏱ │ 🗑 │
-│  ══ SeekBar ══   │  ─────────────────────────────────────────   │
-│                  │  1 │  🎵  │ Midnight Pulse   │ Ablaze │ 3:24│  │
-│  ⏮  ⏭  ⏸  🔀  🔁 │  2 │  🎵  │ Hero             │ Local  │ 4:01│  │
-│                  │  …                                          │
-│  🔊 ─────── 80%  │                                              │
-│                  │  ┌─ Playlists ──────────────────────────┐    │
-│  ── Queue ──     │  │  [cover grid 2×2]  [cover grid 2×2]  │    │
-│  Next 3 tracks   │  │  My Mix (6)        Chill (12)         │    │
-└──────────────────┴──────────────────────────────────────────────┘
-```
+### 🗄️ Base de données (migration v500000)
+- **DB Trigger** automatique : chaque `INSERT` dans `notifications` déclenche l'Edge Function push via `pg_net`
+- **15 index** ajoutés sur les tables les plus interrogées (`songs`, `likes`, `notifications`, `push_subscriptions`, `chat_messages`, `song_play_events`)
+- **RLS** renforcé sur `notifications`, `push_subscriptions`, `app_meta`
+- **Crons** de nettoyage automatique (logs push > 30j, notifications lues > 90j)
+- **Déduplication DB** notifications identiques dans la même fenêtre de 30 secondes
 
-#### Fonctionnalités nouvelles
-- **Drag & Drop** : glissez vos fichiers audio directement dans la fenêtre
-- **Recherche/Filtre** : filtrez en temps réel par nom, artiste ou album
-- **Tri** : par nom, artiste (d'autres tris extensibles)
-- **Raccourcis clavier** :
-  - `Espace` — Lecture / Pause
-  - `←` / `→` — Reculer / Avancer de 10s
-  - `↑` / `↓` — Volume +5% / -5%
-  - `M` — Muet
-  - `N` — Piste suivante
-  - `P` — Piste précédente
-- **EQ animé** : barres d'égaliseur animées sur la piste active
-- **Hover reveal** : bouton play au survol d'un titre
-- **File size badge** : taille du fichier affiché sur la pochette
-- **Queue preview** : prochaines pistes visibles dans la sidebar
-- **Mode mobile préservé** : tabs navigation (🎵 / 📚 / 📁)
+### ⚡ Edge Function v500000
+- Accepte `notif_id` **et** `id` (compatibilité DB trigger + appels client)
+- Rate limit augmenté à **120 push/heure**
+- Logs structurés JSON pour Supabase Log Explorer
+- CORS headers sur toutes les réponses d'erreur
+- Retry 429 borné à 10 secondes max
 
 ---
 
-### 🔧 Corrections et améliorations techniques
-
-- **`LocalPlayerPage`** : `aler''` → bug JS corrigé (`return`)
-- **`LocalPlayerPage`** : `CustomEven'novasound:close-player'` → typo corrigée
-- **`Header`** : le `LanguageSwitcher` est maintenant intégré dans le dropdown "Plus" (desktop) et dans le footer du drawer mobile
-- **Locales** : clés `upload`, `song`, `artist`, `playlists` alignées entre fr/en/es/it/pt
-- **`AudioPlayer`** : import `useTranslation` ajouté
-
----
-
-## 📦 Structure du projet
+## 🏗️ Architecture
 
 ```
-novasound_v410000/
-├── web/
+NovaSound TITAN LUX/
+├── web/                          # Frontend React + Vite + Tailwind
 │   ├── src/
+│   │   ├── App.jsx               # Router, providers globaux, redirect offline
+│   │   ├── contexts/
+│   │   │   ├── PlayerContext.jsx      # État lecteur (chanson, playlist, file)
+│   │   │   ├── PlayerTimeContext.jsx  # ✨ NEW v500000 — temps lecture isolé
+│   │   │   ├── NotificationContext.jsx# Notifications + push Web
+│   │   │   ├── OnlineContext.jsx      # Détection réseau temps réel
+│   │   │   ├── AuthContext.jsx        # Session Supabase Auth
+│   │   │   └── ChatContext.jsx        # Chat global + realtime
 │   │   ├── components/
-│   │   │   ├── AudioPlayer.jsx        ← useTranslation ajouté
-│   │   │   ├── Footer.jsx             ← Fully translated
-│   │   │   ├── Header.jsx             ← Fully translated + LanguageSwitcher intégré
-│   │   │   └── LanguageSwitcher.jsx   ← 4 modes (dropdown/inline/compact/grid)
-│   │   ├── locales/
-│   │   │   ├── fr.json                ← 200+ clés
-│   │   │   ├── en.json                ← 200+ clés
-│   │   │   ├── es.json                ← Mis à jour
-│   │   │   ├── it.json                ← Mis à jour
-│   │   │   └── pt.json                ← Mis à jour
-│   │   └── pages/
-│   │       └── LocalPlayerPage.jsx    ← Refonte desktop totale (1414 lignes)
-│   └── ...
+│   │   │   ├── AudioPlayer.jsx        # Lecteur audio global (persistant)
+│   │   │   ├── SongCard.jsx           # Carte chanson (ne re-render plus pendant lecture)
+│   │   │   ├── BottomNav.jsx          # Navigation mobile (masquée sur live/local-player)
+│   │   │   └── Footer.jsx             # Pied de page (max-w-7xl)
+│   │   ├── pages/
+│   │   │   ├── LocalPlayerPage.jsx    # Lecteur hors-ligne IndexedDB + FSA
+│   │   │   ├── LiveRoomPage.jsx       # Live room chat (textarea v500000)
+│   │   │   ├── ChatPage.jsx           # Chat global (padding mobile corrigé)
+│   │   │   ├── ArtistsPage.jsx        # Liste artistes (max-w-6xl)
+│   │   │   └── NotificationsPage.jsx  # Notifications (max-w-5xl)
+│   │   └── lib/
+│   │       ├── notifUtils.js          # ✅ FIX: notif_id (était: id)
+│   │       └── supabaseClient.js      # Client Supabase
+│   └── public/
+│       └── sw.js                      # Service Worker push + cache offline
 ├── supabase/
-│   ├── functions/
-│   │   └── send-push-notification/
-│   │       └── index.ts               ← v410000 (inchangé fonctionnellement)
-│   └── migrations/
-│       └── 20260306_V410000.sql       ← Migration complète
-└── README.md
+│   └── functions/
+│       └── send-push-notification/
+│           ├── index.ts               # Edge Function v410000 (ancienne)
+│           └── index_v500000.ts       # ✨ Edge Function v500000 (nouvelle)
+└── migration_v500000.sql              # ✨ Migration DB à exécuter dans Supabase
 ```
 
 ---
 
-## 🗄️ Migration V410000
+## 🚀 Déploiement
 
-**Fichier :** `supabase/migrations/20260306_V410000.sql`
-
-### Ce que fait la migration :
-
-1. **`i18n_overrides`** : table idempotente (re-créée si absente), peuplée avec les nouvelles clés `localPlayer.*`
-2. **`users.preferred_lang`** : nouvelle colonne pour synchroniser la langue préférée côté serveur
-3. **`local_player_sessions`** : nouvelle table de tracking anonyme des sessions locales (stats internes)
-4. **`get_i18n_overrides(lang)`** : fonction RPC pour charger les overrides côté client
-5. **`upsert_preferred_lang(lang)`** : fonction RPC pour sauvegarder la langue préférée
-6. **Index** : 3 index supplémentaires sur `songs` pour les performances
-
-### Appliquer la migration
-
-```bash
-# Via Supabase CLI
-supabase db push --db-url "postgresql://..."
-
-# Ou via le Dashboard Supabase
-# SQL Editor → coller le contenu de 20260306_V410000.sql → Run
+### 1. Migration SQL
+```sql
+-- Dans Supabase SQL Editor, exécuter migration_v500000.sql
+-- Puis configurer les clés pour le DB Trigger :
+INSERT INTO public.app_meta (key, value) VALUES
+  ('supabase_url',      'https://VOTRE_REF.supabase.co'),
+  ('service_role_key',  'VOTRE_SERVICE_ROLE_KEY')
+ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value;
 ```
 
----
-
-## ⚡ Edge Function — send-push-notification
-
-**Version :** V410000 (hérite de V400001 sans changement fonctionnel)
-
-### Déployer
-
+### 2. Edge Function
 ```bash
-supabase functions deploy send-push-notification \
-  --project-ref <votre-ref> \
-  --no-verify-jwt
+# Remplacer l'ancienne Edge Function par la v500000
+cp supabase/functions/send-push-notification/index_v500000.ts \
+   supabase/functions/send-push-notification/index.ts
+
+# Déployer
+supabase functions deploy send-push-notification
 ```
 
-### Variables d'environnement requises
-
-```bash
-VAPID_PUBLIC_KEY=<votre-clé-publique>
-VAPID_PRIVATE_KEY=<votre-clé-privée>
+### 3. Variables d'environnement Edge Function
+```
+SUPABASE_URL=https://VOTRE_REF.supabase.co
+SUPABASE_SERVICE_ROLE_KEY=eyJ...
+SUPABASE_ANON_KEY=eyJ...
+VAPID_PUBLIC_KEY=BFCdXh1JM5vELnaw7GolQNKPEc-CJRafU2QC3r1lTdyCSSBl5QL6nJfU3HXbnhqm_krsVViGLJ8nf2VpYBjt38o
+VAPID_PRIVATE_KEY=VOTRE_VAPID_PRIVATE_KEY
 VAPID_SUBJECT=mailto:eloadxfamily@gmail.com
-SUPABASE_URL=<votre-url>
-SUPABASE_SERVICE_ROLE_KEY=<votre-service-role-key>
+PUSH_WEBHOOK_SECRET=VOTRE_SECRET_WEBHOOK  (optionnel)
+PUSH_BATCH_SIZE=10  (optionnel, défaut 10)
 ```
 
----
-
-## 🛠 Installation & Développement
-
+### 4. Frontend (Vercel)
 ```bash
-# 1. Cloner et installer
 cd web
 npm install
-
-# 2. Configurer les variables d'environnement
-cp .env.example .env
-# Remplir VITE_SUPABASE_URL et VITE_SUPABASE_ANON_KEY
-
-# 3. Lancer le dev server
-npm run dev
-
-# 4. Build production
 npm run build
+# Déployer le dossier dist/ sur Vercel
 ```
 
 ---
 
-## 🌐 Déploiement Vercel
+## 🔔 Système de Notifications
 
-```bash
-# Build command
-npm run build
-
-# Output directory
-dist
-
-# Root directory
-web
+### Flux complet (v500000)
+```
+Action utilisateur (like, follow, commentaire…)
+  → INSERT dans public.notifications (via notifUtils.js)
+  → DB Trigger trg_push_on_notification (AFTER INSERT)
+  → pg_net appel HTTP non-bloquant → Edge Function
+  → Edge Function récupère les push_subscriptions de l'user
+  → Envoie push VAPID chiffré (Web Push Protocol)
+  → Service Worker reçoit l'event 'push'
+  → Affiche notification système Android/iOS/PC
+  → NotificationContext lit les nouvelles notifs via Realtime Supabase
+  → Badge in-app mis à jour
 ```
 
-Variables Vercel à configurer :
-```
-VITE_SUPABASE_URL=https://xxx.supabase.co
-VITE_SUPABASE_ANON_KEY=eyJhbGc...
-```
+### Types de notifications supportés
+`like` · `comment` · `follow` · `new_song` · `repost` · `news` · `chat_reply` · `chat_mention` · `chat_mention_all` · `mood_vote` · `live_start` · `live_started` · `live_invite` · `queue_song` · `achievement`
 
 ---
 
-## 📝 Nom de commit recommandé
+## 📱 Lecteur Local (hors-ligne)
 
-```
-feat(v410000): full i18n, desktop local player redesign, drag&drop, keyboard shortcuts
-```
-
----
-
-## 🗺 Roadmap
-
-| Version | Statut | Fonctionnalité |
-|---------|--------|----------------|
-| V400001 | ✅ Done | Migration réparatrice, push notifications |
-| **V410000** | **✅ Current** | **i18n complète, refonte Local Player desktop** |
-| V420000 | 🔜 Planned | Dark/Light mode, admin i18n editor en live |
-| V430000 | 🔜 Planned | Equalizer visuel, audio fingerprint |
+- **100% offline** — aucune connexion requise
+- **FSA (File System Access API)** : persistance automatique des handles sur PC
+- **IndexedDB** : sauvegarde playlists entre sessions
+- **ID3v2** : lecture automatique des métadonnées (titre, artiste, album, couverture)
+- **Formats** : MP3, M4A, WAV, FLAC, AAC, OGG, OPUS, WMA
+- **Raccourcis clavier** : Space, ←→ ±10s, ↑↓ volume, M muet, N suivant, P précédent
 
 ---
 
-## 📄 Licence
+## 🎵 Fonctionnalités principales
 
-© 2026 NovaSound TITAN LUX — ELOADXFAMILY  
-Tous droits réservés.
+| Fonctionnalité | Description |
+|---|---|
+| **Streaming** | Lecture en ligne de sons hébergés sur Supabase Storage |
+| **Upload** | MP3/M4A/WAV/FLAC jusqu'à 50 MB, couverture optionnelle |
+| **Live Rooms** | Salles de live avec chat temps réel, file d'attente, réactions |
+| **Chat global** | Messagerie communautaire, mentions @tous, réponses, réactions |
+| **Notifications** | Push Web (Android PWA, iOS 16.4+ Safari PWA, PC Chrome/Edge) |
+| **Explorer** | Navigation par genre, artiste, tendances, playlists |
+| **Leaderboard** | Classement artistes par écoutes, likes, abonnés |
+| **Mode radio** | Lecture automatique de sons similaires |
+| **Lecteur local** | Lecture fichiers locaux sans connexion |
+
+---
+
+## 🔧 Stack technique
+
+| Couche | Technologie |
+|---|---|
+| Frontend | React 18, Vite, Tailwind CSS, Framer Motion |
+| Backend | Supabase (PostgreSQL, Auth, Storage, Realtime) |
+| Edge Functions | Deno (TypeScript) |
+| Push notifications | Web Push Protocol (VAPID), Service Worker |
+| Offline | IndexedDB, File System Access API, Cache API |
+| Déploiement | Vercel (frontend), Supabase Cloud (backend) |
+
+---
+
+## 📋 Changelog
+
+### v500000 (2026-03-07)
+- Fix : clignotement des SongCards pendant la lecture (`PlayerTimeContext`)
+- Fix : redirection offline synchrone (`useLayoutEffect`)
+- Fix : zone de saisie Live Room (textarea expandable, placeholder correct)
+- Fix : zone de saisie Chat mobile (padding conditionnel)
+- Fix : push notifications (`notif_id` au lieu de `id` dans notifUtils.js)
+- Fix : responsivité des pages Artistes, Notifications, Pied de page
+- Nouveau : DB Trigger automatique push sur chaque notification
+- Nouveau : 15 index DB pour les performances
+- Nouveau : RLS renforcé, crons nettoyage automatique
+- Edge Function : support `notif_id` + `id`, rate limit 120/hr, logs JSON
+
+### v410000
+- Refonte complète LocalPlayerPage (layout 3 colonnes, FSA handles, ID3v2)
+- Chat : support `@tous/@all/@everyone`, suppressions, éditions
+- Live Room : réactions burst, file d'attente, historique
+- Notifications : types achievement, live_started, queue_song
+
+---
+
+*NovaSound TITAN LUX — ELOADXFAMILY · v500000*
