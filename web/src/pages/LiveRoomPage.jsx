@@ -1249,7 +1249,7 @@ const LiveRoomPage = () => {
                           <h3 className="text-white font-bold text-sm mb-3 flex items-center gap-2"><Search className="w-4 h-4 text-cyan-400" />Recherche</h3>
                           <input value={songSearch} onChange={e => setSongSearch(e.target.value)}
                             placeholder="Titre ou artiste…" autoFocus
-                            className="w-full bg-gray-800 border border-gray-700 text-white rounded-xl px-4 py-2.5 text-sm mb-3 focus:outline-none focus:border-cyan-500 placeholder-gray-500 transition-colors" />
+                            className="w-full bg-gray-800 border border-gray-700 text-white rounded-xl px-4 py-3 text-base mb-3 focus:outline-none focus:border-cyan-500 placeholder-gray-500 transition-colors" />
                           <div className="space-y-1 max-h-52 overflow-y-auto scrollbar-hide">
                             {songResults.map(s => (
                               <div key={s.id} className="flex items-center gap-2 p-2 rounded-xl hover:bg-gray-800 group transition-colors cursor-pointer">
@@ -1433,7 +1433,7 @@ const LiveRoomPage = () => {
                           <div className="bg-gray-800 rounded-2xl p-3">
                             <input value={songSearch} onChange={e => setSongSearch(e.target.value)}
                               placeholder="Titre ou artiste…" autoFocus
-                              className="w-full bg-gray-700 border border-gray-600 text-white rounded-xl px-3 py-2 text-sm mb-3 focus:outline-none focus:border-cyan-500 placeholder-gray-500" />
+                              className="w-full bg-gray-700 border border-gray-600 text-white rounded-xl px-4 py-3 text-base mb-3 focus:outline-none focus:border-cyan-500 placeholder-gray-500" />
                             <div className="space-y-1 max-h-40 overflow-y-auto scrollbar-hide">
                               {songResults.map(s => (
                                 <div key={s.id} className="flex items-center gap-2 p-2 rounded-xl hover:bg-gray-700 cursor-pointer transition-colors"

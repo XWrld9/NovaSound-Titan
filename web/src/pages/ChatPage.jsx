@@ -985,8 +985,8 @@ const ChatPage = () => {
                           placeholder="Écrire dans le chat… @tous pour mentionner tout le monde"
                           rows={1}
                           maxLength={MAX}
-                          style={{ resize: 'none', minHeight: 44, maxHeight: 140 }}
-                          className="w-full bg-gray-800/90 border border-white/[0.10] rounded-2xl px-4 py-3 pr-12 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-cyan-500/50 focus:bg-gray-800 transition-all overflow-y-auto leading-relaxed"
+                          style={{ resize: 'none', minHeight: 60, maxHeight: 180 }}
+                          className="w-full bg-gray-800/90 border border-white/[0.10] rounded-2xl px-4 py-4 pr-12 text-base text-white placeholder-gray-500 focus:outline-none focus:border-cyan-500/50 focus:bg-gray-800 transition-all overflow-y-auto leading-relaxed"
                           onInput={e => { e.target.style.height = 'auto'; e.target.style.height = Math.min(e.target.scrollHeight, 140) + 'px'; }}
                         />
                         {text.length > MAX * 0.8 && (

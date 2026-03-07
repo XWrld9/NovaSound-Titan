@@ -1045,7 +1045,7 @@ const AudioPlayer = ({ currentSong, playlist = [], onNext, onPrevious, onClose, 
             initial={{ y: 100, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
             exit={{ y: 100, opacity: 0 }}
-            className="fixed bottom-14 md:bottom-0 left-0 right-0 z-50 border-t border-white/[0.06] shadow-2xl shadow-black/60"
+            className="fixed bottom-14 md:bottom-0 left-0 right-0 z-50 border-t border-white/[0.06] shadow-2xl shadow-black/60 android-player-fixed"
             style={{
               backgroundColor: 'rgb(18 18 18 / 0.97)',
               backdropFilter: 'blur(24px)',

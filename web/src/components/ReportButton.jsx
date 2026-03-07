@@ -258,25 +258,23 @@ const ReportButton = ({ contentType, contentId, onReported }) => {
                         <textarea
                           value={description}
                           onChange={(e) => setDescription(e.target.value)}
-                          placeholder="Explique brièvement ce qui te dérange..."
-                          rows={2}
-                          maxLength={300}
-                          className="w-full px-4 py-2.5 bg-gray-800 border border-gray-700 rounded-xl text-white placeholder-gray-500 text-sm focus:outline-none focus:border-red-500/50 focus:ring-2 focus:ring-red-500/20 resize-none transition-all"
+                          placeholder="Décrivez pourquoi vous signalez ce contenu..."
+                          className="w-full px-4 py-3 bg-gray-800 border border-gray-700 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-red-500 resize-none text-base"
+                          rows={3}
                         />
-                        <p className="text-xs text-gray-600 mt-1 text-right">{description.length}/300</p>
                       </div>
 
-                      {error && (
-                        <p className="text-sm text-red-400 bg-red-500/10 border border-red-500/20 rounded-lg px-3 py-2">{error}</p>
-                      )}
+                    {error && (
+                      <p className="text-sm text-red-400 bg-red-500/10 border border-red-500/20 rounded-lg px-3 py-2">{error}</p>
+                    )}
 
-                      {!currentUser && (
-                        <p className="text-sm text-amber-400 bg-amber-500/10 border border-amber-500/20 rounded-lg px-3 py-2">
-                          Connecte-toi pour pouvoir signaler du contenu.
-                        </p>
-                      )}
+                    {!currentUser && (
+                      <p className="text-sm text-amber-400 bg-amber-500/10 border border-amber-500/20 rounded-lg px-3 py-2">
+                        Connecte-toi pour pouvoir signaler du contenu.
+                      </p>
+                    )}
 
-                      <div className="flex gap-3 pt-1">
+                    <div className="flex gap-3 pt-1">
                         <button type="button" onClick={() => setStep('warn')} className="px-4 py-2.5 border border-gray-700 rounded-xl text-gray-400 hover:text-white hover:border-gray-600 transition-all text-sm">
                           ← Retour
                         </button>

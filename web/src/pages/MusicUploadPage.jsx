@@ -511,8 +511,8 @@ const MusicUploadPage = () => {
                   <label className="block text-sm font-medium text-gray-300 mb-2">Description</label>
                   <textarea
                     name="description" value={formData.description}
-                    onChange={handleChange} rows={3} disabled={loading}
-                    className="w-full px-4 py-3 bg-gray-900/50 border border-cyan-500/30 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-cyan-400 focus:ring-2 focus:ring-cyan-400/20 transition-all resize-none disabled:opacity-50"
+                    onChange={handleChange} rows={6} disabled={loading}
+                    className="w-full px-4 py-4 bg-gray-900/50 border border-cyan-500/30 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-cyan-400 focus:ring-2 focus:ring-cyan-400/20 transition-all resize-none text-base"
                     placeholder="Parle-nous de ton morceau..."
                   />
                 </div>
