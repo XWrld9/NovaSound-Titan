@@ -90,31 +90,17 @@ export const NotificationProvider = ({ children }) => {
   const setPushEnabled = useCallback((v) => {
     setPushEnabledRaw(v);
     writePersistedPush(currentUser?.id, v);
-    // Badge numérique
-    if (!v && 'clearAppBadge' in navigator) navigator.clearAppBadge?.().catch(() => {});
   }, [currentUser?.id]);
 
   // ── Charger les notifications depuis Supabase ─────────────────
   const loadNotifications = useCallback(async () => {
-    // DEBUG : Afficher l'état de l'authentification
-    console.log('[DEBUG] currentUser:', currentUser);
-    console.log('[DEBUG] currentUser.id:', currentUser?.id);
-    console.log('[DEBUG] currentUser?.id type:', typeof currentUser?.id);
-    
-    if (!currentUser?.id) {
-      console.log('[DEBUG] Pas d utilisateur ID, retour');
-      return;
-    }
-    
-    const { data, error } = await supabase
+    if (!currentUser?.id) return;
+    const { data } = await supabase
       .from('notifications')
       .select('*')
       .eq('user_id', currentUser.id)
       .order('created_at', { ascending: false })
       .limit(60);
-    
-    console.log('[DEBUG] Notifications data:', data);
-    console.log('[DEBUG] Notifications error:', error);
     if (data) {
       setNotifications(data);
       const unread = data.filter(n => !n.is_read).length;
