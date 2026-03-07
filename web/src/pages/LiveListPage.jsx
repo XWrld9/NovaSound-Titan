@@ -18,14 +18,14 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { useOnline } from '@/contexts/OnlineContext';
 import { supabase } from '@/lib/supabaseClient';
-import { ALL_GENRES, GENRE_THEMES_MAP } from '@/hooks/useGenreTheme';
+// eslint-disable-next-line no-unused-vars
 import LiveLikeButton from '@/components/LiveLikeButton';
 import Header from '@/components/Header';
 import {
   Search, Users, Music, Radio, TrendingUp, Clock,
   Filter, ChevronRight, Play, Eye, Zap, Crown,
   Loader2, WifiOff, RefreshCw, Mic, Headphones,
-  Sparkles, Flame, Star, Heart
+  Sparkles, Flame, Star, Heart, X, Plus, Lock, Globe
 } from 'lucide-react';
 
 const GENRES = [
@@ -86,6 +86,45 @@ const LiveListPage = () => {
   const [selectedGenre, setSelectedGenre] = useState('all');
   const [sortBy, setSortBy] = useState('popular');
   const [refreshing, setRefreshing] = useState(false);
+
+  // ── Create Room Modal ──────────────────────────────────────────
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [createForm, setCreateForm] = useState({ name: '', description: '', genre: 'Bikutsi', isPrivate: false });
+  const [creating, setCreating] = useState(false);
+  const [createError, setCreateError] = useState('');
+
+  const handleCreateRoom = async () => {
+    if (!currentUser) { navigate('/login'); return; }
+    if (!createForm.name.trim()) { setCreateError('Le nom du salon est requis'); return; }
+    setCreating(true); setCreateError('');
+    try {
+      const { data: existing } = await supabase
+        .from('live_rooms').select('id').eq('host_id', currentUser.id).eq('is_active', true).maybeSingle();
+      if (existing) {
+        navigate(`/live/${existing.id}`); return;
+      }
+      const { data, error } = await supabase.from('live_rooms').insert({
+        title:       createForm.name.trim(),
+        name:        createForm.name.trim(),
+        description: createForm.description.trim() || null,
+        genre:       createForm.genre,
+        host_id:     currentUser.id,
+        is_active:   true,
+        is_live:     true,
+        is_private:  createForm.isPrivate,
+        participants_count: 1,
+      }).select().single();
+      if (error) throw error;
+      // Rejoindre comme participant hôte
+      await supabase.from('live_room_participants').insert({ room_id: data.id, user_id: currentUser.id, is_host: true }).catch(() => {});
+      setShowCreateModal(false);
+      navigate(`/live/${data.id}`);
+    } catch (err) {
+      setCreateError(err.message || 'Erreur lors de la création');
+    } finally {
+      setCreating(false);
+    }
+  };
 
   // Charger les salons actifs
   const loadRooms = useCallback(async () => {
@@ -205,6 +244,15 @@ const LiveListPage = () => {
                 <RefreshCw className={`w-4 h-4 ${refreshing ? 'animate-spin' : ''}`} />
                 Actualiser
               </button>
+              {currentUser && (
+                <button
+                  onClick={() => { setCreateForm({ name: '', description: '', genre: 'Bikutsi', isPrivate: false }); setCreateError(''); setShowCreateModal(true); }}
+                  className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-cyan-500 to-purple-500 hover:opacity-90 rounded-xl text-white font-semibold transition-all shadow-lg shadow-cyan-500/20"
+                >
+                  <Plus className="w-4 h-4" />
+                  Créer un salon
+                </button>
+              )}
             </div>
           </div>
         </div>
@@ -279,13 +327,13 @@ const LiveListPage = () => {
                   : 'Soyez le premier à créer un salon live !'
                 }
               </p>
-              <Link
-                to="/live"
+              <button
+                onClick={() => { if (!currentUser) { navigate('/login'); return; } setCreateForm({ name: '', description: '', genre: 'Bikutsi', isPrivate: false }); setCreateError(''); setShowCreateModal(true); }}
                 className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-cyan-500 to-purple-500 rounded-xl text-white font-semibold hover:shadow-lg hover:shadow-cyan-500/25 transition-all"
               >
                 <Radio className="w-5 h-5" />
                 Créer un salon
-              </Link>
+              </button>
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -299,7 +347,7 @@ const LiveListPage = () => {
                     className="bg-[#0a0a18]/80 backdrop-blur-xl rounded-2xl border border-white/[0.07] p-6 hover:border-white/[0.12] transition-all duration-300 hover:scale-[1.02] cursor-pointer"
                   >
                     {/* Header du salon */}
-                    <div className={`h-32 bg-gradient-to-br ${GENRES.find(g => g.id === room.genre)?.color || 'from-gray-600 to-gray-700'} p-4 flex items-end`}>
+                    <div className={`h-32 rounded-t-2xl bg-gradient-to-br ${(GENRES.find(g => g.name === room.genre || g.id === room.genre?.toLowerCase().replace(/[é& ]/g, m => ({'é':'e','&':'','  ':' ',' ':'-'})[m]||m)))?.color || 'from-gray-600 to-gray-700'} p-4 flex items-end`}>
                       <div className="flex items-center gap-3">
                         {room.host?.avatar_url ? (
                           <img src={room.host.avatar_url} alt="" className="w-12 h-12 rounded-full border-2 border-white/20" />
@@ -353,7 +401,7 @@ const LiveListPage = () => {
                       <div className="flex gap-2">
                         <button
                           onClick={() => handleJoinRoom(room.id)}
-                          className="px-6 py-3 bg-gradient-to-r from-cyan-500/90 to-purple-500/90 hover:from-cyan-500 hover:to-purple-500 transition-all duration-300 transform hover:scale-[1.02] hover:shadow-xl hover:shadow-cyan-500/30"
+                          className="flex items-center gap-2 px-4 py-2 rounded-xl bg-gradient-to-r from-cyan-500/90 to-purple-500/90 hover:from-cyan-500 hover:to-purple-500 text-white font-medium transition-all duration-300 hover:scale-[1.02] hover:shadow-xl hover:shadow-cyan-500/30"
                         >
                           <Play className="w-4 h-4" />
                           Rejoindre
@@ -384,6 +432,89 @@ const LiveListPage = () => {
           )}
         </div>
       </div>
+
+      {/* ── Modal Créer un salon ────────────────────────────── */}
+      <AnimatePresence>
+        {showCreateModal && (
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm"
+            onClick={e => { if (e.target === e.currentTarget) setShowCreateModal(false); }}>
+            <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.9, opacity: 0 }}
+              className="bg-[#0d0d1f] border border-white/10 rounded-2xl p-6 w-full max-w-lg shadow-2xl">
+              <div className="flex items-center justify-between mb-6">
+                <h2 className="text-xl font-bold text-white flex items-center gap-2">
+                  <Radio className="w-5 h-5 text-cyan-400" /> Créer un salon live
+                </h2>
+                <button onClick={() => setShowCreateModal(false)} className="p-2 text-gray-400 hover:text-white hover:bg-white/10 rounded-xl transition-all">
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+
+              {createError && (
+                <div className="mb-4 p-3 bg-red-500/10 border border-red-500/30 rounded-xl text-red-400 text-sm">{createError}</div>
+              )}
+
+              <div className="space-y-4">
+                {/* Nom */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-300 mb-2">Nom du salon <span className="text-red-400">*</span></label>
+                  <input type="text" value={createForm.name} maxLength={60} placeholder="Ex: Soirée Bikutsi 🔥"
+                    onChange={e => setCreateForm(p => ({ ...p, name: e.target.value }))}
+                    className="w-full px-4 py-3 bg-gray-800/60 border border-white/10 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:border-cyan-500/50 transition-all" />
+                </div>
+
+                {/* Description */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-300 mb-2">Description <span className="text-gray-500 text-xs">(optionnel)</span></label>
+                  <textarea value={createForm.description} maxLength={200} rows={3} placeholder="Décris l'ambiance de ton salon..."
+                    onChange={e => setCreateForm(p => ({ ...p, description: e.target.value }))}
+                    className="w-full px-4 py-3 bg-gray-800/60 border border-white/10 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:border-cyan-500/50 transition-all resize-none" />
+                </div>
+
+                {/* Genre */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-300 mb-2">Genre musical</label>
+                  <div className="flex flex-wrap gap-2 max-h-36 overflow-y-auto pr-1">
+                    {GENRES.filter(g => g.id !== 'all').map(g => (
+                      <button key={g.id} onClick={() => setCreateForm(p => ({ ...p, genre: g.name }))}
+                        className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all ${createForm.genre === g.name ? `bg-gradient-to-r ${g.color} text-white shadow-md` : 'bg-gray-800/60 text-gray-400 hover:bg-gray-700/60 hover:text-white'}`}>
+                        {g.name}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Visibilité */}
+                <div className="flex items-center justify-between p-3 bg-gray-800/40 rounded-xl border border-white/5">
+                  <div className="flex items-center gap-3">
+                    {createForm.isPrivate ? <Lock className="w-4 h-4 text-amber-400" /> : <Globe className="w-4 h-4 text-green-400" />}
+                    <div>
+                      <p className="text-sm font-medium text-white">{createForm.isPrivate ? 'Salon privé' : 'Salon public'}</p>
+                      <p className="text-xs text-gray-500">{createForm.isPrivate ? 'Accessible sur invitation' : 'Visible par tous'}</p>
+                    </div>
+                  </div>
+                  <button onClick={() => setCreateForm(p => ({ ...p, isPrivate: !p.isPrivate }))}
+                    className={`relative w-12 h-6 rounded-full transition-all ${createForm.isPrivate ? 'bg-amber-500' : 'bg-cyan-500'}`}>
+                    <span className={`absolute top-0.5 w-5 h-5 bg-white rounded-full shadow transition-all ${createForm.isPrivate ? 'left-6' : 'left-0.5'}`} />
+                  </button>
+                </div>
+              </div>
+
+              <div className="flex gap-3 mt-6">
+                <button onClick={() => setShowCreateModal(false)} disabled={creating}
+                  className="flex-1 px-4 py-3 border border-gray-700 rounded-xl text-gray-400 hover:text-white hover:border-gray-600 transition-all disabled:opacity-50">
+                  Annuler
+                </button>
+                <button onClick={handleCreateRoom} disabled={creating || !createForm.name.trim()}
+                  className="flex-1 px-4 py-3 bg-gradient-to-r from-cyan-500 to-purple-500 rounded-xl text-white font-bold transition-all hover:opacity-90 disabled:opacity-50 flex items-center justify-center gap-2">
+                  {creating ? <Loader2 className="w-4 h-4 animate-spin" /> : <Radio className="w-4 h-4" />}
+                  {creating ? 'Création...' : 'Lancer le salon'}
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </>
   );
 };

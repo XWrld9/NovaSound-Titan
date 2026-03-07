@@ -284,6 +284,17 @@ export const PlayerProvider = ({ children }) => {
     queueRef.current = [];
   }, []);
 
+  // ── Compat aliases pour AudioPlayerMobile & LocalPlayer ───────
+  const play     = useCallback(() => window.dispatchEvent(new CustomEvent('novasound:force-play')),  []);
+  const pause    = useCallback(() => window.dispatchEvent(new CustomEvent('novasound:force-pause')), []);
+  const seek     = useCallback((t)  => window.dispatchEvent(new CustomEvent('novasound:seek-to',     { detail: { time: t } })), []);
+  const next     = handleNext;
+  const previous = handlePrevious;
+  const setVolume    = useCallback((v) => window.dispatchEvent(new CustomEvent('novasound:set-volume',    { detail: { volume: v } })), []);
+  const toggleMute   = useCallback(()  => window.dispatchEvent(new CustomEvent('novasound:toggle-mute')), []);
+  const setRepeatMode     = useCallback((m) => window.dispatchEvent(new CustomEvent('novasound:set-repeat',   { detail: { mode: m } })),  []);
+  const setPlaybackSpeed  = useCallback((s) => window.dispatchEvent(new CustomEvent('novasound:set-speed',    { detail: { speed: s } })), []);
+
   return (
     <PlayerContext.Provider value={{
       currentSong, playlist, queue, isVisible, sleepTimer,
@@ -296,6 +307,12 @@ export const PlayerProvider = ({ children }) => {
       setSleepTimer, clearSleepTimer, toggleRadio, resetAutoPlay,
       shuffle, setShuffle, toggleShuffle,
       repeat, setRepeat, cycleRepeat,
+      // Compat aliases
+      play, pause, seek, next, previous,
+      setVolume, toggleMute, setRepeatMode, setPlaybackSpeed,
+      // activeSong alias for LocalPlayerPageMobile
+      activeSong: currentSong,
+      isPlaying: isPlayingGlobal,
     }}>
       {children}
     </PlayerContext.Provider>

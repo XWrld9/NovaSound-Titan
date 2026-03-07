@@ -203,17 +203,52 @@ const AudioPlayer = ({ currentSong, playlist = [], onNext, onPrevious, onClose, 
     return () => window.removeEventListener('novasound:seek-to', handler);
   }, [setAudioCurrentTime]);
 
+  // ── force-play / force-pause depuis PlayerContext compat aliases ─
+  useEffect(() => {
+    const onPlay  = () => { audioRef.current?.play().then(() => { setIsPlaying(true); setIsPlayingGlobal(true); }).catch(() => {}); };
+    const onPause = () => { audioRef.current?.pause(); setIsPlaying(false); setIsPlayingGlobal(false); };
+    window.addEventListener('novasound:force-play',  onPlay);
+    window.addEventListener('novasound:force-pause', onPause);
+    return () => { window.removeEventListener('novasound:force-play', onPlay); window.removeEventListener('novasound:force-pause', onPause); };
+  }, [setIsPlayingGlobal]);
+
+  // ── set-volume / toggle-mute / set-speed depuis PlayerContext ────
+  useEffect(() => {
+    const onVol   = (e) => { const v = Math.max(0, Math.min(1, e.detail?.volume ?? 1)); setVolume(v); if (audioRef.current) audioRef.current.volume = v; };
+    const onMute  = () => toggleMute();
+    const onSpeed = (e) => { const s = e.detail?.speed ?? 1; if (audioRef.current) audioRef.current.playbackRate = s; };
+    window.addEventListener('novasound:set-volume',  onVol);
+    window.addEventListener('novasound:toggle-mute', onMute);
+    window.addEventListener('novasound:set-speed',   onSpeed);
+    return () => {
+      window.removeEventListener('novasound:set-volume',  onVol);
+      window.removeEventListener('novasound:toggle-mute', onMute);
+      window.removeEventListener('novasound:set-speed',   onSpeed);
+    };
+  }, [toggleMute]);
+
   // ── Raccourcis clavier — actifs en mode expanded/plein écran ────
   useEffect(() => {
     const onKey = (e) => {
       // Ne pas intercepter si focus sur un input/textarea
       if (['INPUT', 'TEXTAREA'].includes(e.target.tagName)) return;
-      if (!isExpanded) return;
       switch (e.code) {
         case 'ArrowRight': case 'MediaTrackNext':
+          if (!isExpanded) break;
           e.preventDefault(); autoPlayRef.current = true; goNextRef.current?.(); break;
         case 'ArrowLeft': case 'MediaTrackPrevious':
+          if (!isExpanded) break;
           e.preventDefault(); autoPlayRef.current = true; goPreviousRef.current?.(); break;
+        case 'ArrowUp':
+          // Volume + (global, toujours actif si lecteur visible)
+          e.preventDefault();
+          setVolume(prev => { const v = Math.min(1, (prev || 0) + 0.05); if (audioRef.current) audioRef.current.volume = v; return v; });
+          break;
+        case 'ArrowDown':
+          // Volume - (global, toujours actif si lecteur visible)
+          e.preventDefault();
+          setVolume(prev => { const v = Math.max(0, (prev || 0) - 0.05); if (audioRef.current) audioRef.current.volume = v; return v; });
+          break;
         case 'Space': case 'KeyK':
           e.preventDefault();
           if (audioRef.current) {
@@ -221,6 +256,7 @@ const AudioPlayer = ({ currentSong, playlist = [], onNext, onPrevious, onClose, 
           }
           break;
         case 'Escape':
+          if (!isExpanded) break;
           if (isCoverMode || isNativeFS) toggleImmersiveRef.current?.();
           else { setIsExpanded(false); setIsCoverMode(false); setShowQueue(false); setShowSpeedMenu(false); }
           break;
@@ -231,7 +267,7 @@ const AudioPlayer = ({ currentSong, playlist = [], onNext, onPrevious, onClose, 
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [isExpanded, isPlaying, isCoverMode, isNativeFS]);
+  }, [isExpanded, isPlaying, isCoverMode, isNativeFS, toggleMute]);
 
   // ── Scroll lock ─────────────────────────────────────────────────
   useEffect(() => {

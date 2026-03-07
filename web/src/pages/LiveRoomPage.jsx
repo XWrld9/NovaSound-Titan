@@ -40,31 +40,31 @@ const REACTION_EMOJIS  = ['🔥','💜','🎵','✨','🎶','❤️','💫','�
 
 // Descriptions personnalisées par genre musical
 const GENRE_DESCRIPTIONS = {
-  'Bikutsi': '🔥 Plonge dans l\'énergie effrénée du Bikutsi camerounais ! Rythmes endiablés et dansse traditionnelle beti.',
-  'Makossa': '🌍 Voyage au cœur de la Makossa, le son qui a conquis le monde. Groove doux et mélodies envoûtantes.',
-  'Assiko': '🌿 Laisse-toi porter par les rythmes traditionnels Assiko du littoral camerounais. Ambiance nature et authenticité.',
-  'Ambas-Bay': '🌊 Découvre les sonorités folkloriques Yabassi. Musique authentique des rivières et traditions ancestrales.',
-  'Benskin': '🎭 Fusion unique entre traditions camerounaises et influences modernes. Le son urbain de Douala.',
-  'Mbolé': '🥁 Rythmes puissants de la forêt équatoriale. Énergie brute et chants traditionnels Bantou.',
-  'Afrobeats': '🎵 Le son qui fait vibrer l\'Afrique ! Fusion moderne de rythmes traditionnels et influences urbaines.',
-  'Hip-Hop': '🎤 Culture urbaine et flows puissants. Beats qui marquent l\'histoire et paroles qui font réfléchir.',
-  'R&B': '💜 Mélodies douces et voix envoûtantes. Le son de l\'amour et des émotions profondes.',
-  'Pop': '✨ Hits qui marquent les esprits et mélodies qui restent dans la tête. Le son de la génération.',
-  'Électronique': '🎧 Futurisme et innovation sonore. Beats synthétiques et paysages sonores électriques.',
-  'Trap': '🚀 Basses qui secouent et 808 qui déchire. Le son des rues et de l\'ambition sans limites.',
-  'Gospel': '🙏 Musique de l\'âme et voix qui élèvent. Harmonies sacrées et messages d\'espoir.',
-  'Jazz': '🎺 Improvisation et liberté musicale. Le son du swing, du blues et de l\'expression pure.',
-  'Reggae': '🌺 One Love et vibes positives. Rythmes jamaïcains et messages de paix et d\'unité.',
-  'Dancehall': '🔥 Énergie caribéenne et rythmes contagieux. Le son qui fait bouger les foules.',
-  'Amapiano': '🇿🇦 Log drums et grooves sud-africains. Le son qui réinvente la dance music.',
-  'Coupé-Décalé': '🎉 Côte d\'Ivoire en fête ! Rythmes endiablés et ambiance de joie pure.',
-  'Rock': '🎸 Guitares électriques et énergie brute. Le son de la rébellion et de l\'authenticité.',
-  'Classique': '🎻 Élégance intemporelle et émotions pures. Les plus grandes mélodies de tous les temps.',
-  'Folk': '🪶 Authenticité et simplicité. Le son des racines et des histoires personnelles.',
-  'Latin': '💃 Rythmes latinos et passion brûlante. Salsa, reggaeton et sons qui font danser.',
-  'Drill': '🌃 Ambiance urbaine sombre et beats qui glacent. Le son des quartiers et de la réalité brute.',
-  'Country': '🤠 Histoires de vie et guitares acoustiques. Le son de l\'Amérique profonde et des valeurs authentiques.',
-  'Outro': '🌌 Expérimental et avant-gardiste. Le son de demain et des frontières sonores explorées.',
+  'bikutsi': '🔥 Plonge dans l\'énergie effrénée du Bikutsi camerounais ! Rythmes endiablés et danse traditionnelle beti.',
+  'makossa': '🌍 Voyage au cœur de la Makossa, le son qui a conquis le monde. Groove doux et mélodies envoûtantes.',
+  'assiko': '🌿 Laisse-toi porter par les rythmes traditionnels Assiko du littoral camerounais. Ambiance nature et authenticité.',
+  'ambas-bay': '🌊 Découvre les sonorités folkloriques Yabassi. Musique authentique des rivières et traditions ancestrales.',
+  'benskin': '🎭 Fusion unique entre traditions camerounaises et influences modernes. Le son urbain de Douala.',
+  'mbole': '🥁 Rythmes puissants de la forêt équatoriale. Énergie brute et chants traditionnels Bantou.',
+  'afrobeats': '🎵 Le son qui fait vibrer l\'Afrique ! Fusion moderne de rythmes traditionnels et influences urbaines.',
+  'hip-hop': '🎤 Culture urbaine et flows puissants. Beats qui marquent l\'histoire et paroles qui font réfléchir.',
+  'r&b': '💜 Sensualité et mélodies douces. Le son qui fait vibrer les cœurs.',
+  'pop': '⭐ Hits radio et mélodies entraînantes. La musique qui plaît à tous.',
+  'electronique': '🎧 Futurisme et beats synthétiques. L\'énergie de la nuit et des festivals.',
+  'trap': '🔥 Basses lourdes et 808 puissants. Le son des rues et des clubs.',
+  'gospel': '🙌 Musique sacrée et voix puissantes. Élévation spirituelle et harmonie.',
+  'jazz': '🎺 Improvisation et sophistication. Le son chic des salles de concert.',
+  'reggae': '🌺 Rythmes jamaïcains et messages positifs. Peace & Love.',
+  'dancehall': '🔥 Énergie des tropiques et vibrations. Le son qui fait bouger les corps.',
+  'amapiano': '🎹 Piano log et basses profondes. Le son d\'Afrique du Sud qui conquiert le monde.',
+  'coupe-decale': '🎵 Côte d\'Ivoire et rythmes entraînants. Le son qui fait danser l\'Afrique de l\'Ouest.',
+  'rock': '🎸 Guitares électriques et énergie brute. Le son de la rébellion.',
+  'classique': '🎻 Œuvres intemporelles et orchestres majestueux. La musique des siècles.',
+  'folk': '🎸 Acoustique et authenticité. Le son des racines et des histoires.',
+  'country': '🤠 Guitares acoustiques et histoires de vie. Le son de l\'Amérique profonde.',
+  'latin': '💃 Salsa, reggaeton et rythmes latinos. La passion et la fiesta.',
+  'drill': '🔥 Basses sombres et flows rapides. Le son des rues modernes.',
+  'outro': '🎯 Expérimental et avant-garde. Le son de demain.',
 };
 const GRADIENTS        = [
   'from-cyan-500 to-blue-600','from-fuchsia-500 to-purple-600','from-amber-400 to-orange-500',
@@ -408,6 +408,7 @@ const LiveRoomPage = () => {
       const { data: roomData, error } = await supabase
         .from('live_rooms')
         .insert({
+          title: roomName.trim(),
           name: roomName.trim(),
           description: finalDescription,
           genre: roomGenre || null,
@@ -434,9 +435,16 @@ const LiveRoomPage = () => {
         });
       
       // Notifier les followers (si public)
-      if (!isPrivate && currentUser.followers_count > 0) {
-        // TODO: Implémenter la notification des followers
-        console.log('Notification des followers à implémenter');
+      if (!isPrivate) {
+        try {
+          await notifyFollowers(supabase, currentUser.id, {
+            type:     'live_start',
+            title:    `🎙️ ${currentUser.username || 'Quelqu\'un'} est en live !`,
+            body:     roomName.trim(),
+            url:      `/live/${roomData.id}`,
+            icon_url: currentUser.avatar_url || '/icon-192.png',
+          });
+        } catch (_) { /* non-fatal */ }
       }
       
       // Rediriger vers la salle
@@ -445,7 +453,7 @@ const LiveRoomPage = () => {
     } catch (error) {
       console.error('Erreur création salle:', error);
       setPhase('lobby');
-      // TODO: Afficher une erreur à l'utilisateur
+      alert('Erreur lors de la création : ' + (error.message || 'Veuillez réessayer.'));
     } finally {
       setCreatingRoom(false);
       // Réinitialiser le formulaire

@@ -140,15 +140,35 @@ const AudioPlayerMobile = memo(({ currentSong, isPlaying, currentTime, duration,
   // Keyboard shortcuts
   useEffect(() => {
     const handleKeyDown = (e) => {
-      if (e.code === 'Space' && !isExpanded) {
+      if (['INPUT', 'TEXTAREA'].includes(e.target?.tagName)) return;
+      if (e.code === 'Space') {
         e.preventDefault();
         handlePlayPause();
+      } else if (e.code === 'ArrowUp') {
+        e.preventDefault();
+        // Augmenter le volume via event global
+        window.dispatchEvent(new CustomEvent('novasound:set-volume', {
+          detail: { volume: Math.min(1, ((parseFloat(String(document.querySelector('audio')?.volume ?? 1)) || 1) + 0.05)) }
+        }));
+      } else if (e.code === 'ArrowDown') {
+        e.preventDefault();
+        window.dispatchEvent(new CustomEvent('novasound:set-volume', {
+          detail: { volume: Math.max(0, ((parseFloat(String(document.querySelector('audio')?.volume ?? 1)) || 1) - 0.05)) }
+        }));
+      } else if (e.code === 'ArrowRight' && isExpanded) {
+        e.preventDefault();
+        next();
+      } else if (e.code === 'ArrowLeft' && isExpanded) {
+        e.preventDefault();
+        previous();
+      } else if (e.code === 'KeyM') {
+        e.preventDefault();
+        toggleMute();
       }
     };
-    
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [handlePlayPause, isExpanded]);
+  }, [handlePlayPause, isExpanded, next, previous, toggleMute]);
   
   if (!currentSong) return null;
   

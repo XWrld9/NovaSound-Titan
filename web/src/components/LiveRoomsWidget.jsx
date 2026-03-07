@@ -63,7 +63,7 @@ const LiveRoomsWidget = () => {
         <span className="text-sm">Aucun salon en direct pour l'instant</span>
       </div>
       <Link to="/live" className="text-xs text-red-400 hover:text-red-300 font-semibold transition-colors">
-        Créer →
+        Voir tous →
       </Link>
     </div>
   );

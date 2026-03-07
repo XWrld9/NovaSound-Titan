@@ -350,12 +350,26 @@ export const AuthProvider = ({ children }) => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return { success: false, message: 'Utilisateur non connecté' };
 
-      const { data, error } = await supabase
+      // Tenter la mise à jour complète avec social_links
+      let { data, error } = await supabase
         .from('users')
         .update(updates)
         .eq('id', user.id)
         .select()
         .single();
+
+      // Si erreur sur colonne manquante (social_links non encore migrée), retry sans social_links
+      if (error && (error.message?.includes('social_links') || error.code === '42703')) {
+        const { social_links: _sl, ...safeUpdates } = updates;
+        const result = await supabase
+          .from('users')
+          .update(safeUpdates)
+          .eq('id', user.id)
+          .select()
+          .single();
+        data  = result.data;
+        error = result.error;
+      }
 
       if (error) return { success: false, message: error.message };
 

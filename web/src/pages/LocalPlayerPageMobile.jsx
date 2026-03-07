@@ -267,7 +267,11 @@ const PlaylistCard = memo(({ playlist, onSelect, onDelete, onPlay }) => {
         <button
           onClick={(e) => {
             e.stopPropagation();
-            // TODO: Implement share functionality
+            if (navigator.share) {
+              navigator.share({ title: song.title, text: `${song.title} — ${song.artist}` }).catch(() => {});
+            } else if (navigator.clipboard) {
+              navigator.clipboard.writeText(`${song.title} — ${song.artist}`).catch(() => {});
+            }
           }}
           className="p-2 text-gray-400 hover:text-white transition-colors rounded-lg"
         >
@@ -283,7 +287,7 @@ PlaylistCard.displayName = 'PlaylistCard';
 // ── Main Component ───────────────────────────────────────────────────────────
 const LocalPlayerPageMobile = memo(() => {
   const navigate = useNavigate();
-  const { activeSong, isPlaying, play, pause, queue, setQueue } = usePlayer();
+  const { activeSong, isPlaying, playSong, queue, setQueue, addToQueue } = usePlayer();
   const { currentTime, duration } = usePlayerTime();
   
   // States
@@ -353,9 +357,19 @@ const LocalPlayerPageMobile = memo(() => {
   
   // Song actions
   const handlePlaySong = useCallback((song, index) => {
-    // TODO: Implement play functionality
-    console.log('Play song:', song);
-  }, []);
+    if (!song?.url) return;
+    // Construire la playlist locale à partir des songs chargées
+    const localSongs = songs.map(s => ({
+      ...s,
+      id:        s.id,
+      title:     s.title,
+      artist:    s.artist,
+      audio_url: s.url,
+      cover_url: s.coverUrl || null,
+    }));
+    const targetSong = { ...song, audio_url: song.url, cover_url: song.coverUrl || null };
+    playSong(targetSong, localSongs);
+  }, [songs, playSong]);
   
   const handleRemoveSong = useCallback((song, index) => {
     setSongs(prev => prev.filter((_, i) => i !== index));
@@ -374,9 +388,11 @@ const LocalPlayerPageMobile = memo(() => {
   }, []);
   
   const handleLongPress = useCallback((song) => {
-    console.log('Long press on song:', song);
-    // TODO: Show context menu
-  }, []);
+    // Ajouter à la file de lecture via long press
+    if (song?.url) {
+      addToQueue({ ...song, audio_url: song.url, cover_url: song.coverUrl || null });
+    }
+  }, [addToQueue]);
   
   // Playlist actions
   const handleCreatePlaylist = useCallback(async () => {
@@ -409,9 +425,23 @@ const LocalPlayerPageMobile = memo(() => {
   }, []);
   
   const handleSelectPlaylist = useCallback((playlist) => {
-    // TODO: Load playlist songs
-    console.log('Select playlist:', playlist);
-  }, []);
+    if (!playlist?.songs?.length) return;
+    // Charger les morceaux de la playlist dans la liste active
+    const playlistSongs = playlist.songs.map(s => ({
+      ...s,
+      url: s.url || s.audio_url,
+      coverUrl: s.coverUrl || s.cover_url || null,
+    }));
+    setSongs(prev => {
+      // Fusionner avec les morceaux déjà chargés (dédupliqués par id)
+      const existing = new Set(prev.map(s => s.id));
+      const newOnes  = playlistSongs.filter(s => !existing.has(s.id));
+      return [...prev, ...newOnes];
+    });
+    setActiveTab('library');
+    // Jouer le premier morceau de la playlist
+    if (playlistSongs[0]) handlePlaySong(playlistSongs[0], 0);
+  }, [handlePlaySong]);
   
   // Filter and sort
   const filteredSongs = useMemo(() => {

@@ -201,7 +201,7 @@ self.addEventListener('notificationclose', e => {
 // ── Push subscription changée (rotation de clés) ─────────────────────────────
 self.addEventListener('pushsubscriptionchange', e => {
   // Le navigateur a révoqué/changé la subscription → re-souscrire automatiquement
-  const VAPID_KEY = 'BFCdXh1JM5vELnaw7GolQNKPEc-CJRafU2QC3r1lTdyCSSBl5QL6nJfU3HXbnhqm_krsVViGLJ8nf2VpYBjt38o';
+  const VAPID_KEY = 'BOfOThRQ1WFrroj7sGuIVy-R2u--fgE_1_FInA6OwhrhdY2lomv7Co4gMXLRvZg257FbDztvNOgYWqCbk8C4qZc';
   const decode = b64 => {
     const pad  = '='.repeat((4 - b64.length % 4) % 4);
     const base = (b64 + pad).replace(/-/g, '+').replace(/_/g, '/');
