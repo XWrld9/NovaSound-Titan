@@ -17,6 +17,7 @@ import { supabase } from '@/lib/supabaseClient';
 import { useAuth } from '@/contexts/AuthContext';
 import { usePlayer } from '@/contexts/PlayerContext';
 import Header from '@/components/Header';
+import LiveLikeButton from '@/components/LiveLikeButton';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { notifyFollowers } from '@/lib/notifUtils';
 import {
@@ -1172,6 +1173,14 @@ const LiveRoomPage = () => {
               <button onClick={copyLink} className="flex items-center gap-1.5 text-xs text-gray-400 hover:text-white bg-gray-800 hover:bg-gray-700 px-2.5 sm:px-3 py-1.5 rounded-lg transition-all">
                 {copied ? <><Check className="w-3.5 h-3.5 text-green-400" />Copié</> : <><Share2 className="w-3.5 h-3.5" /><span className="hidden sm:inline">Partager</span></>}
               </button>
+              {/* Live Like Button */}
+              <LiveLikeButton 
+                roomId={room?.id}
+                initialLikes={room?.likes_count || 0}
+                roomTitle={room?.name}
+                hostId={room?.host_id}
+                compact={true}
+              />
               {/* Bouton panneau mobile */}
               <button onClick={() => setMobileSideOpen(!mobileSideOpen)}
                 className="lg:hidden flex items-center gap-1.5 text-xs text-gray-400 bg-gray-800 px-2.5 py-1.5 rounded-lg transition-colors">

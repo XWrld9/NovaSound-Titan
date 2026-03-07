@@ -327,7 +327,9 @@ const LiveListPage = () => {
                         </button>
                         <LiveLikeButton 
                           roomId={room.id}
-                          initialLikes={room.live_room_likes?.[0]?.count || 0}
+                          initialLikes={room.likes_count || 0}
+                          roomTitle={room.title}
+                          hostId={room.host_id}
                           compact={true}
                         />
                       </div>

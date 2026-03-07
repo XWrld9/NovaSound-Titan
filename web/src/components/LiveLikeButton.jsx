@@ -6,7 +6,7 @@ import Lottie from 'lottie-react';
 import heartAnimation from '@/animations/heart-animation.json';
 import { supabase } from '@/lib/supabaseClient';
 
-const LiveLikeButton = ({ roomId, initialLikes = 0, initialLiked = false, compact = false }) => {
+const LiveLikeButton = ({ roomId, initialLikes = 0, initialLiked = false, compact = false, roomTitle = '', hostId = '' }) => {
   const { currentUser, supabase } = useAuth();
   const [likes, setLikes] = useState(initialLikes);
   const [isLiked, setIsLiked] = useState(initialLiked);
@@ -30,7 +30,7 @@ const LiveLikeButton = ({ roomId, initialLikes = 0, initialLiked = false, compac
       const { data } = await supabase
         .from('live_room_likes')
         .select('id')
-        .eq('user_id', currentUser.id)
+        .eq('user_id', supabase.auth.currentUser?.id || currentUser.id) // auth.uid() = UUID
         .eq('room_id', roomId)
         .maybeSingle();
       setIsLiked(!!data);
@@ -73,6 +73,51 @@ const LiveLikeButton = ({ roomId, initialLikes = 0, initialLiked = false, compac
     };
   }, [roomId, supabase, loadLikesData]);
 
+  // Envoyer notification push à l'hôte de la salle
+  const sendLikeNotification = async (isLiking) => {
+    if (!isLiking || !currentUser || !hostId || !roomId) return;
+    
+    try {
+      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+      const serviceRoleKey = import.meta.env.VITE_SUPABASE_SERVICE_ROLE_KEY;
+      
+      if (!supabaseUrl || !serviceRoleKey) {
+        console.warn('Variables Supabase manquantes pour les notifications');
+        return;
+      }
+
+      const payload = {
+        type: 'live_like',
+        user_id: hostId, // Envoyer à l'hôte
+        title: '❤️ Nouveau like sur votre live !',
+        body: `${currentUser.username || 'Quelqu\'un'} a aimé votre salle "${roomTitle || 'Live Room'}"`,
+        url: `/live/${roomId}`,
+        icon_url: '/icon-192.png',
+        notif_id: `live_like_${roomId}_${currentUser.id}_${Date.now()}`,
+        room_id: roomId,
+        liker_name: currentUser.username || 'Utilisateur'
+      };
+
+      const response = await fetch(`${supabaseUrl}/functions/v1/send-push-notification`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${serviceRoleKey}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(payload)
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        console.warn('Erreur notification push:', errorData.error || response.statusText);
+      } else {
+        console.log('✅ Notification live_like envoyée');
+      }
+    } catch (error) {
+      console.warn('Erreur envoi notification:', error);
+    }
+  };
+
   // Action like / unlike
   const handleLike = async () => {
     if (!currentUser || isLoading || !roomId) return;
@@ -95,7 +140,7 @@ const LiveLikeButton = ({ roomId, initialLikes = 0, initialLiked = false, compac
         const { error } = await supabase
           .from('live_room_likes')
           .delete()
-          .eq('user_id', currentUser.id)
+          .eq('user_id', supabase.auth.currentUser?.id || currentUser.id)
           .eq('room_id', roomId);
         if (error) throw error;
       } else {
@@ -103,10 +148,13 @@ const LiveLikeButton = ({ roomId, initialLikes = 0, initialLiked = false, compac
         const { error } = await supabase
           .from('live_room_likes')
           .insert({ 
-            user_id: currentUser.id, 
+            user_id: supabase.auth.currentUser?.id || currentUser.id, // auth.uid() = UUID
             room_id: roomId 
           });
         if (error) throw error;
+        
+        // Envoyer la notification push à l'hôte
+        await sendLikeNotification(true);
       }
       // Le Realtime déclenchera loadLikesData() automatiquement
     } catch (error) {
