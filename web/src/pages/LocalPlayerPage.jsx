@@ -25,10 +25,15 @@ import { useNavigate, Link } from 'react-router-dom';
 import { usePlayer } from '@/contexts/PlayerContext';
 import { usePlayerTime } from '@/contexts/PlayerTimeContext';
 import Footer from '@/components/Footer';
+import LocalPlayerPageMobile from './LocalPlayerPageMobile';
 
 const AUDIO_EXTS = /\.(mp3|m4a|wav|flac|ogg|aac|opus|webm|mp4|3gp|caf|aiff|wma|amr|ape|mka)$/i;
 const isAudioFile = (f) => AUDIO_EXTS.test(f.name) || f.type.startsWith('audio/') || f.type === 'video/mp4';
 const FS_ACCESS_SUPPORTED = typeof window !== 'undefined' && 'showOpenFilePicker' in window;
+
+const isMobile = () =>
+  /android|webos|iphone|ipad|ipod|blackberry|iemobile|opera mini/i.test(navigator.userAgent) ||
+  window.innerWidth < 768;
 
 // ── IndexedDB ─────────────────────────────────────────────────────────────────
 const IDB_NAME    = 'novasound_local_v2';
@@ -795,6 +800,13 @@ const LocalPlayerPage = () => {
   const duration       = isLocalPlaying ? (audioDuration    || 0) : 0;
   const ct             = isLocalPlaying ? (audioCurrentTime || 0) : 0;
   const VolumeIcon     = isMuted || volume === 0 ? VolumeX : Volume2;
+
+  // ══════════════════════════════════════════════════════════════════════════════
+  // Mobile redirection
+  // ══════════════════════════════════════════════════════════════════════════════
+  if (isMobile()) {
+    return <LocalPlayerPageMobile />;
+  }
 
   // ══════════════════════════════════════════════════════════════════════════════
   // EMPTY STATE (no files loaded)

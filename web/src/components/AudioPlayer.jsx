@@ -5,6 +5,7 @@ import {
   UserPlus, UserCheck, ExternalLink, X, Maximize2, Minimize2,
   ListMusic, Moon, Trash2, Gauge, Radio, Plus, Calendar,
 } from 'lucide-react';
+import AudioPlayerMobile from './AudioPlayerMobile';
 import { Slider } from '@/components/ui/slider';
 import { supabase } from '@/lib/supabaseClient';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -25,6 +26,10 @@ import AddToPlaylistModal from '@/components/AddToPlaylistModal';
 const isIOS = () =>
   /iphone|ipad|ipod/i.test(navigator.userAgent) ||
   (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+
+const isMobile = () =>
+  /android|webos|iphone|ipad|ipod|blackberry|iemobile|opera mini/i.test(navigator.userAgent) ||
+  window.innerWidth < 768;
 
 const tryNativeFullscreen = async (element) => {
   try {
@@ -83,6 +88,10 @@ if (typeof window !== 'undefined') {
 }
 
 const AudioPlayer = ({ currentSong, playlist = [], onNext, onPrevious, onClose, shouldAutoPlay = false, resetAutoPlay }) => {
+  if (isMobile()) {
+    return <AudioPlayerMobile />;
+  }
+
   const { currentUser } = useAuth();
   const genreTheme = useGenreTheme(currentSong?.genre);
   const navigate = useNavigate();
