@@ -18,6 +18,8 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { useOnline } from '@/contexts/OnlineContext';
 import { supabase } from '@/lib/supabaseClient';
+import { ALL_GENRES } from '@/hooks/useGenreTheme';
+import LiveLikeButton from '@/components/LiveLikeButton';
 import Header from '@/components/Header';
 import {
   Search, Users, Music, Radio, TrendingUp, Clock,
@@ -66,7 +68,8 @@ const LiveListPage = () => {
         .select(`
           *,
           host:users!live_rooms_host_id_fkey(username, avatar_url),
-          live_room_participants(count)
+          live_room_participants(count),
+          live_room_likes(count)
         `)
         .eq('is_active', true)
         .order('created_at', { ascending: false });
@@ -322,9 +325,11 @@ const LiveListPage = () => {
                           <Play className="w-4 h-4" />
                           Rejoindre
                         </button>
-                        <button className="p-2 bg-gray-700/50 hover:bg-gray-700 rounded-xl text-gray-400 hover:text-white transition-all">
-                          <Heart className="w-4 h-4" />
-                        </button>
+                        <LiveLikeButton 
+                          roomId={room.id}
+                          initialLikes={room.live_room_likes?.[0]?.count || 0}
+                          compact={true}
+                        />
                       </div>
                     </div>
 

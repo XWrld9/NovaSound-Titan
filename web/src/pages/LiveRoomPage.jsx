@@ -7,12 +7,12 @@
  * ✅ V110000 — Zone réaction : fermeture manuelle (croix) + pas d'auto-close
  * ✅ V110000 — Pause/Resume live par l'hôte + broadcast aux auditeurs
  * ✅ V110000 — Partage du lien en live dans le chat global
- * ✅ V110000 — Notification push automatique aux abonnés au démarrage du live
  */
 
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Helmet } from 'react-helmet-async';
 import { motion, AnimatePresence } from 'framer-motion';
+import { ALL_GENRES } from '@/hooks/useGenreTheme';
 import { supabase } from '@/lib/supabaseClient';
 import { useAuth } from '@/contexts/AuthContext';
 import { usePlayer } from '@/contexts/PlayerContext';
@@ -36,6 +36,35 @@ const HEARTBEAT_MS     = 25000;
 const TYPING_TIMEOUT   = 3000;
 const SYNC_THRESHOLD   = 2.0; // secondes d'écart avant recalibration
 const REACTION_EMOJIS  = ['🔥','💜','🎵','✨','🎶','❤️','💫','🎉','😍','🚀','👏','🤩','💎','🎸','🥁','🎤'];
+
+// Descriptions personnalisées par genre musical
+const GENRE_DESCRIPTIONS = {
+  'Bikutsi': '🔥 Plonge dans l\'énergie effrénée du Bikutsi camerounais ! Rythmes endiablés et dansse traditionnelle beti.',
+  'Makossa': '🌍 Voyage au cœur de la Makossa, le son qui a conquis le monde. Groove doux et mélodies envoûtantes.',
+  'Assiko': '🌿 Laisse-toi porter par les rythmes traditionnels Assiko du littoral camerounais. Ambiance nature et authenticité.',
+  'Ambas-Bay': '🌊 Découvre les sonorités folkloriques Yabassi. Musique authentique des rivières et traditions ancestrales.',
+  'Benskin': '🎭 Fusion unique entre traditions camerounaises et influences modernes. Le son urbain de Douala.',
+  'Mbolé': '🥁 Rythmes puissants de la forêt équatoriale. Énergie brute et chants traditionnels Bantou.',
+  'Afrobeats': '🎵 Le son qui fait vibrer l\'Afrique ! Fusion moderne de rythmes traditionnels et influences urbaines.',
+  'Hip-Hop': '🎤 Culture urbaine et flows puissants. Beats qui marquent l\'histoire et paroles qui font réfléchir.',
+  'R&B': '💜 Mélodies douces et voix envoûtantes. Le son de l\'amour et des émotions profondes.',
+  'Pop': '✨ Hits qui marquent les esprits et mélodies qui restent dans la tête. Le son de la génération.',
+  'Électronique': '🎧 Futurisme et innovation sonore. Beats synthétiques et paysages sonores électriques.',
+  'Trap': '🚀 Basses qui secouent et 808 qui déchire. Le son des rues et de l\'ambition sans limites.',
+  'Gospel': '🙏 Musique de l\'âme et voix qui élèvent. Harmonies sacrées et messages d\'espoir.',
+  'Jazz': '🎺 Improvisation et liberté musicale. Le son du swing, du blues et de l\'expression pure.',
+  'Reggae': '🌺 One Love et vibes positives. Rythmes jamaïcains et messages de paix et d\'unité.',
+  'Dancehall': '🔥 Énergie caribéenne et rythmes contagieux. Le son qui fait bouger les foules.',
+  'Amapiano': '🇿🇦 Log drums et grooves sud-africains. Le son qui réinvente la dance music.',
+  'Coupé-Décalé': '🎉 Côte d\'Ivoire en fête ! Rythmes endiablés et ambiance de joie pure.',
+  'Rock': '🎸 Guitares électriques et énergie brute. Le son de la rébellion et de l\'authenticité.',
+  'Classique': '🎻 Élégance intemporelle et émotions pures. Les plus grandes mélodies de tous les temps.',
+  'Folk': '🪶 Authenticité et simplicité. Le son des racines et des histoires personnelles.',
+  'Latin': '💃 Rythmes latinos et passion brûlante. Salsa, reggaeton et sons qui font danser.',
+  'Drill': '🌃 Ambiance urbaine sombre et beats qui glacent. Le son des quartiers et de la réalité brute.',
+  'Country': '🤠 Histoires de vie et guitares acoustiques. Le son de l\'Amérique profonde et des valeurs authentiques.',
+  'Outro': '🌌 Expérimental et avant-gardiste. Le son de demain et des frontières sonores explorées.',
+};
 const GRADIENTS        = [
   'from-cyan-500 to-blue-600','from-fuchsia-500 to-purple-600','from-amber-400 to-orange-500',
   'from-emerald-400 to-teal-600','from-rose-400 to-pink-600','from-indigo-400 to-violet-600',
@@ -296,6 +325,9 @@ const LiveRoomPage = () => {
 
   /* Lobby / Create */
   const [roomName, setRoomName]         = useState('');
+  const [roomDescription, setRoomDescription] = useState('');
+  const [roomGenre, setRoomGenre]       = useState('');
+  const [maxParticipants, setMaxParticipants] = useState(20);
   const [isPrivate, setIsPrivate]       = useState(false);
   const [creatingRoom, setCreatingRoom] = useState(false);
 
@@ -357,6 +389,71 @@ const LiveRoomPage = () => {
   const releaseWakeLock = useCallback(() => {
     if (wakeLockRef.current) { wakeLockRef.current.release(); wakeLockRef.current = null; }
   }, []);
+
+  /* ── Créer une salle ───────────────────────────────────────────── */
+  const createRoom = useCallback(async () => {
+    if (!currentUser || !roomName.trim() || creatingRoom) return;
+    
+    setCreatingRoom(true);
+    setPhase('creating');
+    
+    try {
+      // Utiliser la description personnalisée si aucune description fournie
+      const finalDescription = roomDescription?.trim() || 
+        (roomGenre && GENRE_DESCRIPTIONS[roomGenre] ? GENRE_DESCRIPTIONS[roomGenre] : 'Rejoignez ce live pour découvrir de la musique incroyable !');
+
+      // Créer la salle avec toutes les options
+      const { data: roomData, error } = await supabase
+        .from('live_rooms')
+        .insert({
+          name: roomName.trim(),
+          description: finalDescription,
+          genre: roomGenre || null,
+          max_participants: maxParticipants,
+          host_id: currentUser.id,
+          is_active: true,
+          is_private: isPrivate,
+          participants_count: 1, // L'hôte compte comme participant
+          created_at: new Date().toISOString()
+        })
+        .select()
+        .single();
+        
+      if (error) throw error;
+      
+      // Ajouter l'hôte comme participant
+      await supabase
+        .from('live_room_participants')
+        .insert({
+          room_id: roomData.id,
+          user_id: currentUser.id,
+          joined_at: new Date().toISOString(),
+          is_host: true
+        });
+      
+      // Notifier les followers (si public)
+      if (!isPrivate && currentUser.followers_count > 0) {
+        // TODO: Implémenter la notification des followers
+        console.log('Notification des followers à implémenter');
+      }
+      
+      // Rediriger vers la salle
+      navigate(`/live/${roomData.id}`);
+      
+    } catch (error) {
+      console.error('Erreur création salle:', error);
+      setPhase('lobby');
+      // TODO: Afficher une erreur à l'utilisateur
+    } finally {
+      setCreatingRoom(false);
+      // Réinitialiser le formulaire
+      setRoomName('');
+      setRoomDescription('');
+      setRoomGenre('');
+      setMaxParticipants(20);
+      setIsPrivate(false);
+    }
+  }, [currentUser, roomName, roomDescription, roomGenre, maxParticipants, isPrivate, creatingRoom, navigate]);
 
   /* ── Fetch lobby ──────────────────────────────────────────────── */
   const fetchRooms = useCallback(async () => {
@@ -498,29 +595,7 @@ const LiveRoomPage = () => {
     } catch (err) { console.error('shareInGlobalChat:', err); }
   }, [currentUser]);
 
-  /* ── Créer une salle ─────────────────────────────────────────── */
-  const createRoom = async () => {
-    if (!currentUser || !roomName.trim()) return;
-    setCreatingRoom(true);
-    try {
-      const { data, error } = await supabase.from('live_rooms')
-        .insert({ name: roomName.trim(), host_id: currentUser.id, is_private: isPrivate, is_active: true })
-        .select().single();
-      if (error) throw error;
-
-      // V110000 — notifier les abonnés que le live a démarré
-      const hostUsername = currentUser.user_metadata?.username || currentUser.email?.split('@')[0] || 'Un artiste';
-      notifyFollowers(supabase, currentUser.id, {
-        type:     'live_started',
-        title:    '🔴 Live en cours !',
-        body:     `${hostUsername} a démarré un live : "${data.name}"`,
-        url:      `/live/${data.id}`,
-        icon_url: currentUser.user_metadata?.avatar_url || '/icon-192.png',
-      }).catch(() => {});
-
-      await joinRoom(data.id, true);
-    } catch (e) { console.error(e); setCreatingRoom(false); }
-  };
+  /* ── Ancienne fonction createRoom supprimée (remplacée par la version complète) ── */
 
   /* ── Rejoindre une salle ─────────────────────────────────────── */
   const joinRoom = useCallback(async (id, asHost = false) => {
@@ -876,24 +951,122 @@ const LiveRoomPage = () => {
             <p className="text-gray-400 text-base sm:text-lg max-w-lg mx-auto leading-relaxed">{'Crée une salle, invite tes amis et partagez la même vibe musicale en temps réel.'}</p>
           </motion.div>
 
-          {/* Créer */}
+          {/* Créer une salle - Interface améliorée */}
           <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}
-            className="bg-gray-900/80 backdrop-blur border border-gray-800 rounded-2xl p-5 sm:p-6 mb-6 sm:mb-8">
-            <h2 className="text-sm font-bold text-white mb-4 flex items-center gap-2"><Plus className="w-4 h-4 text-green-400" />{'Créer une salle'}</h2>
-            <div className="flex gap-3 flex-wrap">
-              <input value={roomName} onChange={e => setRoomName(e.target.value)} onKeyDown={e => e.key === 'Enter' && createRoom()}
-                placeholder={'Nom de ta salle…'} maxLength={60}
-                className="flex-1 min-w-[160px] bg-gray-800 border border-gray-700 text-white rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-green-500 placeholder-gray-500 transition-colors" />
-              <button onClick={() => setIsPrivate(!isPrivate)}
-                className={`flex items-center gap-2 px-4 py-2.5 rounded-xl border text-sm font-medium transition-all ${isPrivate ? 'bg-amber-500/15 border-amber-500/40 text-amber-400' : 'bg-gray-800 border-gray-700 text-gray-400 hover:border-gray-600'}`}>
-                {isPrivate ? <Lock className="w-4 h-4" /> : <Unlock className="w-4 h-4" />}{isPrivate ? 'Privée' : 'Publique'}
-              </button>
-              <button onClick={createRoom} disabled={!roomName.trim() || creatingRoom || !currentUser}
-                className="bg-gradient-to-r from-green-500 to-cyan-500 hover:from-green-600 hover:to-cyan-600 disabled:opacity-40 text-white font-semibold px-6 py-2.5 rounded-xl text-sm transition-all shadow-lg shadow-green-500/20 flex items-center gap-2">
-                {creatingRoom ? <><Loader2 className="w-4 h-4 animate-spin" />Création…</> : <><Zap className="w-4 h-4" />{'Créer'}</>}
-              </button>
+            className="bg-gray-900/60 backdrop-blur-md border border-white/[0.06] rounded-2xl p-6 sm:p-8 mb-8 sm:mb-10 shadow-xl shadow-black/20">
+            <div className="flex items-center gap-3 mb-6">
+              <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-green-500 to-cyan-500 flex items-center justify-center">
+                <Radio className="w-6 h-6 text-white" />
+              </div>
+              <div>
+                <h2 className="text-xl font-bold text-white">Créer ta salle live</h2>
+                <p className="text-gray-400 text-sm">Lance un live et partage ta musique avec tes amis</p>
+              </div>
             </div>
-            {!currentUser && <p className="text-xs text-amber-400 mt-3 flex items-center gap-1.5"><AlertCircle className="w-3.5 h-3.5" /><Link to="/login" className="underline hover:text-amber-300">Connecte-toi</Link> pour créer une salle.</p>}
+
+            {/* Formulaire de création */}
+            <div className="space-y-4">
+              {/* Titre du live */}
+              <div>
+                <label className="block text-sm font-medium text-gray-300 mb-2">Titre du live</label>
+                <input 
+                  value={roomName} 
+                  onChange={e => setRoomName(e.target.value)} 
+                  onKeyDown={e => e.key === 'Enter' && createRoom()}
+                  placeholder="Ex: Soirée Chill, Session Hip-Hop, Mix Electro..." 
+                  maxLength={60}
+                  className="w-full bg-gray-800/90 border border-white/[0.10] text-white rounded-xl px-4 py-3 text-base focus:outline-none focus:border-cyan-500/50 focus:bg-gray-800 transition-all"
+                />
+                <p className="text-xs text-gray-500 mt-1">{roomName.length}/60 caractères</p>
+              </div>
+
+              {/* Description optionnelle */}
+              <div>
+                <label className="block text-sm font-medium text-gray-300 mb-2">Description (optionnel)</label>
+                <textarea
+                  value={roomDescription || ''}
+                  onChange={e => setRoomDescription(e.target.value)}
+                  placeholder="Décris ton live... ambiance, style musical, etc."
+                  maxLength={200}
+                  rows={2}
+                  className="w-full bg-gray-800/90 border border-white/[0.10] text-white rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-cyan-500/50 focus:bg-gray-800 transition-all resize-none"
+                />
+                <p className="text-xs text-gray-500 mt-1">{(roomDescription || '').length}/200 caractères</p>
+              </div>
+
+              {/* Options */}
+              <div className="flex flex-wrap gap-3">
+                <button 
+                  onClick={() => setIsPrivate(!isPrivate)}
+                  className={`flex items-center gap-2 px-4 py-2.5 rounded-xl border text-sm font-medium transition-all ${
+                    isPrivate 
+                      ? 'bg-amber-500/15 border-amber-500/40 text-amber-400' 
+                      : 'bg-gray-800/90 border-white/[0.10] text-gray-400 hover:border-cyan-500/30'
+                  }`}
+                >
+                  {isPrivate ? <Lock className="w-4 h-4" /> : <Unlock className="w-4 h-4" />}
+                  {isPrivate ? 'Privée' : 'Publique'}
+                </button>
+
+                <button 
+                  onClick={() => setMaxParticipants(maxParticipants === 10 ? 50 : maxParticipants - 10)}
+                  className="flex items-center gap-2 px-4 py-2.5 rounded-xl border border-white/[0.10] bg-gray-800/90 text-gray-400 hover:border-cyan-500/30 text-sm font-medium transition-all"
+                >
+                  <Users className="w-4 h-4" />
+                  Max: {maxParticipants}
+                </button>
+
+                <div className="flex flex-wrap gap-2">
+                  {ALL_GENRES.map(g => (
+                    <button key={g} type="button"
+                      onClick={() => setRoomGenre(roomGenre === g ? '' : g)}
+                      className={`px-3 py-1.5 rounded-full text-xs font-semibold border transition-all ${
+                        roomGenre === g
+                          ? 'bg-cyan-500/20 border-cyan-400 text-cyan-300'
+                          : 'border-gray-700 text-gray-400 hover:border-cyan-500/50 hover:text-gray-200'
+                      }`}
+                    >{g}</button>
+                  ))}
+                </div>
+
+                {/* Aperçu de la description personnalisée */}
+                {roomGenre && GENRE_DESCRIPTIONS[roomGenre] && (
+                  <div className="mt-3 p-3 bg-cyan-500/5 border border-cyan-500/20 rounded-xl">
+                    <p className="text-xs text-cyan-300 leading-relaxed">
+                      💡 Description automatique : {GENRE_DESCRIPTIONS[roomGenre]}
+                    </p>
+                  </div>
+                )}
+              </div>
+
+              {/* Bouton de création */}
+              <button 
+                onClick={createRoom} 
+                disabled={!roomName.trim() || creatingRoom || !currentUser}
+                className="w-full bg-gradient-to-r from-green-500 via-cyan-500 to-purple-500 hover:from-green-600 hover:via-cyan-600 hover:to-purple-600 disabled:opacity-40 disabled:cursor-not-allowed text-white font-bold py-4 rounded-xl text-base transition-all shadow-xl shadow-green-500/30 flex items-center justify-center gap-3 transform hover:scale-[1.02] active:scale-[0.98]"
+              >
+                {creatingRoom ? (
+                  <>
+                    <Loader2 className="w-5 h-5 animate-spin" />
+                    <span>Création de la salle...</span>
+                  </>
+                ) : (
+                  <>
+                    <Zap className="w-5 h-5" />
+                    <span>Lancer le live maintenant</span>
+                  </>
+                )}
+              </button>
+
+              {!currentUser && (
+                <p className="text-amber-400 text-sm text-center flex items-center justify-center gap-2">
+                  <AlertCircle className="w-4 h-4" />
+                  <Link to="/login" className="underline hover:text-amber-300 font-medium">
+                    Connecte-toi pour créer une salle
+                  </Link>
+                </p>
+              )}
+            </div>
           </motion.div>
 
           {/* Grille de salles */}
