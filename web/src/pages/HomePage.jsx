@@ -207,7 +207,7 @@ const HomePage = () => {
               style={{ backgroundImage: 'url(https://horizons-cdn.hostinger.com/83c37f40-fa54-4cc6-8247-95b1353f3eba/e8ebebbd32c0e37f6ab462c275dd560a.jpg)' }} />
             <div className="absolute inset-0 bg-gradient-to-b from-gray-950/80 via-gray-950/60 to-gray-950" />
             <div className="absolute inset-0 bg-gradient-to-r from-cyan-500/20 to-fuchsia-500/20" />
-            <div className="relative w-full max-w-screen-2xl mx-auto px-4 md:px-8 lg:px-12 h-full flex items-center justify-center md:justify-start text-center md:text-left">
+            <div className="relative w-full max-w-7xl mx-auto px-4 md:px-8 lg:px-12 h-full flex items-center justify-center md:justify-start text-center md:text-left">
               <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }} className="max-w-3xl">
                 <h1 className="text-4xl sm:text-5xl md:text-7xl font-bold mb-4 md:mb-6 bg-gradient-to-r from-cyan-400 via-white to-fuchsia-500 bg-clip-text text-transparent leading-tight">
                   Ressens la vague sonore

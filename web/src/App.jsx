@@ -46,6 +46,7 @@ const ChatPage          = lazy(() => import('@/pages/ChatPage'));
 const MessagesPage      = lazy(() => import('@/pages/MessagesPage'));
 const ArtistStatsPage   = lazy(() => import('@/pages/ArtistStatsPage'));
 const SearchPage        = lazy(() => import('@/pages/SearchPage'));
+const LiveListPage      = lazy(() => import('@/pages/LiveListPage'));
 const LiveRoomPage      = lazy(() => import('@/pages/LiveRoomPage'));
 const LeaderboardPage   = lazy(() => import('@/pages/LeaderboardPage'));
 const LocalPlayerPage   = lazy(() => import('@/pages/LocalPlayerPage'));
@@ -150,7 +151,7 @@ function App() {
                           <Route path="/stats"           element={<ProtectedRoute><ArtistStatsPage /></ProtectedRoute>} />
                           <Route path="/moderation"      element={<ProtectedRoute><ModerationPanel /></ProtectedRoute>} />
                           <Route path="/auth/callback"   element={<AuthCallbackPage />} />
-                          <Route path="/live"            element={<LiveRoomPage />} />
+                          <Route path="/live"            element={<LiveListPage />} />
                           <Route path="/live/:roomId"    element={<LiveRoomPage />} />
                           <Route path="/leaderboard"     element={<LeaderboardPage />} />
                           <Route path="/local-player"    element={<LocalPlayerPage />} />

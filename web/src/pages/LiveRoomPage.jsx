@@ -1125,9 +1125,9 @@ const LiveRoomPage = () => {
                     placeholder="Écrire un message…"
                     maxLength={500}
                     rows={1}
-                    style={{ resize: 'none', minHeight: 44, maxHeight: 120 }}
+                    style={{ resize: 'none', minHeight: 60, maxHeight: 140 }}
                     onInput={e => { e.target.style.height = 'auto'; e.target.style.height = Math.min(e.target.scrollHeight, 120) + 'px'; }}
-                    className="flex-1 bg-gray-800 border border-gray-700 text-white rounded-xl px-3 sm:px-4 py-3 text-sm focus:outline-none focus:border-cyan-500 placeholder-gray-500 transition-colors leading-relaxed overflow-y-auto"
+                    className="flex-1 bg-gray-800 border border-gray-700 text-white rounded-xl px-4 py-4 text-base focus:outline-none focus:border-cyan-500 placeholder-gray-500 transition-colors leading-relaxed overflow-y-auto"
                   />
                   <button onClick={() => setShowReactions(!showReactions)}
                     className={`p-2.5 rounded-xl transition-all flex-shrink-0 mb-0.5 ${showReactions ? 'bg-fuchsia-500/20 text-fuchsia-400' : 'bg-gray-800 text-gray-400 hover:text-white hover:bg-gray-700'}`}>

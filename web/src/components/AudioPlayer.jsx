@@ -1079,8 +1079,8 @@ const AudioPlayer = ({ currentSong, playlist = [], onNext, onPrevious, onClose, 
                 <button onClick={() => currentSong?.is_local ? setShowNowPlaying(true) : setIsExpanded(true)} className="text-gray-600 hover:text-gray-400 transition-colors p-1">
                   <Maximize2 className="w-3.5 h-3.5" />
                 </button>
-                <button onClick={closePlayer} className="text-gray-600 hover:text-gray-400 transition-colors p-1">
-                  <X className="w-3.5 h-3.5" />
+                <button onClick={closePlayer} className="text-gray-400 hover:text-red-400 hover:bg-red-500/10 transition-all p-1.5 rounded-lg">
+                  <X className="w-4 h-4" />
                 </button>
               </div>
               <div className="flex items-center gap-3 px-3 pb-2 pt-0.5">
