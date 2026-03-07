@@ -21,7 +21,7 @@ const LikeButton = ({ songId, initialLikes = 0, initialLiked = false, compact = 
       // Vrai compteur depuis les lignes (source de vérité)
       const { count } = await supabase
         .from('likes')
-        .select('id', { count: 'exact', head: true })
+        .select('*', { count: 'exact', head: true })
         .eq('song_id', songId);
 
       if (count !== null) setLikes(count);
