@@ -469,7 +469,7 @@ const LiveRoomPage = () => {
     setLoadingRooms(true);
     try {
       const { data } = await supabase.from('live_rooms')
-        .select('id,title,description,genre,is_public,is_active,is_private,host_id,participants_count,created_at,host:host_id(id,username,avatar_url),current_song:current_song_id(id,title,artist,cover_url)')
+        .select('id,title,description,genre,is_active,is_private,host_id,participants_count,created_at,host:host_id(id,username,avatar_url),current_song:current_song_id(id,title,artist,cover_url)')
         .eq('is_active', true).eq('is_private', false)
         .order('participants_count', { ascending: false }).limit(20);
       setRooms(data || []);
@@ -615,7 +615,7 @@ const LiveRoomPage = () => {
 
     try {
       const { data: rd, error: re } = await supabase.from('live_rooms')
-        .select('id,title,description,genre,is_public,is_active,is_private,host_id,participants_count,created_at,current_song_id,host:host_id(id,username,avatar_url),current_song:current_song_id(id,title,artist,cover_url,audio_url)')
+        .select('id,title,description,genre,is_active,is_private,host_id,participants_count,created_at,current_song_id,host:host_id(id,username,avatar_url),current_song:current_song_id(id,title,artist,cover_url,audio_url)')
         .eq('id', id).single();
       if (re || !rd) throw new Error('Salle introuvable ou expirée.');
       if (!rd.is_active) throw new Error('Cette salle est terminée.');

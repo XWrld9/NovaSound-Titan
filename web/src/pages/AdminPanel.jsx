@@ -140,7 +140,7 @@ const AdminPanel = () => {
   const loadLiveRooms = useCallback(async () => {
     try {
       const { data } = await supabase.from('live_rooms')
-        .select('id, title, description, genre, is_public, is_active, host_id, participants_count, created_at, updated_at, host:users!host_id(username, avatar_url, email)')
+        .select('id, title, description, genre, is_active, is_private, host_id, participants_count, created_at, updated_at, host:users!host_id(username, avatar_url, email)')
         .order('created_at', { ascending:false }).limit(50);
       setLiveRooms(data || []);
     } catch {}

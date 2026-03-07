@@ -87,11 +87,17 @@ if (typeof window !== 'undefined') {
   window.addEventListener('click',       _unlockAudio, { once: false });
 }
 
-const AudioPlayer = ({ currentSong, playlist = [], onNext, onPrevious, onClose, shouldAutoPlay = false, resetAutoPlay }) => {
-  if (isMobile()) {
-    return <AudioPlayerMobile />;
-  }
+// ── Wrapper : décide mobile vs desktop AVANT de monter des hooks ─────────────
+// Les hooks React ne doivent jamais être appelés après un return conditionnel.
+// Ce wrapper délègue à AudioPlayerDesktop (hooks desktop) ou AudioPlayerMobile.
+const AudioPlayer = (props) => {
+  const mobile = typeof window !== 'undefined' && isMobile();
+  if (mobile) return <AudioPlayerMobile />;
+  return <AudioPlayerDesktop {...props} />;
+};
 
+// ── Composant desktop complet ─────────────────────────────────────────────────
+const AudioPlayerDesktop = ({ currentSong, playlist = [], onNext, onPrevious, onClose, shouldAutoPlay = false, resetAutoPlay }) => {
   const { currentUser } = useAuth();
   const genreTheme = useGenreTheme(currentSong?.genre);
   const navigate = useNavigate();
