@@ -46,18 +46,49 @@ const TrendingPage = () => {
     setLoadingSongs(true);
     try {
       const view = PERIODS.find(x => x.id === p)?.view || 'trending_7d';
-      const { data } = await supabase.from(view).select('*').limit(20);
-      setSongs(data || []);
-    } catch {}
+      const { data, error } = await supabase.from(view).select('*').limit(20);
+      if (error) {
+        // Vue absente → fallback sur songs triés par plays_count
+        const { data: fallback } = await supabase.from('songs')
+          .select('id,title,artist,cover_url,audio_url,plays_count,likes_count,uploader_id,created_at')
+          .eq('is_archived', false)
+          .order('plays_count', { ascending: false }).limit(20);
+        setSongs(fallback || []);
+      } else {
+        setSongs(data || []);
+      }
+    } catch {
+      const { data: fallback } = await supabase.from('songs')
+        .select('id,title,artist,cover_url,audio_url,plays_count,likes_count,uploader_id,created_at')
+        .eq('is_archived', false)
+        .order('plays_count', { ascending: false }).limit(20);
+      setSongs(fallback || []);
+    }
     finally { setLoadingSongs(false); }
   }, []);
 
   const fetchTrendingArtists = useCallback(async (p) => {
     setLoadingArtists(true);
     try {
-      const { data } = await supabase.rpc('get_trending_artists', { period: p, lim: 15 });
-      setArtists(data || []);
-    } catch {}
+      const { data, error } = await supabase.rpc('get_trending_artists', { period: p, lim: 15 });
+      if (error) {
+        // RPC absent → fallback agrégation manuelle
+        const { data: songs } = await supabase.from('songs')
+          .select('uploader_id, plays_count, users!uploader_id(id,username,avatar_url)')
+          .eq('is_archived', false).order('plays_count', { ascending: false }).limit(100);
+        const byUser = {};
+        for (const s of songs || []) {
+          if (!s.uploader_id || !s.users) continue;
+          if (!byUser[s.uploader_id]) byUser[s.uploader_id] = { ...s.users, period_plays: 0 };
+          byUser[s.uploader_id].period_plays += s.plays_count || 0;
+        }
+        setArtists(Object.values(byUser).sort((a,b) => b.period_plays - a.period_plays).slice(0,15));
+      } else {
+        setArtists(data || []);
+      }
+    } catch {
+      setArtists([]);
+    }
     finally { setLoadingArtists(false); }
   }, []);
 

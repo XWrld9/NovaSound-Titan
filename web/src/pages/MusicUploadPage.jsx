@@ -308,11 +308,29 @@ const MusicUploadPage = () => {
         plays_count: 0,
         likes_count: 0,
         created_at:  new Date().toISOString(),
-        genre:       formData.genre || null,
-        duration_s:  audioDuration || null,
-        description: formData.description?.trim() || null,
+        // Colonnes optionnelles — ignorées si absentes du schéma
+        ...(formData.genre       ? { genre:       formData.genre }                        : {}),
+        ...(audioDuration        ? { duration_s:  audioDuration }                         : {}),
+        ...(formData.description ? { description: formData.description.trim() || null }   : {}),
       });
-      if (insertError) throw insertError;
+      if (insertError) {
+        // Retry sans les colonnes optionnelles si erreur schéma
+        if (insertError.message?.includes('column') || insertError.code === 'PGRST204') {
+          const { error: retryErr } = await supabase.from('songs').insert({
+            title:       formData.title.trim(),
+            artist:      formData.artist.trim(),
+            uploader_id: currentUser.id,
+            audio_url:   audioPublic?.publicUrl || null,
+            cover_url:   albumCoverUrl,
+            plays_count: 0,
+            likes_count: 0,
+            created_at:  new Date().toISOString(),
+          });
+          if (retryErr) throw retryErr;
+        } else {
+          throw insertError;
+        }
+      }
 
       // V50000: Notifier les abonnés d'abord (plus pertinent), puis notifyAll
       notifyFollowers(supabase, currentUser.id, {

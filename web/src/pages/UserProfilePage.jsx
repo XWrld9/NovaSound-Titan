@@ -103,20 +103,20 @@ const UserProfilePage = () => {
       const [songsRes, favRes, likesRes, followersRes, followingRes, repostsRes] =
         await Promise.allSettled([
           supabase.from('songs').select('*').eq('uploader_id', currentUser.id).order('created_at', { ascending: false }).limit(100),
-          supabase.from('favorites').select('song_id, songs(id,title,artist,cover_url,audio_url,created_at,plays_count,likes_count,uploader_id,is_archived)').eq('user_id', currentUser.id).order('created_at', { ascending: false }),
-          supabase.from('likes').select('song_id, songs(id,title,artist,cover_url,audio_url,created_at,plays_count,likes_count,uploader_id,is_archived)').eq('user_id', currentUser.id).order('created_at', { ascending: false }),
-          supabase.from('follows').select('follower_id, users!follows_follower_id_fkey(*)').eq('following_id', currentUser.id),
-          supabase.from('follows').select('following_id, users!follows_following_id_fkey(*)').eq('follower_id', currentUser.id),
-          supabase.from('song_reposts').select('song_id, created_at, songs(id,title,artist,cover_url,audio_url,created_at,plays_count,likes_count,uploader_id,is_archived)').eq('user_id', currentUser.id).order('created_at', { ascending: false }),
+          supabase.from('favorites').select('song_id, created_at, songs(id,title,artist,cover_url,audio_url,created_at,plays_count,likes_count,uploader_id)').eq('user_id', currentUser.id).order('created_at', { ascending: false }),
+          supabase.from('likes').select('song_id, created_at, songs(id,title,artist,cover_url,audio_url,created_at,plays_count,likes_count,uploader_id)').eq('user_id', currentUser.id).order('created_at', { ascending: false }),
+          supabase.from('follows').select('follower_id, users!follows_follower_id_fkey(id,username,avatar_url,followers_count)').eq('following_id', currentUser.id),
+          supabase.from('follows').select('following_id, users!follows_following_id_fkey(id,username,avatar_url,followers_count)').eq('follower_id', currentUser.id),
+          supabase.from('song_reposts').select('song_id, created_at, songs(id,title,artist,cover_url,audio_url,created_at,plays_count,likes_count,uploader_id)').eq('user_id', currentUser.id).order('created_at', { ascending: false }),
         ]);
 
       if (songsRes.status === 'fulfilled' && !songsRes.value.error)    setUserSongs(songsRes.value.data || []);
-      if (favRes.status === 'fulfilled' && !favRes.value.error)        setFavoriteSongs((favRes.value.data || []).map(f => f.songs).filter(Boolean).filter(s => !s?.is_archived));
-      if (likesRes.status === 'fulfilled' && !likesRes.value.error)    setLikedSongs((likesRes.value.data || []).map(l => l.songs).filter(Boolean).filter(s => !s?.is_archived));
+      if (favRes.status === 'fulfilled' && !favRes.value.error)        setFavoriteSongs((favRes.value.data || []).map(f => f.songs).filter(Boolean).filter(Boolean));
+      if (likesRes.status === 'fulfilled' && !likesRes.value.error)    setLikedSongs((likesRes.value.data || []).map(l => l.songs).filter(Boolean).filter(Boolean));
       if (followersRes.status === 'fulfilled' && !followersRes.value.error) setFollowers(followersRes.value.data || []);
       if (followingRes.status === 'fulfilled' && !followingRes.value.error) setFollowing(followingRes.value.data || []);
       if (repostsRes.status === 'fulfilled' && !repostsRes.value.error)
-        setRepostedSongs((repostsRes.value.data || []).map(r => r.songs).filter(Boolean).filter(s => !s?.is_archived));
+        setRepostedSongs((repostsRes.value.data || []).map(r => r.songs).filter(Boolean).filter(Boolean));
     } catch (err) {
       console.error('[UserProfile] fetchUserData:', err);
       setLoading(false);

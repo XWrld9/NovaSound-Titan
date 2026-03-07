@@ -161,16 +161,40 @@ const LeaderboardPage = () => {
   const fetchArtistsAndListeners = useCallback(async (isRefresh = false) => {
     if (isRefresh) setRefreshing(true); else setLoading(true);
     const [ar, lr] = await Promise.allSettled([
-      supabase.from('users')
-        .select('id,username,avatar_url,followers_count,total_plays,total_likes,xp_points')
-        .order('total_plays', { ascending: false }).limit(20),
+      // On agrège les plays depuis songs (total_plays n'existe pas dans users)
+      supabase.from('songs')
+        .select('uploader_id, plays_count, likes_count')
+        .eq('is_archived', false)
+        .order('plays_count', { ascending: false })
+        .limit(200),
       supabase.from('user_streaks')
         .select('user_id,current_streak,longest_streak,total_days')
         .order('total_days', { ascending: false }).limit(20),
     ]);
 
     if (ar.status === 'fulfilled') {
-      const list = ar.value.data || [];
+      // Agréger par uploader_id
+      const songRows = ar.value.data || [];
+      const byUser = {};
+      for (const s of songRows) {
+        if (!s.uploader_id) continue;
+        if (!byUser[s.uploader_id]) byUser[s.uploader_id] = { total_plays: 0, total_likes: 0 };
+        byUser[s.uploader_id].total_plays += s.plays_count || 0;
+        byUser[s.uploader_id].total_likes += s.likes_count || 0;
+      }
+      const uploaderIds = Object.keys(byUser);
+      let list = [];
+      if (uploaderIds.length) {
+        const { data: ud } = await supabase.from('users')
+          .select('id,username,avatar_url,followers_count')
+          .in('id', uploaderIds);
+        list = (ud || []).map(u => ({
+          ...u,
+          total_plays: byUser[u.id]?.total_plays || 0,
+          total_likes: byUser[u.id]?.total_likes || 0,
+          xp_points:   (byUser[u.id]?.total_plays || 0) + (byUser[u.id]?.total_likes || 0) * 3,
+        })).sort((a, b) => b.total_plays - a.total_plays).slice(0, 20);
+      }
       setTopArtists(list);
       if (currentUser?.id) {
         const idx = list.findIndex(u => u.id === currentUser.id);

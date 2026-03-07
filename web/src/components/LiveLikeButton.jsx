@@ -7,7 +7,7 @@ import heartAnimation from '@/animations/heart-animation.json';
 import { supabase } from '@/lib/supabaseClient';
 
 const LiveLikeButton = ({ roomId, initialLikes = 0, initialLiked = false, compact = false, roomTitle = '', hostId = '' }) => {
-  const { currentUser, supabase } = useAuth();
+  const { currentUser } = useAuth();
   const [likes, setLikes] = useState(initialLikes);
   const [isLiked, setIsLiked] = useState(initialLiked);
   const [isLoading, setIsLoading] = useState(false);

@@ -140,7 +140,7 @@ const AdminPanel = () => {
   const loadLiveRooms = useCallback(async () => {
     try {
       const { data } = await supabase.from('live_rooms')
-        .select('*, host:users!host_id(username, avatar_url, email)')
+        .select('id, title, description, genre, is_public, is_active, host_id, participants_count, created_at, updated_at, host:users!host_id(username, avatar_url, email)')
         .order('created_at', { ascending:false }).limit(50);
       setLiveRooms(data || []);
     } catch {}
@@ -184,14 +184,14 @@ const AdminPanel = () => {
   const stopLiveRoom = async (room) => {
     try {
       await supabase.from('live_rooms').update({ is_active:false, participants_count:0 }).eq('id', room.id);
-      addToast(`🛑 Live "${room.name}" arrêté`);
+      addToast(`🛑 Live "${room.title || room.name}" arrêté`);
       loadLiveRooms(); loadStats();
     } catch (e) { addToast(e.message, 'error'); }
   };
 
   const deleteLiveRoom = (room) => confirm({
     type:'danger', title:'Supprimer la salle',
-    message:`Supprimer définitivement "${room.name || 'Sans nom'}" ?\n\nTous les participants seront déconnectés.`,
+    message:`Supprimer définitivement "${room.title || room.name || 'Sans nom'}" ?\n\nTous les participants seront déconnectés.`,
     confirmText:'Supprimer', onConfirm: async () => {
       try {
         await supabase.from('live_rooms').delete().eq('id', room.id);
@@ -438,7 +438,7 @@ const AdminPanel = () => {
                   {liveRooms.filter(r=>r.is_active).slice(0,3).map(room => (
                     <div key={room.id} className="flex items-center justify-between py-2 border-b border-white/[0.04] last:border-0">
                       <div className="flex-1 min-w-0">
-                        <p className="text-white text-xs font-semibold truncate">{room.name || 'Sans nom'}</p>
+                        <p className="text-white text-xs font-semibold truncate">{room.title || room.name || 'Sans nom'}</p>
                         <p className="text-gray-600 text-[10px]">{room.host?.username} · {room.participants_count} participant(s)</p>
                       </div>
                       <button onClick={() => stopLiveRoom(room)} className="px-2.5 py-1 rounded-lg bg-red-500/15 text-red-400 text-[10px] font-bold border border-red-500/20 hover:bg-red-500/25 transition-all">
@@ -477,7 +477,7 @@ const AdminPanel = () => {
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 mb-0.5">
                       {room.is_active && <span className="w-1.5 h-1.5 bg-red-500 rounded-full animate-pulse flex-shrink-0" />}
-                      <p className="text-white font-semibold text-sm truncate">{room.name || 'Sans nom'}</p>
+                      <p className="text-white font-semibold text-sm truncate">{room.title || room.name || 'Sans nom'}</p>
                     </div>
                     <p className="text-gray-500 text-xs">
                       Hôte : {room.host?.username || '?'} · {room.participants_count || 0} participant(s) · {new Date(room.created_at).toLocaleString('fr-FR')}

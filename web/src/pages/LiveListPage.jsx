@@ -65,14 +65,10 @@ const SORT_OPTIONS = [
   { id: 'active', name: 'Actif', icon: Zap },
 ];
 
-const getGenreColor = (genre) => {
-  const genreObj = GENRES.find(g => 
-    g.name.toLowerCase() === genre?.toLowerCase() || 
-    g.id === genre?.toLowerCase().replace(/[é&\s]/g, (m) => 
-      ({é:'e','&':'','  ':' ',' ':'-'})[m]||m
-    )
-  );
-  return genreObj?.color || 'from-gray-500 to-gray-600';
+const getGenreColorById = (genreName) => {
+  if (!genreName) return 'from-gray-600 to-gray-700';
+  const g = GENRES.find(x => x.name === genreName || x.name.toLowerCase() === genreName.toLowerCase());
+  return g?.color || 'from-gray-600 to-gray-700';
 };
 
 const LiveListPage = () => {
@@ -105,7 +101,6 @@ const LiveListPage = () => {
       }
       const { data, error } = await supabase.from('live_rooms').insert({
         title:       createForm.name.trim(),
-        name:        createForm.name.trim(),
         description: createForm.description.trim() || null,
         genre:       createForm.genre,
         host_id:     currentUser.id,
@@ -135,10 +130,9 @@ const LiveListPage = () => {
       const { data, error } = await supabase
         .from('live_rooms')
         .select(`
-          *,
-          host:users!live_rooms_host_id_fkey(username, avatar_url),
-          live_room_participants(count),
-          live_room_likes(count)
+          id, title, description, genre, is_public, is_active,
+          host_id, participants_count, created_at, updated_at,
+          host:users!host_id(username, avatar_url)
         `)
         .eq('is_active', true)
         .order('created_at', { ascending: false });
@@ -159,32 +153,19 @@ const LiveListPage = () => {
 
   // Filtrer et trier les salons
   const filteredRooms = useMemo(() => {
+    const q = search.toLowerCase();
     let filtered = rooms.filter(room => {
-      const matchesSearch = !search || 
-        room.name?.toLowerCase().includes(search.toLowerCase()) ||
-        room.description?.toLowerCase().includes(search.toLowerCase()) ||
-        room.host?.username?.toLowerCase().includes(search.toLowerCase());
-      
-      const matchesGenre = selectedGenre === 'all' || 
-        room.genre?.toLowerCase().replace(/[é&\s]/g, (m) => 
-          ({é:'e','&':'','  ':' ',' ':'-'})[m]||m
-        ) === selectedGenre;
-      
+      const matchesSearch = !search ||
+        (room.title || '').toLowerCase().includes(q) ||
+        (room.description || '').toLowerCase().includes(q) ||
+        (room.host?.username || '').toLowerCase().includes(q);
+      const matchesGenre = selectedGenre === 'all' || (room.genre || '') === selectedGenre;
       return matchesSearch && matchesGenre;
     });
-
-    // Trier
     return filtered.sort((a, b) => {
-      switch (sortBy) {
-        case 'popular':
-          return (b.live_room_participants?.[0]?.count || 0) - (a.live_room_participants?.[0]?.count || 0);
-        case 'recent':
-          return new Date(b.created_at) - new Date(a.created_at);
-        case 'active':
-          return (b.listener_count || 0) - (a.listener_count || 0);
-        default:
-          return 0;
-      }
+      if (sortBy === 'popular') return (b.participants_count || 0) - (a.participants_count || 0);
+      if (sortBy === 'recent')  return new Date(b.created_at) - new Date(a.created_at);
+      return 0;
     });
   }, [rooms, search, selectedGenre, sortBy]);
 
@@ -347,7 +328,7 @@ const LiveListPage = () => {
                     className="bg-[#0a0a18]/80 backdrop-blur-xl rounded-2xl border border-white/[0.07] p-6 hover:border-white/[0.12] transition-all duration-300 hover:scale-[1.02] cursor-pointer"
                   >
                     {/* Header du salon */}
-                    <div className={`h-32 rounded-t-2xl bg-gradient-to-br ${(GENRES.find(g => g.name === room.genre || g.id === room.genre?.toLowerCase().replace(/[é& ]/g, m => ({'é':'e','&':'','  ':' ',' ':'-'})[m]||m)))?.color || 'from-gray-600 to-gray-700'} p-4 flex items-end`}>
+                    <div className={`h-32 rounded-t-2xl bg-gradient-to-br ${getGenreColorById(room.genre)} p-4 flex items-end`}>
                       <div className="flex items-center gap-3">
                         {room.host?.avatar_url ? (
                           <img src={room.host.avatar_url} alt="" className="w-12 h-12 rounded-full border-2 border-white/20" />
@@ -357,7 +338,7 @@ const LiveListPage = () => {
                           </div>
                         )}
                         <div className="flex-1">
-                          <h3 className="text-white font-bold text-lg truncate">{room.name}</h3>
+                          <h3 className="text-white font-bold text-lg truncate">{room.title || room.name}</h3>
                           <p className="text-white/80 text-sm">par @{room.host?.username}</p>
                         </div>
                         <div className="px-2 py-1 bg-green-500/20 border border-green-500/30 rounded-full">
@@ -383,14 +364,14 @@ const LiveListPage = () => {
                         <div className="flex items-center gap-4 text-sm text-gray-400">
                           <div className="flex items-center gap-1">
                             <Users className="w-4 h-4" />
-                            <span>{room.live_room_participants?.[0]?.count || 0}</span>
+                            <span>{room.participants_count || 0}</span>
                           </div>
                           <div className="flex items-center gap-1">
                             <Headphones className="w-4 h-4" />
                             <span>{room.listener_count || 0}</span>
                           </div>
                           {room.genre && (
-                            <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-gradient-to-r ${getGenreColor(room.genre)} text-white`}>
+                            <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-gradient-to-r ${getGenreColorById(room.genre)} text-white`}>
                               {room.genre}
                             </span>
                           )}

@@ -256,7 +256,7 @@ const ArtistProfilePage = () => {
         supabase.from('songs').select('*').eq('uploader_id', id).eq('is_archived', false)
           .order('plays_count', { ascending: false }).limit(50),
         supabase.from('song_reposts')
-          .select('song_id, songs(id,title,artist,cover_url,audio_url,plays_count,likes_count,uploader_id,is_archived)')
+          .select('song_id, songs(id,title,artist,cover_url,audio_url,plays_count,likes_count,uploader_id)')
           .eq('user_id', id).order('created_at', { ascending: false }).limit(50),
       ]);
       if (artistError) throw artistError;

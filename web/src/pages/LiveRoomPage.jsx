@@ -182,7 +182,7 @@ const RoomCard = ({ room, onJoin }) => {
       <div className="flex items-center gap-3 mb-4">
         <Avatar user={room.host} size={10} crown />
         <div className="min-w-0">
-          <h3 className="text-white font-bold text-base truncate">{room.name}</h3>
+          <h3 className="text-white font-bold text-base truncate">{room.title || room.name}</h3>
           <p className="text-xs text-gray-500 truncate">par {room.host?.username || 'Anonyme'}</p>
         </div>
       </div>
@@ -409,7 +409,6 @@ const LiveRoomPage = () => {
         .from('live_rooms')
         .insert({
           title: roomName.trim(),
-          name: roomName.trim(),
           description: finalDescription,
           genre: roomGenre || null,
           max_participants: maxParticipants,
@@ -470,7 +469,7 @@ const LiveRoomPage = () => {
     setLoadingRooms(true);
     try {
       const { data } = await supabase.from('live_rooms')
-        .select('*, host:host_id(id,username,avatar_url), current_song:current_song_id(id,title,artist,cover_url)')
+        .select('id,title,description,genre,is_public,is_active,is_private,host_id,participants_count,created_at,host:host_id(id,username,avatar_url),current_song:current_song_id(id,title,artist,cover_url)')
         .eq('is_active', true).eq('is_private', false)
         .order('participants_count', { ascending: false }).limit(20);
       setRooms(data || []);
@@ -616,7 +615,7 @@ const LiveRoomPage = () => {
 
     try {
       const { data: rd, error: re } = await supabase.from('live_rooms')
-        .select('*, host:host_id(id,username,avatar_url), current_song:current_song_id(id,title,artist,cover_url,audio_url)')
+        .select('id,title,description,genre,is_public,is_active,is_private,host_id,participants_count,created_at,current_song_id,host:host_id(id,username,avatar_url),current_song:current_song_id(id,title,artist,cover_url,audio_url)')
         .eq('id', id).single();
       if (re || !rd) throw new Error('Salle introuvable ou expirée.');
       if (!rd.is_active) throw new Error('Cette salle est terminée.');

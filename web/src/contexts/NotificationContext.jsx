@@ -14,7 +14,8 @@ import { supabase } from '@/lib/supabaseClient';
 import { useAuth } from './AuthContext';
 
 // ⚠️ Doit correspondre exactement à la clé dans send-push-notification/index.ts
-const VAPID_PUBLIC_KEY = 'BOfOThRQ1WFrroj7sGuIVy-R2u--fgE_1_FInA6OwhrhdY2lomv7Co4gMXLRvZg257FbDztvNOgYWqCbk8C4qZc';
+const VAPID_PUBLIC_KEY = import.meta.env.VITE_VAPID_PUBLIC_KEY
+  || 'BOfOThRQ1WFrroj7sGuIVy-R2u--fgE_1_FInA6OwhrhdY2lomv7Co4gMXLRvZg257FbDztvNOgYWqCbk8C4qZc';
 
 const PUSH_KEY = (uid) => `novasound.push.v2.${uid}`;
 
