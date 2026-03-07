@@ -96,13 +96,25 @@ export const NotificationProvider = ({ children }) => {
 
   // ── Charger les notifications depuis Supabase ─────────────────
   const loadNotifications = useCallback(async () => {
-    if (!currentUser?.id) return;
-    const { data } = await supabase
+    // DEBUG : Afficher l'état de l'authentification
+    console.log('[DEBUG] currentUser:', currentUser);
+    console.log('[DEBUG] currentUser.id:', currentUser?.id);
+    console.log('[DEBUG] currentUser?.id type:', typeof currentUser?.id);
+    
+    if (!currentUser?.id) {
+      console.log('[DEBUG] Pas d utilisateur ID, retour');
+      return;
+    }
+    
+    const { data, error } = await supabase
       .from('notifications')
       .select('*')
       .eq('user_id', currentUser.id)
       .order('created_at', { ascending: false })
       .limit(60);
+    
+    console.log('[DEBUG] Notifications data:', data);
+    console.log('[DEBUG] Notifications error:', error);
     if (data) {
       setNotifications(data);
       const unread = data.filter(n => !n.is_read).length;
