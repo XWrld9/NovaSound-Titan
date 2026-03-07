@@ -549,22 +549,27 @@ const AudioPlayer = ({ currentSong, playlist = [], onNext, onPrevious, onClose, 
   }, [playlist, currentSong?.id, currentTime, onPrevious]);
 
   const handleEnded = useCallback(() => {
+    console.log('[AudioPlayer] Song ended, repeat:', repeat, 'playlist length:', playlist.length);
+    
     if (repeat === 'one') {
-      if (audioRef.current) {
-        audioRef.current.currentTime = 0;
-        audioRef.current.play().catch(() => {});
-      }
-    } else if (repeat === 'all') {
-      // repeat:all → toujours passer au suivant (y compris rembobiner si dernier)
-      goNext();
+      // Recommencer la même chanson
+      audioRef.current.currentTime = 0;
+      audioRef.current.play().catch(err => {
+        console.error('[AudioPlayer] Repeat play error:', err);
+        // Si erreur, essayer de passer à la suivante
+        if (playlist.length > 0) {
+          onNext?.();
+        } else {
+          setIsPlaying(false);
+        }
+      });
+    } else if (repeat === 'all' || playlist.length > 0) {
+      // Passer à la chanson suivante
+      onNext?.();
     } else {
-      // repeat:off → passer au suivant sauf si c'est le dernier
-      const idx = playlist.findIndex(s => s.id === currentSong?.id);
-      if (idx < playlist.length - 1) {
-        goNext();
-      } else {
-        setIsPlaying(false);
-      }
+      // Lecture terminée, pas de playlist, pas de repeat
+      console.log('[AudioPlayer] Playback completed - no more songs');
+      setIsPlaying(false);
     }
   }, [repeat, goNext, playlist, currentSong?.id]);
 
