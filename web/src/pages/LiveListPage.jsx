@@ -18,7 +18,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { useOnline } from '@/contexts/OnlineContext';
 import { supabase } from '@/lib/supabaseClient';
-import { ALL_GENRES } from '@/hooks/useGenreTheme';
+import { ALL_GENRES, GENRE_THEMES_MAP } from '@/hooks/useGenreTheme';
 import LiveLikeButton from '@/components/LiveLikeButton';
 import Header from '@/components/Header';
 import {
@@ -30,13 +30,33 @@ import {
 
 const GENRES = [
   { id: 'all', name: 'Tous', color: 'from-cyan-500 to-purple-500' },
-  { id: 'electronic', name: 'Electronic', color: 'from-blue-500 to-cyan-500' },
-  { id: 'hiphop', name: 'Hip-Hop', color: 'from-purple-500 to-pink-500' },
-  { id: 'rock', name: 'Rock', color: 'from-red-500 to-orange-500' },
-  { id: 'jazz', name: 'Jazz', color: 'from-amber-500 to-yellow-500' },
-  { id: 'pop', name: 'Pop', color: 'from-pink-500 to-rose-500' },
-  { id: 'classical', name: 'Classique', color: 'from-indigo-500 to-blue-500' },
-  { id: 'world', name: 'World', color: 'from-green-500 to-emerald-500' },
+  // Genres camerounais en premier
+  { id: 'bikutsi', name: 'Bikutsi', color: 'from-red-600 to-red-800' },
+  { id: 'makossa', name: 'Makossa', color: 'from-yellow-600 to-yellow-800' },
+  { id: 'assiko', name: 'Assiko', color: 'from-green-600 to-green-800' },
+  { id: 'ambas-bay', name: 'Ambas-Bay', color: 'from-blue-600 to-blue-800' },
+  { id: 'benskin', name: 'Benskin', color: 'from-purple-600 to-purple-800' },
+  { id: 'mbole', name: 'Mbolé', color: 'from-orange-600 to-orange-800' },
+  // Genres africains et mondiaux
+  { id: 'afrobeats', name: 'Afrobeats', color: 'from-amber-600 to-amber-800' },
+  { id: 'hip-hop', name: 'Hip-Hop', color: 'from-violet-600 to-violet-800' },
+  { id: 'r&b', name: 'R&B', color: 'from-pink-600 to-pink-800' },
+  { id: 'pop', name: 'Pop', color: 'from-cyan-600 to-cyan-800' },
+  { id: 'electronique', name: 'Électronique', color: 'from-emerald-600 to-emerald-800' },
+  { id: 'trap', name: 'Trap', color: 'from-red-600 to-red-800' },
+  { id: 'gospel', name: 'Gospel', color: 'from-orange-600 to-orange-800' },
+  { id: 'jazz', name: 'Jazz', color: 'from-violet-600 to-violet-800' },
+  { id: 'reggae', name: 'Reggae', color: 'from-lime-600 to-lime-800' },
+  { id: 'dancehall', name: 'Dancehall', color: 'from-yellow-600 to-yellow-800' },
+  { id: 'amapiano', name: 'Amapiano', color: 'from-emerald-600 to-emerald-800' },
+  { id: 'coupe-decale', name: 'Coupé-Décalé', color: 'from-pink-600 to-pink-800' },
+  { id: 'rock', name: 'Rock', color: 'from-orange-600 to-orange-800' },
+  { id: 'classique', name: 'Classique', color: 'from-yellow-600 to-yellow-800' },
+  { id: 'folk', name: 'Folk', color: 'from-green-600 to-green-800' },
+  { id: 'country', name: 'Country', color: 'from-amber-600 to-amber-800' },
+  { id: 'latin', name: 'Latin', color: 'from-red-600 to-red-800' },
+  { id: 'drill', name: 'Drill', color: 'from-slate-600 to-slate-800' },
+  { id: 'outro', name: 'Outro', color: 'from-purple-600 to-purple-800' },
 ];
 
 const SORT_OPTIONS = [
@@ -44,6 +64,16 @@ const SORT_OPTIONS = [
   { id: 'recent', name: 'Récent', icon: Clock },
   { id: 'active', name: 'Actif', icon: Zap },
 ];
+
+const getGenreColor = (genre) => {
+  const genreObj = GENRES.find(g => 
+    g.name.toLowerCase() === genre?.toLowerCase() || 
+    g.id === genre?.toLowerCase().replace(/[é&\s]/g, (m) => 
+      ({é:'e','&':'','  ':' ',' ':'-'})[m]||m
+    )
+  );
+  return genreObj?.color || 'from-gray-500 to-gray-600';
+};
 
 const LiveListPage = () => {
   const { currentUser } = useAuth();
@@ -96,7 +126,10 @@ const LiveListPage = () => {
         room.description?.toLowerCase().includes(search.toLowerCase()) ||
         room.host?.username?.toLowerCase().includes(search.toLowerCase());
       
-      const matchesGenre = selectedGenre === 'all' || room.genre === selectedGenre;
+      const matchesGenre = selectedGenre === 'all' || 
+        room.genre?.toLowerCase().replace(/[é&\s]/g, (m) => 
+          ({é:'e','&':'','  ':' ',' ':'-'})[m]||m
+        ) === selectedGenre;
       
       return matchesSearch && matchesGenre;
     });
@@ -149,9 +182,9 @@ const LiveListPage = () => {
         <meta name="description" content="Découvrez et rejoignez les salons live actifs sur NovaSound" />
       </Helmet>
 
-      <div className="min-h-screen bg-gradient-to-br from-gray-900 via-purple-900/20 to-gray-900">
+      <div className="min-h-screen bg-gradient-to-br from-[#050510] via-[#0a0a18] to-[#050510]">
         {/* Header avec glassmorphism */}
-        <div className="sticky top-0 z-40 backdrop-blur-xl bg-gray-900/80 border-b border-white/10">
+        <div className="sticky top-0 z-40 backdrop-blur-xl bg-[#0a0a18]/95 backdrop-blur-xl border-b border-white/[0.07]">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="flex items-center justify-between h-16">
               <div className="flex items-center gap-4">
@@ -263,7 +296,7 @@ const LiveListPage = () => {
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, y: -20 }}
-                    className="group relative bg-gray-800/30 backdrop-blur-sm border border-white/10 rounded-2xl overflow-hidden hover:border-cyan-500/30 transition-all hover:shadow-xl hover:shadow-cyan-500/10"
+                    className="bg-[#0a0a18]/80 backdrop-blur-xl rounded-2xl border border-white/[0.07] p-6 hover:border-white/[0.12] transition-all duration-300 hover:scale-[1.02] cursor-pointer"
                   >
                     {/* Header du salon */}
                     <div className={`h-32 bg-gradient-to-br ${GENRES.find(g => g.id === room.genre)?.color || 'from-gray-600 to-gray-700'} p-4 flex items-end`}>
@@ -309,8 +342,8 @@ const LiveListPage = () => {
                             <span>{room.listener_count || 0}</span>
                           </div>
                           {room.genre && (
-                            <span className="px-2 py-0.5 bg-gray-700 rounded-full text-xs">
-                              {GENRES.find(g => g.id === room.genre)?.name || room.genre}
+                            <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-gradient-to-r ${getGenreColor(room.genre)} text-white`}>
+                              {room.genre}
                             </span>
                           )}
                         </div>
@@ -320,7 +353,7 @@ const LiveListPage = () => {
                       <div className="flex gap-2">
                         <button
                           onClick={() => handleJoinRoom(room.id)}
-                          className="flex-1 flex items-center justify-center gap-2 py-2 bg-gradient-to-r from-cyan-500 to-purple-500 rounded-xl text-white font-medium hover:shadow-lg hover:shadow-cyan-500/25 transition-all"
+                          className="px-6 py-3 bg-gradient-to-r from-cyan-500/90 to-purple-500/90 hover:from-cyan-500 hover:to-purple-500 transition-all duration-300 transform hover:scale-[1.02] hover:shadow-xl hover:shadow-cyan-500/30"
                         >
                           <Play className="w-4 h-4" />
                           Rejoindre

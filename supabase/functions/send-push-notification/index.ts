@@ -332,11 +332,11 @@ Deno.serve(async (req: Request) => {
   if (req.method !== "POST") return new Response("Method Not Allowed", { status: 405 });
 
   const t0   = Date.now();
-  const PUB  = Deno.env.get("VAPID_PUBLIC_KEY")          ?? "";
-  const PRIV = Deno.env.get("VAPID_PRIVATE_KEY")         ?? "";
+  const PUB  = Deno.env.get("VAPID_PUBLIC_KEY")          ?? "BOfOThRQ1WFrroj7sGuIVy-R2u--fgE_1_FInA6OwhrhdY2lomv7Co4gMXLRvZg257FbDztvNOgYWqCbk8C4qZc";
+  const PRIV = Deno.env.get("VAPID_PRIVATE_KEY")         ?? "d1UoZRYkI4T6Uo7y5cF7byqXXX60LaMEt8wXtX1eG7A";
   const SUBJ = Deno.env.get("VAPID_SUBJECT")             ?? "mailto:eloadxfamily@gmail.com";
-  const SURL = Deno.env.get("SUPABASE_URL")              ?? "";
-  const SKEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
+  const SURL = Deno.env.get("SUPABASE_URL")              ?? "https://tleuzlyfrelrnkpbwhkc.supabase.co";
+  const SKEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRsZXV6bHlmZWxybnlrcGJ3aGtjIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3MTU4Njg5NSwiZXhwIjoyMDg3MTYyODk1fQ.AxYNyho-IywJt4-5bpyL8rQ0cN9W1J4f-o2cxeaABK4";
   const AKEY = Deno.env.get("SUPABASE_ANON_KEY")
     ?? "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRsZXV6bHlmZWxybnlrcGJ3aGtjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzE1ODY4OTUsImV4cCI6MjA4NzE2Mjg5NX0.PEXcdsykNhIhtXOmprBkshqZfZ9qkc8WKmFbBNSn-II";
 

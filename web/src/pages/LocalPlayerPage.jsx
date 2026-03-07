@@ -539,8 +539,16 @@ const LocalPlayerPage = () => {
   // ── Keyboard shortcuts ────────────────────────────────────────────────────────
   useEffect(() => {
     const handler = (e) => {
-      const tag = document.activeElement?.tagName;
-      if (tag === 'INPUT' || tag === 'TEXTAREA') return;
+      // ✅ FIX v700000: Ignorer les raccourcis si un input/textarea est focus
+      const activeElement = document.activeElement;
+      const isInputFocused = 
+        activeElement?.tagName === 'INPUT' || 
+        activeElement?.tagName === 'TEXTAREA' ||
+        activeElement?.hasAttribute('contenteditable');
+      
+      if (isInputFocused) {
+        return; // Ne pas intercepter les touches quand l'utilisateur tape
+      }
       switch (e.code) {
         case 'Space':
           e.preventDefault();
@@ -590,8 +598,33 @@ const LocalPlayerPage = () => {
     const onDrop = async (e) => {
       e.preventDefault();
       setIsDragging(false);
-      const files = Array.from(e.dataTransfer?.files || []).filter(isAudioFile);
-      if (!files.length) return;
+      const items = [...e.dataTransfer.items];
+      const files = [];
+      
+      // ✅ FIX v700000: Support des dossiers drag & drop
+      for (const item of items) {
+        if (item.kind === 'file') {
+          const entry = item.webkitGetAsEntry?.();
+          if (entry) {
+            if (entry.isFile) {
+              const file = item.getAsFile();
+              if (file && isAudioFile(file)) files.push(file);
+            } else if (entry.isDirectory) {
+              // Lire récursivement le dossier
+              const dirFiles = await readDirectory(entry);
+              files.push(...dirFiles.filter(isAudioFile));
+            }
+          } else {
+            const file = item.getAsFile();
+            if (file && isAudioFile(file)) files.push(file);
+          }
+        }
+      }
+      
+      if (files.length === 0) {
+        alert('Aucun fichier audio détecté. Formats supportés: MP3, M4A, WAV, FLAC, OGG, AAC');
+        return;
+      }
       setLoading(true);
       const newSongs = await processBatch(files);
       setSongs(prev => {
@@ -611,7 +644,38 @@ const LocalPlayerPage = () => {
     };
   }, [playSong]);
 
-  const processBatch = async (files) => {
+  // Fonction helper pour lire un dossier récursivement
+async function readDirectory(dirEntry) {
+  const files = [];
+  const reader = dirEntry.createReader();
+  
+  return new Promise((resolve) => {
+    const readEntries = () => {
+      reader.readEntries(async (entries) => {
+        if (entries.length === 0) {
+          resolve(files);
+          return;
+        }
+        
+        for (const entry of entries) {
+          if (entry.isFile) {
+            const file = await new Promise((res) => entry.file(res));
+            files.push(file);
+          } else if (entry.isDirectory) {
+            const subFiles = await readDirectory(entry);
+            files.push(...subFiles);
+          }
+        }
+        
+        readEntries(); // Continue reading
+      });
+    };
+    
+    readEntries();
+  });
+}
+
+const processBatch = async (files) => {
     const BATCH = 4; const results = [];
     for (let i = 0; i < files.length; i += BATCH) {
       const r = await Promise.all(files.slice(i, i + BATCH).map(f => fileToSong(f).catch(() => null)));
