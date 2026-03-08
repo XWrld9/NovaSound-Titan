@@ -310,7 +310,13 @@ const ExplorerPage = () => {
           <div className="mb-6">
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-4">
               <div>
-                <h1 className="text-3xl font-bold text-white">{'Explorer'}</h1>
+                <h1 className="relative text-3xl sm:text-4xl font-black tracking-tight leading-none">
+              {/* Explorer en dégradé bleu/cyan */}
+              <span className="block bg-gradient-to-r from-blue-400 via-cyan-400 to-teal-500 bg-clip-text text-transparent drop-shadow-[0_0_20px_rgba(34,211,238,0.8)]"
+                style={{ filter: 'drop-shadow(0 0 12px rgba(34,211,238,0.6))' }}>
+                Explorer
+              </span>
+            </h1>
                 {!loading && totalCount !== null && (
                   <p className="text-sm text-gray-600 mt-0.5">
                     {totalCount} morceau{totalCount > 1 ? 'x' : ''}
