@@ -189,7 +189,7 @@ const SongPage = () => {
   };
 
   if (loading) return (
-    <div className="min-h-screen bg-gray-950 flex flex-col pb-36"><Header />
+    <div className="min-h-screen bg-gray-950 flex flex-col pb-44 md:pb-32"><Header />
       <main className="flex-1 w-full max-w-screen-2xl mx-auto px-4 md:px-8 lg:px-12 py-8">
         <div className="animate-pulse flex flex-col md:flex-row gap-8">
           <div className="w-full md:w-64 aspect-square bg-gray-800 rounded-2xl flex-shrink-0" />
@@ -202,7 +202,7 @@ const SongPage = () => {
   );
 
   if (error||!song) return (
-    <div className="min-h-screen bg-gray-950 flex flex-col pb-36"><Header />
+    <div className="min-h-screen bg-gray-950 flex flex-col pb-44 md:pb-32"><Header />
       <main className="flex-1 w-full max-w-screen-2xl mx-auto px-4 md:px-8 lg:px-12 py-16 flex flex-col items-center justify-center">
         <Music className="w-16 h-16 text-gray-700 mb-4" />
         <h2 className="text-xl font-bold text-white mb-2">Son introuvable</h2>
@@ -256,7 +256,7 @@ const SongPage = () => {
         )}
       </AnimatePresence>
 
-      <div className="min-h-screen bg-gray-950 flex flex-col pb-36 md:pb-32">
+      <div className="min-h-screen bg-gray-950 flex flex-col pb-44 md:pb-32">
         <Header />
         <main className="flex-1 w-full max-w-screen-2xl mx-auto px-4 md:px-8 lg:px-12 py-6">
 

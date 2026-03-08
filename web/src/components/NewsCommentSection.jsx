@@ -303,9 +303,18 @@ const NewsCommentSection = ({ newsId, newsAuthorId }) => {
               className="flex-1 bg-gray-800/60 border border-white/[0.08] rounded-xl px-3 py-2 text-sm text-white placeholder-gray-600 focus:outline-none focus:border-fuchsia-500/40 transition-colors"
             />
             <button
-              onClick={handleSend}
-              disabled={!text.trim() || sending}
-              className="flex-shrink-0 w-8 h-8 rounded-full bg-gradient-to-br from-fuchsia-500 to-pink-600 flex items-center justify-center disabled:opacity-40 transition-all hover:opacity-90"
+              onPointerDown={(e) => {
+                // Empêche le blur de l'input sur iOS → clavier reste visible → tap réussi
+                e.preventDefault();
+                if (!text.trim() || sending) return;
+                handleSend();
+              }}
+              onClick={(e) => {
+                if (!e.defaultPrevented && text.trim() && !sending) handleSend();
+              }}
+              aria-disabled={!text.trim() || sending}
+              className="flex-shrink-0 w-8 h-8 rounded-full bg-gradient-to-br from-fuchsia-500 to-pink-600 flex items-center justify-center transition-all hover:opacity-90"
+              style={{ opacity: (!text.trim() || sending) ? 0.4 : 1, cursor: text.trim() && !sending ? 'pointer' : 'default' }}
             >
               {sending
                 ? <div className="w-3.5 h-3.5 rounded-full border-2 border-white/30 border-t-white animate-spin" />

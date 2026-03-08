@@ -693,7 +693,8 @@ const AudioPlayerDesktop = ({ currentSong, playlist = [], onNext, onPrevious, on
         animate={{ scale: 1, opacity: 1 }}
         exit={{ scale: 0, opacity: 0 }}
         transition={{ type: 'spring', stiffness: 400, damping: 28 }}
-        className={`fixed right-4 z-[44] flex flex-col items-end gap-2 ${isNavHiddenPage ? 'bottom-4' : 'bottom-20 md:bottom-4'}`}
+        className="fixed right-4 z-[44] flex flex-col items-end gap-2"
+        style={{ bottom: isNavHiddenPage ? '1rem' : 'calc(var(--ns-bottom-nav-h) + 1rem)' }}
       >
         {/* Audio toujours actif */}
         <audio
@@ -793,7 +794,7 @@ const AudioPlayerDesktop = ({ currentSong, playlist = [], onNext, onPrevious, on
             animate={{ y: 0 }}
             exit={{ y: '100%' }}
             transition={{ duration: 0.3, ease: [0.32, 0.72, 0, 1] }}
-            className="fixed inset-0 z-[60] flex flex-col"
+            className="fixed inset-0 z-[54] flex flex-col"
             style={{ ...expandedBg, paddingBottom: 'env(safe-area-inset-bottom, 0px)', transition: 'background 0.5s ease' }}
             onClick={() => { setShowSleepMenu(false); setShowSpeedMenu(false); }}
           >
@@ -1182,8 +1183,9 @@ const AudioPlayerDesktop = ({ currentSong, playlist = [], onNext, onPrevious, on
             initial={{ y: 100, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
             exit={{ y: 100, opacity: 0 }}
-            className={`fixed left-0 right-0 z-50 border-t border-white/[0.06] shadow-2xl shadow-black/60 android-player-fixed ${isNavHiddenPage ? 'bottom-0' : 'bottom-14 md:bottom-0'}`}
+            className={`fixed left-0 right-0 z-[45] border-t border-white/[0.06] shadow-2xl shadow-black/60 android-player-fixed`}
             style={{
+              bottom: isNavHiddenPage ? 0 : 'var(--ns-bottom-nav-h)',
               backgroundColor: 'rgb(18 18 18 / 0.97)',
               backdropFilter: 'blur(24px)',
               WebkitBackdropFilter: 'blur(24px)',

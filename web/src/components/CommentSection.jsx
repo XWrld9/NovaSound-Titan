@@ -542,26 +542,33 @@ const CommentSection = ({ songId, songUploaderEmail, onCommentChange }) => {
                 <span className={`text-xs ${text.length > MAX_CHARS * 0.9 ? 'text-amber-400' : 'text-gray-600'}`}>
                   {text.length}/{MAX_CHARS}
                 </span>
+                {/*
+                  IMPORTANT iOS : ne jamais mettre `disabled` sur le button lui-même.
+                  Sur iOS Safari, un <button disabled> ne reçoit PAS onPointerDown,
+                  ce qui casse complètement le trick e.preventDefault() anti-blur-clavier.
+                  On gère l'état visuellement via style/aria-disabled.
+                */}
                 <motion.button
-                  // onPointerDown + preventDefault empêche le blur de la textarea sur mobile
-                  // ce qui évite que le clavier disparaisse et que le tap manque sa cible
                   onPointerDown={(e) => {
-                    if (!text.trim() || submitting) return;
+                    // Toujours intercepter le pointer pour empêcher le blur du textarea
                     e.preventDefault();
+                    if (!text.trim() || submitting) return;
                     handleSubmit();
                   }}
                   onClick={(e) => {
-                    // Fallback pour les navigateurs desktop sans onPointerDown
-                    if (!e.defaultPrevented) handleSubmit();
+                    // Fallback desktop (pas de pointer events)
+                    if (!e.defaultPrevented && text.trim() && !submitting) handleSubmit();
                   }}
-                  disabled={!text.trim() || submitting}
-                  whileTap={{ scale: 0.95 }}
+                  aria-disabled={!text.trim() || submitting}
+                  whileTap={text.trim() && !submitting ? { scale: 0.95 } : {}}
                   type="button"
                   className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold transition-all"
                   style={{
                     background: text.trim() && !submitting ? 'linear-gradient(90deg,#06b6d4,#a855f7)' : 'rgba(255,255,255,0.08)',
                     color: text.trim() && !submitting ? '#fff' : 'rgba(255,255,255,0.3)',
-                    border: 'none', cursor: text.trim() && !submitting ? 'pointer' : 'default',
+                    border: 'none',
+                    cursor: text.trim() && !submitting ? 'pointer' : 'default',
+                    opacity: submitting ? 0.7 : 1,
                   }}
                 >
                   {submitting

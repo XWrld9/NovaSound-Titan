@@ -219,3 +219,18 @@ button {
   scrollbar-width: none;
 }
 .notif-stats-bar::-webkit-scrollbar { display: none; }
+
+/* ── NovaSound — BottomNav height token avec safe-area iOS ──────────────────
+   Utilisé par le mini player et la bulle pour se positionner EXACTEMENT
+   au-dessus de la BottomNav, même sur iPhone avec home indicator.
+   Desktop (md+) : pas de BottomNav → 0px.
+   ─────────────────────────────────────────────────────────────────────────── */
+:root {
+  --ns-bottom-nav-h: 0px;
+}
+@media (max-width: 767px) {
+  :root {
+    /* 3.5rem = 56px = hauteur BottomNav + safe-area-inset-bottom iPhone */
+    --ns-bottom-nav-h: calc(3.5rem + env(safe-area-inset-bottom, 0px));
+  }
+}

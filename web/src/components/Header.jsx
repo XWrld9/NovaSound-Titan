@@ -6,6 +6,7 @@ import {
   Trophy, Shield, Users, HardDrive, ChevronDown
 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
+import { usePlayer } from '@/contexts/PlayerContext';
 import { supabase } from '@/lib/supabaseClient';
 import { Button } from '@/components/ui/button';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -27,6 +28,7 @@ const isStandalone = () =>
 
 const Header = () => {
   const { currentUser, isAuthenticated, logout, isAdmin } = useAuth();
+  const { minimizePlayer } = usePlayer();
   const navigate                                 = useNavigate();
   const location                                 = useLocation();
   const { canInstall, install }                  = usePWAInstall();
@@ -284,10 +286,10 @@ const Header = () => {
                 </div>
               )}
 
-              {/* Mobile burger */}
+              {/* Mobile burger — z-[46] pour rester au-dessus du mini player (z-[45]) */}
               <button
-                onClick={() => setIsMobileMenuOpen(true)}
-                className="md:hidden p-2 text-cyan-400 hover:bg-cyan-500/10 rounded-lg transition-colors"
+                onClick={() => { minimizePlayer(); setIsMobileMenuOpen(true); }}
+                className="md:hidden relative z-[46] p-2 text-cyan-400 hover:bg-cyan-500/10 rounded-lg transition-colors"
               >
                 <Menu className="w-6 h-6" />
               </button>
