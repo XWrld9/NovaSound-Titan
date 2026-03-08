@@ -265,10 +265,6 @@ const AdminPanel = () => {
       } catch (e) { addToast(e.message,'error'); }
     }
   });
-      addToast(`✅ "${song.title}" remis en ligne`);
-      loadSongs();
-    } catch (e) { addToast(e.message,'error'); }
-  };
 
   const deleteMsg = async (id) => {
     try {
