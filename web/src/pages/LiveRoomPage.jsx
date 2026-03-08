@@ -1211,8 +1211,8 @@ const LiveRoomPage = () => {
         <main className="flex-1 flex flex-col overflow-hidden"
           style={{
             /* Sur mobile on réserve la place pour le BottomNav (56px) */
-            height: 'calc(100dvh - 64px)',
-            maxHeight: 'calc(100dvh - 64px)',
+            height: 'calc(100dvh - 120px)',
+            maxHeight: 'calc(100dvh - 120px)',
             paddingBottom: 'var(--bottom-nav-h, 0px)',
           }}>
           <style>{`:root { --bottom-nav-h: 56px; } @media (min-width: 768px) { :root { --bottom-nav-h: 0px; } }`}</style>
