@@ -130,6 +130,12 @@ const TrendingPage = () => {
               style={{ background: 'radial-gradient(ellipse, #f59e0b 0%, #ec4899 40%, #8b5cf6 80%, transparent 100%)' }} />
                       </div>
 
+          {/* Sous-titre stylé */}
+          <h2 className="text-lg sm:text-xl font-semibold mt-1">
+            <span className="text-gray-300">Ce qui buzze sur </span>
+            <span className="bg-gradient-to-r from-cyan-400 to-fuchsia-500 bg-clip-text text-transparent font-black">NovaSound TL</span>
+          </h2>
+
           <p className="text-gray-500 text-sm">{'Les sons et artistes les plus écoutés et likés'}</p>
         </motion.div>
 
