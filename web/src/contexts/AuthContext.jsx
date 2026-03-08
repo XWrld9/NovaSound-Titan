@@ -12,6 +12,9 @@ export const useAuth = () => {
 export const AuthProvider = ({ children }) => {
   const [currentUser, setCurrentUser] = useState(null);
   const [initialLoading, setInitialLoading] = useState(true);
+  const [isAdmin, setIsAdmin] = useState(false);
+
+  const ADMIN_EMAIL = 'eloadxfamily@gmail.com';
 
   // ── Auth state listener ──────────────────────────────────────────────────
   useEffect(() => {
@@ -64,6 +67,18 @@ export const AuthProvider = ({ children }) => {
 
     loadProfile();
   }, [currentUser?.id]);
+
+  // ── Vérification admin ────────────────────────────────────────────────────
+  useEffect(() => {
+    if (!currentUser?.id) { setIsAdmin(false); return; }
+    if (currentUser.email === ADMIN_EMAIL || currentUser.user_metadata?.email === ADMIN_EMAIL) {
+      setIsAdmin(true); return;
+    }
+    supabase.from('user_roles').select('role')
+      .eq('user_id', currentUser.id).eq('role', 'admin').eq('is_active', true).maybeSingle()
+      .then(({ data }) => setIsAdmin(!!data))
+      .catch(() => setIsAdmin(false));
+  }, [currentUser?.id, currentUser?.email]);
 
   // ── Helpers ──────────────────────────────────────────────────────────────
   const getEmailRedirectTo = () => {
@@ -401,6 +416,7 @@ export const AuthProvider = ({ children }) => {
 
   const value = {
     currentUser,
+    isAdmin,
     isAuthenticated: !!currentUser,
     initialLoading,
     signup,

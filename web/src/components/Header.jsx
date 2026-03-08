@@ -26,8 +26,7 @@ const isStandalone = () =>
     window.navigator.standalone === true);
 
 const Header = () => {
-  const { currentUser, isAuthenticated, logout } = useAuth();
-  const [isAdmin, setIsAdmin]                   = useState(false);
+  const { currentUser, isAuthenticated, logout, isAdmin } = useAuth();
   const navigate                                 = useNavigate();
   const location                                 = useLocation();
   const { canInstall, install }                  = usePWAInstall();
@@ -121,22 +120,6 @@ const Header = () => {
     }, 300);
     return () => clearTimeout(timer);
   }, [searchQuery]);
-
-  useEffect(() => { checkAdminAccess(); }, [currentUser]);
-
-  const checkAdminAccess = async () => {
-    if (!currentUser) return;
-    const adminEmail = 'eloadxfamily@gmail.com';
-    if (currentUser.email === adminEmail || currentUser.user_metadata?.email === adminEmail) {
-      setIsAdmin(true); return;
-    }
-    try {
-      const { data, error } = await supabase
-        .from('user_roles').select('role')
-        .eq('user_id', currentUser.id).eq('role', 'admin').eq('is_active', true).maybeSingle();
-      if (!error && data) setIsAdmin(true);
-    } catch {}
-  };
 
   const handleInstallClick = () => {
     if (ios)       { setShowIOSTooltip(v => !v); return; }
