@@ -27,15 +27,36 @@ import { useGenreTheme } from '@/hooks/useGenreTheme';
 import WaveformVisualizer from '@/components/WaveformVisualizer';
 import { useNavigate } from 'react-router-dom';
 
-const AudioPlayerMobile = memo(({ currentSong, isPlaying, currentTime, duration, volume, isMuted, isShuffled, repeatMode, playbackSpeed }) => {
+const AudioPlayerMobile = memo(({ 
+  currentSong: propSong, isPlaying: propIsPlaying, currentTime: propTime, duration: propDuration,
+  volume: propVolume, isMuted: propIsMuted, isShuffled, repeatMode, playbackSpeed,
+  onPlay, onPause, onSeek, onVolumeChange, onToggleMute,
+  onNext, onPrev, onToggleShuffle, onToggleRepeat
+}) => {
   const navigate = useNavigate();
   const { currentUser } = useAuth();
   const { 
-    play, pause, next, previous, seek, setVolume, toggleMute, 
-    toggleShuffle, setRepeatMode, setPlaybackSpeed, addToQueue, removeFromQueue 
+    play: ctxPlay, pause: ctxPause, next: ctxNext, previous: ctxPrev, seek: ctxSeek,
+    setVolume: ctxSetVolume, toggleMute: ctxToggleMute,
+    toggleShuffle, setRepeatMode, setPlaybackSpeed, addToQueue, removeFromQueue,
+    currentSong: ctxSong, isPlaying: ctxIsPlaying,
   } = usePlayer();
   
+  // Priorité aux props passées par AudioPlayerDesktop (qui possède l'audio réel)
+  // Fallback sur le contexte pour compatibilité usage standalone
+  const currentSong  = propSong    ?? ctxSong;
+  const isPlaying    = propIsPlaying !== undefined ? propIsPlaying : ctxIsPlaying;
+  const play         = onPlay    ?? ctxPlay;
+  const pause        = onPause   ?? ctxPause;
+  const next         = onNext    ?? ctxNext;
+  const previous     = onPrev    ?? ctxPrev;
+  const seek         = onSeek    ?? ctxSeek;
+  const setVolume    = onVolumeChange ?? ctxSetVolume;
+  const toggleMute   = onToggleMute  ?? ctxToggleMute;
+
   const { currentTime: playerTime, duration: playerDuration } = usePlayerTime();
+  const currentTime  = propTime    !== undefined ? propTime    : playerTime;
+  const duration     = propDuration !== undefined ? propDuration : playerDuration;
   
   // États UI
   const [isExpanded, setIsExpanded] = useState(false);

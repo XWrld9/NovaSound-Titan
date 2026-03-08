@@ -587,7 +587,7 @@ const LiveRoomPage = () => {
     }
     chanRef.current.send({ type: 'broadcast', event: 'live_pause', payload: { isPaused: newPaused } }).catch(() => {});
     if (roomRef.current) {
-      await supabase.from('live_rooms').update({ is_paused: newPaused }).eq('id', roomRef.current.id).catch(() => {});
+      try { await supabase.from('live_rooms').update({ is_paused: newPaused }).eq('id', roomRef.current.id); } catch (_) {}
     }
   }, [liveIsPaused]);
 

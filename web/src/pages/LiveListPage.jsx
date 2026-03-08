@@ -111,7 +111,7 @@ const LiveListPage = () => {
       }).select().single();
       if (error) throw error;
       // Rejoindre comme participant hôte
-      await supabase.from('live_room_participants').insert({ room_id: data.id, user_id: currentUser.id, is_host: true }).catch(() => {});
+      try { await supabase.from('live_room_participants').insert({ room_id: data.id, user_id: currentUser.id, is_host: true }); } catch (_) {}
       setShowCreateModal(false);
       navigate(`/live/${data.id}`);
     } catch (err) {

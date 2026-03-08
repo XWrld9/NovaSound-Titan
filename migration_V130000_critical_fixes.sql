@@ -207,3 +207,35 @@ WHERE  is_active = true
 -- ✅ clear_chat_messages_admin recréé proprement (fix PGRST203)
 -- ✅ Admin bypass RLS sur live_rooms/users/songs/chat_messages/news/comments
 -- ✅ Index de performance pour les nouveaux FK
+
+-- ── 7. Activer Realtime sur live_room_messages (manquait → messages live muets) ──
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_publication_tables
+    WHERE pubname = 'supabase_realtime' AND tablename = 'live_room_messages'
+  ) THEN
+    ALTER PUBLICATION supabase_realtime ADD TABLE public.live_room_messages;
+  END IF;
+END $$;
+
+-- Aussi s'assurer que live_rooms et live_room_participants sont dans realtime
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_publication_tables
+    WHERE pubname = 'supabase_realtime' AND tablename = 'live_rooms'
+  ) THEN
+    ALTER PUBLICATION supabase_realtime ADD TABLE public.live_rooms;
+  END IF;
+END $$;
+
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_publication_tables
+    WHERE pubname = 'supabase_realtime' AND tablename = 'live_room_participants'
+  ) THEN
+    ALTER PUBLICATION supabase_realtime ADD TABLE public.live_room_participants;
+  END IF;
+END $$;

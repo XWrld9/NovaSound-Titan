@@ -87,14 +87,11 @@ if (typeof window !== 'undefined') {
   window.addEventListener('click',       _unlockAudio, { once: false });
 }
 
-// ── Wrapper : décide mobile vs desktop AVANT de monter des hooks ─────────────
-// Les hooks React ne doivent jamais être appelés après un return conditionnel.
-// Ce wrapper délègue à AudioPlayerDesktop (hooks desktop) ou AudioPlayerMobile.
-const AudioPlayer = (props) => {
-  const mobile = typeof window !== 'undefined' && isMobile();
-  if (mobile) return <AudioPlayerMobile />;
-  return <AudioPlayerDesktop {...props} />;
-};
+// ── Wrapper unique — résout les Rules of Hooks ───────────────────────────────
+// AudioPlayerDesktop gère TOUJOURS l'audio (contient le <audio> element).
+// Sur mobile, il affiche l'UI de AudioPlayerMobile tout en conservant son audio.
+// JAMAIS de hooks appelés après un return conditionnel.
+const AudioPlayer = (props) => <AudioPlayerDesktop {...props} />;
 
 // ── Composant desktop complet ─────────────────────────────────────────────────
 const AudioPlayerDesktop = ({ currentSong, playlist = [], onNext, onPrevious, onClose, shouldAutoPlay = false, resetAutoPlay }) => {
@@ -531,9 +528,11 @@ const AudioPlayerDesktop = ({ currentSong, playlist = [], onNext, onPrevious, on
       });
       // Fallback ancienne méthode si RPC non disponible
       if (error) {
-        await supabase.rpc('increment_plays', { song_id_param: currentSong.id }).catch(() =>
-          supabase.from('songs').update({ plays_count: (currentSong.plays_count || 0) + 1 }).eq('id', currentSong.id)
-        );
+        try {
+          await supabase.rpc('increment_plays', { song_id_param: currentSong.id });
+        } catch (_) {
+          await supabase.from('songs').update({ plays_count: (currentSong.plays_count || 0) + 1 }).eq('id', currentSong.id);
+        }
       }
     } catch {}
   };
@@ -656,6 +655,47 @@ const AudioPlayerDesktop = ({ currentSong, playlist = [], onNext, onPrevious, on
   };
 
   if (!currentSong) return null;
+
+  // ── Sur mobile : rendre l'UI mobile MAIS garder le <audio> dans le DOM ─────
+  // AudioPlayerMobile n'a pas d'élément audio — AudioPlayerDesktop le possède.
+  // On rend les deux pour que la lecture soit active sur mobile.
+  if (isMobile()) {
+    return (
+      <>
+        <audio
+          ref={audioRef}
+          onTimeUpdate={handleTimeUpdate}
+          onLoadedMetadata={handleLoadedMetadata}
+          onEnded={handleEnded}
+          onPlay={() => { setIsPlaying(true); setIsPlayingGlobal(true); setIsBuffering(false); }}
+          onPause={() => { setIsPlaying(false); setIsPlayingGlobal(false); }}
+          onWaiting={() => setIsBuffering(true)}
+          onCanPlay={() => setIsBuffering(false)}
+          style={{ display: 'none' }}
+        />
+        <AudioPlayerMobile
+          currentSong={currentSong}
+          isPlaying={isPlaying}
+          currentTime={currentTime}
+          duration={duration}
+          volume={volume}
+          isMuted={isMuted}
+          isShuffled={shuffle}
+          repeatMode={repeat}
+          playbackSpeed={playbackSpeed}
+          onPlay={() => audioRef.current?.play().catch(() => {})}
+          onPause={() => audioRef.current?.pause()}
+          onSeek={(v) => { if (audioRef.current) { audioRef.current.currentTime = v; setCurrentTime(v); }}}
+          onVolumeChange={setVolume}
+          onToggleMute={toggleMute}
+          onNext={() => { autoPlayRef.current = true; goNextRef.current?.(); }}
+          onPrev={() => { autoPlayRef.current = true; goPreviousRef.current?.(); }}
+          onToggleShuffle={toggleShuffle}
+          onToggleRepeat={cycleRepeat}
+        />
+      </>
+    );
+  }
 
   const immersiveTitle = isIOS()
     ? (isCoverMode ? 'Quitter la vue couverture' : 'Vue couverture')
