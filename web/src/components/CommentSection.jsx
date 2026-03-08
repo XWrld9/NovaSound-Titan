@@ -500,7 +500,7 @@ const CommentSection = ({ songId, songUploaderEmail, onCommentChange }) => {
         // Ne pas bloquer l'expérience utilisateur
       }
 
-      showToast('#22d3ee');
+      showToast('Commentaire publié !', '#22d3ee');
       onCommentChange?.(); // Notifier le parent qu'un commentaire a été ajouté
     } else {
       // Rollback

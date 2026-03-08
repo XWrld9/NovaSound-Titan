@@ -92,10 +92,12 @@ const SongCard = memo(({ song: initialSong, onPlay, isPlaying: isPlayingProp, se
   return (
     <>
       <div
-        className={`bg-gray-900/80 border rounded-xl transition-all group relative ${song.is_archived ? 'border-amber-500/40 opacity-70' : 'border-cyan-500/30 hover:border-cyan-400'}`}
-        style={{ overflow: 'hidden' }}
+        className={`relative bg-gray-900/80 border border-gray-800 rounded-xl overflow-hidden transition-all duration-300 group cursor-pointer ${
+          isPlaying ? 'ring-2 ring-cyan-500/50 shadow-lg shadow-cyan-500/20' : 'hover:border-cyan-500/30 hover:shadow-cyan-500/10 hover:shadow-lg hover:scale-[1.02]'
+        }`}
         onMouseEnter={() => setIsHovered(true)}
         onMouseLeave={() => setIsHovered(false)}
+        onClick={handlePlay}
       >
         {song.is_archived && (
           <div className="absolute top-2 left-2 z-10 flex items-center gap-1 bg-amber-500/90 backdrop-blur-sm px-2 py-0.5 rounded-full">
