@@ -725,7 +725,7 @@ const LocalPlayerPageMobile = memo(() => {
                           playlist={playlist}
                           onSelect={handleSelectPlaylist}
                           onDelete={handleDeletePlaylist}
-                          onPlay={() => playPlaylist(playlist)}
+                          onPlay={() =>                           }}
                           onLongPress={handleLongPress}
                         />
                       ))}

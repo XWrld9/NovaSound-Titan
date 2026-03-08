@@ -8,16 +8,20 @@ import NewsForm from '@/components/NewsForm';
 import ReportButton from '@/components/ReportButton';
 import NewsLikeButton from '@/components/NewsLikeButton';
 import { useAuth } from '@/contexts/AuthContext';
-import { Newspaper, Calendar, User, X, ChevronRight } from 'lucide-react';
+import { Newspaper, Calendar, User, X, ChevronRight, Trash2 } from 'lucide-react';
 import NewsShareButton from '@/components/NewsShareButton';
 import NewsCommentSection from '@/components/NewsCommentSection';
 
+const ADMIN_EMAIL = 'eloadxfamily@gmail.com';
+
 const NewsPage = () => {
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, currentUser } = useAuth();
+  const isAdmin = currentUser?.email === ADMIN_EMAIL;
   const [news, setNews] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedNews, setSelectedNews] = useState(null);
   const [expandedComments, setExpandedComments] = useState(new Set());
+  const [deletingId, setDeletingId] = useState(null);
 
   useEffect(() => { fetchNews(); }, []);
 
@@ -34,6 +38,19 @@ const NewsPage = () => {
       console.error('Error fetching news:', error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleDeleteNews = async (newsId) => {
+    if (!window.confirm('Supprimer cette actualité définitivement ?')) return;
+    setDeletingId(newsId);
+    try {
+      await supabase.from('news').delete().eq('id', newsId);
+      setNews(prev => prev.filter(n => n.id !== newsId));
+      if (selectedNews?.id === newsId) setSelectedNews(null);
+    } catch (e) { console.error(e); }
+    setDeletingId(null);
+  };
     }
   };
 
@@ -115,7 +132,22 @@ const NewsPage = () => {
                         initialLikes={item.likes_count || 0}
                         authorId={item.author_id}
                       />
+                      <NewsShareButton newsId={item.id} title={item.title} />
                       <ReportButton contentType="news" contentId={item.id} />
+                      {isAdmin && (
+                        <button
+                          onClick={() => handleDeleteNews(item.id)}
+                          disabled={deletingId === item.id}
+                          className="flex items-center gap-1 px-2.5 py-1.5 rounded-xl text-xs font-bold bg-red-500/10 border border-red-500/20 text-red-400 hover:bg-red-500/20 transition-all disabled:opacity-50"
+                          title="Supprimer cette actualité"
+                        >
+                          {deletingId === item.id
+                            ? <div className="w-3.5 h-3.5 rounded-full border-2 border-red-400/30 border-t-red-400 animate-spin" />
+                            : <Trash2 className="w-3.5 h-3.5" />
+                          }
+                          Supprimer
+                        </button>
+                      )}
                     </div>
                   </div>
 

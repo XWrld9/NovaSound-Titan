@@ -96,6 +96,44 @@ const LoginPage = () => {
 
           <motion.div initial={{ opacity:0, y:20 }} animate={{ opacity:1, y:0 }} className="w-full max-w-sm">
 
+            {/* 🔔 Bannière de mise à jour — notification style app */}
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: -8 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              transition={{ delay: 0.15, type: 'spring', damping: 20 }}
+              className="mb-5 relative overflow-hidden rounded-2xl border border-amber-500/30 bg-gradient-to-br from-amber-950/80 to-orange-950/60 backdrop-blur-xl shadow-2xl shadow-amber-500/10 p-4"
+            >
+              {/* Glow de fond */}
+              <div className="absolute inset-0 opacity-20 pointer-events-none" style={{ background: 'radial-gradient(ellipse at top left, #f59e0b 0%, transparent 65%)' }} />
+              <div className="relative flex items-start gap-3">
+                {/* Icône notification pulsante */}
+                <div className="flex-shrink-0 mt-0.5">
+                  <div className="relative w-9 h-9 rounded-xl bg-amber-500/20 border border-amber-400/30 flex items-center justify-center">
+                    <span className="text-lg">🔔</span>
+                    <span className="absolute -top-1 -right-1 w-3 h-3 rounded-full bg-amber-400 border-2 border-gray-950 animate-pulse" />
+                  </div>
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-1.5 mb-1">
+                    <span className="text-[10px] font-black text-amber-400 uppercase tracking-widest">Mise à jour importante</span>
+                    <span className="text-[9px] bg-amber-500/20 text-amber-300 border border-amber-500/30 px-1.5 py-0.5 rounded-full font-bold">TITAN LUX</span>
+                  </div>
+                  <p className="text-sm text-amber-100 leading-snug font-medium">
+                    NovaSound a subi une <span className="text-amber-300 font-bold">gigantesque mise à jour</span> ! 🚀
+                  </p>
+                  <p className="text-xs text-amber-200/70 mt-1 leading-relaxed">
+                    Si tu étais déjà inscrit(e), nous te demandons gentiment de <span className="text-amber-300 font-semibold">créer un nouveau compte</span>. Nous nous excusons sincèrement pour la gêne occasionnée. 🙏
+                  </p>
+                  <div className="flex items-center gap-2 mt-2.5">
+                    <a href="/#/signup" className="flex items-center gap-1.5 px-3 py-1.5 bg-amber-500/20 hover:bg-amber-500/30 border border-amber-500/40 text-amber-300 text-xs font-bold rounded-xl transition-all">
+                      ✨ Créer un compte
+                    </a>
+                    <span className="text-[10px] text-amber-500/60">Merci de votre compréhension ❤️</span>
+                  </div>
+                </div>
+              </div>
+            </motion.div>
+
             {/* Logo mobile */}
             <div className="lg:hidden text-center mb-8">
               <div className="flex items-center justify-center gap-3 mb-3">

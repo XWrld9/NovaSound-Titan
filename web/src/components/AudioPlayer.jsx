@@ -153,6 +153,23 @@ const AudioPlayerDesktop = ({ currentSong, playlist = [], onNext, onPrevious, on
   // Ref vers toggleImmersive pour éviter les stale closures dans les useEffect clavier
   const toggleImmersiveRef = useRef(null);
 
+  // ── toggleMute déclaré ici (avant les useEffect qui l'utilisent) ── TDZ FIX ──
+  // ⚠️ DOIT rester avant tout useEffect référençant toggleMute dans ses deps ──
+  const toggleMute = useCallback((e) => {
+    e?.stopPropagation();
+    setIsMuted(prev => {
+      if (!prev) {
+        // Va muter : sauvegarder le volume actuel
+        setVolume(v => { setPrevVolume(v); return v; });
+        return true;
+      } else {
+        // Va démuter : restaurer si volume à 0
+        setVolume(v => v === 0 ? 70 : v);
+        return false;
+      }
+    });
+  }, []);
+
   // ── Sync shouldAutoPlay prop → autoPlayRef + reset après usage ──
   useEffect(() => {
     if (shouldAutoPlay) {
@@ -336,7 +353,6 @@ const AudioPlayerDesktop = ({ currentSong, playlist = [], onNext, onPrevious, on
         .from('songs')
         .select('id, title, artist, cover_url, genre, plays_count')
         .eq('is_archived', false)
-        .eq('is_deleted', false)
         .gte('created_at', firstDay)
         .lte('created_at', lastDay)
         .order('plays_count', { ascending: false })
@@ -568,7 +584,7 @@ const AudioPlayerDesktop = ({ currentSong, playlist = [], onNext, onPrevious, on
   const handleLoadedMetadata = () => { if (audioRef.current) { setDuration(audioRef.current.duration); setAudioDuration(audioRef.current.duration); } };
   const handleSeek = (value) => { if (audioRef.current) { audioRef.current.currentTime = value[0]; setCurrentTime(value[0]); } };
   const handleVolumeChange = (value) => { setVolume(value[0]); if (value[0] === 0) setIsMuted(true); else if (isMuted) setIsMuted(false); };
-  const toggleMute = (e) => { e?.stopPropagation(); if (!isMuted) { setPrevVolume(volume); setIsMuted(true); } else { setIsMuted(false); if (volume === 0) setVolume(prevVolume || 70); } };
+  // toggleMute est déclaré plus haut (TDZ fix) — pas de re-déclaration ici
 
   const goNext = useCallback(() => {
     autoPlayRef.current = true;
@@ -622,7 +638,7 @@ const AudioPlayerDesktop = ({ currentSong, playlist = [], onNext, onPrevious, on
       // Lecture terminée, pas de playlist, pas de repeat
       setIsPlaying(false);
     }
-  }, [repeat, goNext, playlist, currentSong?.id]);
+  }, [repeat, playlist, currentSong?.id]);
 
   goNextRef.current     = goNext;
   goPreviousRef.current = goPrevious;

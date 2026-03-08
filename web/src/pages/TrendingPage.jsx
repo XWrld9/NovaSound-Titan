@@ -105,7 +105,7 @@ const TrendingPage = () => {
   return (
     <div className="min-h-screen bg-gray-950 flex flex-col pb-36 md:pb-28">
       <Helmet>
-        <title>{'TENDANCES'} — NovaSound</title>
+        <title>{'TENDANCES'} — NovaSound TL</title>
         <meta name="description" content="Les sons et artistes en vogue sur NovaSound" />
       </Helmet>
       <Header />
@@ -122,7 +122,26 @@ const TrendingPage = () => {
             <TrendingUp className="w-4 h-4 text-cyan-400" />
             <span className="text-sm font-bold text-cyan-300 uppercase tracking-wider">{'TENDANCES'}</span>
           </div>
-          <h1 className="text-3xl sm:text-4xl font-black text-white mb-2">{'Ce qui buzze sur NovaSound'}</h1>
+
+          {/* Titre principal avec effet feu */}
+          <div className="relative inline-block mb-2">
+            {/* Glow derrière */}
+            <div className="absolute -inset-4 rounded-3xl opacity-30 blur-2xl pointer-events-none"
+              style={{ background: 'radial-gradient(ellipse, #f59e0b 0%, #ec4899 40%, #8b5cf6 80%, transparent 100%)' }} />
+            <h1 className="relative text-3xl sm:text-5xl font-black tracking-tight leading-none">
+              {/* TENDANCES en dégradé feu */}
+              <span className="block bg-gradient-to-r from-amber-400 via-orange-400 to-red-500 bg-clip-text text-transparent drop-shadow-[0_0_20px_rgba(251,146,60,0.8)]"
+                style={{ filter: 'drop-shadow(0 0 12px rgba(251,146,60,0.6))' }}>
+                TENDANCES
+              </span>
+              {/* Sous-titre stylé */}
+              <span className="block text-lg sm:text-xl font-semibold mt-1">
+                <span className="text-gray-300">Ce qui buzze sur </span>
+                <span className="bg-gradient-to-r from-cyan-400 to-fuchsia-500 bg-clip-text text-transparent font-black">NovaSound TL</span>
+              </span>
+            </h1>
+          </div>
+
           <p className="text-gray-500 text-sm">{'Les sons et artistes les plus écoutés et likés'}</p>
         </motion.div>
 

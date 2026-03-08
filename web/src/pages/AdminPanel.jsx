@@ -254,6 +254,22 @@ const AdminPanel = () => {
     } catch (e) { addToast(e.message,'error'); }
   };
 
+  const deleteSong = (song) => confirm({
+    type:'danger', title:'Supprimer définitivement',
+    message:`Supprimer DÉFINITIVEMENT "${song.title}" de ${song.artist} ?\n\n⚠️ Cette action est irréversible. Toutes les données seront perdues.`,
+    confirmText:'Supprimer définitivement', onConfirm: async () => {
+      try {
+        await supabase.from('songs').delete().eq('id', song.id);
+        addToast(`🗑️ "${song.title}" supprimé définitivement`);
+        loadSongs(); loadStats();
+      } catch (e) { addToast(e.message,'error'); }
+    }
+  });
+      addToast(`✅ "${song.title}" remis en ligne`);
+      loadSongs();
+    } catch (e) { addToast(e.message,'error'); }
+  };
+
   const deleteMsg = async (id) => {
     try {
       await supabase.from('chat_messages').update({ is_deleted:true }).eq('id', id);
@@ -583,6 +599,7 @@ const AdminPanel = () => {
                         ? <button onClick={() => unarchiveSong(song)} className="flex items-center gap-1 px-2.5 py-1.5 rounded-xl text-xs font-bold bg-green-500/10 border border-green-500/20 text-green-400 hover:bg-green-500/20 transition-all"><CheckCircle className="w-3.5 h-3.5" />Remettre</button>
                         : <button onClick={() => archiveSong(song)} className="flex items-center gap-1 px-2.5 py-1.5 rounded-xl text-xs font-bold bg-orange-500/10 border border-orange-500/20 text-orange-400 hover:bg-orange-500/20 transition-all"><Archive className="w-3.5 h-3.5" />Archiver</button>
                       }
+                      <button onClick={() => deleteSong(song)} className="flex items-center gap-1 px-2.5 py-1.5 rounded-xl text-xs font-bold bg-red-500/10 border border-red-500/20 text-red-400 hover:bg-red-500/20 transition-all"><Trash2 className="w-3.5 h-3.5" />Supprimer</button>
                     </div>
                   </div>
                 </motion.div>
