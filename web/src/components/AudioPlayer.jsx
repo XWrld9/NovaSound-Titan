@@ -5,7 +5,6 @@ import {
   UserPlus, UserCheck, ExternalLink, X, Maximize2, Minimize2,
   ListMusic, Moon, Trash2, Gauge, Radio, Plus, Calendar,
 } from 'lucide-react';
-import AudioPlayerMobile from './AudioPlayerMobile';
 import { Slider } from '@/components/ui/slider';
 import { supabase } from '@/lib/supabaseClient';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -668,7 +667,7 @@ const AudioPlayerDesktop = ({ currentSong, playlist = [], onNext, onPrevious, on
     if (onClose) onClose(); else window.dispatchEvent(new CustomEvent('novasound:close-player'));
   };
 
-  // ── Swipe-to-close mini player ──────────────────────────────────
+  // ── Swipe mini player ──────────────────────────────────────────
   const handleTouchStart = (e) => {
     swipeStartY.current = e.touches[0].clientY;
     swipeStartX.current = e.touches[0].clientX;
@@ -677,52 +676,14 @@ const AudioPlayerDesktop = ({ currentSong, playlist = [], onNext, onPrevious, on
     if (swipeStartY.current === null) return;
     const dy = e.changedTouches[0].clientY - swipeStartY.current;
     const dx = Math.abs(e.changedTouches[0].clientX - swipeStartX.current);
-    if (dy > 60 && dx < 80) { closePlayer(); }
+    if (dx < 80) {
+      if (dy > 60)  { closePlayer(); }         // swipe bas → fermer
+      if (dy < -60) { setIsExpanded(true); }    // swipe haut → ouvrir grand lecteur
+    }
     swipeStartY.current = null; swipeStartX.current = null;
   };
 
   if (!currentSong) return null;
-
-  // ── Sur mobile : rendre l'UI mobile MAIS garder le <audio> dans le DOM ─────
-  // AudioPlayerMobile n'a pas d'élément audio — AudioPlayerDesktop le possède.
-  // On rend les deux pour que la lecture soit active sur mobile.
-  if (isMobile()) {
-    return (
-      <>
-        <audio
-          ref={audioRef}
-          onTimeUpdate={handleTimeUpdate}
-          onLoadedMetadata={handleLoadedMetadata}
-          onEnded={handleEnded}
-          onPlay={() => { setIsPlaying(true); setIsPlayingGlobal(true); setIsBuffering(false); }}
-          onPause={() => { setIsPlaying(false); setIsPlayingGlobal(false); }}
-          onWaiting={() => setIsBuffering(true)}
-          onCanPlay={() => setIsBuffering(false)}
-          style={{ display: 'none' }}
-        />
-        <AudioPlayerMobile
-          currentSong={currentSong}
-          isPlaying={isPlaying}
-          currentTime={currentTime}
-          duration={duration}
-          volume={volume}
-          isMuted={isMuted}
-          isShuffled={shuffle}
-          repeatMode={repeat}
-          playbackSpeed={playbackSpeed}
-          onPlay={() => audioRef.current?.play().catch(() => {})}
-          onPause={() => audioRef.current?.pause()}
-          onSeek={(v) => { if (audioRef.current) { audioRef.current.currentTime = v; setCurrentTime(v); }}}
-          onVolumeChange={setVolume}
-          onToggleMute={toggleMute}
-          onNext={() => { autoPlayRef.current = true; goNextRef.current?.(); }}
-          onPrev={() => { autoPlayRef.current = true; goPreviousRef.current?.(); }}
-          onToggleShuffle={toggleShuffle}
-          onToggleRepeat={cycleRepeat}
-        />
-      </>
-    );
-  }
 
   const immersiveTitle = isIOS()
     ? (isCoverMode ? 'Quitter la vue couverture' : 'Vue couverture')
@@ -772,10 +733,10 @@ const AudioPlayerDesktop = ({ currentSong, playlist = [], onNext, onPrevious, on
           <motion.div
             key="expanded"
             ref={expandedRef}
-            initial={{ opacity: 0, y: 30 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: 30 }}
-            transition={{ type: 'spring', damping: 28, stiffness: 280 }}
+            initial={{ y: '100%' }}
+            animate={{ y: 0 }}
+            exit={{ y: '100%' }}
+            transition={{ duration: 0.3, ease: [0.32, 0.72, 0, 1] }}
             className="fixed inset-0 z-[60] flex flex-col"
             style={{ ...expandedBg, paddingBottom: 'env(safe-area-inset-bottom, 0px)', transition: 'background 0.5s ease' }}
             onClick={() => { setShowSleepMenu(false); setShowSpeedMenu(false); }}

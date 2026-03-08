@@ -96,38 +96,32 @@ const openIDB = () => new Promise((res, rej) => {
   r.onerror = () => rej(r.error);
 });
 
-const idbSave = async (pl) => {
-  try {
-    const db = await openIDB();
-    const tx = db.transaction([IDB_STORE], 'readwrite');
-    await tx.objectStore(IDB_STORE).put(pl);
-    return true;
-  } catch {
-    return false;
-  }
-};
+const idbSave = (pl) => new Promise((res) => {
+  openIDB().then(db => {
+    const tx  = db.transaction([IDB_STORE], 'readwrite');
+    const req = tx.objectStore(IDB_STORE).put(pl);
+    req.onsuccess = () => res(true);
+    req.onerror   = () => res(false);
+  }).catch(() => res(false));
+});
 
-const idbLoad = async () => {
-  try {
-    const db = await openIDB();
-    const tx = db.transaction([IDB_STORE], 'readonly');
-    const all = await tx.objectStore(IDB_STORE).getAll();
-    return all || [];
-  } catch {
-    return [];
-  }
-};
+const idbLoad = () => new Promise((res) => {
+  openIDB().then(db => {
+    const tx  = db.transaction([IDB_STORE], 'readonly');
+    const req = tx.objectStore(IDB_STORE).getAll();
+    req.onsuccess = () => res(req.result || []);
+    req.onerror   = () => res([]);
+  }).catch(() => res([]));
+});
 
-const idbDelete = async (id) => {
-  try {
-    const db = await openIDB();
-    const tx = db.transaction([IDB_STORE], 'readwrite');
-    await tx.objectStore(IDB_STORE).delete(id);
-    return true;
-  } catch {
-    return false;
-  }
-};
+const idbDelete = (id) => new Promise((res) => {
+  openIDB().then(db => {
+    const tx  = db.transaction([IDB_STORE], 'readwrite');
+    const req = tx.objectStore(IDB_STORE).delete(id);
+    req.onsuccess = () => res(true);
+    req.onerror   = () => res(false);
+  }).catch(() => res(false));
+});
 
 // ── Components ───────────────────────────────────────────────────────────────
 const SongItem = memo(({ song, index, isActive, isPlaying, selectionMode, isSelected, onSelect, onPlay, onRemove, onLongPress }) => {

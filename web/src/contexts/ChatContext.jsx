@@ -39,14 +39,15 @@ const insertNotification = async ({ userId, type, title, body, url, senderId, se
   if (!userId) return;
   try {
     await supabase.from('notifications').insert({
-      user_id:  userId,
+      user_id:      userId,
       type,
       title,
-      body:     body?.slice(0, 200) || '',
-      url:      url || '/chat',
-      icon_url: '/icon-192.png',
-      is_read:  false,
-      metadata: JSON.stringify({ msgId, senderId, senderName }),
+      body:         body?.slice(0, 200) || '',
+      url:          url || '/chat',
+      icon_url:     '/icon-192.png',
+      is_read:      false,
+      from_user_id: senderId || null,
+      metadata:     JSON.stringify({ msgId, senderId, senderName }),
     });
   } catch (err) {
     console.error('[Chat] insertNotification:', err);
