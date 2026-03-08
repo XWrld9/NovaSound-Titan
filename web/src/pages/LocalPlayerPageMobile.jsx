@@ -32,6 +32,54 @@ const AUDIO_EXTS = /\.(mp3|m4a|wav|flac|ogg|aac|opus|webm|mp4|3gp|caf|aiff|wma|a
 const isAudioFile = (f) => AUDIO_EXTS.test(f.name) || f.type.startsWith('audio/') || f.type === 'video/mp4';
 const FS_ACCESS_SUPPORTED = typeof window !== 'undefined' && 'showOpenFilePicker' in window;
 
+// ── Génère une pochette SVG colorée à partir du titre ────────────────────────
+const makeCoverSvg = (title = '', artist = '') => {
+  const letter = (title[0] || artist[0] || '?').toUpperCase();
+  const hue = [...(title + artist)].reduce((acc, c) => acc + c.charCodeAt(0), 0) % 360;
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="256" height="256" viewBox="0 0 256 256">
+    <defs><linearGradient id="g" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:hsl(${hue},70%,35%)"/>
+      <stop offset="100%" style="stop-color:hsl(${(hue+60)%360},70%,50%)"/>
+    </linearGradient></defs>
+    <rect width="256" height="256" fill="url(#g)"/>
+    <text x="128" y="160" font-family="Arial,sans-serif" font-size="110" font-weight="bold"
+      fill="rgba(255,255,255,0.9)" text-anchor="middle">${letter}</text>
+  </svg>`;
+  return 'data:image/svg+xml;base64,' + btoa(svg);
+};
+
+// ── Parse ID3v2 — extrait titre, artiste, album, pochette ────────────────────
+const parseID3 = async (file) => {
+  const meta = { title: '', artist: '', album: '', cover: null };
+  try {
+    const bytes = new Uint8Array(await file.slice(0, 512 * 1024).arrayBuffer());
+    if (bytes[0] !== 0x49 || bytes[1] !== 0x44 || bytes[2] !== 0x33) return meta;
+    const ss  = (b, o) => ((b[o]&0x7f)<<21)|((b[o+1]&0x7f)<<14)|((b[o+2]&0x7f)<<7)|(b[o+3]&0x7f);
+    let pos = 10; const end = ss(bytes, 6) + 10;
+    const dec = new TextDecoder('utf-8', { fatal: false });
+    while (pos < end - 10 && pos < bytes.length - 10) {
+      const fid = String.fromCharCode(bytes[pos],bytes[pos+1],bytes[pos+2],bytes[pos+3]);
+      const fsz = (bytes[pos+4]<<24)|(bytes[pos+5]<<16)|(bytes[pos+6]<<8)|bytes[pos+7];
+      if (fsz <= 0 || fsz > 300000) break;
+      const data = bytes.slice(pos+10, pos+10+fsz);
+      const txt  = data[0]===0 ? dec.decode(data.slice(1)) : new TextDecoder('utf-16le',{fatal:false}).decode(data.slice(3));
+      if      (fid==='TIT2') meta.title  = txt.replace(/\0/g,'').trim();
+      else if (fid==='TPE1') meta.artist = txt.replace(/\0/g,'').trim();
+      else if (fid==='TALB') meta.album  = txt.replace(/\0/g,'').trim();
+      else if (fid==='APIC' && !meta.cover) {
+        let i=1; while(i<data.length&&data[i]!==0)i++; i++; i++;
+        while(i<data.length&&data[i]!==0)i++; i++;
+        const mimeStart = 1;
+        let mimeEnd = 1; while(mimeEnd<data.length&&data[mimeEnd]!==0)mimeEnd++;
+        const mime = dec.decode(data.slice(mimeStart, mimeEnd)) || 'image/jpeg';
+        try { meta.cover = URL.createObjectURL(new Blob([data.slice(i)], { type: mime })); } catch(_){}
+      }
+      pos += 10+fsz;
+    }
+  } catch (_) {}
+  return meta;
+};
+
 // ── IndexedDB ─────────────────────────────────────────────────────────────────
 const IDB_NAME = 'novasound_local_v2';
 const IDB_STORE = 'playlists';
@@ -321,20 +369,29 @@ const LocalPlayerPageMobile = memo(() => {
   }, []);
   
   // File handlers
-  const handleFiles = useCallback((files) => {
+  const handleFiles = useCallback(async (files) => {
     const audioFiles = Array.from(files).filter(isAudioFile);
-    const newSongs = audioFiles.map(file => ({
-      id: `${file.name}-${file.size}-${file.lastModified}`,
-      title: file.name.replace(/\.[^/.]+$/, ''),
-      artist: 'Artiste inconnu',
-      duration: 0,
-      file,
-      url: URL.createObjectURL(file),
-      coverUrl: null,
-      bitrate: null,
-      addedAt: Date.now()
+    const newSongs = await Promise.all(audioFiles.map(async (file) => {
+      const raw = file.name.replace(/\.[^/.]+$/, '').replace(/[-_]/g, ' ');
+      const tags = await parseID3(file);
+      const title  = tags.title  || raw;
+      const artist = tags.artist || 'Artiste inconnu';
+      const cover  = tags.cover  || makeCoverSvg(title, artist);
+      return {
+        id: `${file.name}-${file.size}-${file.lastModified}`,
+        title,
+        artist,
+        album: tags.album || '',
+        duration: 0,
+        file,
+        url: URL.createObjectURL(file),
+        coverUrl: cover,
+        _hasBlobCover: !!tags.cover,
+        _coverBlobUrl: tags.cover || null,
+        bitrate: null,
+        addedAt: Date.now(),
+      };
     }));
-    
     setSongs(prev => [...prev, ...newSongs]);
   }, []);
   
@@ -725,7 +782,7 @@ const LocalPlayerPageMobile = memo(() => {
                           playlist={playlist}
                           onSelect={handleSelectPlaylist}
                           onDelete={handleDeletePlaylist}
-                          onPlay={() => playPlaylist(playlist)}
+                          onPlay={() => handleSelectPlaylist(playlist)}
                           onLongPress={handleLongPress}
                         />
                       ))}
