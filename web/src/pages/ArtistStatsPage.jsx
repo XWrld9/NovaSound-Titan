@@ -22,66 +22,128 @@ import {
 import { formatPlays } from '@/lib/utils';
 
 // ── Micro composant graphe en barres SVG ────────────────────────
-const BarChart = ({ data, color = '#06b6d4', height = 80 }) => {
-  if (!data || !data.length) return null;
+// ── Graphique combiné : barres + courbe dans un seul SVG ────────────────────
+const ComposedChart = ({ data, color = '#06b6d4', height = 180 }) => {
+  if (!data || data.length < 2) return null;
+
+  const W = 100;
+  const H = height;
+  const PADDING_TOP    = 12;
+  const PADDING_BOTTOM = 22;
+  const PADDING_X      = 1;
+  const chartH = H - PADDING_TOP - PADDING_BOTTOM;
+  const n = data.length;
   const max = Math.max(...data.map(d => d.value), 1);
-  const barW = 100 / data.length;
+
+  const barW  = (W - PADDING_X * 2) / n;
+  const barGap = barW * 0.25;
+
+  // Coordonnées pour la courbe (centre de chaque barre)
+  const pts = data.map((d, i) => {
+    const x = PADDING_X + i * barW + barW / 2;
+    const y = PADDING_TOP + chartH - (d.value / max) * chartH;
+    return { x, y, v: d.value, label: d.label };
+  });
+
+  // Smooth curve via cubic bezier
+  const pathD = pts.reduce((acc, pt, i) => {
+    if (i === 0) return `M ${pt.x},${pt.y}`;
+    const prev = pts[i - 1];
+    const cpX = (prev.x + pt.x) / 2;
+    return acc + ` C ${cpX},${prev.y} ${cpX},${pt.y} ${pt.x},${pt.y}`;
+  }, '');
+
+  const areaD = `${pathD} L ${pts[pts.length-1].x},${H - PADDING_BOTTOM} L ${pts[0].x},${H - PADDING_BOTTOM} Z`;
+
+  const gradId = `cg-${color.replace('#','')}`;
 
   return (
-    <div className="w-full" style={{ height }}>
-      <svg viewBox={`0 0 100 ${height}`} preserveAspectRatio="none" className="w-full h-full">
-        {data.map((d, i) => {
-          const barH = Math.max(1, (d.value / max) * (height - 12));
-          const x = i * barW + barW * 0.1;
-          const w = barW * 0.8;
-          const y = height - barH - 8;
-          return (
-            <g key={i}>
-              <rect x={x} y={y} width={w} height={barH} rx={1.5}
-                fill={color} opacity={0.7} />
-              {/* Valeur au survol via title */}
-              <title>{d.label}: {formatPlays(d.value)}</title>
-            </g>
-          );
-        })}
-        {/* Labels axe X */}
-        {data.map((d, i) => (
-          <text key={`l-${i}`}
-            x={i * barW + barW / 2}
-            y={height - 1}
+    <svg
+      viewBox={`0 0 ${W} ${H}`}
+      preserveAspectRatio="none"
+      className="w-full"
+      style={{ height }}
+    >
+      <defs>
+        <linearGradient id={gradId} x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%"   stopColor={color} stopOpacity="0.25" />
+          <stop offset="100%" stopColor={color} stopOpacity="0.02" />
+        </linearGradient>
+        {/* Glow filter pour la courbe */}
+        <filter id="glow" x="-20%" y="-20%" width="140%" height="140%">
+          <feGaussianBlur stdDeviation="0.8" result="blur" />
+          <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+        </filter>
+      </defs>
+
+      {/* Grille horizontale légère */}
+      {[0.25, 0.5, 0.75, 1].map(ratio => {
+        const y = PADDING_TOP + chartH * (1 - ratio);
+        return (
+          <line key={ratio}
+            x1={PADDING_X} y1={y} x2={W - PADDING_X} y2={y}
+            stroke="rgba(255,255,255,0.04)" strokeWidth="0.5" strokeDasharray="2,3"
+          />
+        );
+      })}
+
+      {/* Barres */}
+      {data.map((d, i) => {
+        const barH = Math.max(1, (d.value / max) * chartH);
+        const x    = PADDING_X + i * barW + barGap / 2;
+        const w    = barW - barGap;
+        const y    = PADDING_TOP + chartH - barH;
+        const opacity = d.value === 0 ? 0.15 : 0.35;
+        return (
+          <rect key={i}
+            x={x} y={y} width={w} height={barH}
+            rx={1.5}
+            fill={color}
+            opacity={opacity}
+          >
+            <title>{d.label}: {d.value}</title>
+          </rect>
+        );
+      })}
+
+      {/* Aire sous la courbe */}
+      <path d={areaD} fill={`url(#${gradId})`} />
+
+      {/* Courbe principale */}
+      <path d={pathD}
+        fill="none"
+        stroke={color}
+        strokeWidth="1.8"
+        strokeLinejoin="round"
+        strokeLinecap="round"
+        filter="url(#glow)"
+      />
+
+      {/* Points de données */}
+      {pts.map((pt, i) => (
+        <circle key={i} cx={pt.x} cy={pt.y} r={1.6}
+          fill={color}
+          opacity={pt.v > 0 ? 1 : 0.3}
+        >
+          <title>{pt.label}: {pt.v}</title>
+        </circle>
+      ))}
+
+      {/* Labels axe X */}
+      {data.map((d, i) => {
+        // N'afficher que certains labels selon la densité
+        const step = n > 20 ? 7 : n > 10 ? 3 : 1;
+        if (i % step !== 0 && i !== n - 1) return null;
+        return (
+          <text key={`lbl-${i}`}
+            x={PADDING_X + i * barW + barW / 2}
+            y={H - 4}
             textAnchor="middle"
-            fontSize={4.5}
+            fontSize={3.8}
             fill="#4b5563"
           >{d.label}</text>
-        ))}
-      </svg>
-    </div>
-  );
-};
-
-// ── Sparkline SVG ────────────────────────────────────────────────
-const Sparkline = ({ values, color = '#06b6d4', height = 40 }) => {
-  if (!values || values.length < 2) return null;
-  const max = Math.max(...values, 1);
-  const min = Math.min(...values, 0);
-  const range = max - min || 1;
-  const pts = values.map((v, i) => {
-    const x = (i / (values.length - 1)) * 100;
-    const y = height - ((v - min) / range) * (height - 6) - 2;
-    return `${x},${y}`;
-  }).join(' ');
-  const areaBottom = `100,${height - 1} 0,${height - 1}`;
-
-  return (
-    <svg viewBox={`0 0 100 ${height}`} preserveAspectRatio="none" className="w-full" style={{ height }}>
-      <defs>
-        <linearGradient id={`grad-${color.replace('#','')}`} x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor={color} stopOpacity="0.3" />
-          <stop offset="100%" stopColor={color} stopOpacity="0" />
-        </linearGradient>
-      </defs>
-      <polygon points={`${pts} ${areaBottom}`} fill={`url(#grad-${color.replace('#','')})`} />
-      <polyline points={pts} fill="none" stroke={color} strokeWidth="1.5" strokeLinejoin="round" strokeLinecap="round" />
+        );
+      })}
     </svg>
   );
 };
@@ -197,7 +259,6 @@ const ArtistStatsPage = () => {
     return generateDailyData(totalMetric, period, currentUser?.id?.charCodeAt(0) || 42);
   }, [songs, period, chartMetric, currentUser?.id, playsHistory]);
 
-  const sparkValues = useMemo(() => chartData.map(d => d.value), [chartData]);
 
   // Top 3 songs
   const topSongs = useMemo(() => songs.filter(s => !s.is_archived).slice(0, 10), [songs]);
@@ -294,15 +355,11 @@ const ArtistStatsPage = () => {
                     </div>
                   </div>
                 </div>
-                {/* Sparkline large */}
-                <div className="mb-3">
-                  <Sparkline values={sparkValues} color={chartMetric === 'plays' ? '#06b6d4' : '#ec4899'} height={70} />
-                </div>
-                {/* Barchart détaillé */}
-                <BarChart
+                {/* Graphique combiné barres + courbe */}
+                <ComposedChart
                   data={chartData.filter((_, i) => period === 7 ? true : i % 3 === 0)}
                   color={chartMetric === 'plays' ? '#06b6d4' : '#ec4899'}
-                  height={90}
+                  height={180}
                 />
               </motion.div>
 
