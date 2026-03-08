@@ -247,11 +247,13 @@ const AudioPlayerDesktop = ({ currentSong, playlist = [], onNext, onPrevious, on
     };
   }, [toggleMute]);
 
+  const lastVolKeyRef = useRef(0);
+
   // ── Raccourcis clavier — actifs en mode expanded/plein écran ────
   useEffect(() => {
     const onKey = (e) => {
-      // Ne pas intercepter si focus sur un input/textarea
       if (['INPUT', 'TEXTAREA'].includes(e.target.tagName)) return;
+      const now = Date.now();
       switch (e.code) {
         case 'ArrowRight': case 'MediaTrackNext':
           if (!isExpanded) break;
@@ -260,14 +262,24 @@ const AudioPlayerDesktop = ({ currentSong, playlist = [], onNext, onPrevious, on
           if (!isExpanded) break;
           e.preventDefault(); autoPlayRef.current = true; goPreviousRef.current?.(); break;
         case 'ArrowUp':
-          // Volume + (global, toujours actif si lecteur visible)
           e.preventDefault();
-          setVolume(prev => { const v = Math.min(1, (prev || 0) + 0.05); if (audioRef.current) audioRef.current.volume = v; return v; });
+          if (now - lastVolKeyRef.current < 80) break; // throttle 80ms
+          lastVolKeyRef.current = now;
+          setVolume(prev => {
+            const v = Math.min(100, (prev || 0) + 2);
+            if (audioRef.current) audioRef.current.volume = (isMuted ? 0 : v) / 100;
+            return v;
+          });
           break;
         case 'ArrowDown':
-          // Volume - (global, toujours actif si lecteur visible)
           e.preventDefault();
-          setVolume(prev => { const v = Math.max(0, (prev || 0) - 0.05); if (audioRef.current) audioRef.current.volume = v; return v; });
+          if (now - lastVolKeyRef.current < 80) break; // throttle 80ms
+          lastVolKeyRef.current = now;
+          setVolume(prev => {
+            const v = Math.max(0, (prev || 0) - 2);
+            if (audioRef.current) audioRef.current.volume = (isMuted ? 0 : v) / 100;
+            return v;
+          });
           break;
         case 'Space': case 'KeyK':
           e.preventDefault();
@@ -281,13 +293,13 @@ const AudioPlayerDesktop = ({ currentSong, playlist = [], onNext, onPrevious, on
           else { setIsExpanded(false); setIsCoverMode(false); setShowQueue(false); setShowSpeedMenu(false); }
           break;
         case 'KeyM':
-          e.preventDefault(); toggleMute();  break;
+          e.preventDefault(); toggleMute(); break;
         default: break;
       }
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [isExpanded, isPlaying, isCoverMode, isNativeFS, toggleMute]);
+  }, [isExpanded, isPlaying, isCoverMode, isNativeFS, toggleMute, isMuted]);
 
   // ── Scroll lock ─────────────────────────────────────────────────
   useEffect(() => {

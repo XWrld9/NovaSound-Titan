@@ -11,6 +11,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { Newspaper, Calendar, User, X, ChevronRight, Trash2 } from 'lucide-react';
 import NewsShareButton from '@/components/NewsShareButton';
 import NewsCommentSection from '@/components/NewsCommentSection';
+import AdminConfirmDialog from '@/components/AdminConfirmDialog';
 
 const ADMIN_EMAIL = 'eloadxfamily@gmail.com';
 
@@ -22,6 +23,7 @@ const NewsPage = () => {
   const [selectedNews, setSelectedNews] = useState(null);
   const [expandedComments, setExpandedComments] = useState(new Set());
   const [deletingId, setDeletingId] = useState(null);
+  const [confirmDialog, setConfirmDialog] = useState({ isOpen: false });
 
   useEffect(() => { fetchNews(); }, []);
 
@@ -41,15 +43,23 @@ const NewsPage = () => {
     }
   };
 
-  const handleDeleteNews = async (newsId) => {
-    if (!window.confirm('Supprimer cette actualité définitivement ?')) return;
-    setDeletingId(newsId);
-    try {
-      await supabase.from('news').delete().eq('id', newsId);
-      setNews(prev => prev.filter(n => n.id !== newsId));
-      if (selectedNews?.id === newsId) setSelectedNews(null);
-    } catch (e) { console.error(e); }
-    setDeletingId(null);
+  const handleDeleteNews = (newsId) => {
+    setConfirmDialog({
+      isOpen: true,
+      type: 'danger',
+      title: 'Supprimer l\'actualité',
+      message: 'Supprimer cette actualité définitivement ?\n\nTous les commentaires associés seront également supprimés.',
+      confirmText: 'Supprimer définitivement',
+      onConfirm: async () => {
+        setDeletingId(newsId);
+        try {
+          await supabase.from('news').delete().eq('id', newsId);
+          setNews(prev => prev.filter(n => n.id !== newsId));
+          if (selectedNews?.id === newsId) setSelectedNews(null);
+        } catch (e) { console.error(e); }
+        setDeletingId(null);
+      },
+    });
   };
 
   return (
@@ -242,6 +252,17 @@ const NewsPage = () => {
           </>
         )}
       </AnimatePresence>
+
+      {/* Dialog confirmation suppression */}
+      <AdminConfirmDialog
+        isOpen={confirmDialog.isOpen}
+        type={confirmDialog.type}
+        title={confirmDialog.title}
+        message={confirmDialog.message}
+        confirmText={confirmDialog.confirmText}
+        onConfirm={confirmDialog.onConfirm}
+        onClose={() => setConfirmDialog({ isOpen: false })}
+      />
     </>
   );
 };
