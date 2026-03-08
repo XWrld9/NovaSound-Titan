@@ -1030,33 +1030,33 @@ const LiveRoomPage = () => {
       <Helmet><title>Live Rooms — NovaSound TITAN LUX</title></Helmet>
       <div className="min-h-screen bg-gray-950 flex flex-col">
         <Header />
-        <main className="flex-1 w-full max-w-screen-xl mx-auto px-4 md:px-8 lg:px-12 py-6 sm:py-8 pb-28">
+        <main className="flex-1 w-full max-w-screen-xl mx-auto px-4 md:px-8 lg:px-12 py-4 sm:py-8 pb-28">
 
-          {/* Hero */}
-          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="text-center mb-8 sm:mb-12">
-            <div className="inline-flex items-center gap-2.5 bg-green-500/10 border border-green-500/25 text-green-400 px-5 py-2 rounded-full text-sm font-bold mb-5">
-              <span className="relative flex h-2.5 w-2.5">
+          {/* Hero — compact on mobile */}
+          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="text-center mb-5 sm:mb-12">
+            <div className="inline-flex items-center gap-2 bg-green-500/10 border border-green-500/25 text-green-400 px-3 py-1.5 sm:px-5 sm:py-2 rounded-full text-xs sm:text-sm font-bold mb-3 sm:mb-5">
+              <span className="relative flex h-2 w-2 sm:h-2.5 sm:w-2.5">
                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75" />
-                <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-green-500" />
+                <span className="relative inline-flex rounded-full h-2 w-2 sm:h-2.5 sm:w-2.5 bg-green-500" />
               </span>
               LIVE ROOMS
             </div>
-            <h1 className="text-3xl sm:text-4xl md:text-6xl font-black text-white mb-4 tracking-tight">
+            <h1 className="text-2xl sm:text-4xl md:text-6xl font-black text-white mb-2 sm:mb-4 tracking-tight">
               {'Écoute'} <span className="bg-gradient-to-r from-cyan-400 via-fuchsia-400 to-cyan-400 bg-clip-text text-transparent">{'ensemble'}</span>
             </h1>
-            <p className="text-gray-400 text-base sm:text-lg max-w-lg mx-auto leading-relaxed">{'Crée une salle, invite tes amis et partagez la même vibe musicale en temps réel.'}</p>
+            <p className="text-gray-400 text-sm sm:text-lg max-w-lg mx-auto leading-relaxed hidden sm:block">{'Crée une salle, invite tes amis et partagez la même vibe musicale en temps réel.'}</p>
           </motion.div>
 
           {/* Créer une salle - Interface améliorée */}
           <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}
-            className="bg-gray-900/60 backdrop-blur-md border border-white/[0.06] rounded-2xl p-6 sm:p-8 mb-8 sm:mb-10 shadow-xl shadow-black/20">
-            <div className="flex items-center gap-3 mb-6">
-              <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-green-500 to-cyan-500 flex items-center justify-center">
-                <Radio className="w-6 h-6 text-white" />
+            className="bg-gray-900/60 backdrop-blur-md border border-white/[0.06] rounded-2xl p-4 sm:p-8 mb-5 sm:mb-10 shadow-xl shadow-black/20">
+            <div className="flex items-center gap-2.5 sm:gap-3 mb-4 sm:mb-6">
+              <div className="w-9 h-9 sm:w-12 sm:h-12 rounded-xl sm:rounded-2xl bg-gradient-to-br from-green-500 to-cyan-500 flex items-center justify-center">
+                <Radio className="w-4 h-4 sm:w-6 sm:h-6 text-white" />
               </div>
               <div>
-                <h2 className="text-xl font-bold text-white">Créer ta salle live</h2>
-                <p className="text-gray-400 text-sm">Lance un live et partage ta musique avec tes amis</p>
+                <h2 className="text-base sm:text-xl font-bold text-white">Créer ta salle live</h2>
+                <p className="text-gray-400 text-xs sm:text-sm hidden sm:block">Lance un live et partage ta musique avec tes amis</p>
               </div>
             </div>
 

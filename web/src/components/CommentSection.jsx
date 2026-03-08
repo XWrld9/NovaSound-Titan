@@ -527,7 +527,7 @@ const CommentSection = ({ songId, songUploaderEmail, onCommentChange }) => {
                 : <div className="w-8 h-8 rounded-full bg-gray-800 border border-gray-700 flex items-center justify-center"><User className="w-4 h-4 text-gray-500" /></div>
               }
             </div>
-            <div className="flex-1 min-w-0 overflow-hidden">
+            <div className="flex-1 min-w-0">
               <textarea
                 ref={textareaRef}
                 value={text}
@@ -536,7 +536,7 @@ const CommentSection = ({ songId, songUploaderEmail, onCommentChange }) => {
                 placeholder="Laisse ton avis… (Ctrl+Entrée pour envoyer)"
                 rows={2}
                 className="w-full bg-gray-800/70 border border-gray-700/60 rounded-xl px-4 py-3 text-sm text-white placeholder-gray-600 resize-none focus:outline-none focus:border-cyan-500/60 transition-colors"
-                style={{ fontSize: 13, lineHeight: 1.5 }}
+                style={{ fontSize: 16, lineHeight: 1.5, touchAction: 'manipulation' }}
               />
               <div className="flex items-center justify-between mt-2">
                 <span className={`text-xs ${text.length > MAX_CHARS * 0.9 ? 'text-amber-400' : 'text-gray-600'}`}>

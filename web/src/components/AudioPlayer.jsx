@@ -686,17 +686,13 @@ const AudioPlayerDesktop = ({ currentSong, playlist = [], onNext, onPrevious, on
   if (!currentSong) return null;
 
   // ── MODE RÉDUIT : bulle flottante en bas à droite ─────────────
+  // IMPORTANT : le <audio> ref={audioRef} est rendu UNE SEULE FOIS dans le return principal
+  // ci-dessous, jamais ici. Sinon React démonte/remonte l'élément audio au toggle isMinimized
+  // ce qui coupe la lecture. Les deux branches partagent le même audioRef.
   if (isMinimized) {
     return (
-      <motion.div
-        initial={{ scale: 0, opacity: 0 }}
-        animate={{ scale: 1, opacity: 1 }}
-        exit={{ scale: 0, opacity: 0 }}
-        transition={{ type: 'spring', stiffness: 400, damping: 28 }}
-        className="fixed right-4 z-[44] flex flex-col items-end gap-2"
-        style={{ bottom: isNavHiddenPage ? '1rem' : 'calc(var(--ns-bottom-nav-h) + 1rem)' }}
-      >
-        {/* Audio toujours actif */}
+      <>
+        {/* Audio TOUJOURS monté ici — même composant, même ref, jamais interrompu */}
         <audio
           ref={audioRef}
           onTimeUpdate={handleTimeUpdate}
@@ -706,9 +702,20 @@ const AudioPlayerDesktop = ({ currentSong, playlist = [], onNext, onPrevious, on
           onPause={() => { setIsPlaying(false); setIsPlayingGlobal(false); }}
           onWaiting={() => setIsBuffering(true)}
           onCanPlay={() => setIsBuffering(false)}
+          onPlaying={() => setIsBuffering(false)}
+          onError={() => { setIsBuffering(false); setIsPlaying(false); setIsPlayingGlobal(false); }}
           loop={repeat === 'one'} playsInline preload="auto"
+          webkit-playsinline="true" x-webkit-airplay="allow"
           style={{ display: 'none' }}
         />
+        <motion.div
+          initial={{ scale: 0, opacity: 0 }}
+          animate={{ scale: 1, opacity: 1 }}
+          exit={{ scale: 0, opacity: 0 }}
+          transition={{ type: 'spring', stiffness: 400, damping: 28 }}
+          className="fixed right-4 z-[47] flex flex-col items-end gap-2"
+          style={{ bottom: isNavHiddenPage ? '1rem' : 'calc(var(--ns-bottom-nav-h) + 1rem)' }}
+        >
         <motion.button
           whileTap={{ scale: 0.92 }}
           onClick={restorePlayer}
@@ -738,7 +745,8 @@ const AudioPlayerDesktop = ({ currentSong, playlist = [], onNext, onPrevious, on
             <SkipForward className="w-3.5 h-3.5" />
           </button>
         </div>
-      </motion.div>
+        </motion.div>
+      </>
     );
   }
 

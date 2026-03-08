@@ -286,9 +286,9 @@ const Header = () => {
                 </div>
               )}
 
-              {/* Mobile burger — z-[46] pour rester au-dessus du mini player (z-[45]) */}
+              {/* Mobile burger — z-[46] */}
               <button
-                onClick={() => { minimizePlayer(); setIsMobileMenuOpen(true); }}
+                onClick={() => setIsMobileMenuOpen(true)}
                 className="md:hidden relative z-[46] p-2 text-cyan-400 hover:bg-cyan-500/10 rounded-lg transition-colors"
               >
                 <Menu className="w-6 h-6" />

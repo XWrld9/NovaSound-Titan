@@ -621,7 +621,7 @@ const LocalPlayerPageMobile = memo(() => {
           ))}
         </div>
 
-        <div className="flex-1 overflow-y-auto px-4 pt-3 pb-8" style={{ scrollbarWidth:'none' }}>
+        <div className="flex-1 overflow-y-auto px-4 pt-3 pb-6" style={{ scrollbarWidth:'none', paddingBottom: 'calc(1.5rem + env(safe-area-inset-bottom, 0px))' }}>
           <AnimatePresence mode="wait">
 
             {/* ── BIBLIOTHÈQUE ── */}

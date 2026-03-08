@@ -186,6 +186,19 @@ const AdminPanel = () => {
 
   useEffect(() => { if (isAdmin) refreshAll(); }, [isAdmin, refreshAll]);
 
+  // ── Realtime sync ─────────────────────────────────────────────────────────────
+  useEffect(() => {
+    if (!isAdmin) return;
+    const ch = supabase.channel('admin-realtime')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'reports' }, () => { loadReports(); loadStats(); })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'users' }, () => { loadUsers(); loadStats(); })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'live_rooms' }, () => { loadLiveRooms(); loadStats(); })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'songs' }, () => { loadSongs(); loadStats(); })
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'chat_messages' }, () => { loadChat(); })
+      .subscribe();
+    return () => supabase.removeChannel(ch);
+  }, [isAdmin, loadReports, loadStats, loadUsers, loadLiveRooms, loadSongs, loadChat]);
+
   // ── Actions ──────────────────────────────────────────────────────────────────
   const stopLiveRoom = async (room) => {
     try {
@@ -281,10 +294,16 @@ const AdminPanel = () => {
 
   const resolveReport = async (report, action) => {
     try {
-      await supabase.from('reports').update({ status: action, resolved_at: new Date().toISOString(), resolved_by: currentUser?.id }).eq('id', report.id);
+      await supabase.from('reports').update({
+        status: action,
+        admin_id: currentUser?.id,
+        admin_notes: `${action === 'resolved' ? 'Résolu' : 'Ignoré'} le ${new Date().toLocaleDateString('fr-FR')}`,
+        updated_at: new Date().toISOString(),
+      }).eq('id', report.id);
       addToast(action === 'resolved' ? '✅ Signalement résolu' : '🚫 Signalement ignoré');
       loadReports(); loadStats();
     } catch (e) { addToast(e.message, 'error'); }
+  };
   };
 
   const grantAdmin = (user) => confirm({
