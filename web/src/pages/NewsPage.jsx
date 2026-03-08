@@ -51,8 +51,6 @@ const NewsPage = () => {
     } catch (e) { console.error(e); }
     setDeletingId(null);
   };
-    }
-  };
 
   return (
     <>
