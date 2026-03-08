@@ -229,7 +229,7 @@ const Footer = () => {
           {/* Bottom bar */}
           <div className="border-t border-white/[0.05] mt-10 pt-6 flex flex-col sm:flex-row items-center justify-between gap-3">
             <p className="text-gray-700 text-xs font-mono">
-              © 2026 NovaSound TITAN LUX — ELOADXFAMILY · v410.0.0
+              © 2026 NovaSound TITAN LUX — ELOADXFAMILY · v 2.0
             </p>
             <div className="flex items-center gap-4">
               <button onClick={() => setShowAbout(true)} className="text-gray-700 hover:text-gray-500 text-xs transition-colors flex items-center gap-1">

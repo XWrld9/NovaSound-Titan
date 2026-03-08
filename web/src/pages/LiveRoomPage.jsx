@@ -17,6 +17,7 @@ import { supabase } from '@/lib/supabaseClient';
 import { useAuth } from '@/contexts/AuthContext';
 import { usePlayer } from '@/contexts/PlayerContext';
 import Header from '@/components/Header';
+import Footer from '@/components/Footer';
 import LiveLikeButton from '@/components/LiveLikeButton';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { notifyFollowers, notifyUser } from '@/lib/notifUtils';
@@ -1193,6 +1194,7 @@ const LiveRoomPage = () => {
             }
           </div>
         </main>
+        <Footer />
       </div>
     </>
   );
@@ -1830,6 +1832,7 @@ const LiveRoomPage = () => {
           </motion.div>
         )}
       </AnimatePresence>
+        <Footer />
     </>
   );
 };
