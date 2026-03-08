@@ -847,6 +847,5 @@ Il pourra accéder au panneau d'administration.`,
       />
     </div>
   );
-};
 
 export default AdminPanel;
