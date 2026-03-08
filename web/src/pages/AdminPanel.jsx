@@ -386,11 +386,12 @@ Il pourra accéder au panneau d'administration.`,
     </div>
   );
 
-  // ══ RENDER PRINCIPAL ══════════════════════════════════════════════════════════
-  if (loading) return renderLoading();
-  if (!isAdmin) return renderAccessDenied();
-
-  return (
+  // ══ RENDER PRINCIPAL ════════════════════════════════════════════════════════
+  const renderContent = () => {
+    if (loading) return renderLoading();
+    if (!isAdmin) return renderAccessDenied();
+    
+    return (
     <div className="min-h-screen bg-[#050510] text-white">
 
       {/* ── Toasts ─────────────────────────────────────────────────────────────── */}
@@ -848,6 +849,9 @@ Il pourra accéder au panneau d'administration.`,
         cancelText={confirmDialog.cancelText || 'Annuler'} type={confirmDialog.type || 'danger'}
       />
     </div>
-  );
+      );
+    };
+
+  return renderContent();
 
 export default AdminPanel;
