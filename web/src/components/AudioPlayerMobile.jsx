@@ -200,7 +200,7 @@ const AudioPlayerMobile = memo(({
   if (!currentSong) return null;
   
   return (
-    <AnimatePresence mode="wait">
+    <AnimatePresence>
       {/* Mini Player (Mobile Bottom Bar) */}
       {!isExpanded && (
         <motion.div
@@ -208,7 +208,7 @@ const AudioPlayerMobile = memo(({
           initial={{ y: 100, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
           exit={{ y: 100, opacity: 0 }}
-          transition={{ type: "spring", damping: 25, stiffness: 300 }}
+          transition={{ duration: 0.2, ease: 'easeOut' }}
           className="fixed bottom-14 left-0 right-0 z-50 md:hidden"
         >
           <div 
@@ -300,11 +300,16 @@ const AudioPlayerMobile = memo(({
       {isExpanded && (
         <motion.div
           key="expanded"
-          initial={{ scale: 0.9, opacity: 0 }}
-          animate={{ scale: 1, opacity: 1 }}
-          exit={{ scale: 0.9, opacity: 0 }}
-          transition={{ type: "spring", damping: 25, stiffness: 300 }}
-          className="fixed inset-0 z-50 md:hidden"
+          initial={{ y: '100%' }}
+          animate={{ y: 0 }}
+          exit={{ y: '100%' }}
+          transition={{ duration: 0.28, ease: [0.32, 0.72, 0, 1] }}
+          className="fixed inset-0 z-[60] md:hidden overflow-hidden"
+          drag="y"
+          dragControls={dragControls}
+          dragConstraints={{ top: 0, bottom: 0 }}
+          dragElastic={0.15}
+          onDragEnd={handleDragEnd}
         >
           <div 
             ref={playerRef}

@@ -500,7 +500,7 @@ const CommentSection = ({ songId, songUploaderEmail, onCommentChange }) => {
         // Ne pas bloquer l'expérience utilisateur
       }
 
-      showToast('Commentaire publié !', '#22d3ee');
+      showToast('#22d3ee');
       onCommentChange?.(); // Notifier le parent qu'un commentaire a été ajouté
     } else {
       // Rollback
@@ -532,14 +532,14 @@ const CommentSection = ({ songId, songUploaderEmail, onCommentChange }) => {
       {/* Zone de saisie */}
       {currentUser ? (
         <div className="mb-6">
-          <div className="flex gap-3">
+          <div className="flex gap-3 min-w-0">
             <div className="flex-shrink-0 mt-1">
               {currentUser.avatar_url
                 ? <img src={currentUser.avatar_url} alt="" className="w-8 h-8 rounded-full object-cover border border-gray-700" />
                 : <div className="w-8 h-8 rounded-full bg-gray-800 border border-gray-700 flex items-center justify-center"><User className="w-4 h-4 text-gray-500" /></div>
               }
             </div>
-            <div className="flex-1">
+            <div className="flex-1 min-w-0 overflow-hidden">
               <textarea
                 ref={textareaRef}
                 value={text}
