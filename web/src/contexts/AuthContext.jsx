@@ -47,7 +47,7 @@ export const AuthProvider = ({ children }) => {
   useEffect(() => {
     if (!currentUser?.id) return;
     // Ne pas re-enrichir si le profil est déjà chargé
-    if (currentUser.username || currentUser.avatar_url) return;
+    if (currentUser.username && currentUser.avatar_url) return;
 
     const loadProfile = async () => {
       try {

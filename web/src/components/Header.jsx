@@ -415,12 +415,12 @@ const Header = () => {
             <motion.div
               initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
               onClick={closeMenu}
-              className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 md:hidden"
+              className="fixed inset-0 bg-black/80 backdrop-blur-sm z-[55] md:hidden"
             />
             <motion.div
               initial={{ x: '100%' }} animate={{ x: 0 }} exit={{ x: '100%' }}
               transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-              className="fixed right-0 top-0 bottom-0 w-[280px] bg-gray-950 border-l border-cyan-500/30 z-50 md:hidden flex flex-col"
+              className="fixed right-0 top-0 bottom-0 w-[280px] bg-gray-950 border-l border-cyan-500/30 z-[55] md:hidden flex flex-col"
               style={{ paddingTop: 'env(safe-area-inset-top, 0px)', paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}
             >
               {/* Drawer header */}

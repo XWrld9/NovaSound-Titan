@@ -27,6 +27,7 @@ import {
   Radio, Zap, TrendingUp, MessageCircle,
 } from 'lucide-react';
 import { usePlayer } from '@/contexts/PlayerContext';
+import { usePlayerTime } from '@/contexts/PlayerTimeContext';
 import { useAuth } from '@/contexts/AuthContext';
 
 import { GENRE_THEMES_MAP } from '@/hooks/useGenreTheme';
@@ -97,7 +98,8 @@ const SuggestionCard = ({ s, onPlay }) => (
 const SongPage = () => {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { playSong, currentSong, isVisible, audioCurrentTime, isPlayingGlobal } = usePlayer();
+  const { playSong, currentSong, isVisible, isPlayingGlobal } = usePlayer();
+  const { audioCurrentTime } = usePlayerTime(); // ← contexte isolé pour éviter re-renders
   const { isAuthenticated } = useAuth();
 
   const [song,          setSong]         = useState(null);
@@ -117,7 +119,7 @@ const SongPage = () => {
     try {
       setLoading(true);
       const { data, error: e } = await supabase.from('songs').select('*').eq('id', id).single();
-      if (e || !data || data.is_deleted) { setError(true); setLoading(false); return; }
+      if (e || !data || data.is_archived) { setError(true); setLoading(false); return; }
       setSong(data);
       if (data.uploader_id) {
         const { data: ud } = await supabase.from('users')

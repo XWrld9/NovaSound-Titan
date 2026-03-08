@@ -11,6 +11,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { notifyOwner, notifyAll } from '@/lib/notifUtils';
 import { useChat } from '@/contexts/ChatContext'; // Importer useChat pour accéder à insertNotification
 import { Link } from 'react-router-dom';
+import { useToast as useGlobalToast } from '@/components/ui/Toast';
 
 const ADMIN_EMAIL = 'eloadxfamily@gmail.com';
 const MAX_CHARS   = 800;
@@ -24,24 +25,7 @@ const timeAgo = (dateStr) => {
   return new Date(dateStr).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' });
 };
 
-/* ── Toast ─────────────────────────────────────────────────── */
-const Toast = ({ msg, color }) =>
-  ReactDOM.createPortal(
-    <motion.div
-      initial={{ opacity: 0, y: 28, x: '-50%' }}
-      animate={{ opacity: 1, y: 0,  x: '-50%' }}
-      exit={{ opacity: 0,  y: 14, x: '-50%' }}
-      style={{
-        position: 'fixed', bottom: 96, left: '50%', zIndex: 10000,
-        padding: '11px 22px', borderRadius: 50, background: color,
-        boxShadow: `0 4px 28px ${color}70`,
-        color: '#fff', fontSize: 13, fontWeight: 600,
-        maxWidth: '88vw', textAlign: 'center', whiteSpace: 'nowrap',
-        pointerEvents: 'none',
-      }}
-    >{msg}</motion.div>,
-    document.body
-  );
+/* ── Toast supprimé : on utilise le système global useToast ── */
 
 /* ── Confirm delete modal ───────────────────────────────────── */
 const DeleteConfirm = ({ onConfirm, onCancel, loading }) =>
@@ -173,10 +157,10 @@ const CommentRow = ({ comment, currentUser, songUploaderEmail, onDeleted, onUpda
         .select('id, content, is_edited')
         .single();
       if (error) throw error;
-      if (!data) throw new Error('no_row'); // RLS a bloqué sans erreur (0 rows)
+      if (!data) throw new Error('no_row');
       onUpdated(comment.id, trimmed);
       setEditing(false);
-      showToast('#22d3ee');
+      showToast('✅ Commentaire modifié', '#22d3ee');
     } catch (err) {
       console.error('[handleEdit]', err);
       showToast(
@@ -195,19 +179,19 @@ const CommentRow = ({ comment, currentUser, songUploaderEmail, onDeleted, onUpda
     const { error } = await supabase.from('song_comments').delete().eq('id', comment.id);
     setDeleteLoading(false);
     setConfirmDelete(false);
-    if (!error) { onDeleted(comment.id); showToast('#ef4444'); }
-    else showToast('#ef4444');
+    if (!error) { onDeleted(comment.id); showToast('🗑️ Commentaire supprimé', '#ef4444'); }
+    else showToast('Erreur lors de la suppression', '#ef4444');
   };
 
   const handleReport = async () => {
     if (reported || !currentUser) return;
     await supabase.from('reports').insert({ reporter_id: currentUser.id, content_type: 'comment', content_id: String(comment.id), reason: 'Contenu inapproprié' });
-    setReported(true); showToast('#f59e0b');
+    setReported(true); showToast('⚑ Signalement envoyé', '#f59e0b');
   };
 
   const handleShare = () => {
     const url = `${window.location.origin}${window.location.pathname}#comment-${comment.id}`;
-    navigator.clipboard?.writeText(url).then(() => showToast('#22d3ee')).catch(() => showToast('#ef4444'));
+    navigator.clipboard?.writeText(url).then(() => showToast('🔗 Lien copié', '#22d3ee')).catch(() => showToast('Impossible de copier', '#ef4444'));
   };
 
   const authorName = comment.user?.username || comment._username || 'Utilisateur';
@@ -315,13 +299,17 @@ const CommentSection = ({ songId, songUploaderEmail, onCommentChange }) => {
   const [loading, setLoading]   = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [text, setText]         = useState('');
-  const [toast, setToast]       = useState(null);
   const textareaRef             = useRef(null);
+  const globalToast             = useGlobalToast();
 
-  const showToast = (msg, color = '#22d3ee') => {
-    setToast({ msg, color });
-    setTimeout(() => setToast(null), 3000);
-  };
+  // showToast unifié → utilise le système global (messages lisibles, pas de couleur hex)
+  const showToast = useCallback((msg, color = '#22d3ee') => {
+    const isError = color === '#ef4444' || color.includes('red');
+    const isWarn  = color === '#f59e0b' || color.includes('amber') || color.includes('orange');
+    if (isError)     globalToast.error(msg);
+    else if (isWarn) globalToast.warning(msg);
+    else             globalToast.success(msg);
+  }, [globalToast]);
 
   /* ── Envoi des notifications commentaires ─────────────────────────────
    * v8002 : notifyOwner → propriétaire du son
@@ -500,7 +488,7 @@ const CommentSection = ({ songId, songUploaderEmail, onCommentChange }) => {
         // Ne pas bloquer l'expérience utilisateur
       }
 
-      showToast('#22d3ee');
+      showToast('💬 Commentaire publié !', '#22d3ee');
       onCommentChange?.(); // Notifier le parent qu'un commentaire a été ajouté
     } else {
       // Rollback
@@ -555,9 +543,20 @@ const CommentSection = ({ songId, songUploaderEmail, onCommentChange }) => {
                   {text.length}/{MAX_CHARS}
                 </span>
                 <motion.button
-                  onClick={handleSubmit}
+                  // onPointerDown + preventDefault empêche le blur de la textarea sur mobile
+                  // ce qui évite que le clavier disparaisse et que le tap manque sa cible
+                  onPointerDown={(e) => {
+                    if (!text.trim() || submitting) return;
+                    e.preventDefault();
+                    handleSubmit();
+                  }}
+                  onClick={(e) => {
+                    // Fallback pour les navigateurs desktop sans onPointerDown
+                    if (!e.defaultPrevented) handleSubmit();
+                  }}
                   disabled={!text.trim() || submitting}
                   whileTap={{ scale: 0.95 }}
+                  type="button"
                   className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold transition-all"
                   style={{
                     background: text.trim() && !submitting ? 'linear-gradient(90deg,#06b6d4,#a855f7)' : 'rgba(255,255,255,0.08)',
@@ -608,7 +607,7 @@ const CommentSection = ({ songId, songUploaderEmail, onCommentChange }) => {
       )}
 
       <AnimatePresence>
-        {toast && <Toast msg={toast.msg} color={toast.color} />}
+        {/* Toast supprimé — le système global useToast est utilisé */}
       </AnimatePresence>
     </section>
   );

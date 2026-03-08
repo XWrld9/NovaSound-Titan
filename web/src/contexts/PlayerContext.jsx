@@ -20,6 +20,7 @@ export const PlayerProvider = ({ children }) => {
   const [playlist,          setPlaylist]           = useState([]);
   const [queue,             setQueue]              = useState([]);
   const [isVisible,         setIsVisible]          = useState(false);
+  const [isMinimized,       setIsMinimized]        = useState(false);
   const [sleepTimer,        setSleepTimerVal]      = useState(null);
   const [radioMode,         setRadioMode]          = useState(false);
   const [radioLoading,      setRadioLoading]       = useState(false);
@@ -240,6 +241,9 @@ export const PlayerProvider = ({ children }) => {
     if (song) { currentSongRef.current = song; setCurrentSong(song); setShouldAutoPlay(true); }
   }, []);
 
+  const minimizePlayer = useCallback(() => setIsMinimized(true),  []);
+  const restorePlayer  = useCallback(() => setIsMinimized(false), []);
+
   const closePlayer = useCallback(() => {
     clearSleepTimer();
     setIsVisible(false);
@@ -297,11 +301,12 @@ export const PlayerProvider = ({ children }) => {
 
   return (
     <PlayerContext.Provider value={{
-      currentSong, playlist, queue, isVisible, sleepTimer,
+      currentSong, playlist, queue, isVisible, isMinimized, sleepTimer,
       radioMode, radioLoading, currentPlaylistId, shouldAutoPlay,
       isPlayingGlobal, setIsPlayingGlobal,
       seekTo, togglePlayPause,
       playSong, handleNext, handlePrevious, closePlayer,
+      minimizePlayer, restorePlayer,
       addToQueue, removeFromQueue, clearQueue,
       removeFromPlaylist, setCurrentPlaylistId,
       setSleepTimer, clearSleepTimer, toggleRadio, resetAutoPlay,

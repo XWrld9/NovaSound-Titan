@@ -159,7 +159,7 @@ export const notifyOwner = async (supabase, songId, actorId, payload) => {
 };
 
 // ── notifyFollowers — notifier tous les abonnés d'un artiste ──
-// V50000 : nouveau helper pour new_song, live_start, etc.
+// VFINAL : insert batch en parallèle (max 50 à la fois) au lieu de boucle séquentielle
 export const notifyFollowers = async (supabase, artistId, payload, excludeIds = []) => {
   if (!artistId || !payload?.type) return 0;
   try {
@@ -177,12 +177,45 @@ export const notifyFollowers = async (supabase, artistId, payload, excludeIds = 
 
     if (!targets.length) return 0;
 
-    let notified = 0;
-    for (const userId of targets) {
-      await notifyUser(supabase, userId, payload);
-      notified++;
+    // Dédupliquer les cibles
+    const uniqueTargets = [...new Set(targets)];
+
+    // Construire les rows de notifications
+    const rows = uniqueTargets.map(userId => ({
+      user_id:  userId,
+      type:     payload.type,
+      title:    payload.title || '',
+      body:     payload.body  || '',
+      url:      payload.url   || '/',
+      icon_url: payload.icon_url || '/icon-192.png',
+      metadata: payload.metadata || {},
+      is_read:  false,
+    }));
+
+    // Batch insert par tranches de 100 (limite Supabase)
+    const CHUNK = 100;
+    for (let i = 0; i < rows.length; i += CHUNK) {
+      await supabase.from('notifications').insert(rows.slice(i, i + CHUNK));
     }
-    return notified;
+
+    // Déclencher le broadcast push en 1 seul appel Edge Function
+    const { url, key } = _getUrlKey(supabase);
+    if (url) {
+      fetch(`${url}/functions/v1/send-push-notification`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${key}` },
+        body: JSON.stringify({
+          broadcast: true,
+          title:     payload.title,
+          body:      (payload.body || '').slice(0, 200),
+          url:       payload.url || '/',
+          icon_url:  payload.icon_url || '/icon-192.png',
+          type:      payload.type || 'default',
+        }),
+      }).catch(() => {});
+    }
+
+    return uniqueTargets.length;
   } catch (err) {
     console.warn('[notifUtils] notifyFollowers error:', err?.message);
     return 0;

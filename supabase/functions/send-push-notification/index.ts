@@ -317,7 +317,7 @@ async function sendBatch(
 }
 
 // ─────────────────────────────────────────────────────────────
-// Main handler - Version finale V110000
+// Main handler - VFINAL (secrets via env uniquement, sécurité broadcast renforcée)
 // ─────────────────────────────────────────────────────────────
 Deno.serve(async (req: Request) => {
   if (req.method === "OPTIONS") {
@@ -331,27 +331,36 @@ Deno.serve(async (req: Request) => {
   }
   if (req.method !== "POST") return new Response("Method Not Allowed", { status: 405 });
 
-  const t0   = Date.now();
-  const PUB  = Deno.env.get("VAPID_PUBLIC_KEY")          ?? "BOfOThRQ1WFrroj7sGuIVy-R2u--fgE_1_FInA6OwhrhdY2lomv7Co4gMXLRvZg257FbDztvNOgYWqCbk8C4qZc";
-  const PRIV = Deno.env.get("VAPID_PRIVATE_KEY")         ?? "d1UoZRYkI4T6Uo7y5cF7byqXXX60LaMEt8wXtX1eG7A";
-  const SUBJ = Deno.env.get("VAPID_SUBJECT")             ?? "mailto:eloadxfamily@gmail.com";
-  const SURL = Deno.env.get("SUPABASE_URL")              ?? "https://tleuzlyfrelrnkpbwhkc.supabase.co";
-  const SKEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRsZXV6bHlmZWxybnlrcGJ3aGtjIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3MTU4Njg5NSwiZXhwIjoyMDg3MTYyODk1fQ.AxYNyho-IywJt4-5bpyL8rQ0cN9W1J4f-o2cxeaABK4";
-  const AKEY = Deno.env.get("SUPABASE_ANON_KEY")
-    ?? "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRsZXV6bHlmZWxybnlrcGJ3aGtjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzE1ODY4OTUsImV4cCI6MjA4NzE2Mjg5NX0.PEXcdsykNhIhtXOmprBkshqZfZ9qkc8WKmFbBNSn-II";
+  const t0 = Date.now();
+
+  // ── Lecture des secrets depuis les variables d'environnement UNIQUEMENT ──────
+  // SUPABASE_URL et SUPABASE_SERVICE_ROLE_KEY sont injectées automatiquement
+  // par Supabase pour toutes les Edge Functions → aucun fallback nécessaire.
+  // VAPID_PUBLIC_KEY, VAPID_PRIVATE_KEY, SUPABASE_ANON_KEY doivent être déclarées
+  // dans Supabase Dashboard → Edge Functions → Secrets.
+  const PUB  = Deno.env.get("VAPID_PUBLIC_KEY");
+  const PRIV = Deno.env.get("VAPID_PRIVATE_KEY");
+  const SUBJ = Deno.env.get("VAPID_SUBJECT") ?? "mailto:contact@novasound.app";
+  const SURL = Deno.env.get("SUPABASE_URL");
+  const SKEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+  const AKEY = Deno.env.get("SUPABASE_ANON_KEY");
+
+  if (!SURL || !SKEY) {
+    console.error("[Push] SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY not set");
+    return new Response(JSON.stringify({ error: "Server configuration error" }), { status: 500, headers: { "Content-Type": "application/json" } });
+  }
 
   // ── Auth guard ─────────────────────────────────────────────────────────────
-  // Accepte deux tokens légitimes :
-  //   1. service_role_key  → webhooks Supabase / appels serveur internes
-  //   2. anon_key          → appels client-side (notifUtils.js envoie Bearer <anon_key>)
-  //      L'anon key est déjà publique dans le bundle frontend ; la vraie sécurité
-  //      repose sur les RLS Supabase et sur le fait que la fonction utilise
-  //      son propre service_role_key pour les opérations DB.
-  // Un token complètement absent est toujours rejeté.
-  const authHeader = req.headers.get("Authorization") ?? "";
-  const token = authHeader.startsWith("Bearer ") ? authHeader.slice(7) : "";
-  const isServiceRole = SKEY && token === SKEY;
-  const isAnonKey     = AKEY && token === AKEY;
+  // Niveaux d'autorisation :
+  //   1. service_role_key  → accès complet (webhooks, appels serveur, broadcast)
+  //   2. anon_key          → accès limité (notifications ciblées user_id uniquement,
+  //                          PAS de broadcast — l'anon key est publique dans le bundle)
+  // Un token absent ou invalide est toujours rejeté.
+  const authHeader   = req.headers.get("Authorization") ?? "";
+  const token        = authHeader.startsWith("Bearer ") ? authHeader.slice(7) : "";
+  const isServiceRole = !!(SKEY && token === SKEY);
+  const isAnonKey     = !!(AKEY && token === AKEY);
+  // JWT tiers (utilisateurs authentifiés via Supabase Auth) — accepté pour single-user
   const isValidJWT    = !isServiceRole && !isAnonKey && token.startsWith("eyJ") && token.split(".").length === 3;
 
   if (!token || (!isServiceRole && !isAnonKey && !isValidJWT)) {
@@ -362,7 +371,7 @@ Deno.serve(async (req: Request) => {
   }
 
   if (!PUB || !PRIV)
-    return new Response(JSON.stringify({ error: "VAPID keys not configured" }), { status: 500, headers: { "Content-Type": "application/json" } });
+    return new Response(JSON.stringify({ error: "VAPID keys not configured — set VAPID_PUBLIC_KEY and VAPID_PRIVATE_KEY in Edge Function Secrets" }), { status: 500, headers: { "Content-Type": "application/json" } });
 
   try { extractXY(PUB); } catch (e: unknown) {
     const msg = e instanceof Error ? e.message : String(e);
@@ -385,6 +394,15 @@ Deno.serve(async (req: Request) => {
   const icon        = (rec.icon_url as string) || (rec.icon as string) || "/icon-192.png";
   const image       = (rec.image_url as string) || (rec.image as string) || undefined;
   const actions     = (rec.actions  as PushAction[]) || undefined;
+
+  // ── Broadcast réservé au service_role uniquement ─────────────────────────
+  // L'anon_key est publique — n'importe qui pourrait envoyer un broadcast sans ce guard.
+  if (isBroadcast && !isServiceRole) {
+    return new Response(
+      JSON.stringify({ error: "Broadcast requires service_role authorization" }),
+      { status: 403, headers: { "Content-Type": "application/json" } }
+    );
+  }
 
   if (!isBroadcast && !userId)
     return new Response(JSON.stringify({ error: "user_id required (or set broadcast: true)" }), { status: 400, headers: { "Content-Type": "application/json" } });

@@ -13,7 +13,7 @@ import { usePlayer } from '@/contexts/PlayerContext';
 import { usePlayerTime } from '@/contexts/PlayerTimeContext';
 import LottieAnimation from '@/components/LottieAnimation';
 import playAnimation from '@/animations/play-animation.json';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { useToast } from '@/components/ui/Toast';
 import { useGenreTheme } from '@/hooks/useGenreTheme';
 import WaveformVisualizer from '@/components/WaveformVisualizer';
@@ -98,7 +98,12 @@ const AudioPlayerDesktop = ({ currentSong, playlist = [], onNext, onPrevious, on
   const genreTheme = useGenreTheme(currentSong?.genre);
   const navigate = useNavigate();
   const toast = useToast();
-  const audioRef = useRef(null);;
+  const location = useLocation();
+  const audioRef = useRef(null);
+
+  // Pages où le BottomNav mobile est masqué → mini player colle directement au bas
+  const isNavHiddenPage = location.pathname === '/local-player' ||
+    /^\/live\/.+/.test(location.pathname);
 
   // Queue & Sleep timer depuis PlayerContext
   const {
@@ -108,6 +113,7 @@ const AudioPlayerDesktop = ({ currentSong, playlist = [], onNext, onPrevious, on
     setIsPlayingGlobal,
     shuffle, setShuffle, toggleShuffle,
     repeat, setRepeat, cycleRepeat,
+    isMinimized, minimizePlayer, restorePlayer,
   } = usePlayer();
 
   // Temps de lecture dans contexte séparé pour éviter re-renders en masse
@@ -149,6 +155,7 @@ const AudioPlayerDesktop = ({ currentSong, playlist = [], onNext, onPrevious, on
   const goPreviousRef = useRef(null);
   const autoPlayRef   = useRef(false);
   const prevSongIdRef = useRef(null);
+  const playlistRef   = useRef(playlist); // ← fix closure périmée dans handleEnded
   // Ref vers toggleImmersive pour éviter les stale closures dans les useEffect clavier
   const toggleImmersiveRef = useRef(null);
 
@@ -629,30 +636,23 @@ const AudioPlayerDesktop = ({ currentSong, playlist = [], onNext, onPrevious, on
   }, [playlist, currentSong?.id, currentTime, onPrevious]);
 
   const handleEnded = useCallback(() => {
-    
+    const currentPlaylist = playlistRef.current; // ← ref toujours fraîche (mode radio)
     if (repeat === 'one') {
-      // Recommencer la même chanson
       audioRef.current.currentTime = 0;
-      audioRef.current.play().catch(err => {
-        console.error('[AudioPlayer] Repeat play error:', err);
-        // Si erreur, essayer de passer à la suivante
-        if (playlist.length > 0) {
-          onNext?.();
-        } else {
-          setIsPlaying(false);
-        }
+      audioRef.current.play().catch(() => {
+        if (currentPlaylist.length > 0) onNext?.();
+        else setIsPlaying(false);
       });
-    } else if (repeat === 'all' || playlist.length > 0) {
-      // Passer à la chanson suivante
+    } else if (repeat === 'all' || currentPlaylist.length > 0) {
       onNext?.();
     } else {
-      // Lecture terminée, pas de playlist, pas de repeat
       setIsPlaying(false);
     }
-  }, [repeat, playlist, currentSong?.id]);
+  }, [repeat, onNext]); // playlist retiré des deps → on lit playlistRef
 
   goNextRef.current     = goNext;
   goPreviousRef.current = goPrevious;
+  playlistRef.current   = playlist; // toujours à jour même dans les vieux callbacks
 
   const cycleRepeatLocal = (e) => { e?.stopPropagation(); cycleRepeat(); };
 
@@ -684,6 +684,62 @@ const AudioPlayerDesktop = ({ currentSong, playlist = [], onNext, onPrevious, on
   };
 
   if (!currentSong) return null;
+
+  // ── MODE RÉDUIT : bulle flottante en bas à droite ─────────────
+  if (isMinimized) {
+    return (
+      <motion.div
+        initial={{ scale: 0, opacity: 0 }}
+        animate={{ scale: 1, opacity: 1 }}
+        exit={{ scale: 0, opacity: 0 }}
+        transition={{ type: 'spring', stiffness: 400, damping: 28 }}
+        className={`fixed right-4 z-[44] flex flex-col items-end gap-2 ${isNavHiddenPage ? 'bottom-4' : 'bottom-20 md:bottom-4'}`}
+      >
+        {/* Audio toujours actif */}
+        <audio
+          ref={audioRef}
+          onTimeUpdate={handleTimeUpdate}
+          onLoadedMetadata={handleLoadedMetadata}
+          onEnded={handleEnded}
+          onPlay={() => { setIsPlaying(true); setIsPlayingGlobal(true); setIsBuffering(false); }}
+          onPause={() => { setIsPlaying(false); setIsPlayingGlobal(false); }}
+          onWaiting={() => setIsBuffering(true)}
+          onCanPlay={() => setIsBuffering(false)}
+          loop={repeat === 'one'} playsInline preload="auto"
+          style={{ display: 'none' }}
+        />
+        <motion.button
+          whileTap={{ scale: 0.92 }}
+          onClick={restorePlayer}
+          className="w-14 h-14 rounded-full shadow-2xl flex items-center justify-center relative overflow-hidden border-2 border-white/20"
+          style={{ background: `linear-gradient(135deg, ${genreTheme.primary}, ${genreTheme.secondary})`, boxShadow: `0 8px 32px ${genreTheme.glow}` }}
+          title={`${currentSong.title} — cliquer pour afficher`}
+        >
+          {currentSong.cover_url
+            ? <img src={currentSong.cover_url} alt="" className={`w-full h-full object-cover ${isPlaying ? 'animate-spin' : ''}`} style={{ animationDuration: '8s' }} />
+            : <Music className="w-6 h-6 text-white" />
+          }
+          {/* Indicateur lecture */}
+          {isPlaying && (
+            <motion.div
+              className="absolute inset-0 rounded-full border-2 border-white/40"
+              animate={{ scale: [1, 1.15, 1], opacity: [0.6, 0, 0.6] }}
+              transition={{ repeat: Infinity, duration: 2 }}
+            />
+          )}
+        </motion.button>
+        {/* Boutons play/next rapides */}
+        <div className="flex gap-1">
+          <button onClick={togglePlay} className="w-8 h-8 rounded-full bg-black/70 backdrop-blur-sm border border-white/10 flex items-center justify-center text-white">
+            {isPlaying ? <Pause className="w-3.5 h-3.5" /> : <Play className="w-3.5 h-3.5 ml-0.5" />}
+          </button>
+          <button onClick={goNext} className="w-8 h-8 rounded-full bg-black/70 backdrop-blur-sm border border-white/10 flex items-center justify-center text-white">
+            <SkipForward className="w-3.5 h-3.5" />
+          </button>
+        </div>
+      </motion.div>
+    );
+  }
 
   const immersiveTitle = isIOS()
     ? (isCoverMode ? 'Quitter la vue couverture' : 'Vue couverture')
@@ -1126,7 +1182,7 @@ const AudioPlayerDesktop = ({ currentSong, playlist = [], onNext, onPrevious, on
             initial={{ y: 100, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
             exit={{ y: 100, opacity: 0 }}
-            className="fixed bottom-14 md:bottom-0 left-0 right-0 z-50 border-t border-white/[0.06] shadow-2xl shadow-black/60 android-player-fixed"
+            className={`fixed left-0 right-0 z-50 border-t border-white/[0.06] shadow-2xl shadow-black/60 android-player-fixed ${isNavHiddenPage ? 'bottom-0' : 'bottom-14 md:bottom-0'}`}
             style={{
               backgroundColor: 'rgb(18 18 18 / 0.97)',
               backdropFilter: 'blur(24px)',
@@ -1158,9 +1214,14 @@ const AudioPlayerDesktop = ({ currentSong, playlist = [], onNext, onPrevious, on
                 <button onClick={() => currentSong?.is_local ? setShowNowPlaying(true) : setIsExpanded(true)} className="text-gray-600 hover:text-gray-400 transition-colors p-1">
                   <Maximize2 className="w-3.5 h-3.5" />
                 </button>
-                <button onClick={closePlayer} className="text-gray-400 hover:text-red-400 hover:bg-red-500/10 transition-all p-1.5 rounded-lg">
-                  <X className="w-4 h-4" />
-                </button>
+                <div className="flex items-center gap-0.5">
+                  <button onClick={minimizePlayer} className="text-gray-500 hover:text-amber-400 hover:bg-amber-500/10 transition-all p-1.5 rounded-lg" title="Réduire en bulle">
+                    <Minimize2 className="w-3.5 h-3.5" />
+                  </button>
+                  <button onClick={closePlayer} className="text-gray-400 hover:text-red-400 hover:bg-red-500/10 transition-all p-1.5 rounded-lg">
+                    <X className="w-4 h-4" />
+                  </button>
+                </div>
               </div>
               <div className="flex items-center gap-3 px-3 pb-2 pt-0.5">
                 <div className="flex-shrink-0 w-11 h-11 rounded-lg overflow-hidden cursor-pointer active:opacity-70 transition-opacity"
@@ -1357,8 +1418,14 @@ const AudioPlayerDesktop = ({ currentSong, playlist = [], onNext, onPrevious, on
                   <Slider value={[isMuted ? 0 : volume]} max={100} step={1} onValueChange={handleVolumeChange} className="cursor-pointer" />
                 </div>
                 <span className="text-xs text-gray-700 w-6 tabular-nums">{isMuted ? 0 : volume}</span>
+                <div className="w-px h-5 bg-white/10 mx-1" />
+                <button onClick={minimizePlayer} className="p-1.5 text-gray-700 hover:text-amber-400 hover:bg-amber-500/10 transition-all rounded-lg" title="Réduire en bulle">
+                  <Minimize2 className="w-3.5 h-3.5" />
+                </button>
+                <button onClick={closePlayer} className="p-1.5 text-gray-700 hover:text-red-400 hover:bg-red-500/10 transition-all rounded-lg" title="Fermer">
+                  <X className="w-3.5 h-3.5" />
+                </button>
               </div>
-            </div>
           </motion.div>
         )}
       </AnimatePresence>
