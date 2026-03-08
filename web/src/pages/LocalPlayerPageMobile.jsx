@@ -26,7 +26,6 @@ import {
 import { usePlayer } from '@/contexts/PlayerContext';
 import { usePlayerTime } from '@/contexts/PlayerTimeContext';
 import Footer from '@/components/Footer';
-import AudioPlayerMobile from '@/components/AudioPlayerMobile';
 
 const AUDIO_EXTS = /\.(mp3|m4a|wav|flac|ogg|aac|opus|webm|mp4|3gp|caf|aiff|wma|amr|ape|mka)$/i;
 const isAudioFile = (f) => AUDIO_EXTS.test(f.name) || f.type.startsWith('audio/') || f.type === 'video/mp4';
@@ -805,19 +804,6 @@ const LocalPlayerPageMobile = memo(() => {
           </motion.div>
         )}
       </AnimatePresence>
-      
-      {/* Mobile Audio Player */}
-      <AudioPlayerMobile
-        currentSong={activeSong}
-        isPlaying={isPlaying}
-        currentTime={currentTime}
-        duration={duration}
-        volume={1}
-        isMuted={false}
-        isShuffled={false}
-        repeatMode="off"
-        playbackSpeed={1}
-      />
       
       {/* Hidden file input */}
       <input
