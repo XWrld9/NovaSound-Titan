@@ -361,7 +361,7 @@ Il pourra accéder au panneau d'administration.`,
   ];
 
   // ══ Loading ═══════════════════════════════════════════════════════════════════
-  if (loading) return (
+  const renderLoading = () => (
     <div className="min-h-screen bg-[#050510] flex items-center justify-center">
       <div className="flex flex-col items-center gap-4">
         <div className="w-12 h-12 rounded-full border-2 border-cyan-500/20 border-t-cyan-400 animate-spin" />
@@ -370,24 +370,26 @@ Il pourra accéder au panneau d'administration.`,
     </div>
   );
 
-  // ══ Accès refusé ══════════════════════════════════════════════════════════════
-  if (!isAdmin) return (
+  // ══ Accès refusé ════════════════════════════════════════════════════════════
+  const renderAccessDenied = () => (
     <div className="min-h-screen bg-[#050510] flex flex-col items-center justify-center gap-6 px-6">
       <div className="w-20 h-20 rounded-3xl bg-red-500/10 border border-red-500/20 flex items-center justify-center">
         <Shield className="w-10 h-10 text-red-500" />
       </div>
       <div className="text-center">
-        <h1 className="text-2xl font-black text-white mb-2">Accès refusé</h1>
-        <p className="text-gray-500 text-sm">Réservé aux administrateurs NovaSound.</p>
+        <p className="text-red-400 font-bold text-lg mb-2">Accès refusé</p>
+        <p className="text-gray-600 text-sm mb-4">Seuls les administrateurs peuvent accéder à ce panneau.</p>
+        <button onClick={() => navigate('/')} className="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors flex items-center gap-2">
+          <Home className="w-4 h-4" /> Retour à l'accueil
+        </button>
       </div>
-      <button onClick={() => navigate('/')}
-        className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-white/[0.07] text-gray-300 hover:text-white border border-white/[0.1] transition-all">
-        <Home className="w-4 h-4" /> Retour à l'accueil
-      </button>
     </div>
   );
 
   // ══ RENDER PRINCIPAL ══════════════════════════════════════════════════════════
+  if (loading) return renderLoading();
+  if (!isAdmin) return renderAccessDenied();
+
   return (
     <div className="min-h-screen bg-[#050510] text-white">
 
