@@ -127,7 +127,7 @@ const AdminPanel = () => {
   const loadLiveRooms = useCallback(async () => {
     try {
       const { data } = await supabase.from('live_rooms')
-        .select('id, title, description, genre, is_active, is_private, host_id, participants_count, created_at, updated_at, host:users!host_id(username, avatar_url, email)')
+        .select('*')
         .order('created_at', { ascending:false }).limit(50);
       setLiveRooms(data || []);
     } catch {}
@@ -154,7 +154,7 @@ const AdminPanel = () => {
   const loadChat = useCallback(async () => {
     try {
       const { data } = await supabase.from('chat_messages')
-        .select('*, user:user_id(username, avatar_url)')
+        .select('*')
         .eq('is_deleted', false).order('created_at', { ascending:false }).limit(100);
       setChatMsgs(data || []);
     } catch {}
@@ -163,7 +163,7 @@ const AdminPanel = () => {
   const loadReports = useCallback(async () => {
     try {
       const { data } = await supabase.from('reports')
-        .select('*, reporter:reporter_id(username, avatar_url), reported_user:reported_user_id(username, avatar_url), song:song_id(title, artist)')
+        .select('*')
         .order('created_at', { ascending:false }).limit(100);
       setReports(data || []);
     } catch { setReports([]); }
@@ -172,7 +172,7 @@ const AdminPanel = () => {
   const loadAdminRoles = useCallback(async () => {
     try {
       const { data } = await supabase.from('user_roles')
-        .select('*, user:user_id(username, avatar_url, email)')
+        .select('*')
         .eq('role', 'admin').order('created_at', { ascending:false });
       setAdminRoles(data || []);
     } catch { setAdminRoles([]); }
