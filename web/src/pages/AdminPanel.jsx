@@ -689,7 +689,6 @@ Il pourra accéder au panneau d'administration.`,
             </div>
           </motion.div>
         )}
-      </div>
 
         {/* ══════════════════════════════════════════════════════════════════════ */}
         {/* SIGNALEMENTS */}
