@@ -126,11 +126,25 @@ const AdminPanel = () => {
 
   const loadLiveRooms = useCallback(async () => {
     try {
-      const { data } = await supabase.from('live_rooms')
-        .select('*')
+      const { data, error } = await supabase.from('live_rooms')
+        .select(`
+          *,
+          host:host_id(username, avatar_url, email)
+        `)
         .order('created_at', { ascending:false }).limit(50);
-      setLiveRooms(data || []);
-    } catch {}
+      
+      if (error) {
+        console.error('Live rooms error:', error);
+        addToast(`Erreur live rooms: ${error.message}`, 'error');
+        setLiveRooms([]);
+      } else {
+        setLiveRooms(data || []);
+      }
+    } catch (e) {
+      console.error('Live rooms catch:', e);
+      addToast(`Erreur live rooms: ${e.message}`, 'error');
+      setLiveRooms([]);
+    }
   }, []);
 
   const loadUsers = useCallback(async () => {
@@ -163,7 +177,12 @@ const AdminPanel = () => {
   const loadReports = useCallback(async () => {
     try {
       const { data, error } = await supabase.from('reports')
-        .select('*')
+        .select(`
+          *,
+          reporter:reporter_id(username, avatar_url),
+          reported_user:users!content_id(username, avatar_url),
+          reported_song:songs!content_id(title, artist)
+        `)
         .order('created_at', { ascending:false }).limit(100);
       
       if (error) {
@@ -183,8 +202,11 @@ const AdminPanel = () => {
   const loadAdminRoles = useCallback(async () => {
     try {
       const { data, error } = await supabase.from('user_roles')
-        .select('*')
-        .eq('role', 'admin').order('created_at', { ascending:false });
+        .select(`
+          *,
+          user:user_id(username, avatar_url, email)
+        `)
+        .eq('role', 'admin').eq('is_active', true).order('granted_at', { ascending:false });
       
       if (error) {
         console.error('Admin roles error:', error);
