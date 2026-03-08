@@ -162,20 +162,42 @@ const AdminPanel = () => {
 
   const loadReports = useCallback(async () => {
     try {
-      const { data } = await supabase.from('reports')
+      const { data, error } = await supabase.from('reports')
         .select('*')
         .order('created_at', { ascending:false }).limit(100);
-      setReports(data || []);
-    } catch { setReports([]); }
+      
+      if (error) {
+        console.error('Reports error:', error);
+        addToast(`Erreur reports: ${error.message}`, 'error');
+        setReports([]);
+      } else {
+        setReports(data || []);
+      }
+    } catch (e) {
+      console.error('Reports catch:', e);
+      addToast(`Erreur reports: ${e.message}`, 'error');
+      setReports([]);
+    }
   }, []);
 
   const loadAdminRoles = useCallback(async () => {
     try {
-      const { data } = await supabase.from('user_roles')
+      const { data, error } = await supabase.from('user_roles')
         .select('*')
         .eq('role', 'admin').order('created_at', { ascending:false });
-      setAdminRoles(data || []);
-    } catch { setAdminRoles([]); }
+      
+      if (error) {
+        console.error('Admin roles error:', error);
+        addToast(`Erreur admin roles: ${error.message}`, 'error');
+        setAdminRoles([]);
+      } else {
+        setAdminRoles(data || []);
+      }
+    } catch (e) {
+      console.error('Admin roles catch:', e);
+      addToast(`Erreur admin roles: ${e.message}`, 'error');
+      setAdminRoles([]);
+    }
   }, []);
 
   const refreshAll = useCallback(async () => {
@@ -224,10 +246,19 @@ const AdminPanel = () => {
     message:'Supprimer toutes les salles avec is_active=false ?',
     confirmText:'Nettoyer', onConfirm: async () => {
       try {
-        await supabase.from('live_rooms').delete().eq('is_active', false);
-        addToast('✅ Salles inactives supprimées');
-        loadLiveRooms(); loadStats();
-      } catch (e) { addToast(e.message,'error'); }
+        const { error } = await supabase.from('live_rooms').delete().eq('is_active', false);
+        
+        if (error) {
+          console.error('Clean rooms error:', error);
+          addToast(`Erreur nettoyage: ${error.message}`, 'error');
+        } else {
+          addToast('✅ Salles inactives supprimées');
+          loadLiveRooms(); loadStats();
+        }
+      } catch (e) {
+        console.error('Clean rooms catch:', e);
+        addToast(`Erreur nettoyage: ${e.message}`, 'error');
+      }
     }
   });
 
