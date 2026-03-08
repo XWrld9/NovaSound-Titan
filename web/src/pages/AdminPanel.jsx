@@ -849,9 +849,9 @@ Il pourra accéder au panneau d'administration.`,
         cancelText={confirmDialog.cancelText || 'Annuler'} type={confirmDialog.type || 'danger'}
       />
     </div>
-      );
-    };
+  };
 
   return renderContent();
+};
 
 export default AdminPanel;
