@@ -469,7 +469,7 @@ const MessagesPage = () => {
       <div className="min-h-screen bg-gray-950 flex flex-col pb-24 md:pb-0">
         <Header />
 
-        <div className="flex-1 flex" style={{ height: 'calc(100vh - 64px - 80px)' }}>
+        <div className="flex-1 flex" style={{ height: 'calc(100dvh - 64px - 80px)' }}>
           {/* ── Sidebar conversations ── */}
           <div className={`
             w-full md:w-80 lg:w-96 flex-shrink-0

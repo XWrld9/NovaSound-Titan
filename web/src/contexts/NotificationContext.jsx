@@ -235,7 +235,6 @@ export const NotificationProvider = ({ children }) => {
         await upsertSubscription(currentUser.id, e.data.subscription);
         setPushEnabledRaw(true);
         writePersistedPush(currentUser.id, true);
-        console.log('[Push] Subscription renewed and saved');
       }
 
       // Background Sync — messages en attente
@@ -258,7 +257,6 @@ export const NotificationProvider = ({ children }) => {
                 .update({ is_synced: true, synced_at: new Date().toISOString() })
                 .eq('id', msg.id);
             }
-            console.log(`[Sync] ${pending.length} message(s) synchronisé(s)`);
           }
         } catch (err) {
           console.warn('[Sync] pending messages error:', err);

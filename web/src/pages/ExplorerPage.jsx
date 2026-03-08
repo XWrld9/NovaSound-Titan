@@ -279,7 +279,8 @@ const ExplorerPage = () => {
   }, []);
 
   const handleScroll = useCallback(() => {
-    const near = window.innerHeight + document.documentElement.scrollTop >= document.documentElement.offsetHeight - 400;
+    const viewH = window.visualViewport?.height || window.innerHeight;
+    const near = viewH + document.documentElement.scrollTop >= document.documentElement.offsetHeight - 400;
     if (!near || loading || !hasMore) return;
     const next = page + 1;
     setPage(next);

@@ -186,6 +186,7 @@ const MusicUploadPage = () => {
     };
     audio.onerror = () => URL.revokeObjectURL(url);
     audio.src = url;
+    audio.load(); // Requis sur iOS Safari pour déclencher onloadedmetadata
   };
 
   const handleCoverChange = (e) => {

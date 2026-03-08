@@ -421,7 +421,7 @@ const LiveListPage = () => {
             className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm"
             onClick={e => { if (e.target === e.currentTarget) setShowCreateModal(false); }}>
             <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.9, opacity: 0 }}
-              className="bg-[#0d0d1f] border border-white/10 rounded-2xl p-6 w-full max-w-lg shadow-2xl">
+              className="bg-[#0d0d1f] border border-white/10 rounded-2xl p-4 sm:p-6 w-full max-w-lg shadow-2xl max-h-[90vh] overflow-y-auto">
               <div className="flex items-center justify-between mb-6">
                 <h2 className="text-xl font-bold text-white flex items-center gap-2">
                   <Radio className="w-5 h-5 text-cyan-400" /> Créer un salon live
@@ -455,10 +455,10 @@ const LiveListPage = () => {
                 {/* Genre */}
                 <div>
                   <label className="block text-sm font-medium text-gray-300 mb-2">Genre musical</label>
-                  <div className="flex flex-wrap gap-2 max-h-36 overflow-y-auto pr-1">
+                  <div className="flex flex-wrap gap-1.5 max-h-28 sm:max-h-36 overflow-y-auto pr-1">
                     {GENRES.filter(g => g.id !== 'all').map(g => (
                       <button key={g.id} onClick={() => setCreateForm(p => ({ ...p, genre: g.name }))}
-                        className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all ${createForm.genre === g.name ? `bg-gradient-to-r ${g.color} text-white shadow-md` : 'bg-gray-800/60 text-gray-400 hover:bg-gray-700/60 hover:text-white'}`}>
+                        className={`px-2.5 py-1 rounded-lg text-xs sm:text-sm font-medium transition-all ${createForm.genre === g.name ? `bg-gradient-to-r ${g.color} text-white shadow-md` : 'bg-gray-800/60 text-gray-400 hover:bg-gray-700/60 hover:text-white'}`}>
                         {g.name}
                       </button>
                     ))}

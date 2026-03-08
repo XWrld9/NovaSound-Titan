@@ -143,7 +143,8 @@ const DropdownMenu = ({ anchorRef, open, onClose, isArchived, isAdmin, isOwner, 
   useEffect(() => {
     if (!open || !anchorRef.current) return;
     const rect = anchorRef.current.getBoundingClientRect();
-    const spaceBelow = window.innerHeight - rect.bottom;
+    const viewH = window.visualViewport?.height || window.innerHeight;
+    const spaceBelow = viewH - rect.bottom;
     const menuH = 155; // hauteur estimée du menu (4 items)
     const openUp = spaceBelow < menuH + 12;
     setPos({

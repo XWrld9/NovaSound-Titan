@@ -89,7 +89,9 @@ const AudioPlayerMobile = memo(({
   }, [isPlaying, play, pause]);
   
   const handleSeek = useCallback((value) => {
-    seek(value);
+    // Slider shadcn passe un array [n], ctx seek peut attendre un nombre direct
+    const v = Array.isArray(value) ? value[0] : value;
+    seek(v);
   }, [seek]);
   
   const handleVolumeChange = useCallback((value) => {
@@ -116,9 +118,13 @@ const AudioPlayerMobile = memo(({
     }
   }, [currentSong]);
   
-  const handleDownload = useCallback(() => {
-    // TODO: Implémenter le download
-    console.log('Download:', currentSong);
+  const   handleDownload = useCallback(() => {
+    if (!currentSong?.audio_url) return;
+    const a = document.createElement('a');
+    a.href = currentSong.audio_url;
+    a.download = `${currentSong.title || 'song'}.mp3`;
+    a.target = '_blank'; a.rel = 'noopener';
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
   }, [currentSong]);
   
   const handleAddToQueue = useCallback(() => {
@@ -203,7 +209,7 @@ const AudioPlayerMobile = memo(({
           animate={{ y: 0, opacity: 1 }}
           exit={{ y: 100, opacity: 0 }}
           transition={{ type: "spring", damping: 25, stiffness: 300 }}
-          className="fixed bottom-0 left-0 right-0 z-50 md:hidden"
+          className="fixed bottom-14 left-0 right-0 z-50 md:hidden"
         >
           <div 
             className="bg-gray-900/95 backdrop-blur-xl border-t border-white/10"

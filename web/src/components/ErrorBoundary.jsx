@@ -18,11 +18,14 @@ class ErrorBoundary extends React.Component {
   }
 
   handleReset = () => {
-    // Recharge la page entière — la méthode la plus fiable.
-    // resetKey seul ne suffit pas : si le composant enfant re-crash immédiatement,
-    // l'utilisateur voit la page d'erreur réapparaître sans changement visible
-    // et pense que le bouton "Réessayer" est cassé.
-    window.location.reload();
+    // En mode offline, reload = même erreur → boucle infinie
+    // On redirige vers local-player si hors ligne, sinon reload normal
+    if (!navigator.onLine) {
+      window.location.href = window.location.origin + window.location.pathname + '#/local-player';
+      setTimeout(() => window.location.reload(), 50);
+    } else {
+      window.location.reload();
+    }
   };
 
   handleGoHome = () => {

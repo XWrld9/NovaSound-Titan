@@ -63,7 +63,20 @@ const HomePage = () => {
   useEffect(() => { fetchData(); }, []);
 
   useEffect(() => {
-    setListenedHistory(getListened(currentUser?.id));
+    const raw = getListened(currentUser?.id);
+    if (!raw.length) { setListenedHistory([]); return; }
+    // Vérifier que les songs existent encore en DB (purge orphelins)
+    const ids = raw.map(s => s.id);
+    supabase.from('songs').select('id').in('id', ids).eq('is_archived', false)
+      .then(({ data }) => {
+        const alive = new Set((data || []).map(s => s.id));
+        const clean = raw.filter(s => alive.has(s.id));
+        // Persister la version nettoyée
+        if (clean.length !== raw.length) {
+          try { localStorage.setItem(HIST_KEY(currentUser.id), JSON.stringify(clean)); } catch {}
+        }
+        setListenedHistory(clean);
+      }).catch(() => setListenedHistory(raw)); // fallback: afficher tel quel
   }, [currentUser?.id]);
 
   // Nouvelles sorties des artistes suivis
@@ -195,7 +208,7 @@ const HomePage = () => {
         <meta name="description" content="Stream and discover the latest music on NovaSound-Titan. Upload your tracks and connect with music lovers worldwide." />
       </Helmet>
 
-      <div className="min-h-screen bg-gray-950 flex flex-col pb-24 md:pb-32 relative overflow-x-hidden">
+      <div className="min-h-screen bg-gray-950 flex flex-col pb-32 md:pb-32 relative overflow-x-hidden">
         <div className="absolute inset-0 bg-cover bg-center" style={{ backgroundImage: 'url(/background.png)', zIndex: -1 }} />
         <div className="absolute inset-0 bg-gray-950/80" />
         <Header />

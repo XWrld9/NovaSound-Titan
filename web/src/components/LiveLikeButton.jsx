@@ -111,7 +111,6 @@ const LiveLikeButton = ({ roomId, initialLikes = 0, initialLiked = false, compac
         const errorData = await response.json().catch(() => ({}));
         console.warn('Erreur notification push:', errorData.error || response.statusText);
       } else {
-        console.log('✅ Notification live_like envoyée');
       }
     } catch (error) {
       console.warn('Erreur envoi notification:', error);

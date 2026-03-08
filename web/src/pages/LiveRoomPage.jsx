@@ -19,7 +19,7 @@ import { usePlayer } from '@/contexts/PlayerContext';
 import Header from '@/components/Header';
 import LiveLikeButton from '@/components/LiveLikeButton';
 import { Link, useNavigate, useParams } from 'react-router-dom';
-import { notifyFollowers } from '@/lib/notifUtils';
+import { notifyFollowers, notifyUser } from '@/lib/notifUtils';
 import {
   Radio, Users, Music, Send, Heart, Crown, Copy, Check, Plus, Lock, Unlock,
   Headphones, Zap, X, ArrowLeft, Loader2, WifiOff, RefreshCw, Search, Upload,
@@ -316,6 +316,10 @@ const LiveRoomPage = () => {
   const [participants, setParticipants] = useState([]);
   const [messages, setMessages]         = useState([]);
   const [msgInput, setMsgInput]         = useState('');
+  const [mentionUsers,  setMentionUsers]  = useState([]);
+  const [showMention,   setShowMention]   = useState(false);
+  const msgInputRef = useRef(null);
+  const mentionDebounce = useRef(null);
   const [editingMsgId, setEditingMsgId] = useState(null);
   const [editContent, setEditContent]   = useState('');
   const [typingUsers, setTypingUsers]   = useState([]);
@@ -647,7 +651,20 @@ const LiveRoomPage = () => {
         })
         .on('presence', { event: 'join' }, ({ newPresences }) => {
           const u = newPresences?.[0]?.user;
-          if (u && u.id !== currentUser.id) showJoinLeave(`${u.username} a rejoint 👋`, 'join');
+          if (u && u.id !== currentUser.id) {
+            showJoinLeave(`${u.username} a rejoint 👋`, 'join');
+            // Notifier l'hôte qu'un participant a rejoint
+            if (roomRef.current?.host_id && roomRef.current.host_id !== u.id) {
+              notifyUser(supabase, roomRef.current.host_id, {
+                type:     'live_join',
+                title:    `👋 ${u.username} a rejoint ton live`,
+                body:     roomRef.current.title || 'Live Room',
+                url:      `/live/${roomRef.current.id}`,
+                icon_url: u.avatar_url || '/icon-192.png',
+                metadata: { roomId: roomRef.current.id, userId: u.id },
+              }).catch(() => {});
+            }
+          }
         })
         .on('presence', { event: 'leave' }, ({ leftPresences }) => {
           const u = leftPresences?.[0]?.user;
@@ -777,6 +794,63 @@ const LiveRoomPage = () => {
   }, []); // eslint-disable-line
 
   /* ── Envoyer un message ─────────────────────────────────────── */
+  // ── @mention autocomplétion (Live) ─────────────────────────────
+  const handleMsgChange = useCallback((e) => {
+    const val = e.target.value.slice(0, 500);
+    setMsgInput(val);
+    broadcastTyping();
+    const cursor = e.target.selectionStart;
+    const before = val.slice(0, cursor);
+    const match  = before.match(/@([\w-]*)$/);
+    if (match) {
+      const q = match[1].toLowerCase();
+      setShowMention(true);
+      if (q.length >= 1) {
+        clearTimeout(mentionDebounce.current);
+        mentionDebounce.current = setTimeout(async () => {
+          // Chercher parmi les participants du live d'abord, sinon tous les users
+          const participantUsernames = participants.map(p => p.username).filter(Boolean);
+          if (participantUsernames.length) {
+            const filtered = participants.filter(p =>
+              p.username?.toLowerCase().startsWith(q)
+            ).slice(0, 5);
+            setMentionUsers(filtered);
+          } else {
+            try {
+              const { data } = await supabase.from('users')
+                .select('id,username,avatar_url').ilike('username', `${q}%`).limit(5);
+              setMentionUsers(data || []);
+            } catch { setMentionUsers([]); }
+          }
+        }, 150);
+      } else {
+        // @ seul → montrer tous les participants
+        setMentionUsers(participants.slice(0, 5));
+      }
+    } else {
+      setShowMention(false);
+      setMentionUsers([]);
+    }
+  }, [participants, broadcastTyping]);
+
+  const insertMention = useCallback((username) => {
+    const cursor    = msgInputRef.current?.selectionStart || msgInput.length;
+    const before    = msgInput.slice(0, cursor);
+    const after     = msgInput.slice(cursor);
+    const newBefore = before.replace(/@([\w-]*)$/, `@${username} `);
+    const newText   = (newBefore + after).slice(0, 500);
+    setMsgInput(newText);
+    setShowMention(false);
+    setMentionUsers([]);
+    setTimeout(() => {
+      if (msgInputRef.current) {
+        msgInputRef.current.focus();
+        const pos = newBefore.length;
+        msgInputRef.current.setSelectionRange(pos, pos);
+      }
+    }, 50);
+  }, [msgInput]);
+
   const sendMessage = async () => {
     if (!msgInput.trim() || !chanRef.current || !currentUser || !roomRef.current) return;
     const content = msgInput.trim().slice(0, 500);
@@ -788,6 +862,18 @@ const LiveRoomPage = () => {
     try {
       await supabase.from('live_room_messages').insert({ room_id: roomRef.current.id, user_id: currentUser.id, content });
       scrollChat();
+      // Notifier l'hôte (si c'est pas lui qui envoie)
+      if (roomRef.current?.host_id && roomRef.current.host_id !== currentUser.id) {
+        const uname = currentUser.user_metadata?.username || currentUser.email?.split('@')[0] || 'Quelqu\'un';
+        notifyUser(supabase, roomRef.current.host_id, {
+          type:     'live_comment',
+          title:    `💬 ${uname} dans ton live`,
+          body:     content.slice(0, 100),
+          url:      `/live/${roomRef.current.id}`,
+          icon_url: currentUser.user_metadata?.avatar_url || '/icon-192.png',
+          metadata: { roomId: roomRef.current.id },
+        }).catch(() => {});
+      }
     } catch (err) { console.error(err); }
   };
 
@@ -1308,17 +1394,34 @@ const LiveRoomPage = () => {
                   )}
                 </AnimatePresence>
                 <div className="flex gap-2 items-end">
-                  <textarea
-                    value={msgInput}
-                    onChange={e => { setMsgInput(e.target.value); broadcastTyping(); }}
-                    onKeyDown={e => e.key === 'Enter' && !e.shiftKey && (e.preventDefault(), sendMessage())}
-                    placeholder="Écrire un message…"
-                    maxLength={500}
-                    rows={1}
-                    style={{ resize: 'none', minHeight: 60, maxHeight: 140 }}
-                    onInput={e => { e.target.style.height = 'auto'; e.target.style.height = Math.min(e.target.scrollHeight, 120) + 'px'; }}
-                    className="flex-1 bg-gray-800 border border-gray-700 text-white rounded-xl px-4 py-4 text-base focus:outline-none focus:border-cyan-500 placeholder-gray-500 transition-colors leading-relaxed overflow-y-auto"
-                  />
+                  <div className="relative flex-1">
+                    {showMention && mentionUsers.length > 0 && (
+                      <div className="absolute bottom-full mb-1 left-0 right-0 bg-gray-800 border border-gray-700 rounded-xl shadow-xl z-50 overflow-hidden">
+                        {mentionUsers.map(u => (
+                          <button key={u.id} onClick={() => insertMention(u.username)}
+                            className="w-full flex items-center gap-2 px-3 py-2 hover:bg-gray-700 transition-colors text-left">
+                            {u.avatar_url
+                              ? <img src={u.avatar_url} alt="" className="w-6 h-6 rounded-full object-cover flex-shrink-0" />
+                              : <div className="w-6 h-6 rounded-full bg-cyan-500/20 flex items-center justify-center text-xs text-cyan-400 flex-shrink-0">{u.username?.[0]?.toUpperCase()}</div>
+                            }
+                            <span className="text-white text-sm font-medium">@{u.username}</span>
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                    <textarea
+                      ref={msgInputRef}
+                      value={msgInput}
+                      onChange={handleMsgChange}
+                      onKeyDown={e => e.key === 'Enter' && !e.shiftKey && (e.preventDefault(), sendMessage())}
+                      placeholder="Écrire un message… (@nom pour mentionner)"
+                      maxLength={500}
+                      rows={1}
+                      style={{ resize: 'none', minHeight: 60, maxHeight: 140 }}
+                      onInput={e => { e.target.style.height = 'auto'; e.target.style.height = Math.min(e.target.scrollHeight, 120) + 'px'; }}
+                      className="w-full bg-gray-800 border border-gray-700 text-white rounded-xl px-4 py-4 text-base focus:outline-none focus:border-cyan-500 placeholder-gray-500 transition-colors leading-relaxed overflow-y-auto"
+                    />
+                  </div>
                   <button onClick={() => setShowReactions(!showReactions)}
                     className={`p-2.5 rounded-xl transition-all flex-shrink-0 mb-0.5 ${showReactions ? 'bg-fuchsia-500/20 text-fuchsia-400' : 'bg-gray-800 text-gray-400 hover:text-white hover:bg-gray-700'}`}>
                     <Smile className="w-4 h-4" />

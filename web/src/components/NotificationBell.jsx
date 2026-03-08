@@ -13,14 +13,14 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import ReactDOM from 'react-dom';
 import { motion, AnimatePresence, useMotionValue, useTransform } from 'framer-motion';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import {
   Bell, BellOff, Check, CheckCheck, Trash2, X,
   Heart, MessageCircle, UserPlus, Music, Newspaper,
   Reply, AtSign, Zap, Radio, Trophy, Volume2, Settings
 } from 'lucide-react';
 import { useNotifications } from '@/contexts/NotificationContext';
-import { Link } from 'react-router-dom';
+
 import { useAuth } from '@/contexts/AuthContext';
 
 // ── Config par type ──────────────────────────────────────────────────
@@ -37,7 +37,12 @@ const TYPE_CONFIG = {
   mood_vote:        { icon: Zap,            color: '#fb923c', bg: 'rgba(251,146,60,0.15)', label: 'Vibe'            },
   // V50000 — types live (manquants → affichaient une icône Bell générique)
   live_start:       { icon: Radio,          color: '#f43f5e', bg: 'rgba(244,63,94,0.15)',  label: 'Live démarré'    },
+  live_started:     { icon: Radio,          color: '#f43f5e', bg: 'rgba(244,63,94,0.15)',  label: 'Live démarré'    },
   live_invite:      { icon: Radio,          color: '#fb7185', bg: 'rgba(251,113,133,0.15)',label: 'Invitation live' },
+  live_join:        { icon: UserPlus,       color: '#06b6d4', bg: 'rgba(6,182,212,0.15)',  label: 'A rejoint'       },
+  live_comment:     { icon: MessageCircle,  color: '#a855f7', bg: 'rgba(168,85,247,0.15)', label: 'Message live'    },
+  live_like:        { icon: Heart,          color: '#f43f5e', bg: 'rgba(244,63,94,0.15)',  label: 'Like live'       },
+  live_leave:       { icon: Radio,          color: '#6b7280', bg: 'rgba(107,114,128,0.15)',label: 'A quitté'        },
   queue_song:       { icon: Music,          color: '#34d399', bg: 'rgba(52,211,153,0.15)', label: 'File d\'attente' },
   achievement:      { icon: Trophy,         color: '#f59e0b', bg: 'rgba(245,158,11,0.15)', label: 'Trophée'         },
 };
@@ -506,7 +511,7 @@ const NotifPanel = ({ panelRef, panelPos, onClose, mobile }) => {
         ) : (
           // Vue groupée par catégorie
           (() => {
-            const ORDER = ['like','comment','follow','chat_reply','chat_mention','chat_mention_all','new_song','repost','news'];
+            const ORDER = ['like','comment','follow','chat_reply','chat_mention','chat_mention_all','new_song','repost','news','live_start','live_join','live_comment','live_like'];
             const groups = {};
             filtered.forEach(n => {
               const k = ORDER.includes(n.type) ? n.type : 'other';

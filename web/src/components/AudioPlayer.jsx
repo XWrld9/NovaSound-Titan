@@ -425,6 +425,7 @@ const AudioPlayerDesktop = ({ currentSong, playlist = [], onNext, onPrevious, on
     audio.src          = currentSong.audio_url;
     audio.loop         = (repeat === 'one');
     audio.playbackRate = playbackSpeed;
+    audio.load(); // iOS Safari: forcer le rechargement de la source
 
     setPlayRecorded(false); setCurrentTime(0); setDuration(0); setIsBuffering(false);
     if (currentUser) { checkLikeStatus(); checkFollowStatus(); }
@@ -601,7 +602,6 @@ const AudioPlayerDesktop = ({ currentSong, playlist = [], onNext, onPrevious, on
   }, [playlist, currentSong?.id, currentTime, onPrevious]);
 
   const handleEnded = useCallback(() => {
-    console.log('[AudioPlayer] Song ended, repeat:', repeat, 'playlist length:', playlist.length);
     
     if (repeat === 'one') {
       // Recommencer la même chanson
@@ -620,7 +620,6 @@ const AudioPlayerDesktop = ({ currentSong, playlist = [], onNext, onPrevious, on
       onNext?.();
     } else {
       // Lecture terminée, pas de playlist, pas de repeat
-      console.log('[AudioPlayer] Playback completed - no more songs');
       setIsPlaying(false);
     }
   }, [repeat, goNext, playlist, currentSong?.id]);

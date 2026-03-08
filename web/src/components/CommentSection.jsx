@@ -85,7 +85,8 @@ const CommentMenu = ({ anchorRef, open, onClose, isAuthor, isAdmin, onEdit, onDe
     if (!open || !anchorRef.current) return;
     const r = anchorRef.current.getBoundingClientRect();
     const menuH = (isAuthor ? 4 : 3) * 44 + 8;
-    const openUp = window.innerHeight - r.bottom < menuH + 12;
+    const viewH = window.visualViewport?.height || window.innerHeight;
+    const openUp = viewH - r.bottom < menuH + 12;
     setPos({ top: openUp ? r.top - menuH - 4 : r.bottom + 4, left: Math.max(8, r.right - 168) });
   }, [open]);
 
@@ -150,7 +151,7 @@ const CommentRow = ({ comment, currentUser, songUploaderEmail, onDeleted, onUpda
 
   const handleLike = async (e) => {
     e.stopPropagation();
-    if (!currentUser) { showToast('#6366f1'); return; }
+    if (!currentUser) { showToast('Connecte-toi pour commenter.', '#6366f1'); return; }
     const was = liked;
     setLiked(!was); setLikes(l => Math.max(0, was ? l - 1 : l + 1));
     if (was) await supabase.from('comment_likes').delete().eq('user_id', currentUser.id).eq('comment_id', comment.id);
@@ -160,7 +161,7 @@ const CommentRow = ({ comment, currentUser, songUploaderEmail, onDeleted, onUpda
   const handleEdit = async () => {
     const trimmed = editVal.trim();
     if (!trimmed || trimmed === comment.content) { setEditing(false); return; }
-    if (!currentUser?.id) { showToast('#6366f1'); return; }
+    if (!currentUser?.id) { showToast('Connecte-toi pour commenter.', '#6366f1'); return; }
     setEditLoading(true);
     try {
       // IMPORTANT: .eq('user_id', ...) est requis pour que la RLS laisse passer l'UPDATE

@@ -725,59 +725,7 @@ const LocalPlayerPageMobile = memo(() => {
                           playlist={playlist}
                           onSelect={handleSelectPlaylist}
                           onDelete={handleDeletePlaylist}
-                          onPlay={() => console.log('Play playlist:', playlist)}
-                        />
-                      ))}
-                    </div>
-                  )}
-                </motion.div>
-              )}
-              
-              {activeTab === 'queue' && (
-                <motion.div
-                  key="queue"
-                  initial={{ opacity: 0, x: 20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  exit={{ opacity: 0, x: -20 }}
-                  className="space-y-4"
-                >
-                  <div className="flex items-center justify-between">
-                    <h2 className="text-lg font-bold text-white">File d'Attente</h2>
-                    {queue.length > 0 && (
-                      <button
-                        onClick={() => setQueue([])}
-                        className="flex items-center gap-2 px-3 py-2 bg-red-500/10 text-red-400 hover:bg-red-500/20 rounded-lg text-sm font-semibold transition-all"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                        Vider
-                      </button>
-                    )}
-                  </div>
-                  
-                  {queue.length === 0 ? (
-                    <div className="flex flex-col items-center justify-center py-16 text-center">
-                      <ListMusic className="w-16 h-16 text-gray-700 mb-4" />
-                      <h3 className="text-gray-400 text-lg font-semibold mb-2">File vide</h3>
-                      <p className="text-gray-500 text-sm">
-                        Ajoutez des morceaux à la file d'attente
-                      </p>
-                    </div>
-                  ) : (
-                    <div className="space-y-2">
-                      {queue.map((song, index) => (
-                        <SongItem
-                          key={`${song.id}-${index}`}
-                          song={song}
-                          index={index}
-                          isActive={activeSong?.id === song.id}
-                          isPlaying={isPlaying}
-                          selectionMode={false}
-                          isSelected={false}
-                          onSelect={() => {}}
-                          onPlay={handlePlaySong}
-                          onRemove={() => {
-                            setQueue(prev => prev.filter((_, i) => i !== index));
-                          }}
+                          onPlay={() =>                           }}
                           onLongPress={handleLongPress}
                         />
                       ))}
