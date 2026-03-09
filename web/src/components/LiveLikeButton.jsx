@@ -5,6 +5,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import Lottie from 'lottie-react';
 import heartAnimation from '@/animations/heart-animation.json';
 import { supabase } from '@/lib/supabaseClient';
+import { notifyUser } from '@/lib/notifUtils';
 
 const LiveLikeButton = ({ roomId, initialLikes = 0, initialLiked = false, compact = false, roomTitle = '', hostId = '' }) => {
   const { currentUser } = useAuth();
@@ -18,146 +19,67 @@ const LiveLikeButton = ({ roomId, initialLikes = 0, initialLiked = false, compac
   const loadLikesData = useCallback(async () => {
     if (!roomId || !currentUser) return;
     try {
-      // Vrai compteur depuis les lignes
       const { count } = await supabase
         .from('live_room_likes')
         .select('*', { count: 'exact', head: true })
         .eq('room_id', roomId);
-
       if (count !== null) setLikes(count);
 
-      // État liked pour l'utilisateur courant
       const { data } = await supabase
         .from('live_room_likes')
         .select('id')
-        .eq('user_id', supabase.auth.currentUser?.id || currentUser.id) // auth.uid() = UUID
+        .eq('user_id', currentUser.id)
         .eq('room_id', roomId)
         .maybeSingle();
       setIsLiked(!!data);
-    } catch {
-      // silencieux
-    }
-  }, [roomId, currentUser, supabase]);
+    } catch { /* silencieux */ }
+  }, [roomId, currentUser]);
 
-  // Chargement initial
-  useEffect(() => {
-    loadLikesData();
-  }, [loadLikesData]);
+  useEffect(() => { loadLikesData(); }, [loadLikesData]);
 
-  // Supabase Realtime — écoute INSERT/DELETE sur likes
+  // Realtime
   useEffect(() => {
     if (!roomId) return;
-
     const channel = supabase
       .channel(`live_room_likes:${roomId}`)
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'live_room_likes',
-          filter: `room_id=eq.${roomId}`,
-        },
-        () => {
-          // Recompter depuis la DB à chaque changement
-          loadLikesData();
-        }
-      )
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'live_room_likes', filter: `room_id=eq.${roomId}` },
+        () => { loadLikesData(); })
       .subscribe();
-
     channelRef.current = channel;
-
-    return () => {
-      supabase.removeChannel(channel);
-      channelRef.current = null;
-    };
-  }, [roomId, supabase, loadLikesData]);
-
-  // Envoyer notification push à l'hôte de la salle
-  const sendLikeNotification = async (isLiking) => {
-    if (!isLiking || !currentUser || !hostId || !roomId) return;
-    
-    try {
-      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-      const serviceRoleKey = import.meta.env.VITE_SUPABASE_SERVICE_ROLE_KEY;
-      
-      if (!supabaseUrl || !serviceRoleKey) {
-        console.warn('Variables Supabase manquantes pour les notifications');
-        return;
-      }
-
-      const payload = {
-        type: 'live_like',
-        user_id: hostId, // Envoyer à l'hôte
-        title: '❤️ Nouveau like sur votre live !',
-        body: `${currentUser.username || 'Quelqu\'un'} a aimé votre salle "${roomTitle || 'Live Room'}"`,
-        url: `/live/${roomId}`,
-        icon_url: '/icon-192.png',
-        notif_id: `live_like_${roomId}_${currentUser.id}_${Date.now()}`,
-        room_id: roomId,
-        liker_name: currentUser.username || 'Utilisateur'
-      };
-
-      const response = await fetch(`${supabaseUrl}/functions/v1/send-push-notification`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${serviceRoleKey}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(payload)
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        console.warn('Erreur notification push:', errorData.error || response.statusText);
-      } else {
-      }
-    } catch (error) {
-      console.warn('Erreur envoi notification:', error);
-    }
-  };
+    return () => { supabase.removeChannel(channel); channelRef.current = null; };
+  }, [roomId, loadLikesData]);
 
   // Action like / unlike
   const handleLike = async () => {
     if (!currentUser || isLoading || !roomId) return;
-
     const wasLiked = isLiked;
-
-    // Optimistic update
     setIsLiked(!wasLiked);
     setLikes(prev => Math.max(0, wasLiked ? prev - 1 : prev + 1));
-
-    if (!wasLiked) {
-      setShowBurst(true);
-      setTimeout(() => setShowBurst(false), 1000);
-    }
+    if (!wasLiked) { setShowBurst(true); setTimeout(() => setShowBurst(false), 1000); }
     setIsLoading(true);
-
     try {
       if (wasLiked) {
-        // Supprimer le like
-        const { error } = await supabase
-          .from('live_room_likes')
-          .delete()
-          .eq('user_id', supabase.auth.currentUser?.id || currentUser.id)
-          .eq('room_id', roomId);
+        const { error } = await supabase.from('live_room_likes').delete()
+          .eq('user_id', currentUser.id).eq('room_id', roomId);
         if (error) throw error;
       } else {
-        // Ajouter le like
-        const { error } = await supabase
-          .from('live_room_likes')
-          .insert({ 
-            user_id: supabase.auth.currentUser?.id || currentUser.id, // auth.uid() = UUID
-            room_id: roomId 
-          });
+        const { error } = await supabase.from('live_room_likes')
+          .insert({ user_id: currentUser.id, room_id: roomId });
         if (error) throw error;
-        
-        // Envoyer la notification push à l'hôte
-        await sendLikeNotification(true);
+
+        // Notifier l'hôte via notifyUser (insère en DB + déclenche push)
+        if (hostId && hostId !== currentUser.id) {
+          notifyUser(supabase, hostId, {
+            type:     'live_like',
+            title:    `❤️ ${currentUser.username || 'Quelqu\'un'} a aimé ton live`,
+            body:     `${currentUser.username || 'Quelqu\'un'} a liké "${roomTitle || 'ton salon live'}"`,
+            url:      `/live/${roomId}`,
+            icon_url: currentUser.avatar_url || '/icon-192.png',
+            metadata: { roomId, likerId: currentUser.id, likerName: currentUser.username },
+          }).catch(() => {});
+        }
       }
-      // Le Realtime déclenchera loadLikesData() automatiquement
     } catch (error) {
-      // Rollback
       setIsLiked(wasLiked);
       setLikes(prev => Math.max(0, wasLiked ? prev + 1 : prev - 1));
       console.error('Erreur like live room:', error);
@@ -165,6 +87,8 @@ const LiveLikeButton = ({ roomId, initialLikes = 0, initialLiked = false, compac
       setIsLoading(false);
     }
   };
+
+
 
   return (
     <div className="relative inline-flex">

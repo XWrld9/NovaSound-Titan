@@ -611,16 +611,16 @@ const ChatPage = () => {
           {/* Overlay pour lisibilité du chat — sans blur pour garder les textes nets */}
           <div className="absolute inset-0 bg-gray-950/85 pointer-events-none z-0" />
           {/* Barre supérieure */}
-          <div className="flex-shrink-0 border-b border-white/[0.06] bg-gray-950/90 backdrop-blur-md px-4 py-3 relative z-10">
+          <div className="flex-shrink-0 border-b border-white/[0.06] bg-gray-950/92 backdrop-blur-xl px-4 py-2.5 relative z-10">
             <div className="max-w-3xl mx-auto">
               <div className="flex items-center justify-between mb-3">
                 <div className="flex items-center gap-2.5">
-                  <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-cyan-500/20 to-fuchsia-500/20 border border-white/10 flex items-center justify-center">
-                    <Globe className="w-5 h-5 text-cyan-400" />
+                  <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-cyan-500/30 to-fuchsia-500/30 border border-cyan-500/20 flex items-center justify-center shadow-lg shadow-cyan-500/10">
+                    <Globe className="w-4 h-4 text-cyan-400" />
                   </div>
                   <div>
-                    <h1 className="text-white font-black text-base leading-none">{'Chat Global'}</h1>
-                    <p className="text-gray-600 text-[11px] mt-0.5">{'Communauté NovaSound · @tous pour mentionner tout le monde'}</p>
+                    <h1 className="text-white font-black text-sm leading-none">Chat Global</h1>
+                    <p className="text-[10px] text-gray-500 mt-0.5">Communauté NovaSound · <span className="text-yellow-500/80">@tous</span> pour mentionner tout le monde</p>
                   </div>
                 </div>
                 {onlineCount > 0 && (
@@ -906,11 +906,12 @@ const ChatPage = () => {
                 )}
               </AnimatePresence>
 
-              {/* Zone de saisie — grande, confortable sur mobile */}
+              {/* Zone de saisie — expansive, comble l'espace disponible */}
               <div
-                className="flex-shrink-0 border-t border-white/[0.06] bg-gray-950/95 backdrop-blur-xl px-3 pt-2 relative z-10"
+                className="flex-shrink-0 border-t border-white/[0.06] bg-gray-950/95 backdrop-blur-xl px-3 pt-2 relative z-10 flex flex-col"
                 style={{
                   paddingBottom: `calc(${playerVisible ? '72px + ' : ''}56px + env(safe-area-inset-bottom, 8px) + 8px)`,
+                  minHeight: 'clamp(110px, 26vh, 340px)',
                 }}
               >
                 <div className="max-w-3xl mx-auto">
@@ -972,9 +973,9 @@ const ChatPage = () => {
                   </AnimatePresence>
 
                   {currentUser ? (
-                    <div className="flex items-end gap-2">
+                    <div className="flex items-end gap-2 flex-1 min-h-0">
                       <Avatar user={currentUser} size={8} />
-                      <div className="flex-1 relative">
+                      <div className="flex-1 relative flex flex-col h-full">
                         <textarea
                           ref={inputRef}
                           id="chat-input"
@@ -983,11 +984,9 @@ const ChatPage = () => {
                           onChange={handleTextChange}
                           onKeyDown={handleKeyDown}
                           placeholder="Écrire dans le chat… @tous pour mentionner tout le monde"
-                          rows={1}
                           maxLength={MAX}
-                          style={{ resize: 'none', minHeight: 60, maxHeight: 180 }}
-                          className="w-full bg-gray-800/90 border border-white/[0.10] rounded-2xl px-4 py-4 pr-12 text-base text-white placeholder-gray-500 focus:outline-none focus:border-cyan-500/50 focus:bg-gray-800 transition-all overflow-y-auto leading-relaxed"
-                          onInput={e => { e.target.style.height = 'auto'; e.target.style.height = Math.min(e.target.scrollHeight, 140) + 'px'; }}
+                          style={{ resize: 'none', flex: 1, minHeight: 72 }}
+                          className="w-full bg-gray-800/80 border border-white/[0.08] rounded-2xl px-4 py-3 text-base text-white placeholder-gray-600 focus:outline-none focus:border-cyan-500/50 focus:bg-gray-800 transition-all leading-relaxed"
                         />
                         {text.length > MAX * 0.8 && (
                           <span className={`absolute bottom-3 right-12 text-[10px] ${remaining < 50 ? 'text-red-400' : 'text-gray-600'}`}>{remaining}</span>

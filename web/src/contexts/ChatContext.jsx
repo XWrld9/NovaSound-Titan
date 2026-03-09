@@ -11,6 +11,7 @@ import React, { createContext, useContext, useState, useEffect, useCallback, use
 import { supabase } from '@/lib/supabaseClient';
 import { useAuth } from './AuthContext';
 import { offlineStore } from '@/lib/offlineStore';
+import { notifyUser } from '@/lib/notifUtils';
 
 const ChatContext = createContext(null);
 export const useChat = () => {
@@ -216,21 +217,20 @@ export const ChatProvider = ({ children }) => {
 
       // 1. Notification de réponse → auteur du message original
       if (replyTo && replyTargetId && replyTargetId !== currentUser.id) {
-        await insertNotification({
-          userId:     replyTargetId,
-          type:       'chat_reply',
-          title:      `💬 ${senderName} a répondu à ton message`,
-          body:       finalContent,
-          url:        `/chat?highlight=${data.id}&tagger=${encodeURIComponent(senderName)}`,
-          senderId:   currentUser.id,
-          senderName,
-          msgId:      data.id,
-        });
+        const replyPayload = {
+          type:     'chat_reply',
+          title:    `💬 ${senderName} a répondu à ton message`,
+          body:     finalContent.slice(0, 200),
+          url:      `/chat?highlight=${data.id}&tagger=${encodeURIComponent(senderName)}`,
+          icon_url: currentUser.avatar_url || '/icon-192.png',
+          metadata: { msgId: data.id, senderId: currentUser.id, senderName },
+        };
+        // notifyUser insère en DB ET déclenche le push en 1 appel
+        notifyUser(supabase, replyTargetId, replyPayload).catch(() => {});
       }
 
-      // 2. @tous → notifier tout le monde (max 1 fois par 5 min par sender pour éviter le spam)
+      // 2. @tous → notifier tout le monde (anti-spam 5 min)
       if (isMentionAll(finalContent)) {
-        // Anti-spam : ne pas envoyer si le sender a déjà fait un @tous dans les 5 dernières minutes
         const fiveMinAgo = new Date(Date.now() - 5 * 60 * 1000).toISOString();
         const { data: recentAll } = await supabase
           .from('notifications')
@@ -239,7 +239,7 @@ export const ChatProvider = ({ children }) => {
           .ilike('metadata', `%"senderId":"${currentUser.id}"%`)
           .gte('created_at', fiveMinAgo)
           .limit(1);
-        
+
         if (!recentAll?.length) {
           const { data: allUsers } = await supabase
             .from('users').select('id').neq('id', currentUser.id).limit(500);
@@ -257,27 +257,44 @@ export const ChatProvider = ({ children }) => {
             for (let i = 0; i < batch.length; i += 100) {
               await supabase.from('notifications').insert(batch.slice(i, i + 100));
             }
+            // Broadcast push pour @tous (1 seul appel)
+            const { url: sUrl, key: sKey } = { url: import.meta?.env?.VITE_SUPABASE_URL || '', key: import.meta?.env?.VITE_SUPABASE_ANON_KEY || '' };
+            if (sUrl) {
+              fetch(`${sUrl}/functions/v1/send-push-notification`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${sKey}` },
+                body: JSON.stringify({
+                  broadcast: true,
+                  title: `📢 ${senderName} a mentionné @tous dans le chat`,
+                  body: finalContent.slice(0, 200),
+                  url: `/chat?highlight=${data.id}`,
+                  icon_url: '/icon-192.png',
+                  type: 'chat_mention_all',
+                }),
+              }).catch(() => {});
+            }
           }
         }
       } else {
         // 3. @username individuels (hors reply déjà notifié)
+        const alreadyNotified = new Set([currentUser.id]);
+        if (replyTargetId) alreadyNotified.add(replyTargetId);
         const mentions = [...new Set((finalContent.match(/@(\w+)/g) || []).map(m => m.slice(1).toLowerCase()))];
         for (const uname of mentions) {
           if (uname.toLowerCase() === senderName.toLowerCase()) continue;
-          if (replyTargetName && uname.toLowerCase() === replyTargetName.toLowerCase()) continue; // déjà notifié via reply
+          if (replyTargetName && uname.toLowerCase() === replyTargetName.toLowerCase()) continue;
           const { data: targetUser } = await supabase
             .from('users').select('id').ilike('username', uname).maybeSingle();
-          if (targetUser?.id && targetUser.id !== currentUser.id) {
-            await insertNotification({
-              userId:     targetUser.id,
-              type:       'chat_mention',
-              title:      `💬 ${senderName} t'a mentionné dans le chat`,
-              body:       finalContent,
-              url:        `/chat?highlight=${data.id}&tagger=${encodeURIComponent(senderName)}`,
-              senderId:   currentUser.id,
-              senderName,
-              msgId:      data.id,
-            });
+          if (targetUser?.id && !alreadyNotified.has(targetUser.id)) {
+            alreadyNotified.add(targetUser.id);
+            notifyUser(supabase, targetUser.id, {
+              type:     'chat_mention',
+              title:    `💬 ${senderName} t'a mentionné dans le chat`,
+              body:     finalContent.slice(0, 200),
+              url:      `/chat?highlight=${data.id}&tagger=${encodeURIComponent(senderName)}`,
+              icon_url: currentUser.avatar_url || '/icon-192.png',
+              metadata: { msgId: data.id, senderId: currentUser.id, senderName },
+            }).catch(() => {});
           }
         }
       }

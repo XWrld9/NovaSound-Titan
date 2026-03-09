@@ -21,6 +21,7 @@ import { supabase } from '@/lib/supabaseClient';
 // eslint-disable-next-line no-unused-vars
 import LiveLikeButton from '@/components/LiveLikeButton';
 import Header from '@/components/Header';
+import Footer from '@/components/Footer';
 import {
   Search, Users, Music, Radio, TrendingUp, Clock,
   Filter, ChevronRight, Play, Eye, Zap, Crown,
@@ -65,9 +66,18 @@ const SORT_OPTIONS = [
   { id: 'active', name: 'Actif', icon: Zap },
 ];
 
+// Normalise un genre pour comparaison : minuscules + sans accents
+const normalizeGenre = (str) => {
+  if (!str) return '';
+  return str.toLowerCase()
+    .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+    .replace(/&/g, 'and');
+};
+
 const getGenreColorById = (genreName) => {
   if (!genreName) return 'from-gray-600 to-gray-700';
-  const g = GENRES.find(x => x.name === genreName || x.name.toLowerCase() === genreName.toLowerCase());
+  const norm = normalizeGenre(genreName);
+  const g = GENRES.find(x => normalizeGenre(x.name) === norm || normalizeGenre(x.id) === norm);
   return g?.color || 'from-gray-600 to-gray-700';
 };
 
@@ -130,8 +140,8 @@ const LiveListPage = () => {
       const { data, error } = await supabase
         .from('live_rooms')
         .select(`
-          id, title, description, genre, is_active, is_private,
-          host_id, participants_count, created_at, updated_at,
+          id, title, description, genre, is_active, is_private, is_live,
+          host_id, participants_count, likes_count, created_at, updated_at,
           host:users!host_id(username, avatar_url)
         `)
         .eq('is_active', true)
@@ -159,7 +169,12 @@ const LiveListPage = () => {
         (room.title || '').toLowerCase().includes(q) ||
         (room.description || '').toLowerCase().includes(q) ||
         (room.host?.username || '').toLowerCase().includes(q);
-      const matchesGenre = selectedGenre === 'all' || (room.genre || '') === selectedGenre;
+      const matchesGenre = selectedGenre === 'all' || (() => {
+        const genreObj = GENRES.find(g => g.id === selectedGenre);
+        if (!genreObj) return false;
+        const roomNorm = normalizeGenre(room.genre);
+        return normalizeGenre(genreObj.name) === roomNorm || normalizeGenre(genreObj.id) === roomNorm;
+      })();
       return matchesSearch && matchesGenre;
     });
     return filtered.sort((a, b) => {
@@ -243,7 +258,7 @@ const LiveListPage = () => {
         <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-3 sm:py-4">
           {/* Barre de recherche */}
           <div className="relative mb-3">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-500" />
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-300" />
             <input
               type="text"
               value={search}
@@ -343,10 +358,11 @@ const LiveListPage = () => {
                           <p className="text-white/70 text-xs">par @{room.host?.username}</p>
                         </div>
                         <div className="flex items-center gap-1 flex-shrink-0">
-                          <div className="px-1.5 py-0.5 bg-green-500/25 border border-green-500/30 rounded-full">
-                            <span className="text-green-400 text-[10px] font-medium">🌐 Pub</span>
-                          </div>
-                          {room.is_host_live && (
+                          {room.is_private
+                            ? <div className="px-1.5 py-0.5 bg-amber-500/25 border border-amber-500/30 rounded-full"><span className="text-amber-400 text-[10px] font-medium">🔒 Privé</span></div>
+                            : <div className="px-1.5 py-0.5 bg-green-500/25 border border-green-500/30 rounded-full"><span className="text-green-400 text-[10px] font-medium">🌐 Publique</span></div>
+                          }
+                          {room.is_live && (
                             <div className="flex items-center gap-1 px-1.5 py-0.5 bg-red-500 rounded-full">
                               <div className="w-1.5 h-1.5 bg-white rounded-full animate-pulse" />
                               <span className="text-white text-[10px] font-medium">LIVE</span>
@@ -399,6 +415,7 @@ const LiveListPage = () => {
             </div>
           )}
         </div>
+        <Footer />
       </div>
 
       {/* ── Modal Créer un salon ────────────────────────────── */}
