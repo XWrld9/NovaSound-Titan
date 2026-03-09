@@ -164,18 +164,52 @@ const AdminPanel = () => {
   const loadReports = useCallback(async () => {
     try {
       const { data } = await supabase.from('reports')
-        .select('*, reporter:reporter_id(username, avatar_url), reported_user:reported_user_id(username, avatar_url), song:song_id(title, artist)')
+        .select('*')
         .order('created_at', { ascending:false }).limit(100);
-      setReports(data || []);
+      if (!data) { setReports([]); return; }
+      // Enrichir avec les données users (déjà en mémoire ou via lookup)
+      const userIds = [...new Set([
+        ...data.map(r => r.reporter_id),
+        ...data.map(r => r.reported_user_id),
+      ].filter(Boolean))];
+      let userMap = {};
+      if (userIds.length > 0) {
+        const { data: usersData } = await supabase.from('users')
+          .select('id, username, avatar_url').in('id', userIds);
+        if (usersData) usersData.forEach(u => { userMap[u.id] = u; });
+      }
+      // Enrichir songTitle séparément si song_id présent
+      const songIds = [...new Set(data.map(r => r.song_id).filter(Boolean))];
+      let songMap = {};
+      if (songIds.length > 0) {
+        const { data: songsData } = await supabase.from('songs')
+          .select('id, title, artist').in('id', songIds);
+        if (songsData) songsData.forEach(s => { songMap[s.id] = s; });
+      }
+      setReports(data.map(r => ({
+        ...r,
+        reporter:      userMap[r.reporter_id]      || null,
+        reported_user: userMap[r.reported_user_id] || null,
+        song:          songMap[r.song_id]           || null,
+      })));
     } catch { setReports([]); }
   }, []);
 
   const loadAdminRoles = useCallback(async () => {
     try {
       const { data } = await supabase.from('user_roles')
-        .select('*, user:user_id(username, avatar_url, email)')
+        .select('*')
         .eq('role', 'admin').order('created_at', { ascending:false });
-      setAdminRoles(data || []);
+      if (!data) { setAdminRoles([]); return; }
+      // Enrichir avec les données users
+      const userIds = [...new Set(data.map(r => r.user_id).filter(Boolean))];
+      let userMap = {};
+      if (userIds.length > 0) {
+        const { data: usersData } = await supabase.from('users')
+          .select('id, username, avatar_url, email').in('id', userIds);
+        if (usersData) usersData.forEach(u => { userMap[u.id] = u; });
+      }
+      setAdminRoles(data.map(r => ({ ...r, user: userMap[r.user_id] || null })));
     } catch { setAdminRoles([]); }
   }, []);
 

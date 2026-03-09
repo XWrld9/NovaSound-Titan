@@ -51,7 +51,12 @@ const _push = (sb, body) => {
 
 /* ─── Insert DB + trigger push ──────────────────────────────────── */
 const _insert = async (sb, row) => {
-  const { data, error } = await sb.from('notifications').insert({
+  // ⚠️ PAS de .select() après l'insert :
+  // La RLS SELECT autorise seulement le destinataire à lire SES notifs.
+  // Faire .select() ici (en tant qu'expéditeur) retourne 403 et masque
+  // le succès de l'INSERT. On insère et on oublie — le push EF se passe
+  // sans notif_id (idempotency assurée côté DB par les triggers).
+  const { error } = await sb.from('notifications').insert({
     user_id:      row.user_id,
     type:         row.type,
     title:        (row.title || '').slice(0, 120),
@@ -61,9 +66,9 @@ const _insert = async (sb, row) => {
     is_read:      false,
     metadata:     row.metadata   || {},
     from_user_id: row.from_user_id || null,
-  }).select('id').single();
+  });
   if (error) throw error;
-  return data?.id || null;
+  return null; // pas d'id disponible — push envoyé sans notif_id
 };
 
 /* ════════════════════════════════════════════════════════════════
