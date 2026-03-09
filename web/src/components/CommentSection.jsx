@@ -463,39 +463,59 @@ const CommentSection = ({ songId, songUploaderEmail, onCommentChange }) => {
 
     setSubmitting(false);
 
-    if (!error && data) {
-      // Remplacer le temporaire par le vrai ID
-      setComments(prev => prev.map(c =>
-        c.id === tempId
-          ? { ...data, _liked: false, user: tempComment.user }
-          : c
-      ));
+    // ── Détection erreur trigger ────────────────────────────────────────────────
+    // Un trigger Postgres sur song_comments peut échouer (ex: colonne manquante dans
+    // notifications) et faire remonter une erreur même si le commentaire a bien été
+    // inséré. On vérifie donc si le commentaire existe réellement en base avant de
+    // décider d'afficher une erreur à l'utilisateur.
+    if (error) {
+      const isTriggerError = error.message?.toLowerCase().includes('notifications') ||
+                             error.message?.toLowerCase().includes('trigger') ||
+                             error.code === 'P0001' || error.code === '42703';
 
-      // Récupérer les infos de la chanson pour les notifications
-      try {
-        const { data: songData } = await supabase
-          .from('songs')
-          .select('id, title, uploader_id')
-          .eq('id', songId)
-          .single();
+      if (isTriggerError) {
+        // Le trigger a planté mais l'INSERT peut quand même avoir réussi — on vérifie
+        const { data: saved } = await supabase
+          .from('song_comments')
+          .select('*, user:users(id,username,avatar_url)')
+          .eq('song_id', songId)
+          .eq('user_id', currentUser.id)
+          .eq('content', trimmed)
+          .order('created_at', { ascending: false })
+          .limit(1)
+          .maybeSingle();
 
-        if (songData) {
-          // Envoyer les notifications de manière asynchrone (non bloquant)
-          sendCommentNotifications(data, songData);
+        if (saved) {
+          // ✅ Commentaire bien enregistré malgré l'erreur trigger
+          setComments(prev => prev.map(c =>
+            c.id === tempId ? { ...saved, _liked: false } : c
+          ));
+          showToast('💬 Commentaire publié !', '#22d3ee');
+          onCommentChange?.();
+          // Pas de notification : le trigger l'a de toute façon tenté
+          return;
         }
-      } catch (notifError) {
-        console.error('[CommentSection] Erreur récupération infos chanson:', notifError);
-        // Ne pas bloquer l'expérience utilisateur
       }
 
-      showToast('💬 Commentaire publié !', '#22d3ee');
-      onCommentChange?.(); // Notifier le parent qu'un commentaire a été ajouté
-    } else {
-      // Rollback
+      // Vrai échec : rollback
       setComments(prev => prev.filter(c => c.id !== tempId));
       setText(trimmed);
       console.error('[CommentSection submit]', error);
       showToast(error?.message ? `Erreur : ${error.message}` : 'Erreur — réessaie.', '#ef4444');
+      return;
+    }
+
+    // ── Succès normal ───────────────────────────────────────────────────────────
+    if (data) {
+      setComments(prev => prev.map(c =>
+        c.id === tempId ? { ...data, _liked: false, user: tempComment.user } : c
+      ));
+      // Notifications fire-and-forget — ne bloque jamais l'UX
+      supabase.from('songs').select('id, title, uploader_id').eq('id', songId).single()
+        .then(({ data: songData }) => { if (songData) sendCommentNotifications(data, songData); })
+        .catch(() => {});
+      showToast('💬 Commentaire publié !', '#22d3ee');
+      onCommentChange?.();
     }
   };
 

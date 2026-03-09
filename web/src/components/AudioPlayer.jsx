@@ -149,6 +149,8 @@ const AudioPlayerDesktop = ({ currentSong, playlist = [], onNext, onPrevious, on
   // Swipe-to-close (mini player, mobile)
   const swipeStartY   = useRef(null);
   const swipeStartX   = useRef(null);
+  // Drag vertical bulle minimisée — stocké en ref pour éviter les re-renders
+  const miniDragY     = useRef(0);
 
   const expandedRef   = useRef(null);
   const goNextRef     = useRef(null);
@@ -713,38 +715,68 @@ const AudioPlayerDesktop = ({ currentSong, playlist = [], onNext, onPrevious, on
           animate={{ scale: 1, opacity: 1 }}
           exit={{ scale: 0, opacity: 0 }}
           transition={{ type: 'spring', stiffness: 400, damping: 28 }}
-          className="fixed right-4 z-[47] flex flex-col items-end gap-2"
-          style={{ bottom: isNavHiddenPage ? '1rem' : 'calc(var(--ns-bottom-nav-h) + 1rem)' }}
+          /* ── Drag vertical ── */
+          drag="y"
+          dragMomentum={false}
+          dragElastic={0.12}
+          dragConstraints={{
+            top:    -(typeof window !== 'undefined' ? window.innerHeight * 0.72 : 500),
+            bottom: 0,
+          }}
+          onDragEnd={(_, info) => {
+            miniDragY.current += info.offset.y;
+            // Swipe-down prononcé → fermer le player
+            if (info.offset.y > 90 || info.velocity.y > 600) { closePlayer(); return; }
+            // Swipe-up prononcé → ouvrir le grand lecteur
+            if (info.offset.y < -90 || info.velocity.y < -600) { setIsExpanded(true); }
+          }}
+          className="fixed right-4 z-[47] flex flex-col items-end gap-2 touch-none"
+          style={{ bottom: isNavHiddenPage ? '1rem' : 'calc(var(--ns-bottom-nav-h) + 1rem)', cursor: 'grab' }}
         >
-        <motion.button
-          whileTap={{ scale: 0.92 }}
-          onClick={restorePlayer}
-          className="w-14 h-14 rounded-full shadow-2xl flex items-center justify-center relative overflow-hidden border-2 border-white/20"
-          style={{ background: `linear-gradient(135deg, ${genreTheme.primary}, ${genreTheme.secondary})`, boxShadow: `0 8px 32px ${genreTheme.glow}` }}
-          title={`${currentSong.title} — cliquer pour afficher`}
-        >
-          {currentSong.cover_url
-            ? <img src={currentSong.cover_url} alt="" className={`w-full h-full object-cover ${isPlaying ? 'animate-spin' : ''}`} style={{ animationDuration: '8s' }} />
-            : <Music className="w-6 h-6 text-white" />
-          }
-          {/* Indicateur lecture */}
-          {isPlaying && (
-            <motion.div
-              className="absolute inset-0 rounded-full border-2 border-white/40"
-              animate={{ scale: [1, 1.15, 1], opacity: [0.6, 0, 0.6] }}
-              transition={{ repeat: Infinity, duration: 2 }}
-            />
-          )}
-        </motion.button>
-        {/* Boutons play/next rapides */}
-        <div className="flex gap-1">
-          <button onClick={togglePlay} className="w-8 h-8 rounded-full bg-black/70 backdrop-blur-sm border border-white/10 flex items-center justify-center text-white">
-            {isPlaying ? <Pause className="w-3.5 h-3.5" /> : <Play className="w-3.5 h-3.5 ml-0.5" />}
-          </button>
-          <button onClick={goNext} className="w-8 h-8 rounded-full bg-black/70 backdrop-blur-sm border border-white/10 flex items-center justify-center text-white">
-            <SkipForward className="w-3.5 h-3.5" />
-          </button>
-        </div>
+          {/* Grip handle — indique visuellement la déplaçabilité */}
+          <div className="flex flex-col gap-[3px] items-center mb-0.5 opacity-40 pointer-events-none">
+            <div className="w-5 h-[2px] rounded-full bg-white" />
+            <div className="w-3 h-[2px] rounded-full bg-white" />
+          </div>
+
+          <motion.button
+            whileTap={{ scale: 0.92 }}
+            onClick={restorePlayer}
+            onPointerDown={e => e.stopPropagation()} /* évite que le drag intercepte le tap */
+            className="w-14 h-14 rounded-full shadow-2xl flex items-center justify-center relative overflow-hidden border-2 border-white/20"
+            style={{ background: `linear-gradient(135deg, ${genreTheme.primary}, ${genreTheme.secondary})`, boxShadow: `0 8px 32px ${genreTheme.glow}` }}
+            title={`${currentSong.title} — cliquer pour afficher`}
+          >
+            {currentSong.cover_url
+              ? <img src={currentSong.cover_url} alt="" className={`w-full h-full object-cover ${isPlaying ? 'animate-spin' : ''}`} style={{ animationDuration: '8s' }} />
+              : <Music className="w-6 h-6 text-white" />
+            }
+            {isPlaying && (
+              <motion.div
+                className="absolute inset-0 rounded-full border-2 border-white/40"
+                animate={{ scale: [1, 1.15, 1], opacity: [0.6, 0, 0.6] }}
+                transition={{ repeat: Infinity, duration: 2 }}
+              />
+            )}
+          </motion.button>
+
+          {/* Boutons play/next rapides */}
+          <div className="flex gap-1">
+            <button
+              onClick={e => { e.stopPropagation(); togglePlay(); }}
+              onPointerDown={e => e.stopPropagation()}
+              className="w-8 h-8 rounded-full bg-black/70 backdrop-blur-sm border border-white/10 flex items-center justify-center text-white"
+            >
+              {isPlaying ? <Pause className="w-3.5 h-3.5" /> : <Play className="w-3.5 h-3.5 ml-0.5" />}
+            </button>
+            <button
+              onClick={e => { e.stopPropagation(); goNext(); }}
+              onPointerDown={e => e.stopPropagation()}
+              className="w-8 h-8 rounded-full bg-black/70 backdrop-blur-sm border border-white/10 flex items-center justify-center text-white"
+            >
+              <SkipForward className="w-3.5 h-3.5" />
+            </button>
+          </div>
         </motion.div>
       </>
     );
