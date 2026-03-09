@@ -74,11 +74,13 @@ const idbDeleteHandle = async songId => { try { const db = await openIDB(); cons
 /* ═══════════════════════════════════════════════════════════════
    COVER SVG
    ═══════════════════════════════════════════════════════════════ */
+const _xmlEsc = s => String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 const makeCoverSvg = (title='', artist='') => {
   const hue = s => { let h=0; for(let i=0;i<s.length;i++) h=(h*31+s.charCodeAt(i))>>>0; return h%360; };
   const c1 = `hsl(${hue(title)},60%,42%)`, c2 = `hsl(${hue(artist||title.split('').reverse().join(''))},65%,55%)`;
-  const letter = (title[0]||'♫').toUpperCase();
-  const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200"><defs><linearGradient id="g" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="${c1}"/><stop offset="100%" stop-color="${c2}"/></linearGradient></defs><rect width="200" height="200" fill="url(#g)"/><circle cx="100" cy="85" r="42" fill="rgba(0,0,0,0.2)"/><text x="100" y="102" font-family="system-ui,sans-serif" font-size="52" font-weight="bold" fill="white" text-anchor="middle" opacity="0.95">${letter}</text><text x="100" y="160" font-family="system-ui,sans-serif" font-size="13" fill="rgba(255,255,255,0.5)" text-anchor="middle">${title.slice(0,18)}</text></svg>`;
+  const letter = _xmlEsc((title[0]||'♫').toUpperCase());
+  const label  = _xmlEsc(title.slice(0,18));
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200"><defs><linearGradient id="g" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="${c1}"/><stop offset="100%" stop-color="${c2}"/></linearGradient></defs><rect width="200" height="200" fill="url(#g)"/><circle cx="100" cy="85" r="42" fill="rgba(0,0,0,0.2)"/><text x="100" y="102" font-family="system-ui,sans-serif" font-size="52" font-weight="bold" fill="white" text-anchor="middle" opacity="0.95">${letter}</text><text x="100" y="160" font-family="system-ui,sans-serif" font-size="13" fill="rgba(255,255,255,0.5)" text-anchor="middle">${label}</text></svg>`;
   try { return 'data:image/svg+xml;base64,' + btoa(unescape(encodeURIComponent(svg))); }
   catch(_) { return `data:image/svg+xml,${encodeURIComponent(svg)}`; }
 };
@@ -100,8 +102,11 @@ const persistPlaylists = playlists => {
    ═══════════════════════════════════════════════════════════════ */
 const parseID3 = async file => {
   const meta = { title:'', artist:'', album:'', cover:null, duration:null };
+  if (file.size > 500 * 1024 * 1024) return meta;
   try {
-    const bytes = new Uint8Array(await file.slice(0,512*1024).arrayBuffer());
+    const bytesP = file.slice(0,512*1024).arrayBuffer();
+    const timeout = new Promise((_,rej) => setTimeout(() => rej(new Error('id3 timeout')), 8000));
+    const bytes = new Uint8Array(await Promise.race([bytesP, timeout]));
     if (bytes[0]!==0x49||bytes[1]!==0x44||bytes[2]!==0x33) return meta;
     const ss=(b,o)=>((b[o]&0x7f)<<21)|((b[o+1]&0x7f)<<14)|((b[o+2]&0x7f)<<7)|(b[o+3]&0x7f);
     let pos=10; const end=ss(bytes,6)+10;
@@ -126,7 +131,9 @@ const parseID3 = async file => {
   return meta;
 };
 
+const ALLOWED_AUDIO_MIME = /^audio\/|^video\/mp4$|^video\/webm$/;
 const fileToSong = async (file, handle=null) => {
+  if (!isAudioFile(file) && !ALLOWED_AUDIO_MIME.test(file.type)) return null;
   const url = URL.createObjectURL(file);
   const raw = file.name.replace(/\.[^.]+$/,'').replace(/[-_]/g,' ');
   const tags = await parseID3(file);
@@ -175,29 +182,38 @@ const EQBars = ({ active, color='#22d3ee', bars=5 }) => (
 
 /* Seek Bar */
 const SeekBar = ({ currentTime, duration, onSeek, color='#22d3ee', size='md' }) => {
-  const trackRef = useRef(null);
+  const trackRef  = useRef(null);
+  const boundsRef = useRef(null); // cache getBoundingClientRect → zéro reflow pendant le drag
   const [dragging, setDragging] = useState(false);
   const [dragPct,  setDragPct]  = useState(0);
-  const getPct = x => {
-    if (!trackRef.current) return 0;
-    const {left,width} = trackRef.current.getBoundingClientRect();
-    return Math.max(0,Math.min(1,(x-left)/width));
-  };
-  const start = x => { setDragging(true); setDragPct(getPct(x)); };
-  const move  = useCallback(x => { if (!dragging) return; setDragPct(getPct(x)); }, [dragging]);
+  const getPct = useCallback(x => {
+    const b = boundsRef.current;
+    if (!b) return 0;
+    return Math.max(0, Math.min(1, (x - b.left) / b.width));
+  }, []);
+  const start = useCallback(x => {
+    if (trackRef.current) boundsRef.current = trackRef.current.getBoundingClientRect();
+    setDragging(true); setDragPct(getPct(x));
+  }, [getPct]);
+  const move  = useCallback(x => { if (!dragging) return; setDragPct(getPct(x)); }, [dragging, getPct]);
   const end   = useCallback(x => {
     if (!dragging) return;
-    const p=getPct(x); setDragging(false); setDragPct(p);
-    if (onSeek&&duration>0) onSeek(p*duration);
-  }, [dragging,onSeek,duration]);
-  useEffect(()=>{
+    const p = getPct(x); setDragging(false); setDragPct(p); boundsRef.current = null;
+    if (onSeek && duration > 0) onSeek(p * duration);
+  }, [dragging, getPct, onSeek, duration]);
+  useEffect(() => {
     if (!dragging) return;
-    const mm=e=>move(e.clientX),mu=e=>end(e.clientX);
-    const tm=e=>move(e.touches[0].clientX),tu=e=>end(e.changedTouches[0].clientX);
-    window.addEventListener('mousemove',mm); window.addEventListener('mouseup',mu);
-    window.addEventListener('touchmove',tm,{passive:true}); window.addEventListener('touchend',tu);
-    return()=>{ window.removeEventListener('mousemove',mm); window.removeEventListener('mouseup',mu); window.removeEventListener('touchmove',tm); window.removeEventListener('touchend',tu); };
-  },[dragging,move,end]);
+    const mm = e => move(e.clientX), mu = e => end(e.clientX);
+    const tm = e => { e.preventDefault(); move(e.touches[0].clientX); };
+    const tu = e => end(e.changedTouches[0].clientX);
+    window.addEventListener('mousemove', mm); window.addEventListener('mouseup', mu);
+    window.addEventListener('touchmove', tm, { passive: false });
+    window.addEventListener('touchend', tu);
+    return () => {
+      window.removeEventListener('mousemove', mm); window.removeEventListener('mouseup', mu);
+      window.removeEventListener('touchmove', tm); window.removeEventListener('touchend', tu);
+    };
+  }, [dragging, move, end]);
   const pct = dragging ? dragPct : (duration>0 ? currentTime/duration : 0);
   const h = size==='lg' ? 6 : 4;
   const dotSize = size==='lg' ? (dragging?22:16) : (dragging?16:11);

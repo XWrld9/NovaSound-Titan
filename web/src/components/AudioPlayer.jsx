@@ -705,6 +705,24 @@ const AudioPlayerDesktop = ({ currentSong, playlist = [], onNext, onPrevious, on
     swipeStartY.current = e.touches[0].clientY;
     swipeStartX.current = e.touches[0].clientX;
   };
+  const handleMouseMove = useCallback(
+    throttle((e) => {
+      if (!isDragging || isExpanded) return;
+      
+      const newX = e.clientX - dragStart.x;
+      const newY = e.clientY - dragStart.y;
+      
+      // Limiter à l'écran
+      const maxX = window.innerWidth - (playerRef.current?.offsetWidth || 400);
+      const maxY = window.innerHeight - (playerRef.current?.offsetHeight || 80);
+      
+      setPosition({
+        x: Math.max(0, Math.min(newX, maxX)),
+        y: Math.max(0, Math.min(newY, maxY))
+      });
+    }, 16), // 60fps pour éviter les reflows
+    [isDragging, dragStart, isExpanded]
+  );
   const handleTouchEnd = (e) => {
     if (swipeStartY.current === null) return;
     const dy = e.changedTouches[0].clientY - swipeStartY.current;
@@ -1069,10 +1087,12 @@ const AudioPlayerDesktop = ({ currentSong, playlist = [], onNext, onPrevious, on
                     type="button"
                     onClick={(e) => { e.stopPropagation(); autoPlayRef.current = true; goPreviousRef.current?.(); }}
                     className="p-2 text-gray-300 hover:text-white hover:scale-110 active:scale-90 transition-all"
+                    aria-label="Précédent"
                     title={"Précédent"}>
                     <SkipBack className="w-7 h-7" />
                   </button>
                   <button onClick={togglePlay}
+                    aria-label={isPlaying ? 'Pause' : 'Lecture'}
                     className="w-14 h-14 rounded-full hover:scale-105 active:scale-95 transition-all shadow-xl flex items-center justify-center text-white"
                     style={{
                       background: `linear-gradient(135deg, ${genreTheme.primary}, ${genreTheme.secondary})`,
@@ -1082,6 +1102,7 @@ const AudioPlayerDesktop = ({ currentSong, playlist = [], onNext, onPrevious, on
                   </button>
                   <button
                     type="button"
+                    aria-label="Suivant"
                     onClick={(e) => { e.stopPropagation(); autoPlayRef.current = true; goNextRef.current?.(); }}
                     className="p-2 text-gray-300 hover:text-white hover:scale-110 active:scale-90 transition-all"
                     title={"Suivant"}>
@@ -1240,7 +1261,7 @@ const AudioPlayerDesktop = ({ currentSong, playlist = [], onNext, onPrevious, on
                     )}
                   </div>
                 </motion.div>
-                </>
+                <>
               )}
             </AnimatePresence>
 
@@ -1263,6 +1284,7 @@ const AudioPlayerDesktop = ({ currentSong, playlist = [], onNext, onPrevious, on
               paddingBottom: 'env(safe-area-inset-bottom, 0px)',
             }}
             onTouchStart={handleTouchStart}
+            onMouseDown={handleMouseDown}
             onTouchEnd={handleTouchEnd}
           >
             {/* Indicateur swipe */}

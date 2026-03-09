@@ -1,15 +1,13 @@
 /**
- * AdminPanel — NovaSound TITAN LUX v20000
+ * AdminPanel — NovaSound TITAN LUX v20000 - VERSION PARFAITE FUSIONNÉE
  * Panneau d'administration premium — redesign complet
- * ✅ Bouton retour à l'accueil
- * ✅ Sidebar desktop + bottom tabs mobile
- * ✅ Cartes stats animées avec tendances
- * ✅ Accordéon confirmation stylisé
- * ✅ Badge ADMIN sur l'email de l'admin
- * ✅ Recherche globale multi-entités
- * ✅ Toast notifications internes
- * ✅ Indicateurs live pulsants
+ * ✅ Fusion de la version fonctionnelle (301dc90) avec la version améliorée
+ * ✅ Structure ES module compliant
+ * ✅ Toutes les fonctionnalités admin préservées
+ * ✅ Design moderne et complet
+ * ✅ Synchronisé avec la database NovaSound Titan
  */
+
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import {
   Users, Shield, Trash2, Settings, CheckCircle, Music,
@@ -18,6 +16,7 @@ import {
   Clock, Star, Zap, AlertTriangle, ChevronRight,
   MoreVertical, UserX, UserCheck, Archive, Volume2,
   Mic, Wifi, WifiOff, BarChart2, Filter, Download,
+  X, Info
 } from 'lucide-react';
 import { supabase } from '@/lib/supabaseClient';
 import { useAuth } from '@/contexts/AuthContext';
@@ -164,52 +163,18 @@ const AdminPanel = () => {
   const loadReports = useCallback(async () => {
     try {
       const { data } = await supabase.from('reports')
-        .select('*')
+        .select('*, reporter:reporter_id(username, avatar_url), reported_user:reported_user_id(username, avatar_url), song:song_id(title, artist)')
         .order('created_at', { ascending:false }).limit(100);
-      if (!data) { setReports([]); return; }
-      // Enrichir avec les données users (déjà en mémoire ou via lookup)
-      const userIds = [...new Set([
-        ...data.map(r => r.reporter_id),
-        ...data.map(r => r.reported_user_id),
-      ].filter(Boolean))];
-      let userMap = {};
-      if (userIds.length > 0) {
-        const { data: usersData } = await supabase.from('users')
-          .select('id, username, avatar_url').in('id', userIds);
-        if (usersData) usersData.forEach(u => { userMap[u.id] = u; });
-      }
-      // Enrichir songTitle séparément si song_id présent
-      const songIds = [...new Set(data.map(r => r.song_id).filter(Boolean))];
-      let songMap = {};
-      if (songIds.length > 0) {
-        const { data: songsData } = await supabase.from('songs')
-          .select('id, title, artist').in('id', songIds);
-        if (songsData) songsData.forEach(s => { songMap[s.id] = s; });
-      }
-      setReports(data.map(r => ({
-        ...r,
-        reporter:      userMap[r.reporter_id]      || null,
-        reported_user: userMap[r.reported_user_id] || null,
-        song:          songMap[r.song_id]           || null,
-      })));
+      setReports(data || []);
     } catch { setReports([]); }
   }, []);
 
   const loadAdminRoles = useCallback(async () => {
     try {
       const { data } = await supabase.from('user_roles')
-        .select('*')
+        .select('*, user:user_id(username, avatar_url, email)')
         .eq('role', 'admin').order('created_at', { ascending:false });
-      if (!data) { setAdminRoles([]); return; }
-      // Enrichir avec les données users
-      const userIds = [...new Set(data.map(r => r.user_id).filter(Boolean))];
-      let userMap = {};
-      if (userIds.length > 0) {
-        const { data: usersData } = await supabase.from('users')
-          .select('id, username, avatar_url, email').in('id', userIds);
-        if (usersData) usersData.forEach(u => { userMap[u.id] = u; });
-      }
-      setAdminRoles(data.map(r => ({ ...r, user: userMap[r.user_id] || null })));
+      setAdminRoles(data || []);
     } catch { setAdminRoles([]); }
   }, []);
 
@@ -393,16 +358,21 @@ Il pourra accéder au panneau d'administration.`,
     { k:'admins',   l:'Admins',          icon:Shield },
   ];
 
-  // ══ Loading / Access Denied (before main render) ════════════════════════════
-  if (loading || !isAdmin) {
-    return loading ? (
+  // ══ Loading ═══════════════════════════════════════════════════════════════════
+  if (loading) {
+    return (
       <div className="min-h-screen bg-[#050510] flex items-center justify-center">
         <div className="flex flex-col items-center gap-4">
           <div className="w-12 h-12 rounded-full border-2 border-cyan-500/20 border-t-cyan-400 animate-spin" />
           <p className="text-gray-600 text-sm">Vérification des accès…</p>
         </div>
       </div>
-    ) : (
+    );
+  }
+
+  // ══ Accès refusé ══════════════════════════════════════════════════════════════
+  if (!isAdmin) {
+    return (
       <div className="min-h-screen bg-[#050510] flex flex-col items-center justify-center gap-6 px-6">
         <div className="w-20 h-20 rounded-3xl bg-red-500/10 border border-red-500/20 flex items-center justify-center">
           <Shield className="w-10 h-10 text-red-500" />
@@ -644,7 +614,7 @@ Il pourra accéder au panneau d'administration.`,
                         {!adminRoles.find(r=>r.user_id===user.id && r.is_active) && (
                           <button onClick={() => grantAdmin(user)}
                             className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl text-xs font-bold border bg-cyan-500/10 border-cyan-500/20 text-cyan-400 hover:bg-cyan-500/20 transition-all">
-                            <Shield className="w-3.5 h-3.5" />Admin
+                              <Shield className="w-3.5 h-3.5" />Admin
                           </button>
                         )}
                         <button onClick={() => toggleBan(user)}

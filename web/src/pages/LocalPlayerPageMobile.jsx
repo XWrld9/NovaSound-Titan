@@ -25,10 +25,11 @@ const AUDIO_EXTS = /\.(mp3|m4a|wav|flac|ogg|aac|opus|webm|mp4|3gp|caf|aiff|wma|a
 const isAudioFile = f => AUDIO_EXTS.test(f.name) || f.type.startsWith('audio/') || f.type === 'video/mp4';
 const fmtDur = s => (!s||!isFinite(s)||s<=0) ? '--:--' : `${Math.floor(s/60)}:${String(Math.floor(s%60)).padStart(2,'0')}`;
 
+const _xmlEsc = s => String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 const makeCoverSvg = (title='', artist='') => {
   const hue = [...(title+artist)].reduce((a,c)=>a+c.charCodeAt(0),0)%360;
   const h2 = (hue+120)%360;
-  const letter = (title[0]||'♪').toUpperCase();
+  const letter = _xmlEsc((title[0]||'♪').toUpperCase());
   const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="400" height="400" viewBox="0 0 400 400">
     <defs>
       <linearGradient id="g1" x1="0%" y1="0%" x2="100%" y2="100%">
@@ -53,8 +54,11 @@ const makeCoverSvg = (title='', artist='') => {
 /* ─── ID3 parser ──────────────────────────────────────────────── */
 const parseID3 = async (file) => {
   const meta = { title:'', artist:'', album:'', cover:null };
+  if (file.size > 500 * 1024 * 1024) return meta;
   try {
-    const bytes = new Uint8Array(await file.slice(0,512*1024).arrayBuffer());
+    const bytesP  = file.slice(0,512*1024).arrayBuffer();
+    const timeout = new Promise((_,rej) => setTimeout(() => rej(new Error('id3 timeout')), 8000));
+    const bytes   = new Uint8Array(await Promise.race([bytesP, timeout]));
     if (bytes[0]!==0x49||bytes[1]!==0x44||bytes[2]!==0x33) return meta;
     const ss=(b,o)=>((b[o]&0x7f)<<21)|((b[o+1]&0x7f)<<14)|((b[o+2]&0x7f)<<7)|(b[o+3]&0x7f);
     let pos=10; const end=ss(bytes,6)+10;
@@ -124,27 +128,33 @@ const EqBars = () => (
 
 /* ─── SeekBar ─────────────────────────────────────────────────── */
 const SeekBar = memo(({currentTime,duration,onSeek})=>{
-  const trackRef=useRef(null);
+  const trackRef  = useRef(null);
+  const boundsRef = useRef(null); // cache bounds → zéro reflow pendant le drag
   const [dragging,setDragging]=useState(false);
   const [dragPct,setDragPct]=useState(0);
   const getPct=useCallback(x=>{
-    if(!trackRef.current) return 0;
-    const {left,width}=trackRef.current.getBoundingClientRect();
-    return Math.max(0,Math.min(1,(x-left)/width));
+    const b=boundsRef.current;
+    if(!b) return 0;
+    return Math.max(0,Math.min(1,(x-b.left)/b.width));
   },[]);
-  const onDown=useCallback(x=>{setDragging(true);setDragPct(getPct(x));},[getPct]);
+  const onDown=useCallback(x=>{
+    if(trackRef.current) boundsRef.current=trackRef.current.getBoundingClientRect();
+    setDragging(true);setDragPct(getPct(x));
+  },[getPct]);
   const onMove=useCallback(x=>{if(!dragging)return;setDragPct(getPct(x));},[dragging,getPct]);
   const onUp=useCallback(x=>{
     if(!dragging)return;
-    const p=getPct(x); setDragging(false);
+    const p=getPct(x); setDragging(false); boundsRef.current=null;
     if(onSeek&&duration>0) onSeek(p*duration);
   },[dragging,getPct,onSeek,duration]);
   useEffect(()=>{
     if(!dragging) return;
     const mm=e=>onMove(e.clientX),mu=e=>onUp(e.clientX);
-    const tm=e=>onMove(e.touches[0].clientX),tu=e=>onUp(e.changedTouches[0].clientX);
+    const tm=e=>{e.preventDefault();onMove(e.touches[0].clientX);};
+    const tu=e=>onUp(e.changedTouches[0].clientX);
     window.addEventListener('mousemove',mm); window.addEventListener('mouseup',mu);
-    window.addEventListener('touchmove',tm,{passive:true}); window.addEventListener('touchend',tu);
+    window.addEventListener('touchmove',tm,{passive:false});
+    window.addEventListener('touchend',tu);
     return()=>{
       window.removeEventListener('mousemove',mm); window.removeEventListener('mouseup',mu);
       window.removeEventListener('touchmove',tm); window.removeEventListener('touchend',tu);
