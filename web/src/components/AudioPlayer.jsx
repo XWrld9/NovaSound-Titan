@@ -1,1555 +1,614 @@
-import React, { useState, useRef, useEffect, useCallback } from 'react';
-import {
-  Play, Pause, SkipBack, SkipForward, Volume2, VolumeX, Volume1,
-  Shuffle, Repeat, Music, ChevronDown, Heart, Download, Share2,
-  UserPlus, UserCheck, ExternalLink, X, Maximize2, Minimize2,
-  ListMusic, Moon, Trash2, Gauge, Radio, Plus, Calendar,
-} from 'lucide-react';
+import React, { useState, useRef, useEffect } from 'react';
+import { Play, Pause, SkipBack, SkipForward, Volume2, VolumeX, Shuffle, Repeat, Music, ChevronUp, ChevronDown, Heart, Download, Share2, UserPlus, UserCheck } from 'lucide-react';
 import { Slider } from '@/components/ui/slider';
 import { supabase } from '@/lib/supabaseClient';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '@/contexts/AuthContext';
-import { usePlayer } from '@/contexts/PlayerContext';
-import { usePlayerTime } from '@/contexts/PlayerTimeContext';
+import { Button } from '@/components/ui/button';
 import LottieAnimation from '@/components/LottieAnimation';
 import playAnimation from '@/animations/play-animation.json';
-import { useNavigate, useLocation } from 'react-router-dom';
-import { useToast } from '@/components/ui/Toast';
-import { useGenreTheme } from '@/hooks/useGenreTheme';
-import WaveformVisualizer from '@/components/WaveformVisualizer';
-import SongShareModal from '@/components/SongShareModal';
-import NowPlayingScreen from '@/components/NowPlayingScreen';
-import AddToPlaylistModal from '@/components/AddToPlaylistModal';
 
-
-const isIOS = () =>
-  /iphone|ipad|ipod/i.test(navigator.userAgent) ||
-  (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
-
-const isMobile = () =>
-  /android|webos|iphone|ipad|ipod|blackberry|iemobile|opera mini/i.test(navigator.userAgent) ||
-  window.innerWidth < 768;
-
-const tryNativeFullscreen = async (element) => {
-  try {
-    if (!document.fullscreenElement && !document.webkitFullscreenElement) {
-      if (element?.requestFullscreen)       { await element.requestFullscreen();       return true; }
-      if (element?.webkitRequestFullscreen) { await element.webkitRequestFullscreen(); return true; }
-    } else {
-      if (document.exitFullscreen)          { await document.exitFullscreen();          return true; }
-      if (document.webkitExitFullscreen)    { await document.webkitExitFullscreen();    return true; }
-    }
-  } catch {}
-  return false;
-};
-
-const fmtTime = (s) => {
-  if (!s || isNaN(s)) return '0:00';
-  return `${Math.floor(s / 60)}:${String(Math.floor(s % 60)).padStart(2, '0')}`;
-};
-
-const fmtSleep = (s) => {
-  if (s === null) return '';
-  if (s >= 60) return `${Math.floor(s / 60)}m${String(s % 60).padStart(2,'0')}`;
-  return `${s}s`;
-};
-
-// ── Persistance volume ────────────────────────────────────────────────────────
-const VOLUME_KEY = 'novasound_volume';
-const MUTED_KEY  = 'novasound_muted';
-const savedVolume = () => { try { const v = localStorage.getItem(VOLUME_KEY); return v !== null ? Number(v) : 70; } catch { return 70; } };
-const savedMuted  = () => { try { return localStorage.getItem(MUTED_KEY) === '1'; } catch { return false; } };
-
-const SPEED_OPTIONS = [0.75, 1, 1.25, 1.5, 2];
-
-// ── Composant principal ───────────────────────────────────────────────────────
-// ── Android / iOS audio unlock ────────────────────────────────────────────────
-// Sur Android Chrome, le contexte audio doit être déverrouillé par un geste.
-// On crée un AudioContext silencieux au premier toucher pour autoriser play().
-let _audioUnlocked = false;
-const _unlockAudio = () => {
-  if (_audioUnlocked) return;
-  try {
-    const ctx = new (window.AudioContext || window.webkitAudioContext)();
-    const buf = ctx.createBuffer(1, 1, 22050);
-    const src = ctx.createBufferSource();
-    src.buffer = buf;
-    src.connect(ctx.destination);
-    src.start(0);
-    ctx.resume().then(() => { _audioUnlocked = true; }).catch(() => {});
-  } catch (_) {}
-  _audioUnlocked = true;
-};
-if (typeof window !== 'undefined') {
-  window.addEventListener('touchstart',  _unlockAudio, { passive: true, once: false });
-  window.addEventListener('touchend',    _unlockAudio, { passive: true, once: false });
-  window.addEventListener('click',       _unlockAudio, { once: false });
-}
-
-// ── Wrapper unique — résout les Rules of Hooks ───────────────────────────────
-// AudioPlayerDesktop gère TOUJOURS l'audio (contient le <audio> element).
-// Sur mobile, il affiche l'UI de AudioPlayerMobile tout en conservant son audio.
-// JAMAIS de hooks appelés après un return conditionnel.
-const AudioPlayer = (props) => <AudioPlayerDesktop {...props} />;
-
-// ── Composant desktop complet ─────────────────────────────────────────────────
-const AudioPlayerDesktop = ({ currentSong, playlist = [], onNext, onPrevious, onClose, shouldAutoPlay = false, resetAutoPlay }) => {
+const AudioPlayer = ({ currentSong, playlist = [], onNext, onPrevious }) => {
   const { currentUser } = useAuth();
-  const genreTheme = useGenreTheme(currentSong?.genre);
-  const navigate = useNavigate();
-  const toast = useToast();
-  const location = useLocation();
   const audioRef = useRef(null);
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [currentTime, setCurrentTime] = useState(0);
+  const [duration, setDuration] = useState(0);
+  const [volume, setVolume] = useState(70);
+  const [isMuted, setIsMuted] = useState(false);
+  const [shuffle, setShuffle] = useState(false);
+  const [repeat, setRepeat] = useState('off');
+  const [isExpanded, setIsExpanded] = useState(false);
+  const [playRecorded, setPlayRecorded] = useState(false);
+  const [isLiked, setIsLiked] = useState(false);
+  const [likeId, setLikeId] = useState(null);
+  const [isFollowing, setIsFollowing] = useState(false);
+  const [followId, setFollowId] = useState(null);
 
-  // Pages où le BottomNav mobile est masqué → mini player colle directement au bas
-  const isNavHiddenPage = location.pathname === '/local-player' ||
-    /^\/live\/.+/.test(location.pathname);
+  // États pour le draggable
+  const [position, setPosition] = useState({ x: 0, y: 0 });
+  const [isDragging, setIsDragging] = useState(false);
+  const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
+  const playerRef = useRef(null);
 
-  // Queue & Sleep timer depuis PlayerContext
-  const {
-    queue, addToQueue, removeFromQueue, clearQueue,
-    sleepTimer, setSleepTimer, clearSleepTimer,
-    radioMode, radioLoading, toggleRadio,
-    setIsPlayingGlobal,
-    shuffle, setShuffle, toggleShuffle,
-    repeat, setRepeat, cycleRepeat,
-    isMinimized, minimizePlayer, restorePlayer,
-  } = usePlayer();
-
-  // Temps de lecture dans contexte séparé pour éviter re-renders en masse
-  const { setAudioCurrentTime, setAudioDuration } = usePlayerTime();
-
-  const [isPlaying,      setIsPlaying]      = useState(false);
-  const [isBuffering,    setIsBuffering]    = useState(false);
-  const [currentTime,    setCurrentTime]    = useState(0);
-  const [duration,       setDuration]       = useState(0);
-  const [volume,         setVolume]         = useState(savedVolume);
-  const [isMuted,        setIsMuted]        = useState(savedMuted);
-  const [prevVolume,     setPrevVolume]     = useState(savedVolume);
-  const [playbackSpeed,  setPlaybackSpeed]  = useState(1);
-  const [showSpeedMenu,  setShowSpeedMenu]  = useState(false);
-  const [isExpanded,     setIsExpanded]     = useState(false);
-  const [isCoverMode,    setIsCoverMode]    = useState(false);
-  const [isNativeFS,     setIsNativeFS]     = useState(false);
-  const [playRecorded,   setPlayRecorded]   = useState(false);
-  const [isLiked,        setIsLiked]        = useState(false);
-  const [likeId,         setLikeId]         = useState(null);
-  const [isFollowing,    setIsFollowing]    = useState(false);
-  const [followId,       setFollowId]       = useState(null);
-  const [showShareModal, setShowShareModal] = useState(false);
-  const [showNowPlaying, setShowNowPlaying] = useState(false);
-  const [blurBg,         setBlurBg]         = useState('');
-  const [showQueue,          setShowQueue]          = useState(false);
-  const [showSleepMenu,      setShowSleepMenu]      = useState(false);
-  const [showAddToPlaylist,  setShowAddToPlaylist]  = useState(false);
-  const [showMonthlySongs,   setShowMonthlySongs]   = useState(false);
-  const [monthlySongs,       setMonthlySongs]       = useState([]);
-  const [loadingMonthly,     setLoadingMonthly]     = useState(false);
-
-  // Swipe-to-close (mini player, mobile)
-  const swipeStartY   = useRef(null);
-  const swipeStartX   = useRef(null);
-
-  const expandedRef   = useRef(null);
-  const goNextRef     = useRef(null);
-  const goPreviousRef = useRef(null);
-  const autoPlayRef   = useRef(false);
-  const prevSongIdRef = useRef(null);
-  const playlistRef   = useRef(playlist); // ← fix closure périmée dans handleEnded
-  // Ref vers toggleImmersive pour éviter les stale closures dans les useEffect clavier
-  const toggleImmersiveRef = useRef(null);
-
-  // ── toggleMute déclaré ici (avant les useEffect qui l'utilisent) ── TDZ FIX ──
-  // ⚠️ DOIT rester avant tout useEffect référençant toggleMute dans ses deps ──
-  const toggleMute = useCallback((e) => {
-    e?.stopPropagation();
-    setIsMuted(prev => {
-      if (!prev) {
-        // Va muter : sauvegarder le volume actuel
-        setVolume(v => { setPrevVolume(v); return v; });
-        return true;
-      } else {
-        // Va démuter : restaurer si volume à 0
-        setVolume(v => v === 0 ? 70 : v);
-        return false;
-      }
+  // Fonctions de gestion du drag and drop
+  const handleMouseDown = (e) => {
+    if (isExpanded) return; // Seulement draggable en mode réduit
+    
+    setIsDragging(true);
+    setDragStart({
+      x: e.clientX - position.x,
+      y: e.clientY - position.y
     });
+    
+    e.preventDefault();
+  };
+
+  const handleTouchStart = (e) => {
+    if (isExpanded) return; // Seulement draggable en mode réduit
+    
+    const touch = e.touches[0];
+    setIsDragging(true);
+    setDragStart({
+      x: touch.clientX - position.x,
+      y: touch.clientY - position.y
+    });
+    
+    e.preventDefault();
+  };
+
+  const handleMouseMove = useCallback((e) => {
+    if (!isDragging || isExpanded) return;
+    
+    const newX = e.clientX - dragStart.x;
+    const newY = e.clientY - dragStart.y;
+    
+    // Limiter à l'écran
+    const maxX = window.innerWidth - (playerRef.current?.offsetWidth || 400);
+    const maxY = window.innerHeight - (playerRef.current?.offsetHeight || 80);
+    
+    setPosition({
+      x: Math.max(0, Math.min(newX, maxX)),
+      y: Math.max(0, Math.min(newY, maxY))
+    });
+  }, [isDragging, dragStart, isExpanded]);
+
+  const handleTouchMove = useCallback((e) => {
+    if (!isDragging || isExpanded) return;
+    
+    const touch = e.touches[0];
+    const newX = touch.clientX - dragStart.x;
+    const newY = touch.clientY - dragStart.y;
+    
+    // Limiter à l'écran
+    const maxX = window.innerWidth - (playerRef.current?.offsetWidth || 400);
+    const maxY = window.innerHeight - (playerRef.current?.offsetHeight || 80);
+    
+    setPosition({
+      x: Math.max(0, Math.min(newX, maxX)),
+      y: Math.max(0, Math.min(newY, maxY))
+    });
+  }, [isDragging, dragStart, isExpanded]);
+
+  const handleMouseUp = useCallback(() => {
+    setIsDragging(false);
   }, []);
 
-  // ── Sync shouldAutoPlay prop → autoPlayRef + reset après usage ──
+  const handleTouchEnd = useCallback(() => {
+    setIsDragging(false);
+  }, []);
+
+  // Effets pour le drag and drop
   useEffect(() => {
-    if (shouldAutoPlay) {
-      autoPlayRef.current = true;
-      // Remettre à false immédiatement via contexte pour éviter les lectures parasites
-      resetAutoPlay?.();
+    if (isDragging) {
+      document.addEventListener('mousemove', handleMouseMove);
+      document.addEventListener('mouseup', handleMouseUp);
+      document.addEventListener('touchmove', handleTouchMove);
+      document.addEventListener('touchend', handleTouchEnd);
+      document.body.style.userSelect = 'none';
+      document.body.style.cursor = 'grabbing';
     }
-  }, [shouldAutoPlay, currentSong?.id]);
-
-  // ── Sleep timer end → pause ─────────────────────────────────────
-  useEffect(() => {
-    const handler = () => { audioRef.current?.pause(); setIsPlaying(false); setIsPlayingGlobal(false); };
-    window.addEventListener('novasound:sleep-end', handler);
-    return () => window.removeEventListener('novasound:sleep-end', handler);
-  }, [setIsPlayingGlobal]);
-
-  // ── Ouvrir NowPlayingScreen depuis n'importe où (ex: LocalPlayerPage) ───
-  useEffect(() => {
-    const handler = () => {
-      if (currentSong?.is_local) setShowNowPlaying(true);
-    };
-    window.addEventListener('novasound:open-nowplaying', handler);
-    return () => window.removeEventListener('novasound:open-nowplaying', handler);
-  }, [currentSong?.is_local]);
-
-  // ── Toggle play/pause depuis l'extérieur (SongPage, SongCard, etc.) ────
-  useEffect(() => {
-    const handler = () => {
-      if (!audioRef.current) return;
-      if (audioRef.current.paused) {
-        audioRef.current.play().then(() => { setIsPlaying(true); setIsPlayingGlobal(true); }).catch(() => {});
-      } else {
-        audioRef.current.pause();
-        setIsPlaying(false);
-        setIsPlayingGlobal(false);
-      }
-    };
-    window.addEventListener('novasound:toggle-play', handler);
-    return () => window.removeEventListener('novasound:toggle-play', handler);
-  }, [setIsPlayingGlobal]);
-
-  // ── seek-to depuis l'extérieur (LocalPlayerPage, etc.) ─────────
-  useEffect(() => {
-    const handler = (e) => {
-      if (!audioRef.current || typeof e.detail?.time !== 'number') return;
-      audioRef.current.currentTime = e.detail.time;
-      setCurrentTime(e.detail.time);
-      setAudioCurrentTime(e.detail.time);
-    };
-    window.addEventListener('novasound:seek-to', handler);
-    return () => window.removeEventListener('novasound:seek-to', handler);
-  }, [setAudioCurrentTime]);
-
-  // ── force-play / force-pause depuis PlayerContext compat aliases ─
-  useEffect(() => {
-    const onPlay  = () => { audioRef.current?.play().then(() => { setIsPlaying(true); setIsPlayingGlobal(true); }).catch(() => {}); };
-    const onPause = () => { audioRef.current?.pause(); setIsPlaying(false); setIsPlayingGlobal(false); };
-    window.addEventListener('novasound:force-play',  onPlay);
-    window.addEventListener('novasound:force-pause', onPause);
-    return () => { window.removeEventListener('novasound:force-play', onPlay); window.removeEventListener('novasound:force-pause', onPause); };
-  }, [setIsPlayingGlobal]);
-
-  // ── set-volume / toggle-mute / set-speed depuis PlayerContext ────
-  useEffect(() => {
-    const onVol   = (e) => { const v = Math.max(0, Math.min(1, e.detail?.volume ?? 1)); setVolume(v); if (audioRef.current) audioRef.current.volume = v; };
-    const onMute  = () => toggleMute();
-    const onSpeed = (e) => { const s = e.detail?.speed ?? 1; if (audioRef.current) audioRef.current.playbackRate = s; };
-    window.addEventListener('novasound:set-volume',  onVol);
-    window.addEventListener('novasound:toggle-mute', onMute);
-    window.addEventListener('novasound:set-speed',   onSpeed);
+    
     return () => {
-      window.removeEventListener('novasound:set-volume',  onVol);
-      window.removeEventListener('novasound:toggle-mute', onMute);
-      window.removeEventListener('novasound:set-speed',   onSpeed);
+      document.removeEventListener('mousemove', handleMouseMove);
+      document.removeEventListener('mouseup', handleMouseUp);
+      document.removeEventListener('touchmove', handleTouchMove);
+      document.removeEventListener('touchend', handleTouchEnd);
+      document.body.style.userSelect = '';
+      document.body.style.cursor = '';
     };
-  }, [toggleMute]);
+  }, [isDragging, handleMouseMove, handleMouseUp, handleTouchMove, handleTouchEnd]);
 
-  const lastVolKeyRef = useRef(0);
-
-  // ── Raccourcis clavier — actifs en mode expanded/plein écran ────
+  // Réinitialiser la position quand on expand
   useEffect(() => {
-    const onKey = (e) => {
-      if (['INPUT', 'TEXTAREA'].includes(e.target.tagName)) return;
-      const now = Date.now();
-      switch (e.code) {
-        case 'ArrowRight': case 'MediaTrackNext':
-          if (!isExpanded) break;
-          e.preventDefault(); autoPlayRef.current = true; goNextRef.current?.(); break;
-        case 'ArrowLeft': case 'MediaTrackPrevious':
-          if (!isExpanded) break;
-          e.preventDefault(); autoPlayRef.current = true; goPreviousRef.current?.(); break;
-        case 'ArrowUp':
-          e.preventDefault();
-          if (now - lastVolKeyRef.current < 80) break; // throttle 80ms
-          lastVolKeyRef.current = now;
-          setVolume(prev => {
-            const v = Math.min(100, (prev || 0) + 2);
-            if (audioRef.current) audioRef.current.volume = (isMuted ? 0 : v) / 100;
-            return v;
-          });
-          break;
-        case 'ArrowDown':
-          e.preventDefault();
-          if (now - lastVolKeyRef.current < 80) break; // throttle 80ms
-          lastVolKeyRef.current = now;
-          setVolume(prev => {
-            const v = Math.max(0, (prev || 0) - 2);
-            if (audioRef.current) audioRef.current.volume = (isMuted ? 0 : v) / 100;
-            return v;
-          });
-          break;
-        case 'Space': case 'KeyK':
-          e.preventDefault();
-          if (audioRef.current) {
-            if (isPlaying) { audioRef.current.pause(); } else { audioRef.current.play().catch(() => {}); }
-          }
-          break;
-        case 'Escape':
-          if (!isExpanded) break;
-          if (isCoverMode || isNativeFS) toggleImmersiveRef.current?.();
-          else { setIsExpanded(false); setIsCoverMode(false); setShowQueue(false); setShowSpeedMenu(false); }
-          break;
-        case 'KeyM':
-          e.preventDefault(); toggleMute(); break;
-        default: break;
-      }
-    };
-    window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
-  }, [isExpanded, isPlaying, isCoverMode, isNativeFS, toggleMute, isMuted]);
-
-  // ── Scroll lock ─────────────────────────────────────────────────
-  useEffect(() => {
-    document.body.style.overflow = isExpanded ? 'hidden' : '';
-    return () => { document.body.style.overflow = ''; };
+    if (isExpanded) {
+      setPosition({ x: 0, y: 0 });
+    }
   }, [isExpanded]);
 
-  // ── Fond flou depuis pochette ───────────────────────────────────
+  // Synchroniser le volume avec l'élément audio
   useEffect(() => {
-    if (!currentSong?.cover_url) { setBlurBg(''); return; }
-    const img = new Image();
-    img.crossOrigin = 'anonymous';
-    img.onload = () => {
-      try {
-        const c = document.createElement('canvas');
-        c.width = 80; c.height = 80;
-        c.getContext('2d').drawImage(img, 0, 0, 80, 80);
-        setBlurBg(c.toDataURL('image/jpeg', 0.6));
-      } catch { setBlurBg(currentSong.cover_url); }
-    };
-    img.onerror = () => setBlurBg('');
-    img.src = currentSong.cover_url;
-  }, [currentSong?.id, currentSong?.cover_url]);
-
-  // ── Fullscreen API ──────────────────────────────────────────────
-  useEffect(() => {
-    const onFSChange = () => {
-      const inFS = !!(document.fullscreenElement || document.webkitFullscreenElement);
-      setIsNativeFS(inFS);
-      if (!inFS) setIsCoverMode(false);
-    };
-    document.addEventListener('fullscreenchange',       onFSChange);
-    document.addEventListener('webkitfullscreenchange', onFSChange);
-    return () => {
-      document.removeEventListener('fullscreenchange',       onFSChange);
-      document.removeEventListener('webkitfullscreenchange', onFSChange);
-    };
-  }, []);
-
-  const toggleImmersive = useCallback(async () => {
-    if (!isExpanded) return;
-    if (isCoverMode || isNativeFS) {
-      setIsCoverMode(false);
-      if (isNativeFS) {
-        try { if (document.exitFullscreen) await document.exitFullscreen(); else if (document.webkitExitFullscreen) await document.webkitExitFullscreen(); } catch {}
-      }
-    } else {
-      setIsCoverMode(true);
-      if (!isIOS()) { const el = expandedRef.current || document.documentElement; await tryNativeFullscreen(el); }
+    if (audioRef.current) {
+      audioRef.current.volume = isMuted ? 0 : volume / 100;
     }
-  }, [isExpanded, isCoverMode, isNativeFS]);
-  toggleImmersiveRef.current = toggleImmersive;
-
-  // ── Chargement des sons du mois ───────────────────────────────
-  const fetchMonthlySongs = useCallback(async () => {
-    if (loadingMonthly) return;
-    setLoadingMonthly(true);
-    try {
-      const now = new Date();
-      const firstDay = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
-      const lastDay  = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59).toISOString();
-      const { data } = await supabase
-        .from('songs')
-        .select('id, title, artist, cover_url, genre, plays_count')
-        .eq('is_archived', false)
-        .gte('created_at', firstDay)
-        .lte('created_at', lastDay)
-        .order('plays_count', { ascending: false })
-        .limit(30);
-      setMonthlySongs(data || []);
-    } catch (e) { console.error(e); }
-    setLoadingMonthly(false);
-  }, [loadingMonthly]);
-
-  const openMonthlySongs = useCallback(() => {
-    setShowMonthlySongs(true);
-    fetchMonthlySongs();
-  }, [fetchMonthlySongs]);
-
-  // ── Volume + persistence localStorage ─────────────────────────
-  useEffect(() => {
-    if (audioRef.current) audioRef.current.volume = isMuted ? 0 : volume / 100;
-    try { localStorage.setItem(VOLUME_KEY, String(volume)); } catch {}
   }, [volume, isMuted]);
 
   useEffect(() => {
-    try { localStorage.setItem(MUTED_KEY, isMuted ? '1' : '0'); } catch {}
-  }, [isMuted]);
+    if (audioRef.current && currentSong?.audio_url) {
+      audioRef.current.src = currentSong.audio_url;
+      audioRef.current.load();
+      setPlayRecorded(false);
 
-  // ── Vitesse de lecture ─────────────────────────────────────────
-  useEffect(() => {
-    if (audioRef.current) audioRef.current.playbackRate = playbackSpeed;
-  }, [playbackSpeed]);
+      if (isPlaying) {
+        audioRef.current.play().catch((err) => console.error('Play error:', err));
+      }
 
-  // ── Loop HTML5 (iOS/Android natif) ─────────────────────────────
-  useEffect(() => {
-    if (!audioRef.current) return;
-    audioRef.current.loop = (repeat === 'one');
-  }, [repeat]);
-
-  // ── Media Session metadata ──────────────────────────────────────
-  useEffect(() => {
-    if (!('mediaSession' in navigator) || !currentSong) return;
-    const artwork = currentSong.cover_url
-      ? [96, 128, 192, 256, 512].map(s => ({ src: currentSong.cover_url, sizes: `${s}x${s}`, type: 'image/jpeg' }))
-      : [{ src: '/icon-512.png', sizes: '512x512', type: 'image/png' }];
-    try { navigator.mediaSession.metadata = new MediaMetadata({ title: currentSong.title || 'Titre inconnu', artist: currentSong.artist || 'Artiste inconnu', album: 'NovaSound TITAN LUX', artwork }); } catch {}
-  }, [currentSong?.id, currentSong?.title, currentSong?.artist, currentSong?.cover_url]);
-
-  // ── Media Session actions ───────────────────────────────────────
-  useEffect(() => {
-    if (!('mediaSession' in navigator)) return;
-    const handlers = {
-      play:          () => { audioRef.current?.play(); setIsPlaying(true); setIsPlayingGlobal(true); autoPlayRef.current = true; },
-      pause:         () => { audioRef.current?.pause(); setIsPlaying(false); setIsPlayingGlobal(false); },
-      stop:          () => { audioRef.current?.pause(); setIsPlaying(false); setIsPlayingGlobal(false); },
-      nexttrack:     () => { autoPlayRef.current = true; goNextRef.current?.(); },
-      previoustrack: () => { autoPlayRef.current = true; goPreviousRef.current?.(); },
-      seekbackward:  (d) => { if (audioRef.current) audioRef.current.currentTime = Math.max(0, audioRef.current.currentTime - (d.seekOffset || 10)); },
-      seekforward:   (d) => { if (audioRef.current && audioRef.current.duration) audioRef.current.currentTime = Math.min(audioRef.current.duration, audioRef.current.currentTime + (d.seekOffset || 10)); },
-      seekto:        (d) => { if (audioRef.current && d.seekTime != null) audioRef.current.currentTime = d.seekTime; },
-    };
-    for (const [action, handler] of Object.entries(handlers)) { try { navigator.mediaSession.setActionHandler(action, handler); } catch {} }
-    return () => { for (const action of Object.keys(handlers)) { try { navigator.mediaSession.setActionHandler(action, null); } catch {} } };
-  }, [playlist, shuffle, repeat]);
-
-  useEffect(() => {
-    if (!('mediaSession' in navigator)) return;
-    try { navigator.mediaSession.playbackState = isPlaying ? 'playing' : 'paused'; } catch {}
-  }, [isPlaying]);
-
-  useEffect(() => {
-    if (!('mediaSession' in navigator) || !('setPositionState' in navigator.mediaSession)) return;
-    if (!duration || isNaN(duration)) return;
-    try { navigator.mediaSession.setPositionState({ duration, playbackRate: audioRef.current?.playbackRate || 1, position: Math.min(currentTime, duration) }); } catch {}
-  }, [currentTime, duration]);
-
-  // ── Chargement nouveau son — ANDROID/iOS AUTOPLAY FIX v13000 ──────────────
-  // Stratégie multi-couches pour garantir la lecture sur Android Chrome + iOS :
-  // 1. AudioContext déverrouillé globalement dès le premier geste (_unlockAudio)
-  // 2. play() appelé SYNCHRONEMENT juste après src + load() (contexte geste)
-  // 3. Si AbortError (src changé): retry sur canplaythrough
-  // 4. Si NotAllowedError (politique autoplay): attendre un geste puis rejouer
-  useEffect(() => {
-    if (!audioRef.current || !currentSong?.audio_url) return;
-    const wasFirstSong = prevSongIdRef.current === null;
-    const isNewSong = !wasFirstSong && prevSongIdRef.current !== currentSong.id;
-    prevSongIdRef.current = currentSong.id;
-
-    const audio = audioRef.current;
-    audio.src          = currentSong.audio_url;
-    audio.loop         = (repeat === 'one');
-    audio.playbackRate = playbackSpeed;
-    audio.load(); // iOS Safari: forcer le rechargement de la source
-
-    setPlayRecorded(false); setCurrentTime(0); setDuration(0); setIsBuffering(false);
-    if (currentUser) { checkLikeStatus(); checkFollowStatus(); }
-    else { setIsLiked(false); setLikeId(null); setIsFollowing(false); setFollowId(null); }
-
-    if ((isNewSong || wasFirstSong) && autoPlayRef.current) {
-      setIsBuffering(true);
-      const attemptPlay = () => {
-        _unlockAudio();
-        audio.play()
-          .then(() => { setIsPlaying(true); setIsPlayingGlobal(true); setIsBuffering(false); })
-          .catch((err) => {
-            if (err.name === 'AbortError') {
-              // Source changée pendant load() → retry sur canplaythrough
-              const onReady = () => {
-                audio.removeEventListener('canplaythrough', onReady);
-                _unlockAudio();
-                audio.play()
-                  .then(() => { setIsPlaying(true); setIsPlayingGlobal(true); setIsBuffering(false); })
-                  .catch(() => { setIsPlaying(false); setIsPlayingGlobal(false); setIsBuffering(false); });
-              };
-              audio.addEventListener('canplaythrough', onReady, { once: true });
-            } else if (err.name === 'NotAllowedError') {
-              // Autoplay bloqué → afficher bouton play, puis relancer au prochain geste
-              setIsPlaying(false); setIsPlayingGlobal(false); setIsBuffering(false);
-              const onInteract = () => {
-                document.removeEventListener('touchstart', onInteract);
-                document.removeEventListener('click', onInteract);
-                audio.play().then(() => { setIsPlaying(true); setIsPlayingGlobal(true); }).catch(() => {});
-              };
-              document.addEventListener('touchstart', onInteract, { once: true, passive: true });
-              document.addEventListener('click', onInteract, { once: true });
-            } else {
-              setIsPlaying(false); setIsPlayingGlobal(false); setIsBuffering(false);
-            }
-          });
-      };
-      audio.load();
-      attemptPlay();
-    } else if (!isNewSong && !wasFirstSong) {
-      audio.load();
-      setIsPlaying(false);
-    } else {
-      audio.load();
+      if (currentUser) {
+        checkLikeStatus();
+        checkFollowStatus();
+      } else {
+        setIsLiked(false);
+        setLikeId(null);
+        setIsFollowing(false);
+        setFollowId(null);
+      }
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [currentSong?.id]);
-
-  const retryFetch = async (fn, retries = 2) => {
-    for (let i = 0; i <= retries; i++) {
-      try { return await fn(); }
-      catch (err) { if (i === retries) throw err; await new Promise(r => setTimeout(r, 600 * (i + 1))); }
-    }
-  };
+  }, [currentSong]);
 
   const checkLikeStatus = async () => {
-    try { const { data } = await retryFetch(() => supabase.from('likes').select('id').eq('user_id', currentUser.id).eq('song_id', currentSong.id).maybeSingle()); setIsLiked(!!data); setLikeId(data?.id || null); } catch {}
+    try {
+      const { data, error } = await supabase
+        .from('likes')
+        .select('id')
+        .eq('user_id', currentUser.id)
+        .eq('song_id', currentSong.id)
+        .maybeSingle();
+      if (error) throw error;
+      setIsLiked(!!data);
+      setLikeId(data?.id || null);
+    } catch (err) {
+      console.error('Error checking like status:', err);
+    }
   };
+
   const checkFollowStatus = async () => {
-    const uid = currentSong?.uploader_id;
-    if (!uid || uid === currentUser?.id) return;
-    try { const { data } = await retryFetch(() => supabase.from('follows').select('id').eq('follower_id', currentUser.id).eq('following_id', uid).maybeSingle()); setIsFollowing(!!data); setFollowId(data?.id || null); } catch {}
+    const uploaderId = currentSong?.uploader_id;
+    if (!uploaderId) return;
+    
+    // Don't check if user is the uploader
+    if (uploaderId === currentUser.id) return;
+
+    try {
+      const { data, error } = await supabase
+        .from('follows')
+        .select('id')
+        .eq('follower_id', currentUser.id)
+        .eq('following_id', uploaderId)
+        .maybeSingle();
+      if (error) throw error;
+      setIsFollowing(!!data);
+      setFollowId(data?.id || null);
+    } catch (err) {
+      console.error('Error checking follow status:', err);
+    }
   };
 
   const handleLike = async (e) => {
     e?.stopPropagation();
     if (!currentUser) return;
+
     try {
-      if (isLiked && likeId) { await supabase.from('likes').delete().eq('id', likeId); setIsLiked(false); setLikeId(null); }
-      else { const { data } = await supabase.from('likes').insert({ user_id: currentUser.id, song_id: currentSong.id }).select('id').single(); setIsLiked(true); setLikeId(data?.id || null); }
-    } catch {}
+      if (isLiked && likeId) {
+        const { error } = await supabase
+          .from('likes')
+          .delete()
+          .eq('id', likeId);
+        if (error) throw error;
+        setIsLiked(false);
+        setLikeId(null);
+      } else {
+        const { data, error } = await supabase
+          .from('likes')
+          .insert({
+            user_id: currentUser.id,
+            song_id: currentSong.id
+          })
+          .select('id')
+          .single();
+        if (error) throw error;
+        setIsLiked(true);
+        setLikeId(data?.id || null);
+      }
+    } catch (err) {
+      console.error('Error toggling like:', err);
+    }
   };
 
   const handleFollow = async (e) => {
     e?.stopPropagation();
     if (!currentUser) return;
-    const uid = currentSong?.uploader_id;
-    if (!uid || uid === currentUser.id) return;
+
+    const uploaderId = currentSong?.uploader_id;
+    if (!uploaderId) return;
+    if (uploaderId === currentUser.id) return;
+
     try {
-      if (isFollowing && followId) { await supabase.from('follows').delete().eq('id', followId); setIsFollowing(false); setFollowId(null); }
-      else { const { data } = await supabase.from('follows').insert({ follower_id: currentUser.id, following_id: uid }).select('id').single(); setIsFollowing(true); setFollowId(data?.id || null); }
-    } catch {}
+      if (isFollowing && followId) {
+        const { error } = await supabase
+          .from('follows')
+          .delete()
+          .eq('id', followId);
+        if (error) throw error;
+        setIsFollowing(false);
+        setFollowId(null);
+      } else {
+        const { data, error } = await supabase
+          .from('follows')
+          .insert({
+            follower_id: currentUser.id,
+            following_id: uploaderId
+          })
+          .select('id')
+          .single();
+        if (error) throw error;
+        setIsFollowing(true);
+        setFollowId(data?.id || null);
+      }
+    } catch (err) {
+      console.error('Error toggling follow:', err);
+    }
   };
 
   const handleDownload = (e) => {
     e?.stopPropagation();
     if (!currentSong.audio_url) return;
-    const a = document.createElement('a'); a.href = currentSong.audio_url; a.download = currentSong.title;
-    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    const url = currentSong.audio_url;
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = currentSong.title;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+  const handleShare = (e) => {
+    e?.stopPropagation();
+    const url = `${window.location.origin}/#/song/${currentSong.id}`;
+    navigator.clipboard.writeText(url);
+    const toast = document.createElement('div');
+    toast.className = 'fixed top-4 right-4 bg-cyan-500 text-white px-4 py-2 rounded-lg shadow-lg z-50 animate-pulse';
+    toast.textContent = 'Lien copié!';
+    document.body.appendChild(toast);
+    setTimeout(() => {
+      document.body.removeChild(toast);
+    }, 2000);
   };
 
   const recordPlay = async () => {
-    if (playRecorded || !currentSong?.id || currentSong?.is_local) return;
-    setPlayRecorded(true);
+    if (playRecorded || !currentSong?.id) return;
     try {
-      // Enregistrer via record_play_event (inclut play_events pour trending)
-      const { error } = await supabase.rpc('record_play_event', {
-        p_song_id:    currentSong.id,
-        p_user_id:    currentUser?.id || null,
-        p_duration_s: audioRef.current ? Math.floor(audioRef.current.duration) : null,
-      });
-      // Fallback ancienne méthode si RPC non disponible
-      if (error) {
-        try {
-          await supabase.rpc('increment_plays', { song_id_param: currentSong.id });
-        } catch (_) {
-          await supabase.from('songs').update({ plays_count: (currentSong.plays_count || 0) + 1 }).eq('id', currentSong.id);
-        }
-      }
-    } catch {}
+      const nextPlays = (currentSong.plays_count || 0) + 1;
+      const { error } = await supabase
+        .from('songs')
+        .update({ plays_count: nextPlays })
+        .eq('id', currentSong.id);
+      if (error) throw error;
+      setPlayRecorded(true);
+    } catch (err) {
+      console.error('Error recording play:', err);
+    }
   };
 
   const togglePlay = (e) => {
     e?.stopPropagation();
     if (!audioRef.current || !currentSong) return;
-    // Utiliser l'état réel de l'audio (pas la state React qui peut être périmée)
-    const actuallyPaused = audioRef.current.paused;
-    if (!actuallyPaused) {
+
+    if (isPlaying) {
       audioRef.current.pause();
-      autoPlayRef.current = false;
-      setIsPlaying(false);
-      setIsPlayingGlobal(false);
     } else {
-      audioRef.current.play().then(() => {
-        setIsPlaying(true);
-        setIsPlayingGlobal(true);
-        recordPlay();
-        autoPlayRef.current = true;
-      }).catch(() => { setIsPlaying(false); setIsPlayingGlobal(false); });
+      audioRef.current.play().catch(err => console.error('Play error:', err));
+      recordPlay(); // Record play when user explicitly plays
     }
+    setIsPlaying(!isPlaying);
   };
 
   const handleTimeUpdate = () => {
-    if (!audioRef.current) return;
-    setCurrentTime(audioRef.current.currentTime);
-    setAudioCurrentTime(audioRef.current.currentTime);
-    if (!playRecorded && audioRef.current.currentTime > 10) recordPlay();
+    if (audioRef.current) {
+      setCurrentTime(audioRef.current.currentTime);
+      // Also record play if listened for more than 10 seconds
+      if (!playRecorded && audioRef.current.currentTime > 10) {
+        recordPlay();
+      }
+    }
   };
 
-  const handleLoadedMetadata = () => { if (audioRef.current) { setDuration(audioRef.current.duration); setAudioDuration(audioRef.current.duration); } };
-  const handleSeek = (value) => { if (audioRef.current) { audioRef.current.currentTime = value[0]; setCurrentTime(value[0]); } };
-  const handleVolumeChange = (value) => { setVolume(value[0]); if (value[0] === 0) setIsMuted(true); else if (isMuted) setIsMuted(false); };
-  // toggleMute est déclaré plus haut (TDZ fix) — pas de re-déclaration ici
-
-  const goNext = useCallback(() => {
-    autoPlayRef.current = true;
-    if (playlist.length === 0) return;
-    if (playlist.length === 1) {
-      // Un seul son : rembobiner (comportement repeat:all implicite)
-      if (audioRef.current) {
-        audioRef.current.currentTime = 0;
-        audioRef.current.play().then(() => setIsPlaying(true)).catch(() => {});
-      }
-      return;
+  const handleLoadedMetadata = () => {
+    if (audioRef.current) {
+      setDuration(audioRef.current.duration);
     }
-    const idx = playlist.findIndex(s => s.id === currentSong?.id);
-    let nextIdx;
-    if (shuffle) {
-      do { nextIdx = Math.floor(Math.random() * playlist.length); }
-      while (nextIdx === idx && playlist.length > 1);
-    } else {
-      nextIdx = (idx + 1) % playlist.length;
+  };
+
+  const handleSeek = (value) => {
+    if (audioRef.current) {
+      audioRef.current.currentTime = value[0];
+      setCurrentTime(value[0]);
     }
-    if (onNext) onNext(playlist[nextIdx]);
-  }, [playlist, currentSong?.id, shuffle, onNext]);
+  };
 
-  const goPrevious = useCallback(() => {
-    if (currentTime > 3 && audioRef.current) { audioRef.current.currentTime = 0; setCurrentTime(0); return; }
-    autoPlayRef.current = true;
-    if (playlist.length > 1) {
-      const idx = playlist.findIndex(s => s.id === currentSong?.id);
-      if (onPrevious) onPrevious(playlist[(idx - 1 + playlist.length) % playlist.length]);
-    } else if (onPrevious) onPrevious();
-  }, [playlist, currentSong?.id, currentTime, onPrevious]);
+  const handleVolumeChange = (value) => {
+    setVolume(value[0]);
+    if (value[0] === 0) {
+      setIsMuted(true);
+    } else if (isMuted) {
+      setIsMuted(false);
+    }
+  };
 
-  const handleEnded = useCallback(() => {
-    const currentPlaylist = playlistRef.current; // ← ref toujours fraîche (mode radio)
+  const toggleMute = (e) => {
+    e?.stopPropagation();
+    setIsMuted(!isMuted);
+  };
+
+  const handleEnded = () => {
     if (repeat === 'one') {
       audioRef.current.currentTime = 0;
-      audioRef.current.play().catch(() => {
-        if (currentPlaylist.length > 0) onNext?.();
-        else setIsPlaying(false);
-      });
-    } else if (repeat === 'all' || currentPlaylist.length > 0) {
+      audioRef.current.play();
+    } else if (repeat === 'all' || playlist.length > 0) {
       onNext?.();
     } else {
       setIsPlaying(false);
     }
-  }, [repeat, onNext]); // playlist retiré des deps → on lit playlistRef
+  };
 
-  goNextRef.current     = goNext;
-  goPreviousRef.current = goPrevious;
-  playlistRef.current   = playlist; // toujours à jour même dans les vieux callbacks
-
-  const cycleRepeatLocal = (e) => { e?.stopPropagation(); cycleRepeat(); };
-
-  const VolumeIcon = isMuted || volume === 0 ? VolumeX : volume < 40 ? Volume1 : Volume2;
-  const showFollowButton = currentUser && currentSong?.uploader_id && currentSong.uploader_id !== currentUser.id;
-  const progress = duration ? (currentTime / duration) * 100 : 0;
-
-  const closePlayer = (e) => {
+  const cycleRepeat = (e) => {
     e?.stopPropagation();
-    setIsCoverMode(false);
-    if (isNativeFS) { try { document.exitFullscreen?.(); } catch {} try { document.webkitExitFullscreen?.(); } catch {} }
-    if (onClose) onClose(); else window.dispatchEvent(new CustomEvent('novasound:close-player'));
+    const modes = ['off', 'one', 'all'];
+    const currentIndex = modes.indexOf(repeat);
+    setRepeat(modes[(currentIndex + 1) % modes.length]);
   };
 
-  // ── Swipe mini player ──────────────────────────────────────────
-  const handleTouchStart = (e) => {
-    swipeStartY.current = e.touches[0].clientY;
-    swipeStartX.current = e.touches[0].clientX;
-  };
-  const handleTouchEnd = (e) => {
-    if (swipeStartY.current === null) return;
-    const dy = e.changedTouches[0].clientY - swipeStartY.current;
-    const dx = Math.abs(e.changedTouches[0].clientX - swipeStartX.current);
-    if (dx < 80) {
-      if (dy > 60)  { closePlayer(); }         // swipe bas → fermer
-      if (dy < -60) { setIsExpanded(true); }    // swipe haut → ouvrir grand lecteur
-    }
-    swipeStartY.current = null; swipeStartX.current = null;
+  const formatTime = (seconds) => {
+    if (!seconds || isNaN(seconds)) return '0:00';
+    const mins = Math.floor(seconds / 60);
+    const secs = Math.floor(seconds % 60);
+    return `${mins}:${secs.toString().padStart(2, '0')}`;
   };
 
   if (!currentSong) return null;
 
-  // ── MODE RÉDUIT : bulle flottante en bas à droite ─────────────
-  // IMPORTANT : le <audio> ref={audioRef} est rendu UNE SEULE FOIS dans le return principal
-  // ci-dessous, jamais ici. Sinon React démonte/remonte l'élément audio au toggle isMinimized
-  // ce qui coupe la lecture. Les deux branches partagent le même audioRef.
-  if (isMinimized) {
-    return (
-      <>
-        {/* Audio TOUJOURS monté ici — même composant, même ref, jamais interrompu */}
+  // Determine if we should show follow button (not own song, authenticated)
+  const showFollowButton = currentUser && currentSong?.uploader_id && currentSong.uploader_id !== currentUser.id;
+
+  return (
+    <AnimatePresence>
+      <motion.div
+        ref={playerRef}
+        initial={{ y: 100, opacity: 0 }}
+        animate={{ y: 0, opacity: 1 }}
+        exit={{ y: 100, opacity: 0 }}
+        style={{
+          position: 'fixed',
+          bottom: isExpanded ? 0 : 'auto',
+          left: isExpanded ? 0 : position.x,
+          right: isExpanded ? 0 : 'auto',
+          top: isExpanded ? 0 : position.y,
+          transform: isExpanded ? 'none' : 'translate(0, 0)',
+          zIndex: 50,
+          cursor: !isExpanded ? (isDragging ? 'grabbing' : 'grab') : 'default'
+        }}
+        className={`bg-gray-950/98 backdrop-blur-xl border-t border-cyan-500/30 shadow-2xl transition-all duration-300 ${
+          isExpanded ? 'h-full flex flex-col justify-center w-full' : 'h-auto rounded-lg border border-cyan-500/20'
+        }`}
+        onMouseDown={handleMouseDown}
+      >
         <audio
           ref={audioRef}
           onTimeUpdate={handleTimeUpdate}
           onLoadedMetadata={handleLoadedMetadata}
           onEnded={handleEnded}
-          onPlay={() => { setIsPlaying(true); setIsPlayingGlobal(true); setIsBuffering(false); }}
-          onPause={() => { setIsPlaying(false); setIsPlayingGlobal(false); }}
-          onWaiting={() => setIsBuffering(true)}
-          onCanPlay={() => setIsBuffering(false)}
-          onPlaying={() => setIsBuffering(false)}
-          onError={() => { setIsBuffering(false); setIsPlaying(false); setIsPlayingGlobal(false); }}
-          loop={repeat === 'one'} playsInline preload="auto"
-          webkit-playsinline="true" x-webkit-airplay="allow"
-          style={{ display: 'none' }}
         />
-        <motion.div
-          initial={{ scale: 0, opacity: 0 }}
-          animate={{ scale: 1, opacity: 1 }}
-          exit={{ scale: 0, opacity: 0 }}
-          transition={{ type: 'spring', stiffness: 400, damping: 28 }}
-          className="fixed right-4 z-[47] flex flex-col items-end gap-2"
-          style={{ bottom: isNavHiddenPage ? '1rem' : 'calc(var(--ns-bottom-nav-h) + 1rem)' }}
-        >
-        <motion.button
-          whileTap={{ scale: 0.92 }}
-          onClick={restorePlayer}
-          className="w-14 h-14 rounded-full shadow-2xl flex items-center justify-center relative overflow-hidden border-2 border-white/20"
-          style={{ background: `linear-gradient(135deg, ${genreTheme.primary}, ${genreTheme.secondary})`, boxShadow: `0 8px 32px ${genreTheme.glow}` }}
-          title={`${currentSong.title} — cliquer pour afficher`}
-        >
-          {currentSong.cover_url
-            ? <img src={currentSong.cover_url} alt="" className={`w-full h-full object-cover ${isPlaying ? 'animate-spin' : ''}`} style={{ animationDuration: '8s' }} />
-            : <Music className="w-6 h-6 text-white" />
-          }
-          {/* Indicateur lecture */}
-          {isPlaying && (
-            <motion.div
-              className="absolute inset-0 rounded-full border-2 border-white/40"
-              animate={{ scale: [1, 1.15, 1], opacity: [0.6, 0, 0.6] }}
-              transition={{ repeat: Infinity, duration: 2 }}
-            />
-          )}
-        </motion.button>
-        {/* Boutons play/next rapides */}
-        <div className="flex gap-1">
-          <button onClick={togglePlay} className="w-8 h-8 rounded-full bg-black/70 backdrop-blur-sm border border-white/10 flex items-center justify-center text-white">
-            {isPlaying ? <Pause className="w-3.5 h-3.5" /> : <Play className="w-3.5 h-3.5 ml-0.5" />}
-          </button>
-          <button onClick={goNext} className="w-8 h-8 rounded-full bg-black/70 backdrop-blur-sm border border-white/10 flex items-center justify-center text-white">
-            <SkipForward className="w-3.5 h-3.5" />
-          </button>
-        </div>
-        </motion.div>
-      </>
-    );
-  }
 
-  const immersiveTitle = isIOS()
-    ? (isCoverMode ? 'Quitter la vue couverture' : 'Vue couverture')
-    : (isCoverMode || isNativeFS ? 'Quitter le plein écran' : 'Plein écran');
-
-  // Fond dynamique selon le genre du son en lecture
-  const genreGlowColor = genreTheme.glow;
-  const expandedBg = isCoverMode && blurBg
-    ? { background: `linear-gradient(rgba(0,0,0,0.60),rgba(0,0,0,0.80)), url("${blurBg}") center/cover no-repeat` }
-    : {
-        background: `radial-gradient(ellipse at 30% 0%, ${genreGlowColor} 0%, transparent 60%), linear-gradient(180deg, #0a0f23 0%, #030712 55%)`,
-        transition: 'background 0.8s ease',
-      };
-
-  // ── Sleep timer display ─────────────────────────────────────────
-  const sleepOptions = [5, 10, 15, 20, 30, 45, 60];
-
-  return (
-    <>
-      <audio
-        ref={audioRef}
-        onTimeUpdate={handleTimeUpdate}
-        onLoadedMetadata={handleLoadedMetadata}
-        onEnded={handleEnded}
-        onPlay={() => { setIsPlaying(true); setIsPlayingGlobal(true); setIsBuffering(false); }}
-        onPause={() => { setIsPlaying(false); setIsPlayingGlobal(false); }}
-        onWaiting={() => setIsBuffering(true)}
-        onCanPlay={() => setIsBuffering(false)}
-        onPlaying={() => setIsBuffering(false)}
-        onError={() => { setIsBuffering(false); setIsPlaying(false); setIsPlayingGlobal(false); }}
-        loop={repeat === 'one'}
-        playsInline
-        preload="auto"
-        webkit-playsinline="true"
-        x-webkit-airplay="allow"
-        style={{ display: 'none' }}
-      />
-
-      <AnimatePresence>
-        {showShareModal && <SongShareModal song={currentSong} onClose={() => setShowShareModal(false)} />}
-      </AnimatePresence>
-
-      <AnimatePresence>
-
-        {/* ═══ EXPANDED ═══ */}
-        {isExpanded && (
-          <motion.div
-            key="expanded"
-            ref={expandedRef}
-            initial={{ y: '100%' }}
-            animate={{ y: 0 }}
-            exit={{ y: '100%' }}
-            transition={{ duration: 0.3, ease: [0.32, 0.72, 0, 1] }}
-            className="fixed inset-0 z-[54] flex flex-col"
-            style={{ ...expandedBg, paddingBottom: 'env(safe-area-inset-bottom, 0px)', transition: 'background 0.5s ease' }}
-            onClick={() => { setShowSleepMenu(false); setShowSpeedMenu(false); }}
-          >
-            {!isCoverMode && (
-              <div className="absolute inset-0 opacity-30 pointer-events-none"
-                style={{ background: `radial-gradient(ellipse at 50% -10%, ${genreTheme.glow.replace('0.35', '0.55')} 0%, transparent 65%)`, transition: 'background 0.8s ease' }} />
-            )}
-
-            {/* HEADER */}
-            <div className="relative flex items-center justify-between px-5 pb-2 z-20 flex-shrink-0 overflow-visible"
-              style={{ paddingTop: 'max(20px, env(safe-area-inset-top, 20px))' }}>
-              <button onClick={() => { setIsExpanded(false); setIsCoverMode(false); setShowQueue(false); }}
-                className="flex items-center gap-1.5 text-gray-400 hover:text-white transition-colors">
-                <ChevronDown className="w-5 h-5" />
-                <span className="text-sm hidden sm:inline">Réduire</span>
-              </button>
-              <p className="text-xs text-gray-400 uppercase tracking-widest font-medium">En écoute</p>
-              <div className="flex items-center gap-1.5">
-                {/* Bouton Radio */}
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    toggleRadio();
-                    toast.info(radioMode ? 'Mode Radio désactivé' : 'Mode Radio activé — lecture infinie 📻', { duration: 2500 });
-                  }}
-                  className={`p-2 rounded-full border transition-all relative ${radioMode ? 'bg-cyan-500/20 border-cyan-500/50 text-cyan-400' : 'bg-black/30 border-white/10 text-gray-400 hover:text-white'}`}
-                  title={radioMode ? 'Mode Radio activé — cliquer pour désactiver' : 'Activer le mode Radio (lecture infinie)'}
-                >
-                  {radioLoading
-                    ? <div className="w-4 h-4 rounded-full border-2 border-cyan-400/40 border-t-cyan-400 animate-spin" />
-                    : <Radio className="w-4 h-4" />
-                  }
-                  {radioMode && !radioLoading && (
-                    <span className="absolute -top-1 -right-1 w-2 h-2 rounded-full bg-cyan-400 animate-pulse" />
-                  )}
-                </button>
-
-                {/* Sleep timer */}
-                <div className="relative z-30">
-                  <button
-                    onClick={(e) => { e.stopPropagation(); setShowSleepMenu(v => !v); setShowQueue(false); }}
-                    className={`p-2 rounded-full border transition-all relative ${sleepTimer !== null ? 'bg-amber-500/20 border-amber-500/50 text-amber-400' : 'bg-black/30 border-white/10 text-gray-400 hover:text-white'}`}
-                    title={"Minuteur de sommeil"}
-                  >
-                    <Moon className="w-4 h-4" />
-                    {sleepTimer !== null && (
-                      <span className="absolute -top-1.5 -right-1.5 text-[9px] font-bold bg-amber-500 text-black rounded-full px-1 min-w-[18px] text-center leading-[18px] z-20 pointer-events-none">
-                        {fmtSleep(sleepTimer)}
-                      </span>
-                    )}
-                  </button>
-                  <AnimatePresence>
-                    {showSleepMenu && (
-                      <motion.div
-                        initial={{ opacity: 0, scale: 0.9, y: -4 }}
-                        animate={{ opacity: 1, scale: 1, y: 0 }}
-                        exit={{ opacity: 0, scale: 0.9, y: -4 }}
-                        transition={{ duration: 0.15 }}
-                        className="absolute right-0 top-11 z-50 bg-gray-900 border border-white/10 rounded-2xl shadow-2xl shadow-black/60 p-2 w-44"
-                        onClick={e => e.stopPropagation()}
-                      >
-                        <p className="text-[10px] text-gray-500 font-semibold uppercase tracking-wider px-2 mb-1.5">Arrêter dans…</p>
-                        {sleepOptions.map(m => (
-                          <button key={m}
-                            onClick={() => { setSleepTimer(m); setShowSleepMenu(false); }}
-                            className={`w-full text-left px-3 py-2 text-sm rounded-xl transition-colors ${sleepTimer !== null && sleepTimer <= m * 60 && sleepTimer > (m - 1) * 60 ? 'bg-amber-500/20 text-amber-300' : 'text-gray-300 hover:bg-white/8 hover:text-white'}`}
-                          >{m} min</button>
-                        ))}
-                        {sleepTimer !== null && (
-                          <button onClick={() => { clearSleepTimer(); setShowSleepMenu(false); }}
-                            className="w-full text-left px-3 py-2 text-sm text-red-400 hover:bg-red-500/10 rounded-xl transition-colors border-t border-white/8 mt-1 pt-2">
-                            Annuler le timer
-                          </button>
-                        )}
-                      </motion.div>
-                    )}
-                  </AnimatePresence>
-                </div>
-                {/* Queue */}
-                <button
-                  onClick={(e) => { e.stopPropagation(); setShowQueue(v => !v); setShowSleepMenu(false); }}
-                  className={`p-2 rounded-full border transition-all relative ${showQueue ? 'bg-cyan-500/20 border-cyan-500/50 text-cyan-400' : 'bg-black/30 border-white/10 text-gray-400 hover:text-white'}`}
-                  title={"File d'attente"}
-                >
-                  <ListMusic className="w-4 h-4" />
-                  {queue.length > 0 && (
-                    <span className="absolute -top-1.5 -right-1.5 text-[9px] font-bold bg-cyan-500 text-black rounded-full px-1 min-w-[18px] text-center leading-[18px] pointer-events-none">
-                      {queue.length}
-                    </span>
-                  )}
-                </button>
-                {/* Fullscreen */}
-                <button onClick={toggleImmersive}
-                  className="p-2 rounded-full bg-black/30 border border-white/10 text-gray-400 hover:text-white transition-all"
-                  title={immersiveTitle}>
-                  {isCoverMode || isNativeFS ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
-                </button>
-                <button onClick={(e) => { closePlayer(e); setIsExpanded(false); }}
-                  className="p-2 rounded-full bg-black/30 border border-white/10 text-gray-400 hover:text-white transition-all">
-                  <X className="w-4 h-4" />
-                </button>
-              </div>
-            </div>
-
-            {/* CONTENU */}
-            <div className="flex-1 flex flex-col md:flex-row items-center justify-center gap-6 md:gap-12 lg:gap-20 px-5 md:px-14 lg:px-24 xl:px-32 pb-4 md:pb-8 z-10 overflow-y-auto" style={{ scrollbarWidth:'none' }}>
-              {/* Pochette */}
-              <motion.div
-                initial={{ scale: 0.88, opacity: 0 }}
-                animate={{ scale: 1, opacity: 1 }}
-                transition={{ delay: 0.08, type: 'spring', damping: 22 }}
-                className={`relative z-0 flex-shrink-0 rounded-2xl overflow-hidden shadow-2xl border border-white/10 transition-all duration-500 ${isCoverMode ? 'w-72 h-72 sm:w-80 sm:h-80 md:w-[22rem] md:h-[22rem] lg:w-[26rem] lg:h-[26rem]' : 'w-60 h-60 sm:w-72 sm:h-72 md:w-80 md:h-80 lg:w-96 lg:h-96'}`}
-              >
-                {currentSong.cover_url
-                  ? <img src={currentSong.cover_url} alt={currentSong.title} className="w-full h-full object-cover" />
-                  : <div className="w-full h-full bg-gradient-to-br from-cyan-500 to-purple-600 flex items-center justify-center"><Music className="w-24 h-24 text-white/50" /></div>
-                }
-              </motion.div>
-
-              {/* Controles */}
-              <div className="flex flex-col gap-4 w-full max-w-xl lg:max-w-2xl xl:max-w-3xl">
-                {/* Titre + artiste + actions */}
-                <div className="flex items-start justify-between gap-3">
-                  <div className="min-w-0 flex-1">
-                    <h2 className="text-white text-xl sm:text-2xl font-bold leading-tight break-words drop-shadow-lg">{currentSong.title}</h2>
-                    <div className="flex items-center gap-2 mt-1 flex-wrap">
-                      <span className="text-gray-300 text-sm hover:text-white cursor-pointer transition-colors"
-                        onClick={() => currentSong?.uploader_id && navigate(`/artist/${currentSong.uploader_id}`)}>
-                        {currentSong.artist}
-                      </span>
-                      {/* Genre badge */}
-                      {currentSong.genre && (
-                        <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-cyan-500/15 text-cyan-400 border border-cyan-500/25">
-                          {currentSong.genre}
-                        </span>
-                      )}
-                      {showFollowButton && (
-                        <button onClick={handleFollow}
-                          className={`px-2 py-0.5 text-xs rounded-full border transition-all flex items-center gap-1 ${isFollowing ? 'border-cyan-500/60 text-cyan-400 bg-cyan-500/10' : 'border-white/20 text-gray-400 hover:border-white/40 hover:text-white'}`}>
-                          {isFollowing ? <><UserCheck className="w-3 h-3" />Abonné</> : <><UserPlus className="w-3 h-3" />S'abonner</>}
-                        </button>
-                      )}
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-2 flex-shrink-0">
-                    <button onClick={handleLike} className={`transition-all active:scale-75 ${isLiked ? 'text-pink-500' : 'text-gray-400 hover:text-pink-400'}`}>
-                      <Heart className={`w-5 h-5 ${isLiked ? 'fill-current' : ''}`} />
-                    </button>
-                    <button onClick={(e) => { e.stopPropagation(); setShowShareModal(true); }} className="text-gray-400 hover:text-white transition-colors">
-                      <Share2 className="w-5 h-5" />
-                    </button>
-                    <button onClick={handleDownload} className="text-gray-400 hover:text-cyan-400 transition-colors">
-                      <Download className="w-5 h-5" />
-                    </button>
-                    {/* Lecteur local hors-ligne */}
-                    
-                    {/* Ajouter à la file d'attente */}
-                    <button onClick={() => addToQueue(currentSong)} className="text-gray-400 hover:text-cyan-400 transition-colors" title={"Ajouter à la file d'attente"}>
-                      <ListMusic className="w-4 h-4" />
-                    </button>
-                    {/* Ajouter à une playlist */}
-                    {currentUser && (
-                      <button onClick={() => setShowAddToPlaylist(true)} className="text-gray-400 hover:text-purple-400 transition-colors" title={"Ajouter à une playlist"}>
-                        <Plus className="w-4 h-4" />
-                      </button>
-                    )}
-                    {currentSong?.uploader_id && (
-                      <button onClick={(e) => { e.stopPropagation(); navigate(`/artist/${currentSong.uploader_id}`); setIsExpanded(false); setIsCoverMode(false); }}
-                        className="text-gray-400 hover:text-cyan-400 transition-colors">
-                        <ExternalLink className="w-4 h-4" />
-                      </button>
-                    )}
-                  </div>
-                </div>
-
-                {/* Waveform Visualizer */}
-                <WaveformVisualizer
-                  isPlaying={isPlaying}
-                  barCount={36}
-                  color={genreTheme.primary}
-                  height={28}
-                  className="w-full opacity-70"
-                />
-
-                {/* Seek bar */}
-                <div>
-                  <Slider value={[currentTime]} max={duration || 100} step={0.1} onValueChange={handleSeek} className="cursor-pointer" />
-                  <div className="flex justify-between text-xs text-gray-400 mt-1.5 tabular-nums">
-                    <span>{fmtTime(currentTime)}</span>
-                    <span className="text-gray-600">{(duration > 0 || currentSong?.duration_s) ? `-${fmtTime((duration > 0 ? duration : (currentSong?.duration_s || 0)) - currentTime)}` : "--:--"}</span>
-                  </div>
-                </div>
-
-                {/* Transport */}
-                <div className="flex items-center justify-between">
-                  <button onClick={(e) => { e.stopPropagation(); setShuffle(!shuffle); }}
-                    className={`p-2 transition-all ${shuffle ? 'text-cyan-400' : 'text-gray-500 hover:text-white'}`} title={"Aléatoire"}>
-                    <Shuffle className="w-5 h-5" />
-                  </button>
-                  <button
-                    type="button"
-                    onClick={(e) => { e.stopPropagation(); autoPlayRef.current = true; goPreviousRef.current?.(); }}
-                    className="p-2 text-gray-300 hover:text-white hover:scale-110 active:scale-90 transition-all"
-                    title={"Précédent"}>
-                    <SkipBack className="w-7 h-7" />
-                  </button>
-                  <button onClick={togglePlay}
-                    className="w-14 h-14 rounded-full hover:scale-105 active:scale-95 transition-all shadow-xl flex items-center justify-center text-white"
-                    style={{
-                      background: `linear-gradient(135deg, ${genreTheme.primary}, ${genreTheme.secondary})`,
-                      boxShadow: `0 4px 24px ${genreTheme.glow}`,
-                    }}>
-                    {isBuffering ? <div className="w-7 h-7 rounded-full border-2 border-white/30 border-t-white animate-spin" /> : isPlaying ? <Pause className="w-7 h-7" /> : <Play className="w-7 h-7 ml-0.5" />}
-                  </button>
-                  <button
-                    type="button"
-                    onClick={(e) => { e.stopPropagation(); autoPlayRef.current = true; goNextRef.current?.(); }}
-                    className="p-2 text-gray-300 hover:text-white hover:scale-110 active:scale-90 transition-all"
-                    title={"Suivant"}>
-                    <SkipForward className="w-7 h-7" />
-                  </button>
-                  <button onClick={cycleRepeatLocal}
-                    className={`p-2 relative transition-all ${repeat !== 'off' ? 'text-cyan-400' : 'text-gray-500 hover:text-white'}`}
-                    title={repeat === 'off' ? 'Répétition off' : repeat === 'one' ? 'Répéter ce son' : 'Répéter tout'}>
-                    <Repeat className="w-5 h-5" />
-                    {repeat === 'one' && <span className="absolute -bottom-1 left-1/2 -translate-x-1/2 text-[8px] font-black text-cyan-400 leading-none">1</span>}
-                    {repeat === 'all' && <span className="absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full bg-cyan-400 border border-black/20" />}
-                  </button>
-                </div>
-
-                {/* Volume */}
-                <div className="flex items-center gap-3">
-                  <button onClick={toggleMute} className="text-gray-400 hover:text-white transition-colors flex-shrink-0">
-                    <VolumeIcon className="w-5 h-5" />
-                  </button>
-                  <Slider value={[isMuted ? 0 : volume]} max={100} step={1} onValueChange={handleVolumeChange} className="cursor-pointer flex-1" />
-                  <span className="text-xs text-gray-500 w-6 text-right tabular-nums">{isMuted ? 0 : volume}</span>
-                </div>
-
-                {/* Vitesse de lecture */}
-                <div className="flex items-center justify-between">
-                  <div className="relative">
-                    <button
-                      onClick={(e) => { e.stopPropagation(); setShowSpeedMenu(v => !v); setShowSleepMenu(false); setShowQueue(false); }}
-                      className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-xs font-bold transition-all ${playbackSpeed !== 1 ? 'bg-cyan-500/20 border-cyan-400/50 text-cyan-300' : 'bg-black/20 border-white/10 text-gray-400 hover:text-white'}`}
-                      title={"Vitesse de lecture"}
-                    >
-                      <Gauge className="w-3.5 h-3.5" />
-                      {playbackSpeed}×
-                    </button>
-                    <AnimatePresence>
-                      {showSpeedMenu && (
-                        <motion.div
-                          initial={{ opacity: 0, scale: 0.9, y: 4 }}
-                          animate={{ opacity: 1, scale: 1, y: 0 }}
-                          exit={{ opacity: 0, scale: 0.9, y: 4 }}
-                          transition={{ duration: 0.15 }}
-                          className="absolute left-0 bottom-10 z-50 bg-gray-900 border border-white/10 rounded-2xl shadow-2xl shadow-black/60 p-2 w-36"
-                          onClick={e => e.stopPropagation()}
-                        >
-                          <p className="text-[10px] text-gray-500 font-semibold uppercase tracking-wider px-2 mb-1.5">Vitesse</p>
-                          {SPEED_OPTIONS.map(s => (
-                            <button key={s}
-                              onClick={() => { setPlaybackSpeed(s); setShowSpeedMenu(false); }}
-                              className={`w-full text-left px-3 py-2 text-sm rounded-xl transition-colors flex items-center justify-between ${playbackSpeed === s ? 'bg-cyan-500/20 text-cyan-300 font-bold' : 'text-gray-300 hover:bg-white/8 hover:text-white'}`}
-                            >
-                              <span>{s}×</span>
-                              {s === 1 && <span className="text-[10px] text-gray-600">Normal</span>}
-                            </button>
-                          ))}
-                        </motion.div>
-                      )}
-                    </AnimatePresence>
-                  </div>
-                  {currentSong?.id && (
-                    <a href={`/#/song/${currentSong.id}`}
-                      className="flex items-center gap-1 text-xs text-gray-500 hover:text-cyan-400 transition-colors px-2 py-1 rounded-full hover:bg-white/5"
-                      onClick={e => e.stopPropagation()}
-                      title={"Page du son"}
-                    >
-                      <ExternalLink className="w-3.5 h-3.5" />
-                      <span>Page du son</span>
-                    </a>
-                  )}
-                </div>
-              </div>
-            </div>
-
-            {/* ── PANNEAU QUEUE (slide from bottom) ── */}
-            <AnimatePresence>
-              {showQueue && (
-                <>
-                  {/* Overlay flou derrière la playlist */}
-                  <motion.div
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    exit={{ opacity: 0 }}
-                    transition={{ duration: 0.25 }}
-                    className="absolute inset-0 z-10 pointer-events-none"
-                    style={{ backdropFilter: 'blur(8px)', WebkitBackdropFilter: 'blur(8px)', background: 'rgba(3,7,18,0.55)' }}
-                  />
-                <motion.div
-                  initial={{ y: '100%' }}
-                  animate={{ y: 0 }}
-                  exit={{ y: '100%' }}
-                  transition={{ type: 'spring', damping: 32, stiffness: 300 }}
-                  className="absolute inset-x-0 bottom-0 z-20 bg-gray-950/98 border-t border-white/10 flex flex-col"
-                  style={{ maxHeight: '55%', borderRadius: '20px 20px 0 0' }}
-                  onClick={e => e.stopPropagation()}
-                >
-                  <div className="flex items-center justify-between px-5 py-3 border-b border-white/[0.06] flex-shrink-0">
-                    <div className="flex items-center gap-2">
-                      <ListMusic className="w-4 h-4 text-cyan-400" />
-                      <span className="text-white font-bold text-sm">File d'attente</span>
-                      <span className="text-xs text-gray-500 bg-white/8 px-1.5 py-0.5 rounded-full">{queue.length}</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      {/* Bouton Sons du mois */}
-                      <button
-                        onClick={() => { setShowQueue(false); openMonthlySongs(); }}
-                        className="flex items-center gap-1.5 text-xs text-cyan-400 hover:text-cyan-300 transition-colors px-2.5 py-1.5 rounded-full border border-cyan-500/20 hover:bg-cyan-500/10"
-                        title={"Sons publiés ce mois"}>
-                        <Calendar className="w-3 h-3 flex-shrink-0" /><span>Ce mois</span>
-                      </button>
-                      {/* Bouton Ajouter à une playlist */}
-                      {currentSong && currentUser && (
-                        <button
-                          onClick={() => { setShowQueue(false); setShowAddToPlaylist(true); }}
-                          className="flex items-center gap-1.5 text-xs text-purple-400 hover:text-purple-300 transition-colors px-2.5 py-1.5 rounded-full border border-purple-500/20 hover:bg-purple-500/10"
-                          title={"Ajouter à une playlist"}>
-                          <Plus className="w-3 h-3 flex-shrink-0" /><span>Playlist</span>
-                        </button>
-                      )}
-                      {queue.length > 0 && (
-                        <button onClick={clearQueue}
-                          className="flex items-center gap-1.5 text-xs text-red-400 hover:text-red-300 transition-colors px-3 py-1.5 rounded-full border border-red-500/20 hover:bg-red-500/10 min-w-[60px]">
-                          <Trash2 className="w-3 h-3 flex-shrink-0" /><span>Vider</span>
-                        </button>
-                      )}
-                      <button onClick={() => setShowQueue(false)} className="p-2 text-gray-500 hover:text-white transition-colors rounded-lg hover:bg-white/8 ml-1">
-                        <X className="w-4 h-4" />
-                      </button>
-                    </div>
-                  </div>
-                  <div className="overflow-y-auto flex-1 py-2">
-                    {queue.length === 0 ? (
-                      <div className="flex flex-col items-center justify-center py-10 text-center px-6">
-                        <ListMusic className="w-12 h-12 text-gray-700 mb-3" />
-                        <p className="text-gray-500 text-sm font-medium">File vide</p>
-                        <p className="text-gray-600 text-xs mt-1">Appuie sur ⊕ depuis une carte son pour ajouter ici</p>
-                      </div>
-                    ) : (
-                      queue.map((s, i) => (
-                        <div key={`${s.id}-${i}`}
-                          className="flex items-center gap-3 px-4 py-2 hover:bg-white/[0.04] group transition-colors">
-                          <span className="text-xs text-gray-600 w-4 text-right flex-shrink-0">{i + 1}</span>
-                          {s.cover_url
-                            ? <img src={s.cover_url} alt="" className="w-10 h-10 rounded-lg object-cover flex-shrink-0 shadow-lg" />
-                            : <div className="w-10 h-10 rounded-lg bg-gray-800 flex items-center justify-center flex-shrink-0"><Music className="w-4 h-4 text-gray-600" /></div>
-                          }
-                          <div className="flex-1 min-w-0">
-                            <p className="text-white text-sm font-semibold truncate">{s.title}</p>
-                            <p className="text-gray-500 text-xs truncate">{s.artist}</p>
-                          </div>
-                          <button onClick={() => removeFromQueue(i)}
-                            className="opacity-0 group-hover:opacity-100 p-1.5 text-gray-600 hover:text-red-400 transition-all rounded-lg hover:bg-red-500/10"
-                            title={"Retirer de la file"}>
-                            <Trash2 className="w-3.5 h-3.5" />
-                          </button>
-                        </div>
-                      ))
-                    )}
-                  </div>
-                </motion.div>
-                </>
-              )}
-            </AnimatePresence>
-
-          </motion.div>
-        )}
-
-        {/* ═══ MINI PLAYER ═══ */}
+        {/* Poignée de drag - visible seulement en mode réduit */}
         {!isExpanded && (
-          <motion.div
-            key="mini"
-            initial={{ y: 100, opacity: 0 }}
-            animate={{ y: 0, opacity: 1 }}
-            exit={{ y: 100, opacity: 0 }}
-            className={`fixed left-0 right-0 z-[45] border-t border-white/[0.06] shadow-2xl shadow-black/60 android-player-fixed`}
-            style={{
-              bottom: isNavHiddenPage ? 0 : 'var(--ns-bottom-nav-h)',
-              backgroundColor: 'rgb(18 18 18 / 0.97)',
-              backdropFilter: 'blur(24px)',
-              WebkitBackdropFilter: 'blur(24px)',
-              paddingBottom: 'env(safe-area-inset-bottom, 0px)',
-            }}
+          <div 
+            className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-gray-900 border border-cyan-500/30 rounded-full p-1 z-10 cursor-grab active:cursor-grabbing"
+            onMouseDown={handleMouseDown}
             onTouchStart={handleTouchStart}
-            onTouchEnd={handleTouchEnd}
           >
-            {/* Indicateur swipe */}
-            <div className="flex justify-center pt-1.5 pb-0 md:hidden">
-              <div className="w-8 h-1 rounded-full bg-white/15" />
-            </div>
-
-            {/* Barre de progression */}
-            <div className="w-full h-1 bg-gray-800/80 cursor-pointer group relative"
-              onClick={(e) => {
-                if (!duration) return;
-                const r = e.currentTarget.getBoundingClientRect();
-                handleSeek([(e.clientX - r.left) / r.width * duration]);
-              }}>
-              <div className="h-full bg-gradient-to-r from-cyan-500 to-purple-500 transition-all duration-75 group-hover:h-1.5"
-                style={{ width: `${progress}%` }} />
-            </div>
-
-            {/* MOBILE (< sm) */}
-            <div className="sm:hidden">
-              <div className="flex items-center justify-between px-3 pt-1 pb-0">
-                <button onClick={() => currentSong?.is_local ? setShowNowPlaying(true) : setIsExpanded(true)} className="text-gray-600 hover:text-gray-400 transition-colors p-1">
-                  <Maximize2 className="w-3.5 h-3.5" />
-                </button>
-                <div className="flex items-center gap-0.5">
-                  <button onClick={minimizePlayer} className="text-gray-500 hover:text-amber-400 hover:bg-amber-500/10 transition-all p-1.5 rounded-lg" title="Réduire en bulle">
-                    <Minimize2 className="w-3.5 h-3.5" />
-                  </button>
-                  <button onClick={closePlayer} className="text-gray-400 hover:text-red-400 hover:bg-red-500/10 transition-all p-1.5 rounded-lg">
-                    <X className="w-4 h-4" />
-                  </button>
-                </div>
-              </div>
-              <div className="flex items-center gap-3 px-3 pb-2 pt-0.5">
-                <div className="flex-shrink-0 w-11 h-11 rounded-lg overflow-hidden cursor-pointer active:opacity-70 transition-opacity"
-                  onClick={() => currentSong?.is_local ? setShowNowPlaying(true) : setIsExpanded(true)}>
-                  {currentSong.cover_url
-                    ? <img src={currentSong.cover_url} alt={currentSong.title} className="w-full h-full object-cover" />
-                    : <div className="w-full h-full bg-gradient-to-br from-cyan-500 to-purple-600 flex items-center justify-center"><Music className="w-5 h-5 text-white" /></div>
-                  }
-                </div>
-                <div className="flex-1 min-w-0">
-                  <div className="text-white text-sm font-semibold flex items-center gap-1 overflow-hidden">
-                    <span className="truncate cursor-pointer" onClick={() => currentSong?.is_local ? setShowNowPlaying(true) : setIsExpanded(true)}>{currentSong.title}</span>
-                    {isPlaying && <LottieAnimation animationData={playAnimation} style={{ width: 16, height: 16 }} loop autoplay className="flex-shrink-0" />}
-                    {currentSong?.id && (
-                      <a href={`/#/song/${currentSong.id}`} onClick={e => e.stopPropagation()}
-                        className="flex-shrink-0 text-gray-600 hover:text-cyan-400 transition-colors ml-1" title={"Page du son"}>
-                        <ExternalLink className="w-3 h-3" />
-                      </a>
-                    )}
-                  </div>
-                  <div className="text-gray-500 text-xs truncate cursor-pointer flex items-center gap-1" onClick={() => currentSong?.is_local ? setShowNowPlaying(true) : setIsExpanded(true)}>
-                    {currentSong.artist}
-                    {sleepTimer !== null && (
-                      <span className="text-amber-400 text-[9px] font-bold ml-1">🌙 {fmtSleep(sleepTimer)}</span>
-                    )}
-                  </div>
-                </div>
-                <div className="flex items-center gap-1 flex-shrink-0">
-                  <button onClick={handleLike} className={`p-1.5 transition-all active:scale-75 ${isLiked ? 'text-pink-500' : 'text-gray-500 hover:text-pink-400'}`}>
-                    <Heart className={`w-4 h-4 ${isLiked ? 'fill-current' : ''}`} />
-                  </button>
-                  <button onClick={(e) => { e.stopPropagation(); goPrevious(); }} className="p-1.5 text-gray-400 hover:text-white active:scale-90 transition-all">
-                    <SkipBack className="w-5 h-5" />
-                  </button>
-                  <button onClick={togglePlay}
-                    className="w-10 h-10 rounded-full flex items-center justify-center shadow-md active:scale-90 hover:brightness-110 transition-all text-white"
-                    style={{ background: `linear-gradient(135deg, ${genreTheme.primary}, ${genreTheme.secondary})` }}>
-                    {isBuffering ? <div className="w-4 h-4 rounded-full border-2 border-white/30 border-t-white animate-spin" /> : isPlaying ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4 ml-0.5" />}
-                  </button>
-                  <button onClick={(e) => { e.stopPropagation(); goNext(); }} className="p-1.5 text-gray-400 hover:text-white active:scale-90 transition-all">
-                    <SkipForward className="w-5 h-5" />
-                  </button>
-                </div>
-              </div>
-              <div className="flex justify-between text-[10px] text-gray-700 px-4 pb-1.5 tabular-nums">
-                <span>{fmtTime(currentTime)}</span>
-                <span>{fmtTime(duration > 0 ? duration : (currentSong?.duration_s || 0))}</span>
-              </div>
-            </div>
-
-            {/* TABLET sm → md */}
-            <div className="hidden sm:flex md:hidden items-center gap-3 px-4 py-2.5">
-              {/* Cover */}
-              <div className="relative w-12 h-12 flex-shrink-0 rounded-lg overflow-hidden cursor-pointer"
-                onClick={() => currentSong?.is_local ? setShowNowPlaying(true) : setIsExpanded(true)}>
-                {currentSong.cover_url
-                  ? <img src={currentSong.cover_url} alt={currentSong.title} className="w-full h-full object-cover" />
-                  : <div className="w-full h-full bg-gradient-to-br from-cyan-500 to-purple-600 flex items-center justify-center"><Music className="w-6 h-6 text-white" /></div>
-                }
-              </div>
-              {/* Info + controls */}
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center justify-between mb-1">
-                  <div className="flex items-center gap-1.5 min-w-0 flex-1">
-                    <span className="text-white text-sm font-semibold truncate cursor-pointer" onClick={() => currentSong?.is_local ? setShowNowPlaying(true) : setIsExpanded(true)}>{currentSong.title}</span>
-                    {isPlaying && <LottieAnimation animationData={playAnimation} style={{ width: 16, height: 16 }} loop autoplay className="flex-shrink-0" />}
-                  </div>
-                  <div className="flex items-center gap-0.5 flex-shrink-0 ml-2">
-                    <button onClick={handleLike} className={`p-1.5 transition-all ${isLiked ? 'text-pink-500' : 'text-gray-600 hover:text-pink-400'}`}>
-                      <Heart className={`w-3.5 h-3.5 ${isLiked ? 'fill-current' : ''}`} />
-                    </button>
-                    <button onClick={closePlayer} className="p-1.5 text-gray-600 hover:text-gray-400 transition-colors">
-                      <X className="w-3.5 h-3.5" />
-                    </button>
-                  </div>
-                </div>
-                <div className="flex items-center gap-2">
-                  <span className="text-gray-500 text-xs truncate flex-1">{currentSong.artist}</span>
-                  <div className="flex items-center gap-1 flex-shrink-0">
-                    <button onClick={(e) => { e.stopPropagation(); goPrevious(); }} className="p-1 text-gray-400 hover:text-white transition-colors">
-                      <SkipBack className="w-4 h-4" />
-                    </button>
-                    <button onClick={togglePlay}
-                      className="w-8 h-8 rounded-full flex items-center justify-center text-white transition-all active:scale-90"
-                      style={{ background: `linear-gradient(135deg, ${genreTheme.primary}, ${genreTheme.secondary})` }}>
-                      {isBuffering ? <div className="w-3.5 h-3.5 rounded-full border-2 border-white/30 border-t-white animate-spin" /> : isPlaying ? <Pause className="w-3.5 h-3.5" /> : <Play className="w-3.5 h-3.5 ml-0.5" />}
-                    </button>
-                    <button onClick={(e) => { e.stopPropagation(); goNext(); }} className="p-1 text-gray-400 hover:text-white transition-colors">
-                      <SkipForward className="w-4 h-4" />
-                    </button>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* DESKTOP md+ */}
-            <div className="hidden md:grid md:grid-cols-3 items-center px-6 lg:px-10 xl:px-16 py-3 gap-4 max-w-screen-2xl mx-auto w-full">
-              {/* Gauche */}
-              <div className="flex items-center gap-3 min-w-0">
-                <div className="relative w-14 h-14 flex-shrink-0 rounded-lg overflow-hidden shadow-lg cursor-pointer group"
-                  onClick={() => currentSong?.is_local ? setShowNowPlaying(true) : setIsExpanded(true)}>
-                  {currentSong.cover_url
-                    ? <img src={currentSong.cover_url} alt={currentSong.title} className="w-full h-full object-cover" />
-                    : <div className="w-full h-full bg-gradient-to-br from-cyan-500 to-purple-600 flex items-center justify-center"><Music className="w-7 h-7 text-white" /></div>
-                  }
-                  <div className="absolute inset-0 bg-black/50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                    {currentSong?.is_local ? <Music className="w-4 h-4 text-white" /> : <Maximize2 className="w-4 h-4 text-white" />}
-                  </div>
-                </div>
-                <div className="min-w-0 flex-1">
-                  <div className="flex items-center gap-1.5 overflow-hidden">
-                    <span className="text-white text-sm font-semibold truncate cursor-pointer hover:underline"
-                      onClick={() => currentSong?.is_local ? setShowNowPlaying(true) : setIsExpanded(true)} title={currentSong.title}>{currentSong.title}</span>
-                    {isPlaying && <LottieAnimation animationData={playAnimation} style={{ width: 18, height: 18 }} loop autoplay className="flex-shrink-0 opacity-80" />}
-                    {currentSong?.id && (
-                      <a href={`/#/song/${currentSong.id}`} onClick={e => e.stopPropagation()}
-                        className="flex-shrink-0 text-gray-600 hover:text-cyan-400 transition-colors" title={"Page du son"}>
-                        <ExternalLink className="w-3.5 h-3.5" />
-                      </a>
-                    )}
-                  </div>
-                  <div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
-                    <span className="text-gray-500 text-xs truncate hover:text-white cursor-pointer transition-colors"
-                      onClick={() => currentSong?.uploader_id && navigate(`/artist/${currentSong.uploader_id}`)}>
-                      {currentSong.artist}
-                    </span>
-                    {currentSong.genre && (
-                      <span className="text-[9px] px-1.5 py-px rounded-full bg-cyan-500/10 text-cyan-500 border border-cyan-500/20">{currentSong.genre}</span>
-                    )}
-                    {sleepTimer !== null && (
-                      <span className="text-[9px] text-amber-400 font-bold">🌙 {fmtSleep(sleepTimer)}</span>
-                    )}
-                    {showFollowButton && (
-                      <button onClick={handleFollow}
-                        className={`text-[10px] px-1.5 py-0.5 rounded-full border transition-all flex items-center gap-0.5 flex-shrink-0 ${isFollowing ? 'border-cyan-500/50 text-cyan-400' : 'border-gray-700 text-gray-600 hover:border-gray-500 hover:text-gray-300'}`}>
-                        {isFollowing ? <><UserCheck className="w-2.5 h-2.5" />Abonné</> : <><UserPlus className="w-2.5 h-2.5" />+Suivre</>}
-                      </button>
-                    )}
-                  </div>
-                </div>
-                <div className="flex items-center gap-0.5 flex-shrink-0">
-                  <button onClick={handleLike} className={`p-1.5 rounded-full transition-all ${isLiked ? 'text-pink-500' : 'text-gray-700 hover:text-pink-400'}`}>
-                    <Heart className={`w-4 h-4 ${isLiked ? 'fill-current' : ''}`} />
-                  </button>
-                  <button onClick={(e) => { e.stopPropagation(); setShowShareModal(true); }} className="p-1.5 rounded-full text-gray-700 hover:text-white transition-colors">
-                    <Share2 className="w-4 h-4" />
-                  </button>
-                  <button onClick={handleDownload} className="p-1.5 rounded-full text-gray-700 hover:text-cyan-400 transition-colors">
-                    <Download className="w-4 h-4" />
-                  </button>
-                  <button onClick={closePlayer} className="p-1.5 rounded-full text-gray-700 hover:text-gray-400 hover:bg-gray-800 transition-all" title={"Fermer"}>
-                    <X className="w-3.5 h-3.5" />
-                  </button>
-                </div>
-              </div>
-
-              {/* Centre */}
-              <div className="flex flex-col items-center gap-1.5">
-                <div className="flex items-center gap-4">
-                  <button onClick={(e) => { e.stopPropagation(); setShuffle(!shuffle); }}
-                    className={`transition-all ${shuffle ? 'text-cyan-400' : 'text-gray-600 hover:text-white'}`} title={"Aléatoire"}>
-                    <Shuffle className="w-4 h-4" />
-                  </button>
-                  <button onClick={(e) => { e.stopPropagation(); goPrevious(); }} className="text-gray-400 hover:text-white hover:scale-110 transition-all">
-                    <SkipBack className="w-5 h-5" />
-                  </button>
-                  <button onClick={togglePlay} className="w-9 h-9 rounded-full hover:scale-105 active:scale-95 transition-all shadow-lg flex items-center justify-center text-white"
-                    style={{ background: `linear-gradient(135deg, ${genreTheme.primary}, ${genreTheme.secondary})`, boxShadow: `0 2px 12px ${genreTheme.glow}` }}>
-                    {isBuffering ? <div className="w-4 h-4 rounded-full border-2 border-white/30 border-t-white animate-spin" /> : isPlaying ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4 ml-0.5" />}
-                  </button>
-                  <button onClick={(e) => { e.stopPropagation(); goNext(); }} className="text-gray-400 hover:text-white hover:scale-110 transition-all">
-                    <SkipForward className="w-5 h-5" />
-                  </button>
-                  <button onClick={cycleRepeatLocal}
-                    className={`relative transition-all ${repeat !== 'off' ? 'text-cyan-400' : 'text-gray-600 hover:text-white'}`}>
-                    <Repeat className="w-4 h-4" />
-                    {repeat === 'one' && <span className="absolute -bottom-1.5 left-1/2 -translate-x-1/2 text-[8px] font-black text-cyan-400 leading-none">1</span>}
-                    {repeat === 'all' && <span className="absolute -top-0.5 -right-0.5 w-1.5 h-1.5 rounded-full bg-cyan-400" />}
-                  </button>
-                </div>
-                <div className="flex items-center gap-2 w-full max-w-xs lg:max-w-sm">
-                  <span className="text-xs text-gray-700 w-8 text-right tabular-nums">{fmtTime(currentTime)}</span>
-                  <div className="flex-1"><Slider value={[currentTime]} max={duration || 100} step={0.1} onValueChange={handleSeek} className="cursor-pointer" /></div>
-                  <span className="text-xs text-gray-700 w-8 tabular-nums">{fmtTime(duration > 0 ? duration : (currentSong?.duration_s || 0))}</span>
-                </div>
-              </div>
-
-              {/* Droite */}
-              <div className="flex items-center justify-end gap-2">
-                <button onClick={toggleMute} className="text-gray-600 hover:text-white transition-colors flex-shrink-0">
-                  <VolumeIcon className="w-4 h-4" />
-                </button>
-                <div className="w-20 lg:w-28">
-                  <Slider value={[isMuted ? 0 : volume]} max={100} step={1} onValueChange={handleVolumeChange} className="cursor-pointer" />
-                </div>
-                <span className="text-xs text-gray-700 w-6 tabular-nums">{isMuted ? 0 : volume}</span>
-                <div className="w-px h-5 bg-white/10 mx-1" />
-                <button onClick={minimizePlayer} className="p-1.5 text-gray-700 hover:text-amber-400 hover:bg-amber-500/10 transition-all rounded-lg" title="Réduire en bulle">
-                  <Minimize2 className="w-3.5 h-3.5" />
-                </button>
-                <button onClick={closePlayer} className="p-1.5 text-gray-700 hover:text-red-400 hover:bg-red-500/10 transition-all rounded-lg" title="Fermer">
-                  <X className="w-3.5 h-3.5" />
-                </button>
-              </div>
-            </div>
-          </motion.div>
+            <Gauge className="w-4 h-4 text-cyan-400" />
+          </div>
         )}
-      </AnimatePresence>
 
-      {/* ── Modal Ajouter à une playlist ── */}
-      <AnimatePresence>
-        {showAddToPlaylist && currentSong && (
-          <AddToPlaylistModal
-            song={currentSong}
-            onClose={() => setShowAddToPlaylist(false)}
-          />
-        )}
-      </AnimatePresence>
+        {/* Bouton expand/déexpand */}
+        <button 
+          className="absolute top-2 right-2 bg-gray-900/80 border border-cyan-500/30 rounded-full p-1.5 z-10 hover:bg-gray-800 transition-colors"
+          onClick={() => setIsExpanded(!isExpanded)}
+        >
+          {isExpanded ? <Minimize2 className="w-4 h-4 text-cyan-400" /> : <Maximize2 className="w-4 h-4 text-cyan-400" />}
+        </button>
 
-      {/* ── Modal Sons du mois ── */}
-      <AnimatePresence>
-        {showMonthlySongs && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 z-[200] flex items-end sm:items-center justify-center p-0 sm:p-4"
-            style={{ backgroundColor: 'rgba(0,0,0,0.92)', backdropFilter: 'blur(8px)' }}
-            onClick={() => setShowMonthlySongs(false)}
-          >
-            <motion.div
-              initial={{ y: 40, opacity: 0 }}
-              animate={{ y: 0, opacity: 1 }}
-              exit={{ y: 40, opacity: 0 }}
-              transition={{ type: 'spring', damping: 28, stiffness: 300 }}
-              className="w-full sm:max-w-md bg-gray-950 border border-white/10 rounded-t-3xl sm:rounded-3xl shadow-2xl overflow-hidden"
-              style={{ maxHeight: '70vh' }}
-              onClick={e => e.stopPropagation()}
-            >
-              <div className="flex items-center justify-between px-5 py-4 border-b border-white/[0.06]">
-                <div className="flex items-center gap-2.5">
-                  <Calendar className="w-5 h-5 text-cyan-400" />
-                  <span className="text-white font-bold text-base">Sons du mois</span>
-                  <span className="text-xs text-gray-500 bg-white/8 px-1.5 py-0.5 rounded-full">
-                    {new Date().toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' })}
-                  </span>
+        <div className={`container mx-auto px-4 py-4 ${isExpanded ? 'flex flex-col h-full justify-center gap-8' : ''}`}>
+          
+          {isExpanded && (
+            <div className="w-full aspect-square max-w-sm mx-auto rounded-2xl overflow-hidden shadow-2xl shadow-cyan-500/20 border border-cyan-500/20">
+              {currentSong.cover_url ? (
+                <img
+                  src={currentSong.cover_url}
+                  alt={currentSong.title}
+                  className="w-full h-full object-cover"
+                />
+              ) : (
+                <div className="w-full h-full bg-gradient-to-br from-cyan-500 to-magenta-500 flex items-center justify-center">
+                  <Music className="w-24 h-24 text-white" />
                 </div>
-                <button onClick={() => setShowMonthlySongs(false)} className="p-2 text-gray-500 hover:text-white transition-colors rounded-xl">
-                  <X className="w-4 h-4" />
-                </button>
-              </div>
-              <div className="overflow-y-auto" style={{ maxHeight: 'calc(70vh - 68px)' }}>
-                {loadingMonthly ? (
-                  <div className="flex items-center justify-center py-16">
-                    <div className="w-6 h-6 rounded-full border-2 border-cyan-500/30 border-t-cyan-400 animate-spin" />
-                  </div>
-                ) : monthlySongs.length === 0 ? (
-                  <div className="flex flex-col items-center justify-center py-16 text-center px-6">
-                    <Music className="w-12 h-12 text-gray-700 mb-3" />
-                    <p className="text-gray-500 text-sm font-medium">Aucun son ce mois-ci</p>
-                  </div>
+              )}
+            </div>
+          )}
+
+          <div className={`mb-2 ${isExpanded ? 'w-full max-w-md mx-auto' : ''}`}>
+            <Slider
+              value={[currentTime]}
+              max={duration || 100}
+              step={0.1}
+              onValueChange={handleSeek}
+              className="cursor-pointer py-2"
+            />
+            <div className="flex justify-between text-xs text-gray-400 mt-1">
+              <span>{formatTime(currentTime)}</span>
+              <span>{formatTime(duration)}</span>
+            </div>
+          </div>
+
+          <div className={`flex items-center justify-between gap-4 ${isExpanded ? 'flex-col' : ''}`}>
+            <div className={`flex items-center gap-4 flex-1 min-w-0 ${isExpanded ? 'flex-col text-center w-full' : ''}`}>
+              {!isExpanded && (
+                currentSong.cover_url ? (
+                  <img
+                    src={currentSong.cover_url}
+                    alt={currentSong.title}
+                    className="w-12 h-12 md:w-16 md:h-16 rounded-lg object-cover shadow-lg"
+                    onClick={() => setIsExpanded(true)}
+                  />
                 ) : (
-                  <div className="py-2">
-                    {monthlySongs.map((s) => (
-                      <button
-                        key={s.id}
-                        className="w-full flex items-center gap-3 px-4 py-2.5 hover:bg-white/[0.04] transition-colors text-left"
-                        onClick={() => {
-                          setShowMonthlySongs(false);
-                          navigate(`/song/${s.id}`);
-                        }}
-                      >
-                        {s.cover_url
-                          ? <img src={s.cover_url} alt="" className="w-11 h-11 rounded-xl object-cover flex-shrink-0 shadow-lg" />
-                          : <div className="w-11 h-11 rounded-xl bg-gray-800 flex items-center justify-center flex-shrink-0"><Music className="w-5 h-5 text-gray-600" /></div>
-                        }
-                        <div className="flex-1 min-w-0">
-                          <p className="text-white text-sm font-semibold truncate">{s.title}</p>
-                          <p className="text-gray-500 text-xs truncate">{s.artist}</p>
-                        </div>
-                        {s.genre && (
-                          <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-cyan-500/10 text-cyan-500 border border-cyan-500/20 flex-shrink-0">{s.genre}</span>
-                        )}
-                      </button>
-                    ))}
+                  <div 
+                    className="w-12 h-12 md:w-16 md:h-16 rounded-lg bg-gradient-to-br from-cyan-500 to-magenta-500 flex items-center justify-center"
+                    onClick={() => setIsExpanded(true)}
+                  >
+                    <Music className="w-6 h-6 md:w-8 md:h-8 text-white" />
+                  </div>
+                )
+              )}
+              <div className="min-w-0 flex-1" onClick={() => !isExpanded && setIsExpanded(true)}>
+                <div className={`text-white font-semibold truncate ${isExpanded ? 'text-2xl mb-1' : ''}`}>{currentSong.title}</div>
+                <div className={`flex items-center gap-2 ${isExpanded ? 'justify-center' : ''}`}>
+                  <div className={`text-gray-400 text-sm truncate ${isExpanded ? 'text-lg' : ''}`}>{currentSong.artist}</div>
+                  
+                  {/* Subscribe Button in Player */}
+                  {showFollowButton && (
+                    <button
+                      onClick={handleFollow}
+                      className={`ml-2 px-2 py-0.5 text-xs rounded-full border transition-all flex items-center gap-1 ${
+                        isFollowing 
+                          ? 'bg-cyan-500/20 border-cyan-500 text-cyan-400 hover:bg-red-500/20 hover:border-red-500 hover:text-red-400' 
+                          : 'bg-transparent border-gray-600 text-gray-400 hover:border-cyan-500 hover:text-cyan-400'
+                      }`}
+                      title={isFollowing ? "Unsubscribe" : "Subscribe"}
+                    >
+                      {isFollowing ? (
+                        <>
+                          <UserCheck className="w-3 h-3" />
+                          <span className="hidden sm:inline">Following</span>
+                        </>
+                      ) : (
+                        <>
+                          <UserPlus className="w-3 h-3" />
+                          <span className="hidden sm:inline">Subscribe</span>
+                        </>
+                      )}
+                    </button>
+                  )}
+                </div>
+
+                {isExpanded && (
+                  <div className="flex items-center justify-center gap-4 mt-4">
+                    <button onClick={handleLike} className={`${isLiked ? 'text-magenta-500' : 'text-gray-400'}`}>
+                      <Heart className={`w-6 h-6 ${isLiked ? 'fill-current' : ''}`} />
+                    </button>
+                    <button onClick={handleDownload} className="text-gray-400 hover:text-cyan-400">
+                      <Download className="w-6 h-6" />
+                    </button>
+                    <button onClick={handleShare} className="text-gray-400 hover:text-white">
+                      <Share2 className="w-6 h-6" />
+                    </button>
                   </div>
                 )}
               </div>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+            </div>
 
-      {/* ── NowPlayingScreen v7000 — fullscreen immersif ─────────────── */}
-      <AnimatePresence>
-        {showNowPlaying && (
-          <NowPlayingScreen
-            onClose={() => setShowNowPlaying(false)}
-            isPlaying={isPlaying}
-            isBuffering={isBuffering}
-            onTogglePlay={togglePlay}
-            onNext={() => { autoPlayRef.current = true; goNextRef.current?.(); }}
-            onPrev={() => { autoPlayRef.current = true; goPreviousRef.current?.(); }}
-            shuffle={shuffle}
-            onToggleShuffle={toggleShuffle}
-            repeat={repeat}
-            onToggleRepeat={cycleRepeat}
-            currentTime={currentTime}
-            duration={duration || currentSong?.duration_s || 0}
-            onSeek={(val) => { if (audioRef.current) { audioRef.current.currentTime = val; setCurrentTime(val); } }}
-            volume={volume}
-            isMuted={isMuted}
-            onVolumeChange={(val) => setVolume(val)}
-            onToggleMute={() => toggleMute()}
-          />
-        )}
-      </AnimatePresence>
-    </>
+            <div className={`flex items-center gap-4 md:gap-6 ${isExpanded ? 'w-full justify-center py-4' : ''}`}>
+              <button
+                onClick={(e) => { e.stopPropagation(); setShuffle(!shuffle); }}
+                className={`p-2 rounded-full transition-all ${
+                  shuffle ? 'text-cyan-400 bg-cyan-500/20' : 'text-gray-400 hover:text-white'
+                }`}
+              >
+                <Shuffle className={`${isExpanded ? 'w-6 h-6' : 'w-5 h-5'}`} />
+              </button>
+
+              <button
+                onClick={(e) => { e.stopPropagation(); onPrevious?.(); }}
+                className="p-2 text-gray-400 hover:text-white transition-colors"
+                disabled={!onPrevious}
+              >
+                <SkipBack className={`${isExpanded ? 'w-8 h-8' : 'w-6 h-6'}`} />
+              </button>
+
+              <button
+                onClick={togglePlay}
+                className={`rounded-full bg-gradient-to-r from-cyan-500 to-magenta-500 hover:from-cyan-600 hover:to-magenta-600 text-white shadow-lg shadow-cyan-500/50 transition-all transform hover:scale-105 flex items-center justify-center ${
+                  isExpanded ? 'w-16 h-16' : 'w-12 h-12 p-3'
+                }`}
+              >
+                {isPlaying ? 
+                  <Pause className={`${isExpanded ? 'w-8 h-8' : 'w-6 h-6'}`} /> : 
+                  <Play className={`${isExpanded ? 'w-8 h-8 ml-1' : 'w-6 h-6 ml-1'}`} />
+                }
+              </button>
+
+              <button
+                onClick={(e) => { e.stopPropagation(); onNext?.(); }}
+                className="p-2 text-gray-400 hover:text-white transition-colors"
+                disabled={!onNext}
+              >
+                <SkipForward className={`${isExpanded ? 'w-8 h-8' : 'w-6 h-6'}`} />
+              </button>
+
+              <button
+                onClick={cycleRepeat}
+                className={`p-2 rounded-full transition-all relative ${
+                  repeat !== 'off' ? 'text-cyan-400 bg-cyan-500/20' : 'text-gray-400 hover:text-white'
+                }`}
+              >
+                <Repeat className={`${isExpanded ? 'w-6 h-6' : 'w-5 h-5'}`} />
+                {repeat === 'one' && (
+                  <span className="absolute -top-1 -right-1 w-4 h-4 bg-cyan-400 rounded-full flex items-center justify-center text-xs text-gray-950 font-bold">
+                    1
+                  </span>
+                )}
+              </button>
+            </div>
+
+            <div className={`flex items-center gap-3 flex-1 justify-end ${isExpanded ? 'w-full max-w-md mx-auto' : 'hidden md:flex'}`}>
+              {!isExpanded && (
+                <div className="flex items-center gap-2 mr-4 border-r border-gray-800 pr-4">
+                  <button onClick={handleLike} className={`${isLiked ? 'text-magenta-500' : 'text-gray-400 hover:text-magenta-500'}`}>
+                    <Heart className={`w-4 h-4 ${isLiked ? 'fill-current' : ''}`} />
+                  </button>
+                  <button onClick={handleDownload} className="text-gray-400 hover:text-cyan-400">
+                    <Download className="w-4 h-4" />
+                  </button>
+                  <button onClick={handleShare} className="text-gray-400 hover:text-white">
+                    <Share2 className="w-4 h-4" />
+                  </button>
+                </div>
+              )}
+              <button onClick={toggleMute} className="text-gray-400 hover:text-white transition-colors">
+                {isMuted || volume === 0 ? <VolumeX className="w-5 h-5" /> : <Volume2 className="w-5 h-5" />}
+              </button>
+              <div className="w-24 md:w-32">
+                <Slider
+                  value={[isMuted ? 0 : volume]}
+                  max={100}
+                  step={1}
+                  onValueChange={handleVolumeChange}
+                  className="cursor-pointer"
+                />
+              </div>
+            </div>
+          </div>
+        </div>
+      </motion.div>
+    </AnimatePresence>
   );
 };
 
