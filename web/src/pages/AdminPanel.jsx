@@ -1,13 +1,15 @@
 /**
- * AdminPanel — NovaSound TITAN LUX v20000 - VERSION PARFAITE FUSIONNÉE
+ * AdminPanel — NovaSound TITAN LUX v20000
  * Panneau d'administration premium — redesign complet
- * ✅ Fusion de la version fonctionnelle (301dc90) avec la version améliorée
- * ✅ Structure ES module compliant
- * ✅ Toutes les fonctionnalités admin préservées
- * ✅ Design moderne et complet
- * ✅ Synchronisé avec la database NovaSound Titan
+ * ✅ Bouton retour à l'accueil
+ * ✅ Sidebar desktop + bottom tabs mobile
+ * ✅ Cartes stats animées avec tendances
+ * ✅ Accordéon confirmation stylisé
+ * ✅ Badge ADMIN sur l'email de l'admin
+ * ✅ Recherche globale multi-entités
+ * ✅ Toast notifications internes
+ * ✅ Indicateurs live pulsants
  */
-
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import {
   Users, Shield, Trash2, Settings, CheckCircle, Music,
@@ -16,7 +18,6 @@ import {
   Clock, Star, Zap, AlertTriangle, ChevronRight,
   MoreVertical, UserX, UserCheck, Archive, Volume2,
   Mic, Wifi, WifiOff, BarChart2, Filter, Download,
-  X, Info
 } from 'lucide-react';
 import { supabase } from '@/lib/supabaseClient';
 import { useAuth } from '@/contexts/AuthContext';
@@ -126,25 +127,11 @@ const AdminPanel = () => {
 
   const loadLiveRooms = useCallback(async () => {
     try {
-      const { data, error } = await supabase.from('live_rooms')
-        .select(`
-          *,
-          host:host_id(username, avatar_url, email)
-        `)
+      const { data } = await supabase.from('live_rooms')
+        .select('id, title, description, genre, is_active, is_private, host_id, participants_count, created_at, updated_at, host:users!host_id(username, avatar_url, email)')
         .order('created_at', { ascending:false }).limit(50);
-      
-      if (error) {
-        console.error('Live rooms error:', error);
-        addToast(`Erreur live rooms: ${error.message}`, 'error');
-        setLiveRooms([]);
-      } else {
-        setLiveRooms(data || []);
-      }
-    } catch (e) {
-      console.error('Live rooms catch:', e);
-      addToast(`Erreur live rooms: ${e.message}`, 'error');
-      setLiveRooms([]);
-    }
+      setLiveRooms(data || []);
+    } catch {}
   }, []);
 
   const loadUsers = useCallback(async () => {
@@ -168,7 +155,7 @@ const AdminPanel = () => {
   const loadChat = useCallback(async () => {
     try {
       const { data } = await supabase.from('chat_messages')
-        .select('*')
+        .select('*, user:user_id(username, avatar_url)')
         .eq('is_deleted', false).order('created_at', { ascending:false }).limit(100);
       setChatMsgs(data || []);
     } catch {}
@@ -176,50 +163,20 @@ const AdminPanel = () => {
 
   const loadReports = useCallback(async () => {
     try {
-      const { data, error } = await supabase.from('reports')
-        .select(`
-          *,
-          reporter:reporter_id(username, avatar_url),
-          reported_user:users!content_id(username, avatar_url),
-          reported_song:songs!content_id(title, artist)
-        `)
+      const { data } = await supabase.from('reports')
+        .select('*, reporter:reporter_id(username, avatar_url), reported_user:reported_user_id(username, avatar_url), song:song_id(title, artist)')
         .order('created_at', { ascending:false }).limit(100);
-      
-      if (error) {
-        console.error('Reports error:', error);
-        addToast(`Erreur reports: ${error.message}`, 'error');
-        setReports([]);
-      } else {
-        setReports(data || []);
-      }
-    } catch (e) {
-      console.error('Reports catch:', e);
-      addToast(`Erreur reports: ${e.message}`, 'error');
-      setReports([]);
-    }
+      setReports(data || []);
+    } catch { setReports([]); }
   }, []);
 
   const loadAdminRoles = useCallback(async () => {
     try {
-      const { data, error } = await supabase.from('user_roles')
-        .select(`
-          *,
-          user:user_id(username, avatar_url, email)
-        `)
-        .eq('role', 'admin').eq('is_active', true).order('granted_at', { ascending:false });
-      
-      if (error) {
-        console.error('Admin roles error:', error);
-        addToast(`Erreur admin roles: ${error.message}`, 'error');
-        setAdminRoles([]);
-      } else {
-        setAdminRoles(data || []);
-      }
-    } catch (e) {
-      console.error('Admin roles catch:', e);
-      addToast(`Erreur admin roles: ${e.message}`, 'error');
-      setAdminRoles([]);
-    }
+      const { data } = await supabase.from('user_roles')
+        .select('*, user:user_id(username, avatar_url, email)')
+        .eq('role', 'admin').order('created_at', { ascending:false });
+      setAdminRoles(data || []);
+    } catch { setAdminRoles([]); }
   }, []);
 
   const refreshAll = useCallback(async () => {
@@ -268,19 +225,10 @@ const AdminPanel = () => {
     message:'Supprimer toutes les salles avec is_active=false ?',
     confirmText:'Nettoyer', onConfirm: async () => {
       try {
-        const { error } = await supabase.from('live_rooms').delete().eq('is_active', false);
-        
-        if (error) {
-          console.error('Clean rooms error:', error);
-          addToast(`Erreur nettoyage: ${error.message}`, 'error');
-        } else {
-          addToast('✅ Salles inactives supprimées');
-          loadLiveRooms(); loadStats();
-        }
-      } catch (e) {
-        console.error('Clean rooms catch:', e);
-        addToast(`Erreur nettoyage: ${e.message}`, 'error');
-      }
+        await supabase.from('live_rooms').delete().eq('is_active', false);
+        addToast('✅ Salles inactives supprimées');
+        loadLiveRooms(); loadStats();
+      } catch (e) { addToast(e.message,'error'); }
     }
   });
 
@@ -356,6 +304,7 @@ const AdminPanel = () => {
       loadReports(); loadStats();
     } catch (e) { addToast(e.message, 'error'); }
   };
+  };
 
   const grantAdmin = (user) => confirm({
     type:'info', title:'Promouvoir administrateur',
@@ -412,35 +361,31 @@ Il pourra accéder au panneau d'administration.`,
   ];
 
   // ══ Loading ═══════════════════════════════════════════════════════════════════
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-[#050510] flex items-center justify-center">
-        <div className="flex flex-col items-center gap-4">
-          <div className="w-12 h-12 rounded-full border-2 border-cyan-500/20 border-t-cyan-400 animate-spin" />
-          <p className="text-gray-600 text-sm">Vérification des accès…</p>
-        </div>
+  if (loading) return (
+    <div className="min-h-screen bg-[#050510] flex items-center justify-center">
+      <div className="flex flex-col items-center gap-4">
+        <div className="w-12 h-12 rounded-full border-2 border-cyan-500/20 border-t-cyan-400 animate-spin" />
+        <p className="text-gray-600 text-sm">Vérification des accès…</p>
       </div>
-    );
-  }
+    </div>
+  );
 
   // ══ Accès refusé ══════════════════════════════════════════════════════════════
-  if (!isAdmin) {
-    return (
-      <div className="min-h-screen bg-[#050510] flex flex-col items-center justify-center gap-6 px-6">
-        <div className="w-20 h-20 rounded-3xl bg-red-500/10 border border-red-500/20 flex items-center justify-center">
-          <Shield className="w-10 h-10 text-red-500" />
-        </div>
-        <div className="text-center">
-          <h1 className="text-2xl font-black text-white mb-2">Accès refusé</h1>
-          <p className="text-gray-500 text-sm">Réservé aux administrateurs NovaSound.</p>
-        </div>
-        <button onClick={() => navigate('/')}
-          className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-white/[0.07] text-gray-300 hover:text-white border border-white/[0.1] transition-all">
-          <Home className="w-4 h-4" /> Retour à l'accueil
-        </button>
+  if (!isAdmin) return (
+    <div className="min-h-screen bg-[#050510] flex flex-col items-center justify-center gap-6 px-6">
+      <div className="w-20 h-20 rounded-3xl bg-red-500/10 border border-red-500/20 flex items-center justify-center">
+        <Shield className="w-10 h-10 text-red-500" />
       </div>
-    );
-  }
+      <div className="text-center">
+        <h1 className="text-2xl font-black text-white mb-2">Accès refusé</h1>
+        <p className="text-gray-500 text-sm">Réservé aux administrateurs NovaSound.</p>
+      </div>
+      <button onClick={() => navigate('/')}
+        className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-white/[0.07] text-gray-300 hover:text-white border border-white/[0.1] transition-all">
+        <Home className="w-4 h-4" /> Retour à l'accueil
+      </button>
+    </div>
+  );
 
   // ══ RENDER PRINCIPAL ══════════════════════════════════════════════════════════
   return (
@@ -667,7 +612,7 @@ Il pourra accéder au panneau d'administration.`,
                         {!adminRoles.find(r=>r.user_id===user.id && r.is_active) && (
                           <button onClick={() => grantAdmin(user)}
                             className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl text-xs font-bold border bg-cyan-500/10 border-cyan-500/20 text-cyan-400 hover:bg-cyan-500/20 transition-all">
-                              <Shield className="w-3.5 h-3.5" />Admin
+                            <Shield className="w-3.5 h-3.5" />Admin
                           </button>
                         )}
                         <button onClick={() => toggleBan(user)}
