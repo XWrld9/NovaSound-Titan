@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { Play, Pause, SkipBack, SkipForward, Volume2, VolumeX, Shuffle, Repeat, Music, ChevronUp, ChevronDown, Heart, Download, Share2, UserPlus, UserCheck } from 'lucide-react';
 import { Slider } from '@/components/ui/slider';
 import { supabase } from '@/lib/supabaseClient';
