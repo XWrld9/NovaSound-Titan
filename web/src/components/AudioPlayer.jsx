@@ -20,6 +20,7 @@ import WaveformVisualizer from '@/components/WaveformVisualizer';
 import SongShareModal from '@/components/SongShareModal';
 import NowPlayingScreen from '@/components/NowPlayingScreen';
 import AddToPlaylistModal from '@/components/AddToPlaylistModal';
+import { notifyOwner, notifyUser } from '@/lib/notifUtils';
 
 
 const isIOS = () =>
@@ -530,8 +531,23 @@ const AudioPlayerDesktop = ({ currentSong, playlist = [], onNext, onPrevious, on
     e?.stopPropagation();
     if (!currentUser) return;
     try {
-      if (isLiked && likeId) { await supabase.from('likes').delete().eq('id', likeId); setIsLiked(false); setLikeId(null); }
-      else { const { data } = await supabase.from('likes').insert({ user_id: currentUser.id, song_id: currentSong.id }).select('id').single(); setIsLiked(true); setLikeId(data?.id || null); }
+      if (isLiked && likeId) {
+        await supabase.from('likes').delete().eq('id', likeId);
+        setIsLiked(false); setLikeId(null);
+      } else {
+        const { data } = await supabase.from('likes').insert({ user_id: currentUser.id, song_id: currentSong.id }).select('id').single();
+        setIsLiked(true); setLikeId(data?.id || null);
+        // Notifier le propriétaire du son
+        notifyOwner(supabase, currentSong.id, currentUser.id, {
+          type: 'like_song',
+          title: `❤️ ${currentUser.username || 'Quelqu\'un'} a aimé ton son`,
+          body: `"${currentSong.title}" vient d\'être liké`,
+          url: `/song/${currentSong.id}`,
+          icon_url: currentUser.avatar_url || '/icon-192.png',
+          from_user_id: currentUser.id,
+          metadata: { senderId: currentUser.id, senderName: currentUser.username, songId: currentSong.id },
+        }).catch(() => {});
+      }
     } catch {}
   };
 
@@ -541,8 +557,23 @@ const AudioPlayerDesktop = ({ currentSong, playlist = [], onNext, onPrevious, on
     const uid = currentSong?.uploader_id;
     if (!uid || uid === currentUser.id) return;
     try {
-      if (isFollowing && followId) { await supabase.from('follows').delete().eq('id', followId); setIsFollowing(false); setFollowId(null); }
-      else { const { data } = await supabase.from('follows').insert({ follower_id: currentUser.id, following_id: uid }).select('id').single(); setIsFollowing(true); setFollowId(data?.id || null); }
+      if (isFollowing && followId) {
+        await supabase.from('follows').delete().eq('id', followId);
+        setIsFollowing(false); setFollowId(null);
+      } else {
+        const { data } = await supabase.from('follows').insert({ follower_id: currentUser.id, following_id: uid }).select('id').single();
+        setIsFollowing(true); setFollowId(data?.id || null);
+        // Notifier l'artiste suivi
+        notifyUser(supabase, uid, {
+          type: 'follow',
+          title: `👤 ${currentUser.username || 'Quelqu\'un'} te suit maintenant`,
+          body: `${currentUser.username || 'Un utilisateur'} s\'est abonné à ton profil`,
+          url: `/artist/${currentUser.id}`,
+          icon_url: currentUser.avatar_url || '/icon-192.png',
+          from_user_id: currentUser.id,
+          metadata: { senderId: currentUser.id, senderName: currentUser.username },
+        }).catch(() => {});
+      }
     } catch {}
   };
 

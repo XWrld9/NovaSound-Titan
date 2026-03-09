@@ -11,6 +11,7 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { supabase } from '@/lib/supabaseClient';
+import { notifyOwner, notifyUser } from '@/lib/notifUtils';
 import { useAuth } from '@/contexts/AuthContext';
 import { usePlayer } from '@/contexts/PlayerContext';
 import { Link } from 'react-router-dom';
@@ -218,7 +219,19 @@ const NowPlayingScreen = ({
     if (!was) { setLikeBurst(true); setTimeout(()=>setLikeBurst(false), 900); }
     try {
       if (was && likeId) { await withRetry(()=>supabase.from('likes').delete().eq('id',likeId)); setLikeId(null); }
-      else { const {data} = await withRetry(()=>supabase.from('likes').insert({song_id:currentSong.id,user_id:currentUser.id}).select('id').single()); setLikeId(data?.id||null); }
+      else {
+        const {data} = await withRetry(()=>supabase.from('likes').insert({song_id:currentSong.id,user_id:currentUser.id}).select('id').single());
+        setLikeId(data?.id||null);
+        notifyOwner(supabase, currentSong.id, currentUser.id, {
+          type: 'like_song',
+          title: `❤️ ${currentUser.username || 'Quelqu\'un'} a aimé ton son`,
+          body: `"${currentSong.title}" vient d\'être liké`,
+          url: `/song/${currentSong.id}`,
+          icon_url: currentUser.avatar_url || '/icon-192.png',
+          from_user_id: currentUser.id,
+          metadata: { senderId: currentUser.id, senderName: currentUser.username, songId: currentSong.id },
+        }).catch(()=>{});
+      }
     } catch { setIsLiked(was); } finally { setLikeLoading(false); }
   };
 
@@ -228,7 +241,18 @@ const NowPlayingScreen = ({
     if (!was) { setRepostBurst(true); setTimeout(()=>setRepostBurst(false), 600); }
     try {
       if (was) await withRetry(()=>supabase.from('song_reposts').delete().eq('song_id',currentSong.id).eq('user_id',currentUser.id));
-      else await withRetry(()=>supabase.from('song_reposts').insert({song_id:currentSong.id,user_id:currentUser.id}));
+      else {
+        await withRetry(()=>supabase.from('song_reposts').insert({song_id:currentSong.id,user_id:currentUser.id}));
+        notifyOwner(supabase, currentSong.id, currentUser.id, {
+          type: 'repost',
+          title: `🔁 ${currentUser.username || 'Quelqu\'un'} a repartagé ton son`,
+          body: `"${currentSong.title}" a été repartagé`,
+          url: `/song/${currentSong.id}`,
+          icon_url: currentUser.avatar_url || '/icon-192.png',
+          from_user_id: currentUser.id,
+          metadata: { senderId: currentUser.id, senderName: currentUser.username, songId: currentSong.id },
+        }).catch(()=>{});
+      }
     } catch { setHasReposted(was); } finally { setRepostLoading(false); }
   };
 
@@ -238,7 +262,19 @@ const NowPlayingScreen = ({
     const was = isFollowing; setIsFollowing(!was); setFollowLoading(true);
     try {
       if (was && followId) { await withRetry(()=>supabase.from('follows').delete().eq('id',followId)); setFollowId(null); }
-      else { const {data} = await withRetry(()=>supabase.from('follows').insert({follower_id:currentUser.id,following_id:currentSong.uploader_id}).select('id').single()); setFollowId(data?.id||null); }
+      else {
+        const {data} = await withRetry(()=>supabase.from('follows').insert({follower_id:currentUser.id,following_id:currentSong.uploader_id}).select('id').single());
+        setFollowId(data?.id||null);
+        notifyUser(supabase, currentSong.uploader_id, {
+          type: 'follow',
+          title: `👤 ${currentUser.username || 'Quelqu\'un'} te suit maintenant`,
+          body: `${currentUser.username || 'Un utilisateur'} s\'est abonné à ton profil`,
+          url: `/artist/${currentUser.id}`,
+          icon_url: currentUser.avatar_url || '/icon-192.png',
+          from_user_id: currentUser.id,
+          metadata: { senderId: currentUser.id, senderName: currentUser.username },
+        }).catch(()=>{});
+      }
     } catch { setIsFollowing(was); } finally { setFollowLoading(false); }
   };
 

@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Heart } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '@/contexts/AuthContext';
+import { notifyNewsAuthor } from '@/lib/notifUtils';
 import Lottie from 'lottie-react';
 import heartAnimation from '@/animations/heart-animation.json';
 
@@ -117,6 +118,18 @@ const NewsLikeButton = ({ newsId, initialLikes = 0, authorId }) => {
           .from('news_likes')
           .insert({ user_id: currentUser.id, news_id: newsId });
         if (error) throw error;
+        // Notifier l'auteur de la news
+        if (authorId) {
+          notifyNewsAuthor(supabase, newsId, currentUser.id, {
+            type: 'like_news',
+            title: `❤️ ${currentUser.username || 'Quelqu\'un'} a aimé ta news`,
+            body: `Ta news vient d\'être likée`,
+            url: `/news/${newsId}`,
+            icon_url: currentUser.avatar_url || '/icon-192.png',
+            from_user_id: currentUser.id,
+            metadata: { senderId: currentUser.id, senderName: currentUser.username, newsId },
+          }).catch(() => {});
+        }
       }
       // Le Realtime déclenchera loadLikesData() automatiquement
       // On resync quand même localement pour l'utilisateur courant

@@ -906,15 +906,14 @@ const ChatPage = () => {
                 )}
               </AnimatePresence>
 
-              {/* Zone de saisie — expansive, comble l'espace disponible */}
+              {/* Zone de saisie — style WhatsApp/Instagram */}
               <div
-                className="flex-shrink-0 border-t border-white/[0.06] bg-gray-950/95 backdrop-blur-xl px-3 pt-2 relative z-10 flex flex-col"
+                className="flex-shrink-0 border-t border-white/[0.06] bg-gray-950/98 backdrop-blur-xl px-3 py-2 relative z-10"
                 style={{
-                  paddingBottom: `calc(${playerVisible ? '72px + ' : ''}56px + env(safe-area-inset-bottom, 8px) + 8px)`,
-                  minHeight: 'clamp(110px, 26vh, 340px)',
+                  paddingBottom: `calc(${playerVisible ? '72px + ' : ''}56px + env(safe-area-inset-bottom, 6px) + 6px)`,
                 }}
               >
-                <div className="max-w-3xl mx-auto">
+                <div className="max-w-3xl mx-auto w-full">
                   {/* Preview réponse */}
                   <AnimatePresence>
                     {replyTo && (
@@ -973,9 +972,11 @@ const ChatPage = () => {
                   </AnimatePresence>
 
                   {currentUser ? (
-                    <div className="flex items-end gap-2 flex-1 min-h-0">
+                    <div className="flex items-end gap-2">
                       <Avatar user={currentUser} size={8} />
-                      <div className="flex-1 relative flex flex-col h-full">
+                      {/* Bubble input — style WhatsApp */}
+                      <div className="flex-1 relative flex items-end gap-2 px-3 py-2 rounded-[22px] border border-white/[0.09] transition-all"
+                        style={{ background: 'rgba(255,255,255,0.06)', minHeight: 44 }}>
                         <textarea
                           ref={inputRef}
                           id="chat-input"
@@ -983,17 +984,23 @@ const ChatPage = () => {
                           value={text}
                           onChange={handleTextChange}
                           onKeyDown={handleKeyDown}
-                          placeholder="Écrire dans le chat… @tous pour mentionner tout le monde"
+                          placeholder="Message…"
                           maxLength={MAX}
-                          style={{ resize: 'none', flex: 1, minHeight: 72 }}
-                          className="w-full bg-gray-800/80 border border-white/[0.08] rounded-2xl px-4 py-3 text-base text-white placeholder-gray-600 focus:outline-none focus:border-cyan-500/50 focus:bg-gray-800 transition-all leading-relaxed"
+                          rows={1}
+                          style={{ resize: 'none', minHeight: 24, maxHeight: 120, overflowY: 'auto', lineHeight: '1.5' }}
+                          className="flex-1 bg-transparent text-sm text-white placeholder-gray-500 focus:outline-none leading-relaxed self-center"
+                          onInput={e => {
+                            e.target.style.height = 'auto';
+                            e.target.style.height = Math.min(e.target.scrollHeight, 120) + 'px';
+                          }}
                         />
                         {text.length > MAX * 0.8 && (
-                          <span className={`absolute bottom-3 right-12 text-[10px] ${remaining < 50 ? 'text-red-400' : 'text-gray-600'}`}>{remaining}</span>
+                          <span className={`text-[10px] flex-shrink-0 self-end pb-0.5 ${remaining < 50 ? 'text-red-400' : 'text-gray-600'}`}>{remaining}</span>
                         )}
                       </div>
                       <button onClick={handleSend} disabled={!text.trim() || sending}
-                        className="w-11 h-11 rounded-2xl bg-gradient-to-br from-cyan-500 to-cyan-600 hover:from-cyan-400 hover:to-cyan-500 flex items-center justify-center flex-shrink-0 disabled:opacity-30 transition-all shadow-lg shadow-cyan-500/20 active:scale-95">
+                        className="w-10 h-10 rounded-full bg-gradient-to-br from-cyan-500 to-cyan-600 hover:from-cyan-400 hover:to-cyan-500 flex items-center justify-center flex-shrink-0 disabled:opacity-30 transition-all shadow-lg shadow-cyan-500/20 active:scale-90"
+                        style={{ marginBottom: 2 }}>
                         {sending
                           ? <div className="w-4 h-4 rounded-full border-2 border-white/30 border-t-white animate-spin" />
                           : <Send className="w-4 h-4 text-white" />

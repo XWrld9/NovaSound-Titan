@@ -8,7 +8,7 @@ import {
 } from 'lucide-react';
 import { supabase } from '@/lib/supabaseClient';
 import { useAuth } from '@/contexts/AuthContext';
-import { notifyOwner, notifyAll } from '@/lib/notifUtils';
+import { notifyOwner, notifyMentions, notifyCommentReply } from '@/lib/notifUtils';
 import { useChat } from '@/contexts/ChatContext'; // Importer useChat pour accéder à insertNotification
 import { Link } from 'react-router-dom';
 import { useToast as useGlobalToast } from '@/components/ui/Toast';
@@ -311,35 +311,53 @@ const CommentSection = ({ songId, songUploaderEmail, onCommentChange }) => {
     else             globalToast.success(msg);
   }, [globalToast]);
 
-  /* ── Envoi des notifications commentaires ─────────────────────────────
-   * v8002 : notifyOwner → propriétaire du son
-   *         notifyAll   → TOUS les utilisateurs (sauf auteur du commentaire)
+  /* ── Envoi des notifications commentaires V9000000 ────────────────────
+   * 1. Propriétaire du son → notifyOwner (toujours)
+   * 2. Auteur du commentaire parent → notifyCommentReply (si reply)
+   * 3. @mentions dans le texte → notifyMentions
+   * Plus de notifyAll : on ne spam plus tout le monde
    * ─────────────────────────────────────────────────────────────────── */
-  const sendCommentNotifications = useCallback(async (commentData, songData) => {
+  const sendCommentNotifications = useCallback(async (commentData, songData, parentCommentId = null) => {
     if (!currentUser || !commentData || !songData) return;
 
     const senderName = currentUser.username || 'Quelqu\'un';
-    const preview    = `"${(commentData.content || '').slice(0, 100)}"`;
+    const preview    = (commentData.content || '').slice(0, 80);
+    const notifiedIds = new Set([currentUser.id]);
 
     // 1. Notifier le propriétaire du son
     const ownerId = await notifyOwner(supabase, songData.id, currentUser.id, {
       type:     'comment',
       title:    `💬 ${senderName} a commenté ton son`,
-      body:     `${senderName} : ${preview}`,
+      body:     `${senderName} : "${preview}"`,
       url:      `/song/${songData.id}#comment-${commentData.id}`,
       icon_url: currentUser.avatar_url || '/icon-192.png',
-      metadata: { senderId: currentUser.id, senderName, refId: commentData.id },
+      from_user_id: currentUser.id,
+      metadata: { senderId: currentUser.id, senderName, refId: commentData.id, songId: songData.id },
     });
+    if (ownerId) notifiedIds.add(ownerId);
 
-    // 2. Notifier TOUS les autres utilisateurs
-    notifyAll(supabase, {
-      type:     'comment',
-      title:    `💬 ${senderName} a commenté "${songData.title}"`,
-      body:     `${senderName} : ${preview}`,
-      url:      `/song/${songData.id}`,
+    // 2. Si réponse → notifier l'auteur du commentaire parent
+    if (parentCommentId) {
+      await notifyCommentReply(supabase, parentCommentId, currentUser.id, {
+        title:    `↩ ${senderName} a répondu à ton commentaire`,
+        body:     `${senderName} : "${preview}"`,
+        url:      `/song/${songData.id}#comment-${commentData.id}`,
+        icon_url: currentUser.avatar_url || '/icon-192.png',
+        from_user_id: currentUser.id,
+        metadata: { senderId: currentUser.id, senderName, refId: commentData.id, songId: songData.id },
+      });
+    }
+
+    // 3. @mentions dans le texte du commentaire
+    const mentioned = await notifyMentions(supabase, commentData.content, currentUser.id, {
+      title:    `🏷 ${senderName} t'a mentionné dans un commentaire`,
+      body:     `${senderName} : "${preview}"`,
+      url:      `/song/${songData.id}#comment-${commentData.id}`,
       icon_url: currentUser.avatar_url || '/icon-192.png',
-      metadata: { senderId: currentUser.id, senderName, refId: commentData.id },
-    }, [currentUser.id, ownerId].filter(Boolean)).catch(() => {});
+      from_user_id: currentUser.id,
+      metadata: { senderId: currentUser.id, senderName, refId: commentData.id, songId: songData.id },
+    });
+    mentioned.forEach(id => notifiedIds.add(id));
 
   }, [currentUser]);
 

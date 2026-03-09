@@ -6,7 +6,7 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { supabase } from '@/lib/supabaseClient';
 import { useAuth } from '@/contexts/AuthContext';
-import { notifyUser, notifyAll } from '@/lib/notifUtils';
+import { notifyUser, notifyMentions } from '@/lib/notifUtils';
 import {
   MessageCircle, Send, Heart, Trash2, Edit2, Check,
   X, Loader2, User, ChevronDown, ChevronUp,
@@ -188,28 +188,33 @@ const NewsCommentSection = ({ newsId, newsAuthorId }) => {
       if (error) throw error;
       setComments(prev => prev.find(c => c.id === data.id) ? prev : [...prev, { ...data, likes_count: 0 }]);
       setExpanded(true);
-      if (newsAuthorId && newsAuthorId !== currentUser.id) {
+      {
         const senderName = currentUser.username || currentUser.user_metadata?.username || currentUser.email?.split('@')[0] || 'Quelqu\'un';
+        const preview    = content.slice(0, 100);
+        const meta       = { senderId: currentUser.id, senderName, newsId };
 
-        // 1. Notifier l'auteur de l'actualité
-        notifyUser(supabase, newsAuthorId, {
-          type:     'comment',
-          title:    `💬 ${senderName} a commenté ton actualité`,
-          body:     content.slice(0, 120),
-          url:      '/news',
-          icon_url: currentUser.avatar_url || currentUser.user_metadata?.avatar_url || '/icon-192.png',
-          metadata: { senderId: currentUser.id, senderName },
+        // 1. Notifier l'auteur de la news (si différent du commentateur)
+        if (newsAuthorId && newsAuthorId !== currentUser.id) {
+          notifyUser(supabase, newsAuthorId, {
+            type:     'comment_news',
+            title:    `💬 ${senderName} a commenté ton actualité`,
+            body:     `${senderName} : "${preview}"`,
+            url:      `/news/${newsId}`,
+            icon_url: currentUser.avatar_url || currentUser.user_metadata?.avatar_url || '/icon-192.png',
+            from_user_id: currentUser.id,
+            metadata: meta,
+          }).catch(() => {});
+        }
+
+        // 2. @mentions dans le commentaire
+        notifyMentions(supabase, content, currentUser.id, {
+          title:    `🏷 ${senderName} t'a mentionné dans un commentaire`,
+          body:     `${senderName} : "${preview}"`,
+          url:      `/news/${newsId}`,
+          icon_url: currentUser.avatar_url || '/icon-192.png',
+          from_user_id: currentUser.id,
+          metadata: meta,
         }).catch(() => {});
-
-        // 2. Notifier TOUS les autres utilisateurs
-        notifyAll(supabase, {
-          type:     'news',
-          title:    `📰 ${senderName} a commenté une actualité`,
-          body:     content.slice(0, 120),
-          url:      '/news',
-          icon_url: '/icon-192.png',
-          metadata: { senderId: currentUser.id, senderName },
-        }, [currentUser.id, newsAuthorId]).catch(() => {});
       }
     } catch { setText(content); }
     setSending(false);

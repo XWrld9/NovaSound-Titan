@@ -1,98 +1,268 @@
 /**
- * notifUtils — NovaSound TITAN LUX V60000
+ * notifUtils — NovaSound TITAN LUX V9000000
  *
- * V60000 :
- * ✅ notifyAll — broadcast edge function en 1 seul appel quand pas d'exclusions
- * ✅ notifyFollowers — notifier tous les abonnés d'un artiste
- * ✅ logSearch — enregistrer une recherche dans search_logs (tendances)
- * (tout le reste inchangé depuis V28000)
+ * Refonte complète du système de notifications :
+ * ✅ notifyUser          — 1 utilisateur précis (like, follow, mention, réponse…)
+ * ✅ notifyOwner         — propriétaire d'un son (like, commentaire, repost…)
+ * ✅ notifyNewsAuthor    — auteur d'une news (like news, commentaire news)
+ * ✅ notifyFollowers     — tous les abonnés d'un artiste (nouveau son, live…)
+ * ✅ notifyMentions      — détecte les @username dans un texte et notifie chacun
+ * ✅ notifyCommenters    — notifie les autres commentateurs d'un son (activité)
+ * ✅ notifyAll           — broadcast admin uniquement (annonces globales)
+ * ✅ Déduplication 30s  — évite les doublons en rafale
+ * ✅ Push fire-and-forget — Edge Function non-bloquante
+ * ✅ Tous les types couverts : like_song, like_news, comment, comment_news,
+ *    reply, mention, follow, repost, new_song, live_like, chat_mention,
+ *    chat_reply, broadcast
  */
 
-const _recentNotifs = new Map();
-const _isDupe = (key) => {
-  const ts = _recentNotifs.get(key);
+/* ─── Déduplication en mémoire ──────────────────────────────────── */
+const _recent = new Map();
+const _isDupe = key => {
+  const ts = _recent.get(key);
   if (ts && Date.now() - ts < 30_000) return true;
-  _recentNotifs.set(key, Date.now());
-  if (_recentNotifs.size > 200) {
+  _recent.set(key, Date.now());
+  if (_recent.size > 500) {
     const now = Date.now();
-    for (const [k, t] of _recentNotifs) {
-      if (now - t > 60_000) _recentNotifs.delete(k);
-    }
+    for (const [k, t] of _recent) if (now - t > 60_000) _recent.delete(k);
   }
   return false;
 };
 
-const _getUrlKey = (supabase) => ({
-  url: supabase.supabaseUrl || import.meta?.env?.VITE_SUPABASE_URL || '',
-  key: supabase.supabaseKey || import.meta?.env?.VITE_SUPABASE_ANON_KEY || '',
-});
+/* ─── Edge Function push helper ─────────────────────────────────── */
+const _pushUrl = sb =>
+  (sb.supabaseUrl || import.meta?.env?.VITE_SUPABASE_URL || '') +
+  '/functions/v1/send-push-notification';
+const _pushKey = sb =>
+  sb.supabaseKey || import.meta?.env?.VITE_SUPABASE_ANON_KEY || '';
 
-// Fire-and-forget push vers Edge Function (single user)
-const _triggerPush = (supabase, userId, notifId, payload) => {
-  const { url, key } = _getUrlKey(supabase);
-  if (!url) return;
-  fetch(`${url}/functions/v1/send-push-notification`, {
+const _push = (sb, body) => {
+  const url = _pushUrl(sb);
+  if (!url || url === '/functions/v1/send-push-notification') return;
+  fetch(url, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${key}` },
-    body: JSON.stringify({
-      user_id:  userId,
-      notif_id: notifId,
-      title:    payload.title,
-      body:     (payload.body || '').slice(0, 200),
-      url:      payload.url || '/',
-      icon_url: payload.icon_url || '/icon-192.png',
-      type:     payload.type || 'default',
-    }),
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${_pushKey(sb)}`,
+    },
+    body: JSON.stringify(body),
   }).catch(() => {});
 };
 
-// Fire-and-forget push BROADCAST — 1 seul appel pour TOUS les abonnés
-const _triggerBroadcastPush = (supabase, payload) => {
-  const { url, key } = _getUrlKey(supabase);
-  if (!url) return;
-  fetch(`${url}/functions/v1/send-push-notification`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${key}` },
-    body: JSON.stringify({
-      broadcast: true,
-      title:     payload.title,
-      body:      (payload.body || '').slice(0, 200),
-      url:       payload.url || '/',
-      icon_url:  payload.icon_url || '/icon-192.png',
-      type:      payload.type || 'default',
-    }),
-  }).catch(() => {});
+/* ─── Insert DB + trigger push ──────────────────────────────────── */
+const _insert = async (sb, row) => {
+  const { data, error } = await sb.from('notifications').insert({
+    user_id:      row.user_id,
+    type:         row.type,
+    title:        (row.title || '').slice(0, 120),
+    body:         (row.body  || '').slice(0, 200),
+    url:          row.url        || '/',
+    icon_url:     row.icon_url   || '/icon-192.png',
+    is_read:      false,
+    metadata:     row.metadata   || {},
+    from_user_id: row.from_user_id || null,
+  }).select('id').single();
+  if (error) throw error;
+  return data?.id || null;
 };
 
-// ── notifyUser — notifier un utilisateur précis ───────────────
-export const notifyUser = async (supabase, userId, payload) => {
+/* ════════════════════════════════════════════════════════════════
+   EXPORTS PUBLICS
+   ════════════════════════════════════════════════════════════════ */
+
+/**
+ * notifyUser — notifier UN utilisateur précis
+ * Utilisé pour : follow, mention, reply, live_like, chat_*
+ */
+export const notifyUser = async (sb, userId, payload) => {
   if (!userId || !payload?.type) return;
-  const dedupeKey = `${userId}:${payload.type}:${payload.metadata?.refId || payload.body?.slice(0, 30)}`;
+  const dedupeKey = `${userId}:${payload.type}:${payload.metadata?.refId || payload.body?.slice(0,30) || ''}`;
   if (_isDupe(dedupeKey)) return;
   try {
-    const { data: notifData } = await supabase.from('notifications').insert({
-      user_id:  userId,
-      type:     payload.type,
-      title:    payload.title,
-      body:     (payload.body || '').slice(0, 200),
-      url:      payload.url || '/',
-      icon_url: payload.icon_url || '/icon-192.png',
-      is_read:  false,
-      metadata: JSON.stringify(payload.metadata || {}),
-    }).select('id').single();
-    if (notifData?.id) _triggerPush(supabase, userId, notifData.id, payload);
+    const notifId = await _insert(sb, { ...payload, user_id: userId });
+    if (notifId) {
+      _push(sb, {
+        user_id:  userId,
+        notif_id: notifId,
+        title:    payload.title,
+        body:     (payload.body || '').slice(0, 200),
+        url:      payload.url || '/',
+        icon_url: payload.icon_url || '/icon-192.png',
+        type:     payload.type,
+      });
+    }
   } catch (err) {
-    console.warn('[notifUtils] notifyUser error:', err?.message);
+    // silencieux — ne jamais bloquer l'UX pour une notif
+    console.warn('[notifUtils] notifyUser:', err?.message);
   }
 };
 
-// ── notifyAll — notifier TOUS les utilisateurs ────────────────
-// V60000 : si pas d'exclusions → broadcast push (1 seul appel edge function)
-export const notifyAll = async (supabase, payload, exclude = []) => {
+/**
+ * notifyOwner — notifier le propriétaire d'un SON
+ * Retourne l'ownerId (utile pour l'exclure des notifs suivantes)
+ */
+export const notifyOwner = async (sb, songId, actorId, payload) => {
+  if (!songId || !actorId) return null;
+  try {
+    const { data: song } = await sb
+      .from('songs')
+      .select('uploader_id, title')
+      .eq('id', songId)
+      .maybeSingle();
+    if (!song?.uploader_id) return null;
+    if (song.uploader_id === actorId) return song.uploader_id; // pas de notif à soi-même
+    await notifyUser(sb, song.uploader_id, {
+      ...payload,
+      metadata: { ...(payload.metadata || {}), songId, songTitle: song.title },
+    });
+    return song.uploader_id;
+  } catch (err) {
+    console.warn('[notifUtils] notifyOwner:', err?.message);
+    return null;
+  }
+};
+
+/**
+ * notifyNewsAuthor — notifier l'auteur d'une NEWS
+ */
+export const notifyNewsAuthor = async (sb, newsId, actorId, payload) => {
+  if (!newsId || !actorId) return null;
+  try {
+    const { data: news } = await sb
+      .from('news')
+      .select('author_id, title')
+      .eq('id', newsId)
+      .maybeSingle();
+    if (!news?.author_id) return null;
+    if (news.author_id === actorId) return news.author_id;
+    await notifyUser(sb, news.author_id, {
+      ...payload,
+      metadata: { ...(payload.metadata || {}), newsId, newsTitle: news.title },
+    });
+    return news.author_id;
+  } catch (err) {
+    console.warn('[notifUtils] notifyNewsAuthor:', err?.message);
+    return null;
+  }
+};
+
+/**
+ * notifyFollowers — notifier tous les abonnés d'un artiste
+ * Utilisé pour : nouveau son, go live
+ */
+export const notifyFollowers = async (sb, artistId, payload, excludeIds = []) => {
+  if (!artistId || !payload?.type) return 0;
+  try {
+    const { data: follows, error } = await sb
+      .from('follows')
+      .select('follower_id')
+      .eq('following_id', artistId);
+    if (error || !follows?.length) return 0;
+
+    const excludeSet = new Set([artistId, ...excludeIds].filter(Boolean));
+    const targets = [...new Set(follows.map(f => f.follower_id).filter(id => !excludeSet.has(id)))];
+    if (!targets.length) return 0;
+
+    // Insert par batches de 100
+    const rows = targets.map(userId => ({
+      user_id:      userId,
+      type:         payload.type,
+      title:        (payload.title || '').slice(0, 120),
+      body:         (payload.body  || '').slice(0, 200),
+      url:          payload.url    || '/',
+      icon_url:     payload.icon_url || '/icon-192.png',
+      is_read:      false,
+      metadata:     payload.metadata || {},
+      from_user_id: payload.from_user_id || null,
+    }));
+
+    for (let i = 0; i < rows.length; i += 100) {
+      await sb.from('notifications').insert(rows.slice(i, i + 100));
+    }
+
+    // Un seul push broadcast pour tous les abonnés
+    _push(sb, {
+      target_user_ids: targets, // Edge Function envoie à ces users uniquement
+      title:    payload.title,
+      body:     (payload.body || '').slice(0, 200),
+      url:      payload.url || '/',
+      icon_url: payload.icon_url || '/icon-192.png',
+      type:     payload.type,
+    });
+
+    return targets.length;
+  } catch (err) {
+    console.warn('[notifUtils] notifyFollowers:', err?.message);
+    return 0;
+  }
+};
+
+/**
+ * notifyMentions — parse le texte, notifie chaque @username trouvé
+ * Retourne la liste des userIds notifiés
+ * Utilisé dans : commentaires, chat, descriptions
+ */
+export const notifyMentions = async (sb, text, actorId, payload) => {
+  if (!text || !actorId) return [];
+  const mentions = [...new Set((text.match(/@([\w\-.]+)/g) || []).map(m => m.slice(1).toLowerCase()))];
+  if (!mentions.length) return [];
+
+  try {
+    const { data: users } = await sb
+      .from('users')
+      .select('id, username')
+      .in('username', mentions);
+    if (!users?.length) return [];
+
+    const notified = [];
+    for (const user of users) {
+      if (user.id === actorId) continue; // pas de notif à soi-même
+      await notifyUser(sb, user.id, {
+        ...payload,
+        type:     'mention',
+        metadata: { ...(payload.metadata || {}), mentionedUsername: user.username },
+      });
+      notified.push(user.id);
+    }
+    return notified;
+  } catch (err) {
+    console.warn('[notifUtils] notifyMentions:', err?.message);
+    return [];
+  }
+};
+
+/**
+ * notifyCommentReply — notifier l'auteur d'un commentaire parent (réponse)
+ */
+export const notifyCommentReply = async (sb, parentCommentId, actorId, payload) => {
+  if (!parentCommentId || !actorId) return;
+  try {
+    const { data: parent } = await sb
+      .from('comments')
+      .select('user_id, content')
+      .eq('id', parentCommentId)
+      .maybeSingle();
+    if (!parent?.user_id || parent.user_id === actorId) return;
+    await notifyUser(sb, parent.user_id, {
+      ...payload,
+      type:     'reply',
+      metadata: { ...(payload.metadata || {}), parentContent: parent.content?.slice(0, 60) },
+    });
+  } catch (err) {
+    console.warn('[notifUtils] notifyCommentReply:', err?.message);
+  }
+};
+
+/**
+ * notifyAll — BROADCAST ADMIN uniquement (annonces globales)
+ * ⚠️ Ne pas utiliser pour des actions utilisateur normales
+ */
+export const notifyAll = async (sb, payload, exclude = []) => {
   if (!payload?.type) return;
   try {
-    const { data: users, error } = await supabase.from('users').select('id');
-    if (error || !users?.length) return;
+    const { data: users } = await sb.from('users').select('id');
+    if (!users?.length) return;
+
     const excludeSet = new Set(exclude.filter(Boolean));
     const targets = users.filter(u => !excludeSet.has(u.id));
     if (!targets.length) return;
@@ -100,133 +270,37 @@ export const notifyAll = async (supabase, payload, exclude = []) => {
     const rows = targets.map(u => ({
       user_id:  u.id,
       type:     payload.type,
+      title:    (payload.title || '').slice(0, 120),
+      body:     (payload.body  || '').slice(0, 200),
+      url:      payload.url    || '/',
+      icon_url: payload.icon_url || '/icon-192.png',
+      is_read:  false,
+      metadata: payload.metadata || {},
+    }));
+
+    for (let i = 0; i < rows.length; i += 100) {
+      await sb.from('notifications').insert(rows.slice(i, i + 100));
+    }
+
+    _push(sb, {
+      broadcast: true,
       title:    payload.title,
       body:     (payload.body || '').slice(0, 200),
       url:      payload.url || '/',
       icon_url: payload.icon_url || '/icon-192.png',
-      is_read:  false,
-      metadata: JSON.stringify(payload.metadata || {}),
-    }));
-
-    // Insérer les notifications en base (par batches de 100)
-    for (let i = 0; i < rows.length; i += 100) {
-      await supabase.from('notifications').insert(rows.slice(i, i + 100));
-    }
-
-    // Push : si aucune exclusion → 1 seul appel broadcast
-    //        sinon → per-user (comportement V50000)
-    if (exclude.filter(Boolean).length === 0) {
-      _triggerBroadcastPush(supabase, payload);
-    } else {
-      const { data: inserted } = await supabase.from('notifications')
-        .select('id, user_id')
-        .eq('type', payload.type)
-        .in('user_id', targets.map(u => u.id))
-        .order('created_at', { ascending: false })
-        .limit(targets.length);
-      if (inserted) {
-        const byUser = new Map();
-        for (const row of inserted) {
-          if (!byUser.has(row.user_id)) byUser.set(row.user_id, row.id);
-        }
-        for (const [userId, notifId] of byUser) {
-          _triggerPush(supabase, userId, notifId, payload);
-        }
-      }
-    }
-  } catch (err) {
-    console.warn('[notifUtils] notifyAll error:', err?.message);
-  }
-};
-
-// ── notifyOwner — notifier le propriétaire d'un son ──────────
-export const notifyOwner = async (supabase, songId, actorId, payload) => {
-  if (!songId || !actorId) return null;
-  try {
-    const { data: song } = await supabase
-      .from('songs').select('uploader_id, title').eq('id', songId).maybeSingle();
-    if (!song?.uploader_id) return null;
-    if (song.uploader_id === actorId) return song.uploader_id;
-    await notifyUser(supabase, song.uploader_id, {
-      ...payload,
-      metadata: { ...(payload.metadata || {}), songId, songTitle: song.title },
-    });
-    return song.uploader_id;
-  } catch (err) {
-    console.warn('[notifUtils] notifyOwner error:', err?.message);
-    return null;
-  }
-};
-
-// ── notifyFollowers — notifier tous les abonnés d'un artiste ──
-// VFINAL : insert batch en parallèle (max 50 à la fois) au lieu de boucle séquentielle
-export const notifyFollowers = async (supabase, artistId, payload, excludeIds = []) => {
-  if (!artistId || !payload?.type) return 0;
-  try {
-    const { data: follows, error } = await supabase
-      .from('follows')
-      .select('follower_id')
-      .eq('following_id', artistId);
-
-    if (error || !follows?.length) return 0;
-
-    const excludeSet = new Set([artistId, ...excludeIds].filter(Boolean));
-    const targets = follows
-      .map(f => f.follower_id)
-      .filter(id => !excludeSet.has(id));
-
-    if (!targets.length) return 0;
-
-    // Dédupliquer les cibles
-    const uniqueTargets = [...new Set(targets)];
-
-    // Construire les rows de notifications
-    const rows = uniqueTargets.map(userId => ({
-      user_id:  userId,
       type:     payload.type,
-      title:    payload.title || '',
-      body:     payload.body  || '',
-      url:      payload.url   || '/',
-      icon_url: payload.icon_url || '/icon-192.png',
-      metadata: payload.metadata || {},
-      is_read:  false,
-    }));
-
-    // Batch insert par tranches de 100 (limite Supabase)
-    const CHUNK = 100;
-    for (let i = 0; i < rows.length; i += CHUNK) {
-      await supabase.from('notifications').insert(rows.slice(i, i + CHUNK));
-    }
-
-    // Déclencher le broadcast push en 1 seul appel Edge Function
-    const { url, key } = _getUrlKey(supabase);
-    if (url) {
-      fetch(`${url}/functions/v1/send-push-notification`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${key}` },
-        body: JSON.stringify({
-          broadcast: true,
-          title:     payload.title,
-          body:      (payload.body || '').slice(0, 200),
-          url:       payload.url || '/',
-          icon_url:  payload.icon_url || '/icon-192.png',
-          type:      payload.type || 'default',
-        }),
-      }).catch(() => {});
-    }
-
-    return uniqueTargets.length;
+    });
   } catch (err) {
-    console.warn('[notifUtils] notifyFollowers error:', err?.message);
-    return 0;
+    console.warn('[notifUtils] notifyAll:', err?.message);
   }
 };
 
-// ── logSearch — enregistrer une recherche (pour trending_searches) ─
-// V60000 : fire-and-forget, ne bloque pas l'UX
-export const logSearch = (supabase, query, userId = null, results = 0) => {
+/**
+ * logSearch — enregistrer une recherche (tendances)
+ */
+export const logSearch = (sb, query, userId = null, results = 0) => {
   if (!query?.trim() || query.trim().length < 2) return;
-  supabase.from('search_logs').insert({
+  sb.from('search_logs').insert({
     query:   query.trim().toLowerCase().slice(0, 100),
     user_id: userId || null,
     results,
