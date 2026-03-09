@@ -1318,8 +1318,8 @@ const LiveRoomPage = () => {
                 </div>
               )}
 
-              {/* Messages */}
-              <div className="flex-1 relative overflow-hidden">
+              {/* Messages — peut rétrécir pour laisser de la place à l'input */}
+              <div className="min-h-0 flex-1 relative overflow-hidden" style={{ minHeight: '60px' }}>
                 {/* V110000 — Toast discret join/leave en haut du chat */}
                 <AnimatePresence>
                   {joinLeaveToast && (
@@ -1370,11 +1370,13 @@ const LiveRoomPage = () => {
                 </div>
               </div>
 
-              {/* Input chat */}
+              {/* Input chat — zone expansive qui comble l'espace disponible */}
               <div
-                className="flex-shrink-0 px-3 pt-2.5 pb-3 bg-gray-900/98 border-t border-gray-800"
+                className="flex-shrink-0 flex flex-col px-3 pt-2 bg-gray-900/98 border-t border-gray-800"
                 style={{
                   paddingBottom: `calc(env(safe-area-inset-bottom, 10px) + 10px${playerVisible && playerSong ? ' + 72px' : ''})`,
+                  /* Comble l'espace restant : au moins 28vh pour être généreux, plafonné à 45vh */
+                  minHeight: 'clamp(120px, 28vh, 380px)',
                 }}
               >
                 <AnimatePresence>
@@ -1395,8 +1397,8 @@ const LiveRoomPage = () => {
                     </motion.div>
                   )}
                 </AnimatePresence>
-                <div className="flex gap-2 items-end">
-                  <div className="relative flex-1">
+                <div className="flex gap-2 items-end flex-1 min-h-0">
+                  <div className="relative flex-1 h-full flex flex-col">
                     {showMention && mentionUsers.length > 0 && (
                       <div className="absolute bottom-full mb-1 left-0 right-0 bg-gray-800 border border-gray-700 rounded-xl shadow-xl z-50 overflow-hidden">
                         {mentionUsers.map(u => (
@@ -1418,20 +1420,26 @@ const LiveRoomPage = () => {
                       onKeyDown={e => e.key === 'Enter' && !e.shiftKey && (e.preventDefault(), sendMessage())}
                       placeholder="Écrire un message… (@nom pour mentionner)"
                       maxLength={500}
-                      rows={1}
-                      style={{ resize: 'none', minHeight: 60, maxHeight: 140 }}
-                      onInput={e => { e.target.style.height = 'auto'; e.target.style.height = Math.min(e.target.scrollHeight, 120) + 'px'; }}
-                      className="w-full bg-gray-800 border border-gray-700 text-white rounded-xl px-4 py-4 text-base focus:outline-none focus:border-cyan-500 placeholder-gray-500 transition-colors leading-relaxed overflow-y-auto"
+                      style={{ resize: 'none', flex: 1, minHeight: 80 }}
+                      className="w-full bg-gray-800/80 border border-gray-700/60 text-white rounded-xl px-4 py-3 text-base focus:outline-none focus:border-cyan-500 placeholder-gray-600 transition-colors leading-relaxed"
                     />
+                    {/* Compteur de caractères en bas à droite de la zone */}
+                    {msgInput.length > 400 && (
+                      <span className="absolute bottom-2 right-3 text-[10px] text-amber-400 pointer-events-none">
+                        {500 - msgInput.length}
+                      </span>
+                    )}
                   </div>
-                  <button onClick={() => setShowReactions(!showReactions)}
-                    className={`p-2.5 rounded-xl transition-all flex-shrink-0 mb-0.5 ${showReactions ? 'bg-fuchsia-500/20 text-fuchsia-400' : 'bg-gray-800 text-gray-400 hover:text-white hover:bg-gray-700'}`}>
-                    <Smile className="w-4 h-4" />
-                  </button>
-                  <button onClick={sendMessage} disabled={!msgInput.trim()}
-                    className="bg-gradient-to-r from-cyan-500 to-fuchsia-500 hover:from-cyan-600 hover:to-fuchsia-600 disabled:opacity-40 text-white p-2.5 rounded-xl transition-all flex-shrink-0 shadow-lg shadow-cyan-500/20 mb-0.5">
-                    <Send className="w-4 h-4" />
-                  </button>
+                  <div className="flex flex-col gap-1.5 flex-shrink-0 pb-0.5">
+                    <button onClick={() => setShowReactions(!showReactions)}
+                      className={`p-2.5 rounded-xl transition-all ${showReactions ? 'bg-fuchsia-500/20 text-fuchsia-400' : 'bg-gray-800 text-gray-400 hover:text-white hover:bg-gray-700'}`}>
+                      <Smile className="w-4 h-4" />
+                    </button>
+                    <button onClick={sendMessage} disabled={!msgInput.trim()}
+                      className="bg-gradient-to-r from-cyan-500 to-fuchsia-500 hover:from-cyan-600 hover:to-fuchsia-600 disabled:opacity-40 text-white p-2.5 rounded-xl transition-all flex-shrink-0 shadow-lg shadow-cyan-500/20">
+                      <Send className="w-4 h-4" />
+                    </button>
+                  </div>
                 </div>
               </div>
             </div>

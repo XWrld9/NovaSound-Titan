@@ -206,64 +206,65 @@ const LiveListPage = () => {
         {/* Header avec glassmorphism */}
         <div className="sticky top-0 z-40 backdrop-blur-xl bg-[#0a0a18]/95 backdrop-blur-xl border-b border-white/[0.07]">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="flex items-center justify-between h-16">
-              <div className="flex items-center gap-4">
-                <Link to="/" className="text-gray-400 hover:text-white transition-colors">
+            <div className="flex items-center justify-between h-12 sm:h-14">
+              <div className="flex items-center gap-2 sm:gap-3">
+                <Link to="/" className="text-gray-500 hover:text-white transition-colors text-sm">
                   ← Accueil
                 </Link>
-                <div className="flex items-center gap-2">
-                  <Radio className="w-6 h-6 text-cyan-400" />
-                  <h1 className="text-2xl font-bold text-white">Live Rooms</h1>
+                <div className="flex items-center gap-1.5">
+                  <Radio className="w-4 h-4 sm:w-5 sm:h-5 text-cyan-400" />
+                  <h1 className="text-lg sm:text-xl font-bold text-white">Live Rooms</h1>
                 </div>
               </div>
-              
-              <button
-                onClick={handleRefresh}
-                disabled={refreshing}
-                className="flex items-center gap-2 px-4 py-2 bg-cyan-500/20 hover:bg-cyan-500/30 border border-cyan-500/30 rounded-xl text-cyan-400 transition-all disabled:opacity-50"
-              >
-                <RefreshCw className={`w-4 h-4 ${refreshing ? 'animate-spin' : ''}`} />
-                Actualiser
-              </button>
-              {currentUser && (
+              <div className="flex items-center gap-1.5 sm:gap-2">
                 <button
-                  onClick={() => { setCreateForm({ name: '', description: '', genre: 'Bikutsi', isPrivate: false }); setCreateError(''); setShowCreateModal(true); }}
-                  className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-cyan-500 to-purple-500 hover:opacity-90 rounded-xl text-white font-semibold transition-all shadow-lg shadow-cyan-500/20"
+                  onClick={handleRefresh}
+                  disabled={refreshing}
+                  className="flex items-center gap-1.5 px-3 py-1.5 bg-cyan-500/20 hover:bg-cyan-500/30 border border-cyan-500/30 rounded-lg text-cyan-400 text-xs sm:text-sm transition-all disabled:opacity-50"
                 >
-                  <Plus className="w-4 h-4" />
-                  Créer un salon
+                  <RefreshCw className={`w-3.5 h-3.5 ${refreshing ? 'animate-spin' : ''}`} />
+                  <span className="hidden sm:inline">Actualiser</span>
                 </button>
-              )}
+                {currentUser && (
+                  <button
+                    onClick={() => { setCreateForm({ name: '', description: '', genre: 'Bikutsi', isPrivate: false }); setCreateError(''); setShowCreateModal(true); }}
+                    className="flex items-center gap-1.5 px-3 py-1.5 bg-gradient-to-r from-cyan-500 to-purple-500 hover:opacity-90 rounded-lg text-white text-xs sm:text-sm font-semibold transition-all shadow-lg shadow-cyan-500/20"
+                  >
+                    <Plus className="w-3.5 h-3.5" />
+                    Créer un salon
+                  </button>
+                )}
+              </div>
             </div>
           </div>
         </div>
 
         {/* Filtres et recherche */}
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+        <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-3 sm:py-4">
           {/* Barre de recherche */}
-          <div className="relative mb-6">
-            <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
+          <div className="relative mb-3">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-500" />
             <input
               type="text"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder="Rechercher un salon, un artiste..."
-              className="w-full pl-12 pr-4 py-4 bg-gray-800/50 backdrop-blur-sm border border-white/10 rounded-2xl text-white placeholder-gray-500 focus:outline-none focus:border-cyan-500/50 focus:bg-gray-800/70 transition-all"
+              className="w-full pl-9 pr-4 py-2.5 bg-gray-800/50 backdrop-blur-sm border border-white/10 rounded-xl text-white text-sm placeholder-gray-600 focus:outline-none focus:border-cyan-500/50 focus:bg-gray-800/70 transition-all"
             />
           </div>
 
           {/* Filtres */}
-          <div className="flex flex-wrap gap-4 mb-6">
+          <div className="mb-3">
             {/* Genres */}
-            <div className="flex flex-wrap gap-2">
+            <div className="flex flex-wrap gap-1.5 mb-2">
               {GENRES.map((genre) => (
                 <button
                   key={genre.id}
                   onClick={() => setSelectedGenre(genre.id)}
-                  className={`px-4 py-2 rounded-xl font-medium transition-all ${
+                  className={`px-2.5 py-1 rounded-lg text-xs font-medium transition-all ${
                     selectedGenre === genre.id
-                      ? `bg-gradient-to-r ${genre.color} text-white shadow-lg`
-                      : 'bg-gray-800/50 text-gray-400 hover:bg-gray-800/70 hover:text-white'
+                      ? `bg-gradient-to-r ${genre.color} text-white shadow-md`
+                      : 'bg-gray-800/60 text-gray-500 hover:bg-gray-800/80 hover:text-gray-200'
                   }`}
                 >
                   {genre.name}
@@ -272,20 +273,20 @@ const LiveListPage = () => {
             </div>
 
             {/* Tri */}
-            <div className="flex gap-2 ml-auto">
+            <div className="flex gap-1.5">
               {SORT_OPTIONS.map((option) => {
                 const Icon = option.icon;
                 return (
                   <button
                     key={option.id}
                     onClick={() => setSortBy(option.id)}
-                    className={`flex items-center gap-2 px-4 py-2 rounded-xl font-medium transition-all ${
+                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
                       sortBy === option.id
                         ? 'bg-cyan-500/20 text-cyan-400 border border-cyan-500/30'
-                        : 'bg-gray-800/50 text-gray-400 hover:bg-gray-800/70 hover:text-white'
+                        : 'bg-gray-800/50 text-gray-500 hover:bg-gray-800/70 hover:text-gray-200'
                     }`}
                   >
-                    <Icon className="w-4 h-4" />
+                    <Icon className="w-3 h-3" />
                     {option.name}
                   </button>
                 );
@@ -317,7 +318,7 @@ const LiveListPage = () => {
               </button>
             </div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
               <AnimatePresence>
                 {filteredRooms.map((room) => (
                   <motion.div
@@ -325,87 +326,73 @@ const LiveListPage = () => {
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, y: -20 }}
-                    className="bg-[#0a0a18]/80 backdrop-blur-xl rounded-2xl border border-white/[0.07] p-6 hover:border-white/[0.12] transition-all duration-300 hover:scale-[1.02] cursor-pointer"
+                    className="bg-[#0a0a18]/80 backdrop-blur-xl rounded-xl border border-white/[0.07] hover:border-white/[0.12] transition-all duration-300 hover:scale-[1.01] cursor-pointer overflow-hidden"
                   >
                     {/* Header du salon */}
-                    <div className={`h-32 rounded-t-2xl bg-gradient-to-br ${getGenreColorById(room.genre)} p-4 flex items-end`}>
-                      <div className="flex items-center gap-3">
+                    <div className={`h-20 bg-gradient-to-br ${getGenreColorById(room.genre)} px-3 py-2.5 flex items-end`}>
+                      <div className="flex items-center gap-2 w-full">
                         {room.host?.avatar_url ? (
-                          <img src={room.host.avatar_url} alt="" className="w-12 h-12 rounded-full border-2 border-white/20" />
+                          <img src={room.host.avatar_url} alt="" className="w-9 h-9 rounded-full border-2 border-white/20 flex-shrink-0" />
                         ) : (
-                          <div className="w-12 h-12 rounded-full bg-white/20 flex items-center justify-center">
-                            <Users className="w-6 h-6 text-white" />
+                          <div className="w-9 h-9 rounded-full bg-white/20 flex items-center justify-center flex-shrink-0">
+                            <Users className="w-4 h-4 text-white" />
                           </div>
                         )}
-                        <div className="flex-1">
-                          <h3 className="text-white font-bold text-lg truncate">{room.title || room.name}</h3>
-                          <p className="text-white/80 text-sm">par @{room.host?.username}</p>
+                        <div className="flex-1 min-w-0">
+                          <h3 className="text-white font-bold text-sm truncate">{room.title || room.name}</h3>
+                          <p className="text-white/70 text-xs">par @{room.host?.username}</p>
                         </div>
-                        <div className="px-2 py-1 bg-green-500/20 border border-green-500/30 rounded-full">
-                          <span className="text-green-400 text-xs font-medium">🌐 Publique</span>
-                        </div>
-                        {room.is_host_live && (
-                          <div className="flex items-center gap-1 px-2 py-1 bg-red-500 rounded-full">
-                            <div className="w-2 h-2 bg-white rounded-full animate-pulse" />
-                            <span className="text-white text-xs font-medium">LIVE</span>
+                        <div className="flex items-center gap-1 flex-shrink-0">
+                          <div className="px-1.5 py-0.5 bg-green-500/25 border border-green-500/30 rounded-full">
+                            <span className="text-green-400 text-[10px] font-medium">🌐 Pub</span>
                           </div>
-                        )}
+                          {room.is_host_live && (
+                            <div className="flex items-center gap-1 px-1.5 py-0.5 bg-red-500 rounded-full">
+                              <div className="w-1.5 h-1.5 bg-white rounded-full animate-pulse" />
+                              <span className="text-white text-[10px] font-medium">LIVE</span>
+                            </div>
+                          )}
+                        </div>
                       </div>
                     </div>
 
                     {/* Contenu */}
-                    <div className="p-4">
-                      <p className="text-gray-300 text-sm mb-4 line-clamp-2">
-                        {room.description || 'Rejoignez ce salon live pour découvrir de la musique incroyable !'}
+                    <div className="px-3 py-2.5">
+                      <p className="text-gray-400 text-xs mb-2.5 line-clamp-2">
+                        {room.description || 'Rejoignez ce salon live !'}
                       </p>
 
-                      {/* Stats */}
-                      <div className="flex items-center justify-between mb-4">
-                        <div className="flex items-center gap-4 text-sm text-gray-400">
+                      {/* Stats + Actions sur la même ligne */}
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-3 text-xs text-gray-500">
                           <div className="flex items-center gap-1">
-                            <Users className="w-4 h-4" />
+                            <Users className="w-3 h-3" />
                             <span>{room.participants_count || 0}</span>
                           </div>
-                          <div className="flex items-center gap-1">
-                            <Headphones className="w-4 h-4" />
-                            <span>{room.listener_count || 0}</span>
-                          </div>
                           {room.genre && (
-                            <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-gradient-to-r ${getGenreColorById(room.genre)} text-white`}>
+                            <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold bg-gradient-to-r ${getGenreColorById(room.genre)} text-white`}>
                               {room.genre}
                             </span>
                           )}
                         </div>
-                      </div>
-
-                      {/* Actions */}
-                      <div className="flex gap-2">
-                        <button
-                          onClick={() => handleJoinRoom(room.id)}
-                          className="flex items-center gap-2 px-4 py-2 rounded-xl bg-gradient-to-r from-cyan-500/90 to-purple-500/90 hover:from-cyan-500 hover:to-purple-500 text-white font-medium transition-all duration-300 hover:scale-[1.02] hover:shadow-xl hover:shadow-cyan-500/30"
-                        >
-                          <Play className="w-4 h-4" />
-                          Rejoindre
-                        </button>
-                        <LiveLikeButton 
-                          roomId={room.id}
-                          initialLikes={room.likes_count || 0}
-                          roomTitle={room.title}
-                          hostId={room.host_id}
-                          compact={true}
-                        />
-                      </div>
-                    </div>
-
-                    {/* Badge genre */}
-                    {room.is_featured && (
-                      <div className="absolute top-2 right-2">
-                        <div className="flex items-center gap-1 px-2 py-1 bg-amber-500/20 border border-amber-500/30 rounded-full">
-                          <Star className="w-3 h-3 text-amber-400" />
-                          <span className="text-amber-400 text-xs font-medium">Featured</span>
+                        <div className="flex gap-1.5">
+                          <button
+                            onClick={() => handleJoinRoom(room.id)}
+                            className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-gradient-to-r from-cyan-500/90 to-purple-500/90 hover:from-cyan-500 hover:to-purple-500 text-white text-xs font-medium transition-all"
+                          >
+                            <Play className="w-3 h-3" />
+                            Rejoindre
+                          </button>
+                          <LiveLikeButton
+                            roomId={room.id}
+                            initialLikes={room.likes_count || 0}
+                            roomTitle={room.title}
+                            hostId={room.host_id}
+                            compact={true}
+                          />
                         </div>
                       </div>
-                    )}
+                    </div>
                   </motion.div>
                 ))}
               </AnimatePresence>
