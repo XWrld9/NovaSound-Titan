@@ -20,7 +20,7 @@ import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import LiveLikeButton from '@/components/LiveLikeButton';
 import { Link, useNavigate, useParams } from 'react-router-dom';
-import { notifyFollowers, notifyUser } from '@/lib/notifUtils';
+import { notifyFollowers, notifyUser, notifyMentions, notifyAll } from '@/lib/notifUtils';
 import {
   Radio, Users, Music, Send, Heart, Crown, Copy, Check, Plus, Lock, Unlock,
   Headphones, Zap, X, ArrowLeft, Loader2, WifiOff, RefreshCw, Search, Upload,
@@ -599,13 +599,31 @@ const LiveRoomPage = () => {
   /* ── V110000 : Partager le lien du live dans le chat global ─────── */
   const shareInGlobalChat = useCallback(async () => {
     if (!currentUser || !roomRef.current) return;
-    const username = currentUser.user_metadata?.username || currentUser.email?.split('@')[0] || 'Quelqu\'un';
-    const link = `${window.location.origin}/#/live/${roomRef.current.id}`;
-    const content = `🔴 LIVE • ${roomRef.current.name}\n${username} vous invite à rejoindre !\n👉 ${link}`;
+    const username = currentUser.username || currentUser.user_metadata?.username || currentUser.email?.split('@')[0] || 'Quelqu\'un';
+    const link     = `${window.location.origin}/#/live/${roomRef.current.id}`;
+    const roomName = roomRef.current.name || roomRef.current.title || 'Live';
+    const content  = `🔴 LIVE • ${roomName}\n${username} vous invite à rejoindre !\n👉 ${link}`;
     try {
       await supabase.from('chat_messages').insert({ user_id: currentUser.id, content: content.slice(0, 1000) });
       setChatShared(true);
       setTimeout(() => setChatShared(false), 3000);
+
+      // Notifier TOUS les utilisateurs de l'invitation live
+      notifyAll(supabase, {
+        type:     'live_invite',
+        title:    `🔴 ${username} est en live !`,
+        body:     `"${roomName}" — clique pour rejoindre`,
+        url:      `/live/${roomRef.current.id}`,
+        icon_url: currentUser.avatar_url || currentUser.user_metadata?.avatar_url || '/icon-192.png',
+        from_user_id: currentUser.id,
+        metadata: {
+          roomId:   roomRef.current.id,
+          roomName,
+          hostId:   currentUser.id,
+          hostName: username,
+        },
+      }, [currentUser.id]).catch(() => {}); // exclure l'hôte lui-même
+
     } catch (err) { console.error('shareInGlobalChat:', err); }
   }, [currentUser]);
 
@@ -629,11 +647,19 @@ const LiveRoomPage = () => {
       const amHost = asHost || rd.host_id === currentUser.id;
       setIsHost(amHost); isHostRef.current = amHost;
 
+      // Charger les messages sans join FK (FK non déclarée → 400)
       const { data: msgs } = await supabase.from('live_room_messages')
-        .select('*, user:user_id(id,username,avatar_url)')
+        .select('*')
         .eq('room_id', id).eq('is_deleted', false)
         .order('created_at', { ascending: true }).limit(100);
-      setMessages(msgs || []); messagesRef.current = msgs || [];
+      if (msgs?.length) {
+        // Enrichir avec les données users
+        const uids = [...new Set(msgs.map(m => m.user_id).filter(Boolean))];
+        const { data: uData } = await supabase.from('users').select('id,username,avatar_url').in('id', uids);
+        const uMap = {}; (uData || []).forEach(u => { uMap[u.id] = u; });
+        const enriched = msgs.map(m => ({ ...m, user: uMap[m.user_id] || null }));
+        setMessages(enriched); messagesRef.current = enriched;
+      } else { setMessages([]); messagesRef.current = []; }
 
       if (rd.current_song) {
         setNowPlaying(rd.current_song);
@@ -863,16 +889,37 @@ const LiveRoomPage = () => {
     try {
       await supabase.from('live_room_messages').insert({ room_id: roomRef.current.id, user_id: currentUser.id, content });
       scrollChat();
-      // Notifier l'hôte (si c'est pas lui qui envoie)
+
+      const uname    = currentUser.username || currentUser.user_metadata?.username || currentUser.email?.split('@')[0] || 'Quelqu\'un';
+      const roomId   = roomRef.current.id;
+      const roomName = roomRef.current.name || roomRef.current.title || 'Live';
+      const liveUrl  = `/live/${roomId}`;
+      const icon     = currentUser.avatar_url || currentUser.user_metadata?.avatar_url || '/icon-192.png';
+      const meta     = { roomId, senderName: uname, senderId: currentUser.id };
+
+      // 1. Notifier l'hôte du live (si c'est pas lui qui envoie)
       if (roomRef.current?.host_id && roomRef.current.host_id !== currentUser.id) {
-        const uname = currentUser.user_metadata?.username || currentUser.email?.split('@')[0] || 'Quelqu\'un';
         notifyUser(supabase, roomRef.current.host_id, {
           type:     'live_comment',
           title:    `💬 ${uname} dans ton live`,
           body:     content.slice(0, 100),
-          url:      `/live/${roomRef.current.id}`,
-          icon_url: currentUser.user_metadata?.avatar_url || '/icon-192.png',
-          metadata: { roomId: roomRef.current.id },
+          url:      liveUrl,
+          icon_url: icon,
+          from_user_id: currentUser.id,
+          metadata: meta,
+        }).catch(() => {});
+      }
+
+      // 2. @mentions individuelles → notif de type 'mention' pour chaque personne taguée
+      const hasMentions = /@[\w-]+/.test(content);
+      if (hasMentions) {
+        notifyMentions(supabase, content, currentUser.id, {
+          title:    `🏷 ${uname} t'a mentionné dans un live`,
+          body:     `Dans "${roomName}" : ${content.slice(0, 80)}`,
+          url:      liveUrl,
+          icon_url: icon,
+          from_user_id: currentUser.id,
+          metadata: { ...meta, context: 'live' },
         }).catch(() => {});
       }
     } catch (err) { console.error(err); }

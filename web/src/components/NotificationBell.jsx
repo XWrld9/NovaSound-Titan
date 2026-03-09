@@ -23,19 +23,31 @@ import { useNotifications } from '@/contexts/NotificationContext';
 
 import { useAuth } from '@/contexts/AuthContext';
 
-// ── Config par type ──────────────────────────────────────────────────
+// ── Config par type — V70000 : tous les types couverts ───────────────
 const TYPE_CONFIG = {
+  // ── Likes ──
   like:             { icon: Heart,          color: '#f43f5e', bg: 'rgba(244,63,94,0.15)',  label: 'Like'            },
+  like_song:        { icon: Heart,          color: '#f43f5e', bg: 'rgba(244,63,94,0.15)',  label: 'Like son'        },
+  like_news:        { icon: Heart,          color: '#fb7185', bg: 'rgba(251,113,133,0.15)',label: 'Like news'       },
+  // ── Commentaires ──
   comment:          { icon: MessageCircle,  color: '#06b6d4', bg: 'rgba(6,182,212,0.15)',  label: 'Commentaire'     },
+  comment_news:     { icon: MessageCircle,  color: '#22d3ee', bg: 'rgba(34,211,238,0.15)', label: 'Comm. news'      },
+  reply:            { icon: Reply,          color: '#818cf8', bg: 'rgba(129,140,248,0.15)',label: 'Réponse'         },
+  mention:          { icon: AtSign,         color: '#f472b6', bg: 'rgba(244,114,182,0.15)',label: 'Mention'         },
+  // ── Social ──
   follow:           { icon: UserPlus,       color: '#a855f7', bg: 'rgba(168,85,247,0.15)', label: 'Abonné'          },
-  new_song:         { icon: Music,          color: '#10b981', bg: 'rgba(16,185,129,0.15)', label: 'Nouveau son'     },
   repost:           { icon: Reply,          color: '#34d399', bg: 'rgba(52,211,153,0.15)', label: 'Repartage'       },
-  news:             { icon: Newspaper,      color: '#f59e0b', bg: 'rgba(245,158,11,0.15)', label: 'Actualité'       },
-  chat_reply:       { icon: Reply,          color: '#e879f9', bg: 'rgba(232,121,249,0.15)',label: 'Réponse'         },
-  chat_mention:     { icon: AtSign,         color: '#67e8f9', bg: 'rgba(103,232,249,0.15)',label: 'Mention'         },
-  chat_mention_all: { icon: Zap,            color: '#fbbf24', bg: 'rgba(251,191,36,0.15)', label: '@tous'           },
+  // ── Musique ──
+  new_song:         { icon: Music,          color: '#10b981', bg: 'rgba(16,185,129,0.15)', label: 'Nouveau son'     },
+  queue_song:       { icon: Music,          color: '#34d399', bg: 'rgba(52,211,153,0.15)', label: 'File d\'attente' },
   mood_vote:        { icon: Zap,            color: '#fb923c', bg: 'rgba(251,146,60,0.15)', label: 'Vibe'            },
-  // V50000 — types live (manquants → affichaient une icône Bell générique)
+  // ── News ──
+  news:             { icon: Newspaper,      color: '#f59e0b', bg: 'rgba(245,158,11,0.15)', label: 'Actualité'       },
+  // ── Chat ──
+  chat_reply:       { icon: Reply,          color: '#e879f9', bg: 'rgba(232,121,249,0.15)',label: 'Réponse chat'    },
+  chat_mention:     { icon: AtSign,         color: '#67e8f9', bg: 'rgba(103,232,249,0.15)',label: 'Mention chat'    },
+  chat_mention_all: { icon: Zap,            color: '#fbbf24', bg: 'rgba(251,191,36,0.15)', label: '@tous'           },
+  // ── Live ──
   live_start:       { icon: Radio,          color: '#f43f5e', bg: 'rgba(244,63,94,0.15)',  label: 'Live démarré'    },
   live_started:     { icon: Radio,          color: '#f43f5e', bg: 'rgba(244,63,94,0.15)',  label: 'Live démarré'    },
   live_invite:      { icon: Radio,          color: '#fb7185', bg: 'rgba(251,113,133,0.15)',label: 'Invitation live' },
@@ -43,8 +55,9 @@ const TYPE_CONFIG = {
   live_comment:     { icon: MessageCircle,  color: '#a855f7', bg: 'rgba(168,85,247,0.15)', label: 'Message live'    },
   live_like:        { icon: Heart,          color: '#f43f5e', bg: 'rgba(244,63,94,0.15)',  label: 'Like live'       },
   live_leave:       { icon: Radio,          color: '#6b7280', bg: 'rgba(107,114,128,0.15)',label: 'A quitté'        },
-  queue_song:       { icon: Music,          color: '#34d399', bg: 'rgba(52,211,153,0.15)', label: 'File d\'attente' },
+  // ── Autres ──
   achievement:      { icon: Trophy,         color: '#f59e0b', bg: 'rgba(245,158,11,0.15)', label: 'Trophée'         },
+  broadcast:        { icon: Zap,            color: '#a78bfa', bg: 'rgba(167,139,250,0.15)',label: 'Annonce'         },
 };
 
 // Remplace l'icône par l'emoji du mood si présent dans les metadata
@@ -295,9 +308,9 @@ const NotifPanel = ({ panelRef, panelPos, onClose, mobile }) => {
     return true;
   });
 
-  // Final filtered (+ filtre type)
+  // Final filtered (+ filtre type) — normalizeType regroupe les sous-types
   const filtered = baseFiltered.filter(n => {
-    if (filter !== 'all' && n.type !== filter) return false;
+    if (filter !== 'all' && normalizeType(n.type) !== filter && n.type !== filter) return false;
     return true;
   });
 
@@ -318,22 +331,47 @@ const NotifPanel = ({ panelRef, panelPos, onClose, mobile }) => {
   };
 
   // Tous les types supportés — seuls ceux qui ont des notifs sont affichés (+ "Tout")
+  // V70000 : like_song/like_news groupés avec 'like', comment_news groupé avec 'comment',
+  // reply et mention ajoutés, live_invite ajouté, broadcast ajouté
   const ALL_TYPE_FILTERS = [
-    { key: 'all',              emoji: '🔔', label: 'Tout'   },
-    { key: 'like',             emoji: '❤️', label: 'Likes'  },
-    { key: 'comment',          emoji: '💬', label: 'Comms'  },
-    { key: 'follow',           emoji: '👤', label: 'Abos'   },
-    { key: 'chat_reply',       emoji: '↩️', label: 'Rép.'   },
-    { key: 'chat_mention',     emoji: '@',  label: 'Mentions'},
-    { key: 'chat_mention_all', emoji: '⚡', label: '@tous'  },
-    { key: 'new_song',         emoji: '🎵', label: 'Sons'   },
-    { key: 'repost',           emoji: '🔁', label: 'Reposts'},
-    { key: 'mood_vote',        emoji: '🎭', label: 'Vibes'  },
-    { key: 'news',             emoji: '📰', label: 'News'   },
+    { key: 'all',              emoji: '🔔', label: 'Tout'    },
+    { key: 'like',             emoji: '❤️', label: 'Likes'   },
+    { key: 'mention',          emoji: '@',  label: 'Mentions' },
+    { key: 'comment',          emoji: '💬', label: 'Comms'   },
+    { key: 'reply',            emoji: '↩️', label: 'Réponses'},
+    { key: 'follow',           emoji: '👤', label: 'Abos'    },
+    { key: 'chat_mention',     emoji: '💬', label: 'Chat'    },
+    { key: 'chat_mention_all', emoji: '⚡', label: '@tous'   },
+    { key: 'new_song',         emoji: '🎵', label: 'Sons'    },
+    { key: 'repost',           emoji: '🔁', label: 'Reposts' },
+    { key: 'mood_vote',        emoji: '🎭', label: 'Vibes'   },
+    { key: 'news',             emoji: '📰', label: 'News'    },
+    { key: 'live_start',       emoji: '🔴', label: 'Live'    },
+    { key: 'live_invite',      emoji: '🔴', label: 'Invit.'  },
+    { key: 'broadcast',        emoji: '📢', label: 'Annonce' },
   ];
+
+  // Pour les filtres : like_song + like_news → regroupés sous 'like'
+  // comment_news → regroupé sous 'comment', chat_reply → sous 'chat_mention'
+  // live_join/live_comment/live_like/live_started → sous 'live_start'
+  const normalizeType = (type) => {
+    if (['like_song','like_news','live_like'].includes(type)) return 'like';
+    if (['comment_news'].includes(type))                      return 'comment';
+    if (['chat_reply'].includes(type))                        return 'chat_mention';
+    if (['live_started','live_join','live_comment','live_leave'].includes(type)) return 'live_start';
+    return type;
+  };
+
+  // countByType normalisé
+  const countByTypeNorm = {};
+  notifications.forEach(n => {
+    const k = normalizeType(n.type);
+    countByTypeNorm[k] = (countByTypeNorm[k] || 0) + 1;
+  });
+
   // N'affiche que "Tout" + les types qui ont au moins 1 notif
   const typeFilters = ALL_TYPE_FILTERS.filter(
-    f => f.key === 'all' || (countByType[f.key] || 0) > 0
+    f => f.key === 'all' || (countByTypeNorm[f.key] || 0) > 0
   );
 
   const panelStyle = mobile ? {
@@ -511,7 +549,17 @@ const NotifPanel = ({ panelRef, panelPos, onClose, mobile }) => {
         ) : (
           // Vue groupée par catégorie
           (() => {
-            const ORDER = ['like','comment','follow','chat_reply','chat_mention','chat_mention_all','new_song','repost','news','live_start','live_join','live_comment','live_like'];
+            // V70000 — ORDER complet : tous les types envoyés par le front
+            const ORDER = [
+              'like','like_song','like_news',
+              'mention','reply',
+              'comment','comment_news',
+              'follow','repost',
+              'chat_mention','chat_mention_all','chat_reply',
+              'new_song','mood_vote','news',
+              'live_start','live_started','live_invite','live_join','live_comment','live_like','live_leave',
+              'broadcast','achievement','queue_song',
+            ];
             const groups = {};
             filtered.forEach(n => {
               const k = ORDER.includes(n.type) ? n.type : 'other';
