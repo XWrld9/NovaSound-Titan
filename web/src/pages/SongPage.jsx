@@ -4,7 +4,7 @@
  *    mode cover plein écran, compteur commentaires live,
  *    bug fix edit commentaire inclus dans CommentSection
  */
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -116,42 +116,47 @@ const SongPage = () => {
   const [heroImmersive, setHeroImmersive]= useState(false);
 
   const fetchSong = useCallback(async () => {
+    let mounted = true;
     try {
       setLoading(true);
       const { data, error: e } = await supabase.from('songs').select('*').eq('id', id).single();
+      if (!mounted) return;
       if (e || !data || data.is_archived) { setError(true); setLoading(false); return; }
       setSong(data);
       if (data.uploader_id) {
         const { data: ud } = await supabase.from('users')
           .select('id, username, avatar_url, email, bio').eq('id', data.uploader_id).single();
-        setArtist(ud || null); setArtistEmail(ud?.email || null);
+        if (mounted) { setArtist(ud || null); setArtistEmail(ud?.email || null); }
       }
       const { data: sib } = await supabase.from('songs')
         .select('id,title,artist,cover_url,audio_url,genre,uploader_id,duration_s')
         .eq('is_archived', false).order('created_at',{ascending:false}).limit(60);
-      if (sib) { let l=sib; if(!l.find(s=>s.id===data.id)) l=[data,...l]; setSiblings(l); }
+      if (mounted && sib) { let l=sib; if(!l.find(s=>s.id===data.id)) l=[data,...l]; setSiblings(l); }
       if (data.genre) {
         const { data: gs } = await supabase.from('songs')
           .select('id,title,artist,cover_url,audio_url,plays_count,genre')
           .eq('is_archived',false).eq('genre',data.genre).neq('id',data.id)
           .order('plays_count',{ascending:false}).limit(6);
-        setSimilar(gs||[]);
+        if (mounted) setSimilar(gs||[]);
       }
       if (data.uploader_id) {
         const { data: ss } = await supabase.from('songs')
           .select('id,title,artist,cover_url,audio_url,plays_count,genre')
           .eq('is_archived',false).eq('uploader_id',data.uploader_id).neq('id',data.id)
           .order('created_at',{ascending:false}).limit(5);
-        setMoreBySame(ss||[]);
+        if (mounted) setMoreBySame(ss||[]);
       }
       const { count } = await supabase.from('song_comments')
         .select('id',{count:'exact',head:true}).eq('song_id',data.id);
-      setCommentCount(count ?? 0);
-    } catch { setError(true); }
-    finally { setLoading(false); }
+      if (mounted) setCommentCount(count ?? 0);
+    } catch { if (mounted) setError(true); }
+    finally { if (mounted) setLoading(false); }
   }, [id]);
 
-  useEffect(() => { if(id) fetchSong(); }, [fetchSong]);
+  useEffect(() => {
+    if (!id) return;
+    fetchSong();
+  }, [fetchSong]);
 
   useEffect(() => {
     const h = e => { const u=e.detail; if(u?.id) setSong(p=>p?.id===u.id?{...p,...u}:p); };

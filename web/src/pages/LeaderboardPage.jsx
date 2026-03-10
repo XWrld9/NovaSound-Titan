@@ -6,7 +6,7 @@
  * - myStreakRank ajouté + secondLabelFn pour label dynamique per-row
  * - Podium + Top20 unifiés sur tous les onglets
  */
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Helmet } from 'react-helmet-async';
 import { motion, AnimatePresence } from 'framer-motion';
 import { supabase } from '@/lib/supabaseClient';

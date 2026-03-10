@@ -8,7 +8,7 @@ import NewsForm from '@/components/NewsForm';
 import ReportButton from '@/components/ReportButton';
 import NewsLikeButton from '@/components/NewsLikeButton';
 import { useAuth } from '@/contexts/AuthContext';
-import { Newspaper, Calendar, User, X, ChevronRight, Trash2 } from 'lucide-react';
+import { Newspaper, User, X, ChevronRight, Trash2 } from 'lucide-react';
 import NewsShareButton from '@/components/NewsShareButton';
 import NewsCommentSection from '@/components/NewsCommentSection';
 import AdminConfirmDialog from '@/components/AdminConfirmDialog';
@@ -21,7 +21,7 @@ const NewsPage = () => {
   const [news, setNews] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedNews, setSelectedNews] = useState(null);
-  const [expandedComments, setExpandedComments] = useState(new Set());
+  const [expandedComments] = useState(new Set());
   const [deletingId, setDeletingId] = useState(null);
   const [confirmDialog, setConfirmDialog] = useState({ isOpen: false });
 

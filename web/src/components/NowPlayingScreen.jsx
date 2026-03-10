@@ -196,21 +196,25 @@ const NowPlayingScreen = ({
       setIsLiked(false); setLikeId(null); setHasReposted(false);
       setIsFollowing(false); setFollowId(null); return;
     }
+    let mounted = true;
     const sid = currentSong.id, uid = currentSong.uploader_id;
     withRetry(() => supabase.from('likes').select('id').eq('song_id',sid).eq('user_id',currentUser.id).maybeSingle())
-      .then(({data}) => { setIsLiked(!!data); setLikeId(data?.id||null); }).catch(()=>{});
+      .then(({data}) => { if (mounted) { setIsLiked(!!data); setLikeId(data?.id||null); } }).catch(()=>{});
     withRetry(() => supabase.from('song_reposts').select('id').eq('song_id',sid).eq('user_id',currentUser.id).maybeSingle())
-      .then(({data}) => setHasReposted(!!data)).catch(()=>{});
+      .then(({data}) => { if (mounted) setHasReposted(!!data); }).catch(()=>{});
     if (uid && uid !== currentUser.id) {
       withRetry(() => supabase.from('follows').select('id').eq('follower_id',currentUser.id).eq('following_id',uid).maybeSingle())
-        .then(({data}) => { setIsFollowing(!!data); setFollowId(data?.id||null); }).catch(()=>{});
+        .then(({data}) => { if (mounted) { setIsFollowing(!!data); setFollowId(data?.id||null); } }).catch(()=>{});
     }
+    return () => { mounted = false; };
   }, [currentUser, currentSong?.id, withRetry]);
 
   useEffect(() => {
     if (!currentSong || currentSong.is_local) { setLyricsContent(null); return; }
+    let mounted = true;
     supabase.from('song_lyrics').select('content').eq('song_id',currentSong.id).maybeSingle()
-      .then(({data}) => setLyricsContent(data?.content||null)).catch(()=>{});
+      .then(({data}) => { if (mounted) setLyricsContent(data?.content||null); }).catch(()=>{});
+    return () => { mounted = false; };
   }, [currentSong?.id]);
 
   const toggleLike = async () => {

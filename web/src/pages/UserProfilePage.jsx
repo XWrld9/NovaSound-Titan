@@ -92,10 +92,12 @@ const UserProfilePage = () => {
   // ── Fetch ─────────────────────────────────────────────────────────────────
   const fetchUserData = useCallback(async () => {
     if (!currentUser) return;
+    let mounted = true;
     setLoading(true);
     try {
       const { data: userData, error: userError } = await supabase
         .from('users').select('*').eq('id', currentUser.id).single();
+      if (!mounted) return;
       if (userError || !userData) { setLoading(false); return; }
       setProfile(userData);
       setLoading(false);
@@ -110,6 +112,7 @@ const UserProfilePage = () => {
           supabase.from('song_reposts').select('song_id, created_at, songs(id,title,artist,cover_url,audio_url,created_at,plays_count,likes_count,uploader_id)').eq('user_id', currentUser.id).order('created_at', { ascending: false }),
         ]);
 
+      if (!mounted) return;
       if (songsRes.status === 'fulfilled' && !songsRes.value.error)    setUserSongs(songsRes.value.data || []);
       if (favRes.status === 'fulfilled' && !favRes.value.error)        setFavoriteSongs((favRes.value.data || []).map(f => f.songs).filter(Boolean).filter(Boolean));
       if (likesRes.status === 'fulfilled' && !likesRes.value.error)    setLikedSongs((likesRes.value.data || []).map(l => l.songs).filter(Boolean).filter(Boolean));
@@ -119,8 +122,9 @@ const UserProfilePage = () => {
         setRepostedSongs((repostsRes.value.data || []).map(r => r.songs).filter(Boolean).filter(Boolean));
     } catch (err) {
       console.error('[UserProfile] fetchUserData:', err);
-      setLoading(false);
+      if (mounted) setLoading(false);
     }
+    return () => { mounted = false; };
   }, [currentUser]);
 
   const fetchAchievements = useCallback(async () => {

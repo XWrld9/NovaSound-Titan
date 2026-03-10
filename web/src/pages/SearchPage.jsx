@@ -19,7 +19,7 @@ import {
   Play, Headphones, TrendingUp, Mic2, ChevronRight, User
 } from 'lucide-react';
 import { formatPlays } from '@/lib/utils';
-import { GENRE_THEMES_MAP } from '@/hooks/useGenreTheme';
+
 import { logSearch } from '@/lib/notifUtils';
 
 const HISTORY_KEY = (uid) => `novasound.search.history.${uid}`;

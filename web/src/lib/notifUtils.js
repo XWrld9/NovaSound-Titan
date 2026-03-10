@@ -84,18 +84,22 @@ export const notifyUser = async (sb, userId, payload) => {
   const dedupeKey = `${userId}:${payload.type}:${payload.metadata?.refId || payload.body?.slice(0,30) || ''}`;
   if (_isDupe(dedupeKey)) return;
   try {
-    const notifId = await _insert(sb, { ...payload, user_id: userId });
-    if (notifId) {
-      _push(sb, {
-        user_id:  userId,
-        notif_id: notifId,
-        title:    payload.title,
-        body:     (payload.body || '').slice(0, 200),
-        url:      payload.url || '/',
-        icon_url: payload.icon_url || '/icon-192.png',
-        type:     payload.type,
-      });
-    }
+    // 🔴 FIX BUG 4 : _insert() retourne TOUJOURS null (pas de .select() après INSERT
+    // à cause de la RLS SELECT qui autorise uniquement le destinataire).
+    // L'ancien code testait "if (notifId)" → toujours false → le push ne partait JAMAIS.
+    // Correction : appeler _push systématiquement après un insert réussi,
+    // en passant user_id (l'Edge Function récupère les subscriptions depuis la DB).
+    await _insert(sb, { ...payload, user_id: userId });
+    _push(sb, {
+      user_id:  userId,
+      // notif_id absent intentionnellement (pas récupérable sans .select()) :
+      // l'idempotency côté Edge Function est assurée par la déduplication en mémoire ci-dessus.
+      title:    payload.title,
+      body:     (payload.body || '').slice(0, 200),
+      url:      payload.url || '/',
+      icon_url: payload.icon_url || '/icon-192.png',
+      type:     payload.type,
+    });
   } catch (err) {
     // silencieux — ne jamais bloquer l'UX pour une notif
     console.warn('[notifUtils] notifyUser:', err?.message);
@@ -243,7 +247,7 @@ export const notifyCommentReply = async (sb, parentCommentId, actorId, payload) 
   if (!parentCommentId || !actorId) return;
   try {
     const { data: parent } = await sb
-      .from('comments')
+      .from('song_comments') // 🔴 FIX BUG 5 : était 'comments' — la table s'appelle 'song_comments'
       .select('user_id, content')
       .eq('id', parentCommentId)
       .maybeSingle();

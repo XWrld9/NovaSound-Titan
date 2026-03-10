@@ -1261,7 +1261,7 @@ const AudioPlayerDesktop = ({ currentSong, playlist = [], onNext, onPrevious, on
                     )}
                   </div>
                 </motion.div>
-                <>
+              </>
               )}
             </AnimatePresence>
 

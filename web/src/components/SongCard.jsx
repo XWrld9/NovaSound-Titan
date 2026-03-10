@@ -176,7 +176,7 @@ const SongCard = memo(({ song: initialSong, onPlay, isPlaying: isPlayingProp, se
               {song.artist}
             </Link>
           ) : (
-            <p className="text-gray-400 text-xs truncate mt-0.5">{song.artist}</p>
+            <p className="text-gray-400 text-xs truncate mt-0.5" title={song?.artist}>{song.artist}</p>
           )}
 
           {/* Genre badge — couleur dynamique par genre */}

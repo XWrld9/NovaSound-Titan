@@ -25,7 +25,7 @@ import {
   Download, Share2, ExternalLink, ListMusic
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
-import { ALL_GENRES, GENRE_THEMES_MAP } from '@/hooks/useGenreTheme';
+import { ALL_GENRES } from '@/hooks/useGenreTheme';
 
 const GENRES = ALL_GENRES; // centralisé dans useGenreTheme.js
 

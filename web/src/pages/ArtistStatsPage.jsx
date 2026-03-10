@@ -186,7 +186,7 @@ const ArtistStatsPage = () => {
     setLoading(true);
     try {
       const [{ data: songsData }, { data: followersData }] = await Promise.all([
-        supabase.from('songs').select('*').eq('uploader_id', currentUser.id).order('plays_count', { ascending: false }),
+        supabase.from('songs').select('*').eq('uploader_id', currentUser.id).order('plays_count', { ascending: false }).limit(500),
         supabase.from('follows').select('id', { count: 'exact', head: true }).eq('following_id', currentUser.id),
       ]);
 
