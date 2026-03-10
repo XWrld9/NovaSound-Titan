@@ -23,8 +23,11 @@ export const OnlineProvider = ({ children }) => {
   const [isOnline,   setIsOnline]   = useState(() => typeof navigator !== 'undefined' ? navigator.onLine : true);
   const [wasOffline, setWasOffline] = useState(false);
   const reconnectCbs = useRef([]);
+  const offlineTimer = useRef(null); // délai avant de confirmer le mode offline
 
   const goOnline = useCallback(() => {
+    // Annuler le timer offline s'il est en cours
+    if (offlineTimer.current) { clearTimeout(offlineTimer.current); offlineTimer.current = null; }
     setIsOnline(true);
     setWasOffline(true);
     reconnectCbs.current.forEach(cb => { try { cb(); } catch(e) {} });
@@ -32,8 +35,14 @@ export const OnlineProvider = ({ children }) => {
   }, []);
 
   const goOffline = useCallback(() => {
-    setIsOnline(false);
-    setWasOffline(false);
+    // Attendre 5s avant de passer en mode offline
+    // Evite les faux positifs sur coupures momentanées (changement WiFi, etc.)
+    if (offlineTimer.current) return; // timer déjà en cours
+    offlineTimer.current = setTimeout(() => {
+      offlineTimer.current = null;
+      setIsOnline(false);
+      setWasOffline(false);
+    }, 5000);
   }, []);
 
   useEffect(() => {
@@ -57,6 +66,7 @@ export const OnlineProvider = ({ children }) => {
       window.removeEventListener('online',  onOnline);
       window.removeEventListener('offline', onOffline);
       clearInterval(interval);
+      if (offlineTimer.current) clearTimeout(offlineTimer.current);
     };
   }, [goOnline, goOffline, isOnline]);
 

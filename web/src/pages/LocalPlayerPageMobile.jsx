@@ -443,7 +443,7 @@ const LocalPlayerPageMobile = memo(()=>{
   /* handlers */
   const handlePlaySong=useCallback(song=>{
     const mapped={...song,audio_url:song.url||song.audio_url,cover_url:song.coverUrl||song.cover_url};
-    playSong(mapped,songs.map(s=>({...s,audio_url:s.url,cover_url:s.coverUrl})));
+    playSong(mapped,songs.map(s=>({...s,audio_url:s.audio_url||s.url,cover_url:s.cover_url||s.coverUrl})));
   },[playSong,songs]);
 
   const handleRemoveSong=useCallback(song=>{

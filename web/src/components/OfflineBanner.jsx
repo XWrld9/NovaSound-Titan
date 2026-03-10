@@ -38,8 +38,21 @@ export const useNetworkDetector = () => {
   }, []);
 
   useEffect(() => {
-    const onOnline  = () => { setIsOnline(true);  pingTimer.current = setTimeout(runPing, 300); };
-    const onOffline = () => setIsOnline(false);
+    const offlineTimer = { current: null };
+    const onOnline  = () => {
+      // Annuler le timer offline si connexion revient
+      if (offlineTimer.current) { clearTimeout(offlineTimer.current); offlineTimer.current = null; }
+      setIsOnline(true);
+      pingTimer.current = setTimeout(runPing, 300);
+    };
+    const onOffline = () => {
+      // Attendre 5s avant d'afficher le mode offline
+      if (offlineTimer.current) return;
+      offlineTimer.current = setTimeout(() => {
+        offlineTimer.current = null;
+        setIsOnline(false);
+      }, 5000);
+    };
     window.addEventListener('online',  onOnline);
     window.addEventListener('offline', onOffline);
 

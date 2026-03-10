@@ -79,7 +79,7 @@ const AboutModal = ({ onClose }) => (
             <img src="/icon-512.png" alt="Logo" className="w-10 h-10 rounded-2xl border border-cyan-400/30 object-cover" />
             <div>
               <h3 className="text-white font-black text-base leading-tight">NovaSound TITAN LUX</h3>
-              <p className="text-cyan-400/70 text-xs">v410.0.0 — 2026</p>
+              <p className="text-cyan-400/70 text-xs">v 2.0 — 2026</p>
             </div>
           </div>
           <button onClick={onClose} className="w-8 h-8 rounded-full bg-white/[0.07] flex items-center justify-center text-gray-500 hover:text-white transition-colors">

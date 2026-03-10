@@ -246,6 +246,22 @@ const MusicUploadPage = () => {
         throw new Error('Session expirée — reconnectez-vous');
       }
 
+      // ── Garantir que le profil existe dans public.users ─────────────────
+      // Sur certains appareils, le trigger de création de profil échoue
+      // au moment du signup → uploader_id FK violation à l'insert songs.
+      try {
+        const { data: existingProfile } = await supabase
+          .from('users').select('id').eq('id', currentUser.id).maybeSingle();
+        if (!existingProfile) {
+          await supabase.from('users').insert([{
+            id:         currentUser.id,
+            email:      currentUser.email,
+            username:   currentUser.user_metadata?.username || currentUser.email?.split('@')[0] || 'user',
+            created_at: new Date().toISOString(),
+          }]);
+        }
+      } catch { /* non-bloquant — le profil existe peut-être déjà */ }
+
       // ── Phase 1 : Upload audio via XHR (jamais via SDK fetch) ─
       setUploadPhase('audio');
       const audioExt  = audioFile.name.split('.').pop().toLowerCase() || 'mp3';
@@ -299,6 +315,21 @@ const MusicUploadPage = () => {
       // ── Phase 3 : Insert en base ───────────────────────────────
       setUploadPhase('saving');
       setUploadProgress(90);
+
+      // Garantir que le profil public.users existe avant l'insert
+      // (FK songs_uploader_id_fkey → users.id — échoue si la ligne est absente)
+      try {
+        const { data: existingProfile } = await supabase
+          .from('users').select('id').eq('id', currentUser.id).maybeSingle();
+        if (!existingProfile) {
+          await supabase.from('users').insert([{
+            id:         currentUser.id,
+            email:      currentUser.email,
+            username:   currentUser.username || currentUser.user_metadata?.username || currentUser.email.split('@')[0],
+            created_at: new Date().toISOString(),
+          }]);
+        }
+      } catch { /* profil déjà existant ou non-bloquant */ }
 
       const { error: insertError } = await supabase.from('songs').insert({
         title:       formData.title.trim(),

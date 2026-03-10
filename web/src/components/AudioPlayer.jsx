@@ -100,7 +100,8 @@ const AudioPlayerDesktop = ({ currentSong, playlist = [], onNext, onPrevious, on
   const navigate = useNavigate();
   const toast = useToast();
   const location = useLocation();
-  const audioRef = useRef(null);
+  const audioRef       = useRef(null);
+  const pendingPlayRef  = useRef(false); // force-play reçu avant chargement chanson
 
   // Pages où le BottomNav mobile est masqué → mini player colle directement au bas
   const isNavHiddenPage = location.pathname === '/local-player' ||
@@ -234,7 +235,19 @@ const AudioPlayerDesktop = ({ currentSong, playlist = [], onNext, onPrevious, on
 
   // ── force-play / force-pause depuis PlayerContext compat aliases ─
   useEffect(() => {
-    const onPlay  = () => { audioRef.current?.play().then(() => { setIsPlaying(true); setIsPlayingGlobal(true); }).catch(() => {}); };
+    const onPlay = () => {
+      // Si l'audio est déjà chargé (src présent et readyState >= 2), jouer directement
+      const audio = audioRef.current;
+      if (audio && audio.src && audio.readyState >= 2) {
+        audio.play()
+          .then(() => { setIsPlaying(true); setIsPlayingGlobal(true); })
+          .catch(() => {});
+      } else {
+        // Chanson pas encore chargée (src va être mis à jour par useEffect) →
+        // marquer pendingPlay pour que l'effect de chargement joue dès que prêt
+        pendingPlayRef.current = true;
+      }
+    };
     const onPause = () => { audioRef.current?.pause(); setIsPlaying(false); setIsPlayingGlobal(false); };
     window.addEventListener('novasound:force-play',  onPlay);
     window.addEventListener('novasound:force-pause', onPause);
@@ -467,6 +480,12 @@ const AudioPlayerDesktop = ({ currentSong, playlist = [], onNext, onPrevious, on
     setPlayRecorded(false); setCurrentTime(0); setDuration(0); setIsBuffering(false);
     if (currentUser) { checkLikeStatus(); checkFollowStatus(); }
     else { setIsLiked(false); setLikeId(null); setIsFollowing(false); setFollowId(null); }
+
+    // Consommer pendingPlayRef (force-play reçu avant chargement)
+    if (pendingPlayRef.current) {
+      autoPlayRef.current = true;
+      pendingPlayRef.current = false;
+    }
 
     if ((isNewSong || wasFirstSong) && autoPlayRef.current) {
       setIsBuffering(true);

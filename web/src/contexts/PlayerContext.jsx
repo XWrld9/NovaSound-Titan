@@ -159,6 +159,11 @@ export const PlayerProvider = ({ children }) => {
     setIsVisible(true);
     setCurrentPlaylistId(playlistId || null);
     setShouldAutoPlay(true);
+    // Déclencher force-play DANS LE MÊME TICK que le geste utilisateur.
+    // Sur mobile, audio.play() appelé depuis useEffect (tick suivant) perd le
+    // contexte de geste et obtient NotAllowedError. En dispatchant ici, l'event
+    // arrive dans AudioPlayer pendant que le contexte geste est encore actif.
+    window.dispatchEvent(new CustomEvent('novasound:force-play'));
   }, []);
 
   // ── removeFromPlaylist ──────────────────────────────────────────
