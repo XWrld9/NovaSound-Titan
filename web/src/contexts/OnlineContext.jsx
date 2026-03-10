@@ -42,7 +42,7 @@ export const OnlineProvider = ({ children }) => {
       offlineTimer.current = null;
       setIsOnline(false);
       setWasOffline(false);
-    }, 5000);
+    }, 60000); // 1 minute — évite les faux positifs
   }, []);
 
   useEffect(() => {

@@ -10,6 +10,7 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { WifiOff, Wifi, Music, RefreshCw, Headphones, Clock, CheckCircle2, Loader2 } from 'lucide-react';
+import { useNavigate, useLocation } from 'react-router-dom';
 
 /* ── Ping réel pour vérifier la connectivité (navigator.onLine = non fiable) ── */
 const checkRealConnectivity = async () => {
@@ -51,7 +52,7 @@ export const useNetworkDetector = () => {
       offlineTimer.current = setTimeout(() => {
         offlineTimer.current = null;
         setIsOnline(false);
-      }, 5000);
+      }, 60000); // 1 minute
     };
     window.addEventListener('online',  onOnline);
     window.addEventListener('offline', onOffline);
@@ -87,6 +88,10 @@ const OfflineBanner = () => {
   const [justReconnected, setJustReconnected] = useState(false);
   const [checking,        setChecking]        = useState(false);
   const prevOnline = useRef(isOnline);
+  const navigate   = useNavigate();
+  const location   = useLocation();
+  // Sur /local-player l'utilisateur est intentionnellement offline — ne pas couvrir la page
+  const isLocalPlayer = location.pathname === '/local-player' || location.pathname.startsWith('/local-player/');
 
   useEffect(() => {
     if (!prevOnline.current && isOnline) {
@@ -106,6 +111,7 @@ const OfflineBanner = () => {
   };
 
   if (isOnline && !isSlowConnection && !justReconnected) return null;
+  if (isLocalPlayer) return null; // Lecteur local fonctionne offline — ne pas couvrir
 
   /* Bannière connexion lente */
   if (isOnline && isSlowConnection && !justReconnected) {
@@ -192,7 +198,7 @@ const OfflineBanner = () => {
         {/* Boutons CTA */}
         <div className="flex flex-col gap-3 w-full">
           <button
-            onClick={() => { window.location.href = '/#/local-player'; }}
+            onClick={() => navigate('/local-player')}
             className="w-full py-3.5 rounded-2xl font-semibold text-sm text-white active:scale-95 transition-transform"
             style={{ background: 'linear-gradient(135deg, #10b981, #059669)', boxShadow: '0 4px 20px rgba(16,185,129,0.28)' }}>
             <Headphones className="w-4 h-4 inline mr-2 -mt-0.5" />

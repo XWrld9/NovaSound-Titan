@@ -85,13 +85,21 @@ const OfflineRedirect = () => {
     if (!isOfflineOk) navigate('/local-player', { replace: true });
   };
 
-  // Vérification synchrone au montage (évite le flash de la page normale)
+  // Vérification au montage avec délai de 1 minute (cohérent avec OnlineContext)
+  // navigator.onLine n'est pas fiable instantanément (WiFi lent, transition réseau)
   useLayoutEffect(() => {
-    if (!navigator.onLine) checkAndRedirect(location.pathname);
+    if (!navigator.onLine) {
+      const t = setTimeout(() => {
+        if (!navigator.onLine) checkAndRedirect(location.pathname);
+      }, 60000); // 1 minute — même délai que OnlineContext
+      return () => clearTimeout(t);
+    }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Vérification sur changement d'état réseau ou de route
+  // Le délai de 5s est déjà géré dans OnlineContext — isOnline ne
+  // passe false qu'après confirmation, donc pas de redirect prématuré.
   useEffect(() => {
     if (!isOnline) checkAndRedirect(location.pathname);
   // eslint-disable-next-line react-hooks/exhaustive-deps
