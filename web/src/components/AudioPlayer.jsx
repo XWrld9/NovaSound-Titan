@@ -724,8 +724,7 @@ const AudioPlayerDesktop = ({ currentSong, playlist = [], onNext, onPrevious, on
     swipeStartY.current = e.touches[0].clientY;
     swipeStartX.current = e.touches[0].clientX;
   };
-  const handleMouseMove = useCallback(
-    throttle((e) => {
+  const handleMouseMove = useCallback((e) => {
       if (!isDragging || isExpanded) return;
       
       const newX = e.clientX - dragStart.x;
@@ -739,7 +738,7 @@ const AudioPlayerDesktop = ({ currentSong, playlist = [], onNext, onPrevious, on
         x: Math.max(0, Math.min(newX, maxX)),
         y: Math.max(0, Math.min(newY, maxY))
       });
-    }, 16), // 60fps pour éviter les reflows
+    },
     [isDragging, dragStart, isExpanded]
   );
   const handleTouchEnd = (e) => {

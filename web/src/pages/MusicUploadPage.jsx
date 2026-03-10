@@ -318,18 +318,16 @@ const MusicUploadPage = () => {
 
       // Garantir que le profil public.users existe avant l'insert
       // (FK songs_uploader_id_fkey → users.id — échoue si la ligne est absente)
+      // On utilise upsert (ignoreSufixConflicts) pour éviter le doublon silencieux
+      // qui faisait échouer l'insert précédent sans message d'erreur visible.
       try {
-        const { data: existingProfile } = await supabase
-          .from('users').select('id').eq('id', currentUser.id).maybeSingle();
-        if (!existingProfile) {
-          await supabase.from('users').insert([{
-            id:         currentUser.id,
-            email:      currentUser.email,
-            username:   currentUser.username || currentUser.user_metadata?.username || currentUser.email.split('@')[0],
-            created_at: new Date().toISOString(),
-          }]);
-        }
-      } catch { /* profil déjà existant ou non-bloquant */ }
+        await supabase.from('users').upsert([{
+          id:         currentUser.id,
+          email:      currentUser.email      || '',
+          username:   currentUser.username   || currentUser.user_metadata?.username || currentUser.email?.split('@')[0] || 'user',
+          created_at: new Date().toISOString(),
+        }], { onConflict: 'id', ignoreDuplicates: true });
+      } catch { /* non-bloquant — si ça échoue le profil existe déjà */ }
 
       const { error: insertError } = await supabase.from('songs').insert({
         title:       formData.title.trim(),
