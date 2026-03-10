@@ -33,9 +33,19 @@ export const useNetworkDetector = () => {
   const [isSlowConnection, setIsSlowConnection] = useState(false);
   const pingTimer = useRef(null);
 
+  const pingOfflineTimer = useRef(null);
   const runPing = useCallback(async () => {
     const ok = await checkRealConnectivity();
-    setIsOnline(ok);
+    if (ok) {
+      if (pingOfflineTimer.current) { clearTimeout(pingOfflineTimer.current); pingOfflineTimer.current = null; }
+      setIsOnline(true);
+    } else if (!pingOfflineTimer.current) {
+      // Attendre 60s avant de déclarer offline (comme OnlineContext)
+      pingOfflineTimer.current = setTimeout(() => {
+        pingOfflineTimer.current = null;
+        setIsOnline(false);
+      }, 60000);
+    }
   }, []);
 
   useEffect(() => {
@@ -68,7 +78,12 @@ export const useNetworkDetector = () => {
       updateSpeed();
     }
 
-    if (!navigator.onLine) setIsOnline(false);
+    // Pas de setIsOnline(false) instantané au démarrage — utiliser le timer
+    // pour éviter les faux positifs (WiFi lent, transition réseau)
+    if (!navigator.onLine) {
+      const startTimer = { current: null };
+      startTimer.current = setTimeout(() => { if (!navigator.onLine) setIsOnline(false); }, 60000);
+    }
 
     return () => {
       window.removeEventListener('online',  onOnline);

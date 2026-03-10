@@ -239,7 +239,7 @@ const SeekBar = ({ currentTime, duration, onSeek, color='#22d3ee', size='md' }) 
 /* SongRow */
 const SongRow = memo(({song,index,isActive,isSelected,onPlay,onRemove,selectionMode,onToggleSelect,duration})=>{
   const nr = !!song._needsReimport;
-  const cover = song.cover_svg||song.cover_url;
+  const cover = song.cover_url||song.cover_svg;
   return (
     <motion.div
       initial={{opacity:0,y:4}} animate={{opacity:1,y:0}}
@@ -281,7 +281,7 @@ SongRow.displayName='SongRow';
 
 /* PlaylistCard */
 const PlaylistCard = memo(({pl,onLoad,onDelete,liveSongs})=>{
-  const cover = pl.songs[0]?.cover_svg||pl.songs[0]?.cover_url||makeCoverSvg(pl.name,'');
+  const cover = pl.songs[0]?.cover_url||pl.songs[0]?.cover_svg||makeCoverSvg(pl.name,'');
   const ready = pl.songs.filter(s=>{const l=liveSongs?.find(x=>x.id===s.id);return l&&!l._needsReimport;}).length;
   return (
     <motion.div layout initial={{opacity:0,scale:0.95}} animate={{opacity:1,scale:1}} exit={{opacity:0,scale:0.9}}
@@ -386,6 +386,8 @@ const LocalPlayerPage = () => {
   } = usePlayer();
   const { audioCurrentTime, audioDuration } = usePlayerTime();
   const navigate = useNavigate();
+  // Ref pour éviter la closure périmée dans le handler keydown (Space)
+  const isPlayingGlobalRef = useRef(false);
 
   const [songs,            setSongs]            = useState([]);
   const [loading,          setLoading]          = useState(false);
@@ -406,6 +408,9 @@ const LocalPlayerPage = () => {
   const [modeTransition,   setModeTransition]   = useState(false);
   const [osd,              setOsd]              = useState(null); // {key, label, value, id}
   const osdIdRef = useRef(0);
+
+  // Sync ref
+  useEffect(() => { isPlayingGlobalRef.current = isPlayingGlobal; }, [isPlayingGlobal]);
 
   /* OSD trigger */
   const showOSD = useCallback((key, label, value=null) => {
@@ -486,7 +491,7 @@ const LocalPlayerPage = () => {
           e.preventDefault();
           if (currentSong?.is_local) {
             togglePlayPause?.();
-            showOSD('Space', isPlayingGlobal ? '⏸ Pause' : '▶ Lecture');
+            showOSD('Space', isPlayingGlobalRef.current ? '⏸ Pause' : '▶ Lecture');
           } else if (songs.length) {
             playSong(songs[0], songs);
             showOSD('Space', '▶ Lecture');
@@ -545,7 +550,7 @@ const LocalPlayerPage = () => {
     };
     window.addEventListener('keydown', handler);
     return () => window.removeEventListener('keydown', handler);
-  }, [songs, currentSong, isPlayingGlobal, audioCurrentTime, audioDuration, togglePlayPause, seekTo, handleNext, handlePrevious, playSong, toggleShuffle, shuffle, cycleRepeat, repeat, showOSD]);
+  }, [songs, currentSong, audioCurrentTime, audioDuration, togglePlayPause, seekTo, handleNext, handlePrevious, playSong, toggleShuffle, shuffle, cycleRepeat, repeat, showOSD]); // isPlayingGlobal retiré → ref utilisée
 
   /* ── Drag & Drop ── */
   useEffect(() => {
@@ -699,7 +704,7 @@ const LocalPlayerPage = () => {
   const duration       = isLocalPlaying ? (audioDuration||0) : 0;
   const ct             = isLocalPlaying ? (audioCurrentTime||0) : 0;
   const VolumeIcon     = isMuted||volume===0 ? VolumeX : Volume2;
-  const cover          = activeSong?.cover_svg||activeSong?.cover_url||makeCoverSvg(activeSong?.title||'',activeSong?.artist||'');
+  const cover          = activeSong?.cover_url||activeSong?.cover_svg||makeCoverSvg(activeSong?.title||'',activeSong?.artist||''); // cover_url = vraie pochette APIC, cover_svg = avatar lettre
 
   /* Go online */
   const goOnline = useCallback(()=>{
@@ -807,7 +812,7 @@ const LocalPlayerPage = () => {
                     <button key={pl.id} onClick={()=>loadPlaylist(pl)}
                       className="flex items-center gap-3 px-3 py-3 rounded-2xl bg-white/[0.04] hover:bg-white/[0.07] border border-white/[0.07] hover:border-fuchsia-500/25 transition-all text-left group">
                       <div className="w-10 h-10 rounded-xl overflow-hidden flex-shrink-0 shadow-sm">
-                        <img src={pl.songs[0]?.cover_svg||pl.songs[0]?.cover_url||makeCoverSvg(pl.name,'')} alt="" className="w-full h-full object-cover"/>
+                        <img src={pl.songs[0]?.cover_url||pl.songs[0]?.cover_svg||makeCoverSvg(pl.name,'')} alt="" className="w-full h-full object-cover"/>
                       </div>
                       <div className="flex-1 min-w-0">
                         <p className="text-white text-xs font-semibold truncate group-hover:text-fuchsia-300 transition-colors">{pl.name}</p>
@@ -1043,7 +1048,7 @@ const LocalPlayerPage = () => {
                     {songs.slice(activeIdx>=0?activeIdx:0,(activeIdx>=0?activeIdx:0)+4).filter(s=>s.id!==currentSong?.id).slice(0,3).map((s,i)=>(
                       <div key={s.id} className="flex items-center gap-2 py-1.5 px-2 rounded-lg hover:bg-white/[0.04] cursor-pointer transition-colors" onClick={()=>playSong(s,songs)}>
                         <div className="w-7 h-7 rounded-md overflow-hidden flex-shrink-0">
-                          <img src={s.cover_svg||s.cover_url} alt="" className="w-full h-full object-cover"/>
+                          <img src={s.cover_url||s.cover_svg} alt="" className="w-full h-full object-cover"/>
                         </div>
                         <div className="flex-1 min-w-0">
                           <p className="text-gray-400 text-[11px] font-medium truncate">{s.title}</p>
