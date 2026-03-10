@@ -227,15 +227,31 @@ const LeaderboardPage = () => {
   const fetchSongs = useCallback(async (period) => {
     setLoading(true);
     let data = [];
-    if (period === 'all') {
-      const { data: d } = await supabase.from('songs')
+    try {
+      // trending_24h/7d/30d sont des vues inexistantes → requête directe sur songs avec filtre date
+      let query = supabase.from('songs')
         .select('id,title,artist,cover_url,audio_url,plays_count,likes_count,uploader_id')
-        .eq('is_archived', false).order('plays_count', { ascending: false }).limit(20);
+        .eq('is_archived', false)
+        .order('plays_count', { ascending: false })
+        .limit(20);
+      if (period === 'trending_24h') {
+        query = query.gte('created_at', new Date(Date.now() - 24 * 3600 * 1000).toISOString());
+      } else if (period === 'trending_7d') {
+        query = query.gte('created_at', new Date(Date.now() - 7 * 24 * 3600 * 1000).toISOString());
+      } else if (period === 'trending_30d') {
+        query = query.gte('created_at', new Date(Date.now() - 30 * 24 * 3600 * 1000).toISOString());
+      }
+      // 'all' = pas de filtre date
+      const { data: d } = await query;
       data = d || [];
-    } else {
-      const { data: d } = await supabase.from(period).select('*').limit(20);
-      data = d || [];
-    }
+      // Fallback si filtre trop restrictif et résultats vides
+      if (!data.length && period !== 'all') {
+        const { data: fb } = await supabase.from('songs')
+          .select('id,title,artist,cover_url,audio_url,plays_count,likes_count,uploader_id')
+          .eq('is_archived', false).order('plays_count', { ascending: false }).limit(20);
+        data = fb || [];
+      }
+    } catch { data = []; }
     setTopSongs(data);
     setLoading(false);
   }, []);

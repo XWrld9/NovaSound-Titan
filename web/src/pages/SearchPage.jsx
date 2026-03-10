@@ -110,7 +110,7 @@ const SearchPage = () => {
       const [{ data: songs }, { data: artists }, { data: playlists }] = await Promise.all([
         songsQuery,
         supabase.from('users').select('id, username, avatar_url, bio').ilike('username', `%${q || ''}%`).limit(6),
-        supabase.from('playlists').select('id, name, cover_url, owner_id, users:owner_id(username)').eq('is_public', true).ilike('name', `%${q || ''}%`).limit(6),
+        supabase.from('playlists').select('id, name, cover_url, owner_id').eq('is_public', true).ilike('name', `%${q || ''}%`).limit(6),
       ]);
 
       const combined = [
@@ -131,7 +131,18 @@ const SearchPage = () => {
   // V60000 : charger les recherches tendance
   const fetchTrending = async () => {
     try {
-      const { data } = await supabase.from('trending_searches').select('query, search_count').limit(8);
+      // trending_searches n'existe pas — on agrège depuis search_logs (table réelle)
+      const { data: rawLogs } = await supabase
+        .from('search_logs')
+        .select('query')
+        .gte('created_at', new Date(Date.now() - 7 * 24 * 3600 * 1000).toISOString())
+        .limit(200);
+      const counts = {};
+      (rawLogs || []).forEach(r => { counts[r.query] = (counts[r.query] || 0) + 1; });
+      const data = Object.entries(counts)
+        .sort((a, b) => b[1] - a[1])
+        .slice(0, 8)
+        .map(([query, search_count]) => ({ query, search_count }));
       setTrending(data || []);
     } catch {}
   };

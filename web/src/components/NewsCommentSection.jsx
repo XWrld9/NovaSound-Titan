@@ -140,10 +140,21 @@ const NewsCommentSection = ({ newsId, newsAuthorId }) => {
     try {
       const { data } = await supabase
         .from('news_comments')
-        .select('*, users:user_id(id, username, avatar_url)')
+        .select('*')
         .eq('news_id', newsId)
         .order('created_at', { ascending: true });
-      if (data) setComments(data.map(c => ({ ...c, likes_count: c.likes_count || 0 })));
+      if (data && data.length) {
+        // news_comments n'a pas de FK users → fetch séparé
+        const uids = [...new Set(data.map(x => x.user_id).filter(Boolean))];
+        let usersMap = {};
+        if (uids.length) {
+          const { data: us } = await supabase.from('users').select('id, username, avatar_url').in('id', uids);
+          (us || []).forEach(u => { usersMap[u.id] = u; });
+        }
+        setComments(data.map(c => ({ ...c, users: usersMap[c.user_id] || null, likes_count: c.likes_count || 0 })));
+      } else {
+        setComments([]);
+      }
     } catch (e) { console.error('[NewsComments]', e); }
     setLoading(false);
   }, [newsId]);
@@ -165,8 +176,11 @@ const NewsCommentSection = ({ newsId, newsAuthorId }) => {
       .channel('news_comments_' + newsId)
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'news_comments', filter: 'news_id=eq.' + newsId },
         async (payload) => {
-          const { data } = await supabase.from('news_comments').select('*, users:user_id(id, username, avatar_url)').eq('id', payload.new.id).single();
-          if (data) setComments(prev => prev.find(c => c.id === data.id) ? prev : [...prev, { ...data, likes_count: data.likes_count || 0 }]);
+          const { data: nd } = await supabase.from('news_comments').select('*').eq('id', payload.new.id).single();
+          if (nd) {
+            const { data: u } = await supabase.from('users').select('id, username, avatar_url').eq('id', nd.user_id).maybeSingle();
+            setComments(prev => prev.find(c => c.id === nd.id) ? prev : [...prev, { ...nd, users: u || null, likes_count: nd.likes_count || 0 }]);
+          }
         })
       .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'news_comments', filter: 'news_id=eq.' + newsId },
         (payload) => { setComments(prev => prev.filter(c => c.id !== payload.old.id)); })
@@ -183,10 +197,12 @@ const NewsCommentSection = ({ newsId, newsAuthorId }) => {
       const { data, error } = await supabase
         .from('news_comments')
         .insert({ news_id: newsId, user_id: currentUser.id, content })
-        .select('*, users:user_id(id, username, avatar_url)')
+        .select('*')
         .single();
       if (error) throw error;
-      setComments(prev => prev.find(c => c.id === data.id) ? prev : [...prev, { ...data, likes_count: 0 }]);
+      // Enrichir avec le profil courant (pas de join FK disponible)
+      const userObj = { id: currentUser.id, username: currentUser.username || currentUser.user_metadata?.username || '', avatar_url: currentUser.avatar_url || currentUser.user_metadata?.avatar_url || null };
+      setComments(prev => prev.find(c => c.id === data.id) ? prev : [...prev, { ...data, users: userObj, likes_count: 0 }]);
       setExpanded(true);
       {
         const senderName = currentUser.username || currentUser.user_metadata?.username || currentUser.email?.split('@')[0] || 'Quelqu\'un';

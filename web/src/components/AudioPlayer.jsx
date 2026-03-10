@@ -724,23 +724,7 @@ const AudioPlayerDesktop = ({ currentSong, playlist = [], onNext, onPrevious, on
     swipeStartY.current = e.touches[0].clientY;
     swipeStartX.current = e.touches[0].clientX;
   };
-  const handleMouseMove = useCallback((e) => {
-      if (!isDragging || isExpanded) return;
-      
-      const newX = e.clientX - dragStart.x;
-      const newY = e.clientY - dragStart.y;
-      
-      // Limiter à l'écran
-      const maxX = window.innerWidth - (playerRef.current?.offsetWidth || 400);
-      const maxY = window.innerHeight - (playerRef.current?.offsetHeight || 80);
-      
-      setPosition({
-        x: Math.max(0, Math.min(newX, maxX)),
-        y: Math.max(0, Math.min(newY, maxY))
-      });
-    },
-    [isDragging, dragStart, isExpanded]
-  );
+  // handleMouseMove supprimé — framer-motion drag="y" gère le déplacement nativement
   const handleTouchEnd = (e) => {
     if (swipeStartY.current === null) return;
     const dy = e.changedTouches[0].clientY - swipeStartY.current;
@@ -1302,7 +1286,6 @@ const AudioPlayerDesktop = ({ currentSong, playlist = [], onNext, onPrevious, on
               paddingBottom: 'env(safe-area-inset-bottom, 0px)',
             }}
             onTouchStart={handleTouchStart}
-            onMouseDown={handleMouseDown}
             onTouchEnd={handleTouchEnd}
           >
             {/* Indicateur swipe */}

@@ -185,7 +185,7 @@ const CommentRow = ({ comment, currentUser, songUploaderEmail, onDeleted, onUpda
 
   const handleReport = async () => {
     if (reported || !currentUser) return;
-    await supabase.from('reports').insert({ reporter_id: currentUser.id, content_type: 'comment', content_id: String(comment.id), reason: 'Contenu inapproprié' });
+    await supabase.from('reports').insert({ reporter_id: currentUser.id, content_type: 'comment', content_id: String(comment.id), reason: 'inappropriate' });
     setReported(true); showToast('⚑ Signalement envoyé', '#f59e0b');
   };
 
