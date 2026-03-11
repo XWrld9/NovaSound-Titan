@@ -166,7 +166,7 @@ const LoginPage = () => {
                         placeholder="your@email.com" />
                     </div>
                   </div>
-                  <Button type="submit" disabled={loading} className="w-full bg-gradient-to-r from-cyan-500 to-fuchsia-500 text-white py-2.5 font-semibold rounded-xl">
+                  <Button type="submit" disabled={loading} className="w-full bg-gradient-to-r from-cyan-500 to-fuchsia-500 hover:from-cyan-600 hover:to-fuchsia-600 text-white py-2.5 font-semibold rounded-xl shadow-lg shadow-cyan-500/20">
                     {loading ? 'Envoi...' : '📧 Envoyer le lien de réinitialisation'}
                   </Button>
                   <button type="button" onClick={()=>{setForgotMode(false);setError('');}} className="w-full text-xs text-gray-400 hover:text-cyan-400 transition-colors">{'← Retour à la connexion'}</button>

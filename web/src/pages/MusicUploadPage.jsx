@@ -568,7 +568,7 @@ const MusicUploadPage = () => {
                         className={`px-3 py-1.5 rounded-full text-xs font-semibold border transition-all disabled:opacity-50 ${
                           formData.genre === g
                             ? 'bg-cyan-500/20 border-cyan-400 text-cyan-300'
-                            : 'border-gray-700 text-gray-400 hover:border-cyan-500/50 hover:text-gray-200'
+                            : 'border-gray-700 text-gray-400 hover:border-cyan-500/60 hover:text-white hover:bg-cyan-500/8'
                         }`}
                       >{g}</button>
                     ))}

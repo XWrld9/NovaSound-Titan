@@ -1,161 +1,43 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Share2, Download, X, Loader2, Check } from 'lucide-react';
+import { Share2, Download, X, Loader2, Check, Link } from 'lucide-react';
 
 /**
- * NewsShareButton v2
- * Génère une image de la news via Canvas natif (zéro CORS, zéro dépendance externe).
- * Partage via navigator.share (mobile) ou téléchargement (desktop).
+ * NewsShareButton v3 — Mobile-first
+ * - Carte générée en 1080×1080 (carré Instagram/WhatsApp)
+ * - Polices plus grandes, lisibles même en miniature
+ * - Gestion emoji : strip des emoji du canvas, texte seul
+ * - Hauteur dynamique avec padding de sécurité
+ * - Modal responsive : sheet en bas sur mobile, dialogue centré desktop
  */
+
+// Retire les emoji unicode pour Canvas (Canvas 2D n'affiche pas bien les emoji)
+const stripEmoji = str =>
+  (str || '').replace(
+    /[\u{1F000}-\u{1FFFF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}\u{FE00}-\u{FEFF}\u{200D}\u{20E3}]+/gu,
+    ''
+  ).replace(/\s{2,}/g, ' ').trim();
+
 const NewsShareButton = ({ news }) => {
   const [isGenerating, setIsGenerating] = useState(false);
-  const [showPreview, setShowPreview]   = useState(false);
-  const [imgDataUrl, setImgDataUrl]     = useState(null);
-  const [shared, setShared]             = useState(false);
+  const [showPreview,  setShowPreview]  = useState(false);
+  const [imgDataUrl,   setImgDataUrl]   = useState(null);
+  const [copied,       setCopied]       = useState(false);
+  const [shared,       setShared]       = useState(false);
 
-  const dateLabel = news?.created_at
+  if (!news) return null;
+
+  const dateLabel = news.created_at
     ? new Date(news.created_at).toLocaleDateString('fr-FR', {
         day: 'numeric', month: 'long', year: 'numeric',
       })
     : '';
 
-  // URL directe vers l'actu — partagée avec l'image
-  const newsUrl = news?.id
+  const newsUrl = news.id
     ? `${window.location.origin}/#/news?id=${news.id}`
     : `${window.location.origin}/#/news`;
 
-  // ─── Dessiner la card sur un Canvas 2D ───
-  const generateImage = async () => {
-    const W = 600, H = 400;
-    const canvas = document.createElement('canvas');
-    canvas.width  = W * 2; // retina
-    canvas.height = H * 2;
-    const ctx = canvas.getContext('2d');
-    ctx.scale(2, 2);
-
-    // Fond dégradé
-    const grad = ctx.createLinearGradient(0, 0, W, H);
-    grad.addColorStop(0, '#111827');
-    grad.addColorStop(1, '#1a1040');
-    ctx.fillStyle = grad;
-    roundRect(ctx, 0, 0, W, H, 20);
-    ctx.fill();
-
-    // Bordure violette
-    ctx.strokeStyle = 'rgba(168,85,247,0.4)';
-    ctx.lineWidth = 1.5;
-    roundRect(ctx, 0.75, 0.75, W - 1.5, H - 1.5, 20);
-    ctx.stroke();
-
-    // ── Logo "N" ──
-    const logoGrad = ctx.createLinearGradient(40, 40, 72, 72);
-    logoGrad.addColorStop(0, '#22d3ee');
-    logoGrad.addColorStop(1, '#a855f7');
-    ctx.fillStyle = logoGrad;
-    ctx.beginPath();
-    ctx.arc(56, 56, 16, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.fillStyle = '#fff';
-    ctx.font = 'bold 16px system-ui, sans-serif';
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
-    ctx.fillText('N', 56, 56);
-
-    // Nom plateforme
-    ctx.fillStyle = '#22d3ee';
-    ctx.font = '600 13px system-ui, sans-serif';
-    ctx.textAlign = 'left';
-    ctx.textBaseline = 'middle';
-    ctx.fillText('NovaSound TITAN LUX', 80, 56);
-
-    // Badge date
-    const badgeX = 40, badgeY = 90;
-    ctx.fillStyle = 'rgba(168,85,247,0.15)';
-    ctx.strokeStyle = 'rgba(168,85,247,0.35)';
-    ctx.lineWidth = 1;
-    const dateW = ctx.measureText(dateLabel).width + 24;
-    roundRect(ctx, badgeX, badgeY, dateW, 24, 12);
-    ctx.fill();
-    ctx.stroke();
-    ctx.fillStyle = '#c084fc';
-    ctx.font = '12px system-ui, sans-serif';
-    ctx.textBaseline = 'middle';
-    ctx.fillText(dateLabel, badgeX + 12, badgeY + 12);
-
-    // Titre
-    ctx.fillStyle = '#ffffff';
-    ctx.font = 'bold 22px system-ui, sans-serif';
-    ctx.textBaseline = 'top';
-    const title = news?.title || '';
-    const titleLines = wrapText(ctx, title, W - 80, 22);
-    titleLines.slice(0, 2).forEach((line, i) => {
-      ctx.fillText(line, 40, 128 + i * 30);
-    });
-
-    // Ligne séparatrice
-    const sepY = 128 + Math.min(titleLines.length, 2) * 30 + 14;
-    const lineGrad = ctx.createLinearGradient(40, sepY, W - 40, sepY);
-    lineGrad.addColorStop(0, 'rgba(168,85,247,0.5)');
-    lineGrad.addColorStop(1, 'rgba(168,85,247,0)');
-    ctx.strokeStyle = lineGrad;
-    ctx.lineWidth = 1;
-    ctx.beginPath();
-    ctx.moveTo(40, sepY);
-    ctx.lineTo(W - 40, sepY);
-    ctx.stroke();
-
-    // Contenu tronqué
-    ctx.fillStyle = '#d1d5db';
-    ctx.font = '14px system-ui, sans-serif';
-    ctx.textBaseline = 'top';
-    const content = news?.content || '';
-    const contentLines = wrapText(ctx, content, W - 80, 14);
-    contentLines.slice(0, 4).forEach((line, i) => {
-      ctx.fillText(line, 40, sepY + 14 + i * 22);
-    });
-
-    // Footer — ligne séparatrice
-    const footerY = H - 52;
-    ctx.strokeStyle = 'rgba(255,255,255,0.08)';
-    ctx.lineWidth = 1;
-    ctx.beginPath();
-    ctx.moveTo(40, footerY);
-    ctx.lineTo(W - 40, footerY);
-    ctx.stroke();
-
-    // Auteur — avatar initiale
-    const username = news?.users?.username || 'NovaSound';
-    const avatarGrad = ctx.createLinearGradient(40, footerY + 10, 68, footerY + 38);
-    avatarGrad.addColorStop(0, '#22d3ee');
-    avatarGrad.addColorStop(1, '#a855f7');
-    ctx.fillStyle = avatarGrad;
-    ctx.beginPath();
-    ctx.arc(54, footerY + 24, 14, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.fillStyle = '#fff';
-    ctx.font = 'bold 12px system-ui, sans-serif';
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
-    ctx.fillText(username[0].toUpperCase(), 54, footerY + 24);
-
-    // Nom auteur
-    ctx.fillStyle = '#9ca3af';
-    ctx.font = '13px system-ui, sans-serif';
-    ctx.textAlign = 'left';
-    ctx.textBaseline = 'middle';
-    ctx.fillText(username, 76, footerY + 24);
-
-    // Watermark avec lien direct vers l'actu
-    ctx.fillStyle = 'rgba(34,211,238,0.5)';
-    ctx.font = '11px system-ui, sans-serif';
-    ctx.textAlign = 'right';
-    const shortUrl = `${window.location.hostname}/#/news?id=${news?.id?.slice(0,8) || ''}`;
-    ctx.fillText(shortUrl, W - 40, footerY + 24);
-
-    return canvas.toDataURL('image/png');
-  };
-
-  // ─── Helpers ───
+  // ── Canvas helpers ────────────────────────────────────────────────────
   function roundRect(ctx, x, y, w, h, r) {
     ctx.beginPath();
     ctx.moveTo(x + r, y);
@@ -170,7 +52,7 @@ const NewsShareButton = ({ news }) => {
     ctx.closePath();
   }
 
-  function wrapText(ctx, text, maxWidth, fontSize) {
+  function wrapText(ctx, text, maxWidth) {
     const words = text.split(' ');
     const lines = [];
     let current = '';
@@ -187,6 +69,186 @@ const NewsShareButton = ({ news }) => {
     return lines;
   }
 
+  // ── Génération carte 1080×1080 ────────────────────────────────────────
+  const generateImage = async () => {
+    const S   = 1080;   // carré Instagram / WhatsApp / Stories
+    const PAD = 80;     // marge latérale généreuse
+    const DPR = 2;      // rendu @2x pour la netteté
+    const canvas = document.createElement('canvas');
+    canvas.width  = S * DPR;
+    canvas.height = S * DPR;
+    const ctx = canvas.getContext('2d');
+    ctx.scale(DPR, DPR);
+
+    // ── Police plus fiable sur Canvas ──
+    const FONT = "'Arial', 'Helvetica Neue', sans-serif";
+
+    // ── Fond dégradé ──
+    const bg = ctx.createLinearGradient(0, 0, S * 0.5, S);
+    bg.addColorStop(0,   '#080c14');
+    bg.addColorStop(0.55,'#130d2c');
+    bg.addColorStop(1,   '#080c14');
+    ctx.fillStyle = bg;
+    ctx.fillRect(0, 0, S, S);
+
+    // Halo violet centre
+    const halo = ctx.createRadialGradient(S * 0.5, S * 0.38, 0, S * 0.5, S * 0.38, S * 0.52);
+    halo.addColorStop(0, 'rgba(139,92,246,0.22)');
+    halo.addColorStop(1, 'rgba(0,0,0,0)');
+    ctx.fillStyle = halo;
+    ctx.fillRect(0, 0, S, S);
+
+    // Halo cyan bas-gauche
+    const halo2 = ctx.createRadialGradient(S * 0.1, S * 0.85, 0, S * 0.1, S * 0.85, S * 0.35);
+    halo2.addColorStop(0, 'rgba(34,211,238,0.12)');
+    halo2.addColorStop(1, 'rgba(0,0,0,0)');
+    ctx.fillStyle = halo2;
+    ctx.fillRect(0, 0, S, S);
+
+    // ── Bordure arrondie violette ──
+    ctx.strokeStyle = 'rgba(139,92,246,0.6)';
+    ctx.lineWidth   = 3;
+    roundRect(ctx, 3, 3, S - 6, S - 6, 48);
+    ctx.stroke();
+
+    // ── Bande top cyan→violet ──
+    const topBar = ctx.createLinearGradient(PAD, 0, S - PAD, 0);
+    topBar.addColorStop(0,   'rgba(34,211,238,0)');
+    topBar.addColorStop(0.25,'rgba(34,211,238,0.8)');
+    topBar.addColorStop(0.75,'rgba(139,92,246,0.8)');
+    topBar.addColorStop(1,   'rgba(139,92,246,0)');
+    ctx.strokeStyle = topBar;
+    ctx.lineWidth   = 2.5;
+    ctx.beginPath();
+    ctx.moveTo(PAD, 88); ctx.lineTo(S - PAD, 88);
+    ctx.stroke();
+
+    // ── Logo cercle dégradé ──
+    const logoR = 30;
+    const logoX = PAD + logoR;
+    const logoY = 156;
+    const lg = ctx.createLinearGradient(logoX - logoR, logoY - logoR, logoX + logoR, logoY + logoR);
+    lg.addColorStop(0, '#22d3ee');
+    lg.addColorStop(1, '#8b5cf6');
+    ctx.fillStyle = lg;
+    ctx.beginPath(); ctx.arc(logoX, logoY, logoR, 0, Math.PI * 2); ctx.fill();
+    // Lettre N
+    ctx.fillStyle    = '#fff';
+    ctx.font         = `bold 28px ${FONT}`;
+    ctx.textAlign    = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText('N', logoX, logoY);
+
+    // Nom plateforme + sous-titre
+    const nameX = PAD + logoR * 2 + 20;
+    ctx.fillStyle    = '#22d3ee';
+    ctx.font         = `700 24px ${FONT}`;
+    ctx.textAlign    = 'left';
+    ctx.textBaseline = 'middle';
+    ctx.fillText('NovaSound TITAN LUX', nameX, logoY - 8);
+    ctx.fillStyle = 'rgba(34,211,238,0.5)';
+    ctx.font      = `400 15px ${FONT}`;
+    ctx.fillText('Actualité de la communauté', nameX, logoY + 18);
+
+    // ── Badge date ──
+    let curY = 230;
+    ctx.font         = `400 16px ${FONT}`;
+    ctx.textBaseline = 'middle';
+    const bdW = ctx.measureText(dateLabel).width + 36;
+    ctx.fillStyle   = 'rgba(139,92,246,0.2)';
+    ctx.strokeStyle = 'rgba(139,92,246,0.55)';
+    ctx.lineWidth   = 1.5;
+    roundRect(ctx, PAD, curY - 15, bdW, 30, 15);
+    ctx.fill(); ctx.stroke();
+    ctx.fillStyle = '#c084fc';
+    ctx.fillText(dateLabel, PAD + 18, curY);
+    curY += 46;
+
+    // ── Titre ──
+    const cleanTitle = stripEmoji(news.title || '');
+    ctx.fillStyle    = '#f8fafc';
+    ctx.font         = `700 44px ${FONT}`;
+    ctx.textBaseline = 'top';
+    ctx.textAlign    = 'left';
+    const titleLines = wrapText(ctx, cleanTitle, S - PAD * 2);
+    const titleLineH = 56;
+    const maxTitle   = 3;
+    titleLines.slice(0, maxTitle).forEach((line, i) => {
+      ctx.fillText(line, PAD, curY + i * titleLineH);
+    });
+    curY += Math.min(titleLines.length, maxTitle) * titleLineH + 32;
+
+    // ── Séparateur dégradé ──
+    const sep = ctx.createLinearGradient(PAD, 0, S - PAD, 0);
+    sep.addColorStop(0,   'rgba(139,92,246,0.8)');
+    sep.addColorStop(0.5, 'rgba(34,211,238,0.5)');
+    sep.addColorStop(1,   'rgba(34,211,238,0)');
+    ctx.strokeStyle = sep;
+    ctx.lineWidth   = 2;
+    ctx.beginPath(); ctx.moveTo(PAD, curY); ctx.lineTo(S - PAD, curY); ctx.stroke();
+    curY += 32;
+
+    // ── Extrait du contenu ──
+    const FOOTER_H   = 130;                        // espace réservé footer
+    const availH     = S - curY - FOOTER_H;
+    const contLineH  = 34;
+    const maxCont    = Math.max(1, Math.floor(availH / contLineH));
+    const cleanCont  = stripEmoji(news.content || '');
+    ctx.fillStyle    = '#94a3b8';
+    ctx.font         = `400 22px ${FONT}`;
+    ctx.textBaseline = 'top';
+    const contLines  = wrapText(ctx, cleanCont, S - PAD * 2);
+    contLines.slice(0, maxCont).forEach((line, i) => {
+      ctx.fillText(line, PAD, curY + i * contLineH);
+    });
+    if (contLines.length > maxCont) {
+      const lastLineW = ctx.measureText(contLines[maxCont - 1]).width;
+      ctx.fillStyle   = 'rgba(139,92,246,0.8)';
+      ctx.fillText('…', PAD + lastLineW + 6, curY + (maxCont - 1) * contLineH);
+    }
+
+    // ── Footer ──
+    const footerY = S - FOOTER_H;
+
+    // Ligne séparatrice footer
+    const fLine = ctx.createLinearGradient(PAD, 0, S - PAD, 0);
+    fLine.addColorStop(0,   'rgba(255,255,255,0.15)');
+    fLine.addColorStop(0.6, 'rgba(255,255,255,0.05)');
+    fLine.addColorStop(1,   'rgba(255,255,255,0)');
+    ctx.strokeStyle = fLine;
+    ctx.lineWidth   = 1;
+    ctx.beginPath(); ctx.moveTo(PAD, footerY); ctx.lineTo(S - PAD, footerY); ctx.stroke();
+
+    // Avatar auteur
+    const username = news.users?.username || 'NovaSound';
+    const avR = 26;
+    const avX = PAD + avR;
+    const avY = footerY + FOOTER_H / 2;
+    const ag  = ctx.createLinearGradient(avX - avR, avY - avR, avX + avR, avY + avR);
+    ag.addColorStop(0, '#22d3ee'); ag.addColorStop(1, '#8b5cf6');
+    ctx.fillStyle = ag;
+    ctx.beginPath(); ctx.arc(avX, avY, avR, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle    = '#fff';
+    ctx.font         = `700 22px ${FONT}`;
+    ctx.textAlign    = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText((username[0] || 'N').toUpperCase(), avX, avY);
+
+    // Nom auteur
+    ctx.fillStyle    = '#cbd5e1';
+    ctx.font         = `600 18px ${FONT}`;
+    ctx.textAlign    = 'left';
+    ctx.fillText(username, avX + avR + 16, avY);
+
+    // Watermark domaine
+    ctx.fillStyle    = 'rgba(34,211,238,0.45)';
+    ctx.font         = `400 15px ${FONT}`;
+    ctx.textAlign    = 'right';
+    ctx.fillText(window.location.hostname, S - PAD, avY);
+
+    return canvas.toDataURL('image/png');
+  };
+
   const handleShare = async () => {
     setIsGenerating(true);
     try {
@@ -194,7 +256,7 @@ const NewsShareButton = ({ news }) => {
       setImgDataUrl(dataUrl);
       setShowPreview(true);
     } catch (err) {
-      console.error('Erreur génération image:', err);
+      console.error('[NewsShare] génération:', err);
     } finally {
       setIsGenerating(false);
     }
@@ -204,40 +266,49 @@ const NewsShareButton = ({ news }) => {
     if (!imgDataUrl) return;
     const a = document.createElement('a');
     a.href = imgDataUrl;
-    a.download = `novasound-news-${news?.id?.slice(0, 8) || 'post'}.png`;
+    a.download = `novasound-${news.id?.slice(0, 8) || 'news'}.png`;
     a.click();
     setShared(true);
-    setTimeout(() => setShared(false), 2000);
+    setTimeout(() => setShared(false), 2200);
   };
 
   const handleNativeShare = async () => {
     if (!imgDataUrl) return;
     try {
-      const res  = await fetch(imgDataUrl);
-      const blob = await res.blob();
+      const blob = await (await fetch(imgDataUrl)).blob();
       const file = new File([blob], 'novasound-news.png', { type: 'image/png' });
       if (navigator.share && navigator.canShare?.({ files: [file] })) {
         await navigator.share({
-          title: news?.title || 'NovaSound TITAN LUX',
-          text:  `${news?.title}\n\nVia NovaSound TITAN LUX 🎵\n👉 ${newsUrl}`,
-          url:   newsUrl,
+          title: news.title || 'NovaSound TITAN LUX',
+          text:  `${news.title}\n\nVia NovaSound TITAN LUX 🎵\n👉 ${newsUrl}`,
           files: [file],
         });
       } else if (navigator.share) {
-        // Partage sans fichier (Instagram web, etc.) → lien + texte
         await navigator.share({
-          title: news?.title || 'NovaSound TITAN LUX',
-          text:  `${news?.title}\n\nVia NovaSound TITAN LUX 🎵`,
+          title: news.title || 'NovaSound TITAN LUX',
+          text:  `${news.title}\n\nVia NovaSound TITAN LUX 🎵`,
           url:   newsUrl,
         });
       } else {
-        handleDownload();
+        handleDownload(); return;
       }
       setShared(true);
-      setTimeout(() => setShared(false), 2000);
+      setTimeout(() => setShared(false), 2200);
     } catch (err) {
       if (err.name !== 'AbortError') handleDownload();
     }
+  };
+
+  const handleCopyLink = async () => {
+    try { await navigator.clipboard.writeText(newsUrl); }
+    catch {
+      const ta = document.createElement('textarea');
+      ta.value = newsUrl; ta.style.cssText = 'position:fixed;opacity:0';
+      document.body.appendChild(ta); ta.select();
+      document.execCommand('copy'); document.body.removeChild(ta);
+    }
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
   };
 
   return (
@@ -260,94 +331,145 @@ const NewsShareButton = ({ news }) => {
       <AnimatePresence>
         {showPreview && imgDataUrl && (
           <>
+            {/* Overlay */}
             <motion.div
               initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
               onClick={() => setShowPreview(false)}
-              className="fixed inset-0 bg-black/80 backdrop-blur-sm z-[60]"
+              className="fixed inset-0 bg-black/85 backdrop-blur-sm z-[70]"
             />
+
+            {/* Modal — sheet bas sur mobile, dialogue centré desktop */}
             <motion.div
-              initial={{ opacity: 0, scale: 0.92, y: 24 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.92, y: 24 }}
-              transition={{ type: 'spring', damping: 22, stiffness: 300 }}
-              className="fixed inset-0 z-[60] flex items-center justify-center p-4 pointer-events-none"
+              initial={{ opacity: 0, y: '100%' }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: '100%' }}
+              transition={{ type: 'spring', damping: 28, stiffness: 280 }}
+              className="fixed inset-x-0 bottom-0 z-[70] sm:hidden"
             >
               <div
-                className="bg-gray-900 border border-fuchsia-500/30 rounded-2xl shadow-2xl w-full max-w-lg pointer-events-auto overflow-hidden"
+                className="bg-gray-900 rounded-t-3xl border-t border-x border-fuchsia-500/25 shadow-2xl pb-safe"
                 onClick={e => e.stopPropagation()}
               >
-                <div className="flex items-center justify-between px-5 py-4 border-b border-gray-800">
-                  <h3 className="text-white font-semibold flex items-center gap-2">
+                {/* Grab handle */}
+                <div className="flex justify-center pt-3 pb-1">
+                  <div className="w-10 h-1 rounded-full bg-gray-700" />
+                </div>
+
+                {/* Header */}
+                <div className="flex items-center justify-between px-5 py-3 border-b border-gray-800">
+                  <span className="text-white font-semibold flex items-center gap-2 text-sm">
                     <Share2 className="w-4 h-4 text-fuchsia-400" />
                     Partager cette news
-                  </h3>
-                  <button
-                    onClick={() => setShowPreview(false)}
-                    className="p-1.5 rounded-lg text-gray-400 hover:text-white hover:bg-gray-800 transition-all"
-                  >
+                  </span>
+                  <button onClick={() => setShowPreview(false)} className="p-1.5 text-gray-400 hover:text-white rounded-lg transition-colors">
                     <X className="w-4 h-4" />
                   </button>
                 </div>
 
-                <div className="p-5">
-                  <div className="rounded-xl overflow-hidden border border-gray-700/50 shadow-lg">
-                    <img src={imgDataUrl} alt="Aperçu" className="w-full" />
+                {/* Aperçu image */}
+                <div className="px-4 pt-4 pb-2">
+                  <div className="rounded-2xl overflow-hidden border border-gray-700/50 shadow-xl">
+                    <img src={imgDataUrl} alt="Aperçu" className="w-full aspect-square object-cover" />
                   </div>
-                  <p className="text-xs text-gray-500 text-center mt-3">
-                    Aperçu de l'image qui sera partagée
-                  </p>
+                  <p className="text-xs text-gray-500 text-center mt-2">Carte 1080×1080 prête à partager</p>
                 </div>
 
-                <div className="flex gap-3 px-5 pb-5">
+                {/* Boutons */}
+                <div className="px-4 pb-2 flex flex-col gap-2.5">
                   <motion.button
                     onClick={handleNativeShare}
-                    whileHover={{ scale: 1.02 }}
-                    whileTap={{ scale: 0.98 }}
-                    className="flex-1 flex items-center justify-center gap-2 py-3 rounded-xl bg-gradient-to-r from-fuchsia-500 to-purple-600 text-white font-semibold text-sm shadow-lg shadow-fuchsia-500/25 hover:opacity-90 transition-all"
+                    whileTap={{ scale: 0.97 }}
+                    className="w-full flex items-center justify-center gap-2 py-3.5 rounded-2xl bg-gradient-to-r from-fuchsia-500 to-purple-600 text-white font-bold text-sm shadow-lg shadow-fuchsia-500/25 active:opacity-85"
                   >
-                    {shared
-                      ? <><Check className="w-4 h-4" /> Partagé !</>
-                      : <><Share2 className="w-4 h-4" /> Partager sur les réseaux</>
-                    }
+                    {shared ? <><Check className="w-4 h-4" /> Partagé !</> : <><Share2 className="w-4 h-4" /> Partager sur les réseaux</>}
                   </motion.button>
-                  <motion.button
-                    onClick={handleDownload}
-                    whileHover={{ scale: 1.02 }}
-                    whileTap={{ scale: 0.98 }}
-                    className="flex items-center justify-center gap-2 px-4 py-3 rounded-xl border border-gray-700 text-gray-300 hover:text-white hover:border-gray-600 text-sm transition-all"
-                    title="Télécharger l'image"
-                  >
-                    <Download className="w-4 h-4" />
-                  </motion.button>
+
+                  <div className="flex gap-2.5">
+                    <motion.button
+                      onClick={handleDownload}
+                      whileTap={{ scale: 0.97 }}
+                      className="flex-1 flex items-center justify-center gap-2 py-3 rounded-2xl border border-gray-700 text-gray-300 text-sm active:bg-gray-800 transition-colors"
+                    >
+                      <Download className="w-4 h-4" /> Télécharger
+                    </motion.button>
+                    <motion.button
+                      onClick={handleCopyLink}
+                      whileTap={{ scale: 0.97 }}
+                      className="flex-1 flex items-center justify-center gap-2 py-3 rounded-2xl border border-gray-700 text-gray-300 text-sm active:bg-gray-800 transition-colors"
+                    >
+                      {copied ? <><Check className="w-4 h-4 text-cyan-400" /> Copié !</> : <><Link className="w-4 h-4" /> Copier lien</>}
+                    </motion.button>
+                  </div>
                 </div>
 
-                {/* Bouton copier le lien */}
-                <div className="px-5 pb-2">
-                  <button
-                    onClick={async () => {
-                      try {
-                        await navigator.clipboard.writeText(newsUrl);
-                      } catch {
-                        const ta = document.createElement('textarea');
-                        ta.value = newsUrl;
-                        ta.style.cssText = 'position:fixed;opacity:0';
-                        document.body.appendChild(ta);
-                        ta.select();
-                        document.execCommand('copy');
-                        document.body.removeChild(ta);
-                      }
-                      const btn = document.getElementById('copy-news-link');
-                      if (btn) { btn.textContent = '✓ Lien copié !'; setTimeout(() => { btn.textContent = '🔗 Copier le lien de l\'actu'; }, 2000); }
-                    }}
-                    id="copy-news-link"
-                    className="w-full py-2 rounded-xl border border-gray-700 text-gray-400 hover:text-cyan-400 hover:border-cyan-500/40 text-xs transition-all"
-                  >
-                    🔗 Copier le lien de l'actu
+                {/* Safe area bottom */}
+                <div className="h-6" />
+              </div>
+            </motion.div>
+
+            {/* Dialog desktop */}
+            <motion.div
+              initial={{ opacity: 0, scale: 0.94, y: 12 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.94, y: 12 }}
+              transition={{ type: 'spring', damping: 24, stiffness: 320 }}
+              className="fixed inset-0 z-[70] hidden sm:flex items-center justify-center p-6 pointer-events-none"
+            >
+              <div
+                className="bg-gray-900 border border-fuchsia-500/25 rounded-2xl shadow-2xl w-full max-w-2xl pointer-events-auto flex flex-col max-h-[88vh] overflow-hidden"
+                onClick={e => e.stopPropagation()}
+              >
+                {/* Header */}
+                <div className="flex items-center justify-between px-5 py-4 border-b border-gray-800 flex-shrink-0">
+                  <h3 className="text-white font-semibold flex items-center gap-2">
+                    <Share2 className="w-4 h-4 text-fuchsia-400" />
+                    Partager cette news
+                  </h3>
+                  <button onClick={() => setShowPreview(false)} className="p-1.5 rounded-lg text-gray-400 hover:text-white hover:bg-gray-800 transition-all">
+                    <X className="w-4 h-4" />
                   </button>
                 </div>
-                <p className="text-xs text-gray-600 text-center pb-4 px-5">
-                  Sur mobile : WhatsApp, Telegram… Sur desktop : copie le lien ou télécharge l'image.
-                </p>
+
+                {/* Body 2 col */}
+                <div className="flex flex-row flex-1 min-h-0 overflow-hidden">
+                  {/* Aperçu */}
+                  <div className="flex-1 p-5 border-r border-gray-800 flex flex-col justify-center min-w-0">
+                    <div className="rounded-xl overflow-hidden border border-gray-700/40 shadow-lg">
+                      <img src={imgDataUrl} alt="Aperçu" className="w-full aspect-square object-cover" />
+                    </div>
+                    <p className="text-xs text-gray-500 text-center mt-2">Carte 1080×1080 — Instagram / WhatsApp</p>
+                  </div>
+
+                  {/* Actions */}
+                  <div className="w-60 flex-shrink-0 flex flex-col justify-center gap-3 px-5 py-6">
+                    <motion.button
+                      onClick={handleNativeShare}
+                      whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}
+                      className="w-full flex items-center justify-center gap-2 py-3 rounded-xl bg-gradient-to-r from-fuchsia-500 to-purple-600 text-white font-semibold text-sm shadow-lg shadow-fuchsia-500/20 hover:opacity-90 transition-all"
+                    >
+                      {shared ? <><Check className="w-4 h-4" /> Partagé !</> : <><Share2 className="w-4 h-4" /> Partager</>}
+                    </motion.button>
+
+                    <motion.button
+                      onClick={handleDownload}
+                      whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}
+                      className="w-full flex items-center justify-center gap-2 py-3 rounded-xl border border-gray-700 text-gray-300 hover:text-white hover:border-gray-600 text-sm transition-all"
+                    >
+                      <Download className="w-4 h-4" /> Télécharger l'image
+                    </motion.button>
+
+                    <button
+                      onClick={handleCopyLink}
+                      className="w-full py-2.5 rounded-xl border border-gray-700 text-gray-400 hover:text-cyan-400 hover:border-cyan-500/40 text-xs transition-all flex items-center justify-center gap-1.5"
+                    >
+                      {copied ? <><Check className="w-3.5 h-3.5 text-cyan-400" /> Lien copié !</> : <><Link className="w-3.5 h-3.5" /> Copier le lien</>}
+                    </button>
+
+                    <p className="text-[11px] text-gray-600 text-center leading-snug mt-1">
+                      WhatsApp · Telegram · Instagram<br />ou télécharge l'image.
+                    </p>
+                  </div>
+                </div>
               </div>
             </motion.div>
           </>

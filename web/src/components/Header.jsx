@@ -340,7 +340,7 @@ const Header = () => {
                   </div>
                   <button
                     onClick={() => setSearchOpen(false)}
-                    className="flex-shrink-0 px-4 py-3 text-sm text-gray-400 hover:text-white transition-colors rounded-xl hover:bg-white/5"
+                    className="flex-shrink-0 px-4 py-3 text-sm text-gray-400 hover:text-cyan-400 transition-colors rounded-xl hover:bg-cyan-500/10"
                   >
                     {'Annuler'}
                   </button>
@@ -501,10 +501,10 @@ const Header = () => {
                 ) : (
                   <div className="grid grid-cols-2 gap-3">
                     <Link to="/login" onClick={closeMenu}>
-                      <Button className="w-full bg-cyan-600 hover:bg-cyan-700 text-white rounded-full">{'Connexion'}</Button>
+                      <Button className="w-full bg-gradient-to-r from-cyan-500 to-fuchsia-500 hover:from-cyan-600 hover:to-fuchsia-600 text-white rounded-full font-semibold">{'Connexion'}</Button>
                     </Link>
                     <Link to="/signup" onClick={closeMenu}>
-                      <Button className="w-full bg-gradient-to-r from-cyan-500 to-fuchsia-500 text-white rounded-full">{'Inscription'}</Button>
+                      <Button className="w-full bg-gradient-to-r from-cyan-500 to-fuchsia-500 hover:from-cyan-600 hover:to-fuchsia-600 text-white rounded-full font-semibold">{'Inscription'}</Button>
                     </Link>
                   </div>
                 )}
