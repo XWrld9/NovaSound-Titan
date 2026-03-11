@@ -306,7 +306,15 @@ const AudioPlayerDesktop = ({ currentSong, playlist = [], onNext, onPrevious, on
         case 'Space': case 'KeyK':
           e.preventDefault();
           if (audioRef.current) {
-            if (isPlaying) { audioRef.current.pause(); } else { audioRef.current.play().catch(() => {}); }
+            if (isPlaying) {
+              audioRef.current.pause();
+              setIsPlaying(false);
+              setIsPlayingGlobal(false);
+            } else {
+              audioRef.current.play()
+                .then(() => { setIsPlaying(true); setIsPlayingGlobal(true); })
+                .catch(() => {});
+            }
           }
           break;
         case 'Escape':

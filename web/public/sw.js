@@ -161,7 +161,10 @@ self.addEventListener('notificationclick', e => {
     else if (e.action.startsWith('/')) targetUrl = e.action;
   }
 
-  const fullUrl = self.location.origin + (targetUrl.startsWith('/') ? targetUrl : '/' + targetUrl);
+  // L'app utilise HashRouter → toutes les routes internes = /#/route
+  // Ex: /song/123 → /#/song/123 (sans ça → page 404 serveur)
+  const hashTarget = targetUrl === '/' ? '/#/' : ('/#' + (targetUrl.startsWith('/') ? targetUrl : '/' + targetUrl));
+  const fullUrl = self.location.origin + hashTarget;
   const notifId = e.notification.data?.notifId;
 
   // Effacer le badge

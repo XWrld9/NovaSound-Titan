@@ -1,4 +1,4 @@
-import React, { lazy, Suspense, useEffect, useLayoutEffect } from 'react';
+import React, { lazy, Suspense } from 'react';
 import { Route, Routes, HashRouter as Router, useNavigate, useLocation } from 'react-router-dom';
 import { AuthProvider } from '@/contexts/AuthContext';
 import { NotificationProvider } from '@/contexts/NotificationContext';
@@ -73,40 +73,9 @@ const GlobalPlayer = () => {
   );
 };
 
-// ── Redirect hors-ligne → /local-player ──────────────────────────────────────
-const OfflineRedirect = () => {
-  const { isOnline } = useOnline();
-  const navigate = useNavigate();
-  const location = useLocation();
-
-  const OFFLINE_OK = ['/local-player', '/login', '/signup', '/privacy', '/terms', '/copyright', '/auth', '/reset-password'];
-  const checkAndRedirect = (pathname) => {
-    const isOfflineOk = OFFLINE_OK.some(p => pathname === p || pathname.startsWith(p + '/'));
-    if (!isOfflineOk) navigate('/local-player', { replace: true });
-  };
-
-  // Vérification au montage avec délai de 1 minute (cohérent avec OnlineContext)
-  // navigator.onLine n'est pas fiable instantanément (WiFi lent, transition réseau)
-  useLayoutEffect(() => {
-    if (!navigator.onLine) {
-      const t = setTimeout(() => {
-        if (!navigator.onLine) checkAndRedirect(location.pathname);
-      }, 60000); // 1 minute — même délai que OnlineContext
-      return () => clearTimeout(t);
-    }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  // Vérification sur changement d'état réseau ou de route
-  // Le délai de 5s est déjà géré dans OnlineContext — isOnline ne
-  // passe false qu'après confirmation, donc pas de redirect prématuré.
-  useEffect(() => {
-    if (!isOnline) checkAndRedirect(location.pathname);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isOnline, location.pathname]);
-
-  return null;
-};
+// ── Composant vide — la redirection offline est gérée par OfflineBanner (overlay) ──
+// L'utilisateur décide lui-même d'entrer dans le lecteur local après 1 minute d'offline
+const OfflineRedirect = () => null;
 
 /* ── BottomNav masqué sur /local-player et /live/:roomId ──────────────────── */
 const BottomNavConditional = () => {

@@ -113,15 +113,22 @@ const AdminPanel = () => {
   // ── Loaders ──────────────────────────────────────────────────────────────────
   const loadStats = useCallback(async () => {
     try {
-      const [u, s, lr, m, r] = await Promise.all([
-        supabase.from('users').select('id', { count:'exact', head:true }),
-        supabase.from('songs').select('id', { count:'exact', head:true }),
-        supabase.from('live_rooms').select('id', { count:'exact', head:true }).eq('is_active', true),
-        supabase.from('chat_messages').select('id', { count:'exact', head:true }).eq('is_deleted', false),
-        supabase.from('reports').select('id', { count:'exact', head:true }).eq('status', 'pending').catch(() => ({ count: 0 })),
+      // Utiliser count:'exact' sans head:true pour compatibilité RLS
+      const [u, s, lr, m] = await Promise.all([
+        supabase.from('users').select('id, is_banned', { count:'exact' }),
+        supabase.from('songs').select('id, is_archived', { count:'exact' }),
+        supabase.from('live_rooms').select('id', { count:'exact' }).eq('is_active', true),
+        supabase.from('chat_messages').select('id', { count:'exact' }).eq('is_deleted', false),
       ]);
-      setStats({ users:u.count||0, songs:s.count||0, liveRooms:lr.count||0, messages:m.count||0, reports:r?.count||0 });
-    } catch {}
+      const rpt = await supabase.from('reports').select('id', { count:'exact' }).eq('status', 'pending');
+      setStats({
+        users:     u.count ?? (u.data?.length ?? 0),
+        songs:     s.count ?? (s.data?.length ?? 0),
+        liveRooms: lr.count ?? (lr.data?.length ?? 0),
+        messages:  m.count ?? (m.data?.length ?? 0),
+        reports:   rpt?.count ?? (rpt?.data?.length ?? 0),
+      });
+    } catch (e) { console.warn('[AdminPanel] loadStats:', e); }
   }, []);
 
   const loadLiveRooms = useCallback(async () => {
@@ -183,7 +190,14 @@ const AdminPanel = () => {
     addToast('🔄 Données actualisées', 'info');
   }, [loadStats, loadLiveRooms, loadUsers, loadSongs, loadChat, loadReports, loadAdminRoles, addToast]);
 
-  useEffect(() => { if (isAdmin) refreshAll(); }, [isAdmin, refreshAll]);
+  useEffect(() => {
+    if (isAdmin) {
+      refreshAll();
+      // Polling toutes les 30s pour garder les stats fraîches
+      const interval = setInterval(loadStats, 30_000);
+      return () => clearInterval(interval);
+    }
+  }, [isAdmin, refreshAll, loadStats]);
 
   // ── Realtime sync ─────────────────────────────────────────────────────────────
   useEffect(() => {
