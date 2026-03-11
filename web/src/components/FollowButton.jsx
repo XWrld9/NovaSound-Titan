@@ -78,6 +78,7 @@ const FollowButton = ({ userId, initialFollowers = 0, onFollowChange }) => {
           body:     `${currentUser.username || 'Quelqu\'un'} vient de s'abonner à ton profil`,
           url:      `/artist/${currentUser.id}`,
           icon_url: currentUser.avatar_url || '/icon-192.png',
+          from_user_id: currentUser.id,
           metadata: { senderId: currentUser.id, senderName: currentUser.username },
         }).catch(() => {});
       }

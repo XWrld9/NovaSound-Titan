@@ -483,6 +483,11 @@ const LocalPlayerPage = () => {
 
   /* ── Keyboard shortcuts with OSD ── */
   useEffect(() => {
+    // ✅ FIX: Sur mobile, LocalPlayerPageMobile gère son propre handler keydown.
+    // Sans ce guard, les deux handlers tournent en parallèle → double-toggle →
+    // Space = play+pause instantané = lecture bloquée ou pause annulée.
+    if (isMobile()) return;
+
     const handler = e => {
       const el = document.activeElement;
       if (el?.tagName==='INPUT'||el?.tagName==='TEXTAREA'||el?.hasAttribute('contenteditable')) return;

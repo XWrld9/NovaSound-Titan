@@ -122,6 +122,8 @@ function App() {
                           <Route path="/copyright"       element={<CopyrightInfo />} />
                           <Route path="/upload"          element={<ProtectedRoute><MusicUploadPage /></ProtectedRoute>} />
                           <Route path="/profile"         element={<ProtectedRoute><UserProfilePage /></ProtectedRoute>} />
+                          {/* ✅ FIX: /profile/:id (liens deep notif follow) → ArtistProfilePage */}
+                          <Route path="/profile/:id"     element={<ArtistProfilePage />} />
                           <Route path="/playlists"       element={<ProtectedRoute><MyPlaylistsPage /></ProtectedRoute>} />
                           <Route path="/chat" element={<ChatPage />} />
                           <Route path="/messages" element={<ProtectedRoute><MessagesPage /></ProtectedRoute>} />

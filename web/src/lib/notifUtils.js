@@ -66,6 +66,7 @@ const _insert = async (sb, row) => {
     is_read:      false,
     metadata:     row.metadata   || {},
     from_user_id: row.from_user_id || null,
+    song_id:      row.song_id      || null,  // ✅ Deep link : référence directe au son
   });
   if (error) throw error;
   return null; // pas d'id disponible — push envoyé sans notif_id
@@ -122,6 +123,8 @@ export const notifyOwner = async (sb, songId, actorId, payload) => {
     if (song.uploader_id === actorId) return song.uploader_id; // pas de notif à soi-même
     await notifyUser(sb, song.uploader_id, {
       ...payload,
+      song_id:  songId,  // ✅ Champ song_id pour deep link direct
+      from_user_id: actorId,
       metadata: { ...(payload.metadata || {}), songId, songTitle: song.title },
     });
     return song.uploader_id;
@@ -183,6 +186,7 @@ export const notifyFollowers = async (sb, artistId, payload, excludeIds = []) =>
       is_read:      false,
       metadata:     payload.metadata || {},
       from_user_id: payload.from_user_id || null,
+      song_id:      payload.song_id      || null,  // ✅ Deep link : référence directe au son
     }));
 
     for (let i = 0; i < rows.length; i += 100) {
@@ -285,6 +289,7 @@ export const notifyAll = async (sb, payload, exclude = []) => {
       icon_url: payload.icon_url || '/icon-192.png',
       is_read:  false,
       metadata: payload.metadata || {},
+      song_id:  payload.song_id || null,  // ✅ cohérence schéma
     }));
 
     for (let i = 0; i < rows.length; i += 100) {

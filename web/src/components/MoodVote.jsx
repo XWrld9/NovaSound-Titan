@@ -69,6 +69,7 @@ const MoodVote = ({ songId }) => {
         title: `${moodDef?.emoji || '🎵'} Nouveau vote de vibe`,
         body:  `${currentUser.username || "Quelqu'un"} a voté "${moodDef?.label || mood}" sur ton son`,
         url:   `/song/${songId}`,
+        from_user_id: currentUser.id,
         metadata: { mood, moodEmoji: moodDef?.emoji, refId: songId },
       });
     }

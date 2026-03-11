@@ -447,6 +447,7 @@ const LiveRoomPage = () => {
             body:     roomName.trim(),
             url:      `/live/${roomData.id}`,
             icon_url: currentUser.avatar_url || '/icon-192.png',
+            from_user_id: currentUser.id,
           });
         } catch (_) { /* non-fatal */ }
       }
@@ -688,6 +689,7 @@ const LiveRoomPage = () => {
                 body:     roomRef.current.title || 'Live Room',
                 url:      `/live/${roomRef.current.id}`,
                 icon_url: u.avatar_url || '/icon-192.png',
+                from_user_id: u.id,
                 metadata: { roomId: roomRef.current.id, userId: u.id },
               }).catch(() => {});
             }

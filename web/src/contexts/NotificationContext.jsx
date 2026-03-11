@@ -13,6 +13,23 @@ import React, { createContext, useContext, useState, useEffect, useCallback, use
 import { supabase } from '@/lib/supabaseClient';
 import { useAuth } from './AuthContext';
 
+// ✅ Helper navigation push — fonctionne avec HashRouter dans tous les cas :
+//  - App déjà ouverte sur la même page   → force re-navigation via hash
+//  - App sur une page différente          → navigation normale via hash
+//  - Query params (/chat?highlight=abc)   → préservés dans le hash
+const pushNavigate = (url) => {
+  if (!url) return;
+  const path  = url.startsWith('/') ? url : '/' + url;
+  const newHash = '#' + path;
+  if (window.location.hash === newHash) {
+    // ✅ Même URL : déclencher manuellement un hashchange pour forcer le re-render
+    // (HashRouter n'émet pas de nouvel event si le hash est identique)
+    window.dispatchEvent(new HashChangeEvent('hashchange'));
+  } else {
+    window.location.hash = newHash;
+  }
+};
+
 // ⚠️ Doit correspondre exactement à la clé dans send-push-notification/index.ts
 const VAPID_PUBLIC_KEY = import.meta.env.VITE_VAPID_PUBLIC_KEY
   || 'BOfOThRQ1WFrroj7sGuIVy-R2u--fgE_1_FInA6OwhrhdY2lomv7Co4gMXLRvZg257FbDztvNOgYWqCbk8C4qZc';
@@ -211,7 +228,7 @@ export const NotificationProvider = ({ children }) => {
       // Navigation depuis un clic sur push natif
       if (e.data?.type === 'PUSH_NAVIGATE') {
         const url = e.data.url;
-        if (url) window.location.hash = '#' + (url.startsWith('/') ? url : '/' + url);
+        if (url) pushNavigate(url);
         // Marquer automatiquement comme lu si notifId connu
         if (e.data.notifId) {
           await supabase.from('notifications')

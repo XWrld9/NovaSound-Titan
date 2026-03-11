@@ -52,6 +52,7 @@ const RepostButton = ({ song, size = 'md', showCount = true, onRepost = null }) 
           title: `🔁 ${currentUser.username || 'Quelqu\'un'} a repartagé ton son`,
           body: `${currentUser.username || 'Quelqu\'un'} a repartagé "${song.title}"`,
           url: `/song/${song.id}`, icon_url: currentUser.avatar_url || '/icon-192.png',
+          from_user_id: currentUser.id,
           metadata: { senderId: currentUser.id, senderName: currentUser.username, songId: song.id },
         }).catch(() => {});
       }

@@ -117,6 +117,7 @@ const LikeButton = ({ songId, initialLikes = 0, initialLiked = false, compact = 
           body:     `${currentUser.username || 'Quelqu\'un'} a liké ton morceau`,
           url:      `/song/${songId}`,
           icon_url: currentUser.avatar_url || '/icon-192.png',
+          from_user_id: currentUser.id,
           metadata: { senderId: currentUser.id, senderName: currentUser.username },
         }).catch(() => {});
       }

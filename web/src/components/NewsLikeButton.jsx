@@ -124,7 +124,7 @@ const NewsLikeButton = ({ newsId, initialLikes = 0, authorId }) => {
             type: 'like_news',
             title: `❤️ ${currentUser.username || 'Quelqu\'un'} a aimé ta news`,
             body: `Ta news vient d\'être likée`,
-            url: `/news/${newsId}`,
+            url: `/news?id=${newsId}`,
             icon_url: currentUser.avatar_url || '/icon-192.png',
             from_user_id: currentUser.id,
             metadata: { senderId: currentUser.id, senderName: currentUser.username, newsId },

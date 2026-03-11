@@ -215,8 +215,18 @@ const NotificationsPage = () => {
 
   const handleNavigate = (url) => {
     if (!url) return;
-    if (url.startsWith('/')) navigate(url);
-    else window.open(url, '_blank');
+    if (!url.startsWith('/')) { window.open(url, '_blank'); return; }
+    // ✅ FIX: React Router HashRouter ne gère pas les fragments dans navigate().
+    // On passe par window.location.hash pour tous les cas :
+    //   /song/123#comment-456  → /#/song/123#comment-456  ✅
+    //   /chat?highlight=abc    → /#/chat?highlight=abc     ✅
+    //   /artist/xxx            → /#/artist/xxx             ✅
+    const newHash = '#' + url;
+    if (window.location.hash === newHash) {
+      window.dispatchEvent(new HashChangeEvent('hashchange'));
+    } else {
+      window.location.hash = newHash;
+    }
   };
 
   if (!currentUser) {

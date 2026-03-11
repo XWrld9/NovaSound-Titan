@@ -75,6 +75,7 @@ const LiveLikeButton = ({ roomId, initialLikes = 0, initialLiked = false, compac
             body:     `${currentUser.username || 'Quelqu\'un'} a liké "${roomTitle || 'ton salon live'}"`,
             url:      `/live/${roomId}`,
             icon_url: currentUser.avatar_url || '/icon-192.png',
+            from_user_id: currentUser.id,
             metadata: { roomId, likerId: currentUser.id, likerName: currentUser.username },
           }).catch(() => {});
         }

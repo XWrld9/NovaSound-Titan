@@ -25,7 +25,7 @@
  * ════════════════════════════════════════════════════════════════
  */
 
-const CACHE_NAME    = 'novasound-titan-v61000';
+const CACHE_NAME    = 'novasound-titan-v62000';
 const STATIC_ASSETS = [
   '/', '/index.html', '/manifest.json', '/favicon.ico',
   '/favicon.png', '/apple-touch-icon.png', '/icon-192.png', '/icon-512.png',
@@ -155,16 +155,22 @@ self.addEventListener('notificationclick', e => {
   // Récupérer l'URL cible depuis l'action cliquée ou les données par défaut
   let targetUrl = e.notification.data?.url || '/';
   if (e.action) {
-    // Chercher l'action cliquée dans la liste
     const act = (e.notification.data?.actions || []).find(a => a.action === e.action);
     if (act?.url) targetUrl = act.url;
     else if (e.action.startsWith('/')) targetUrl = e.action;
   }
 
-  // L'app utilise HashRouter → toutes les routes internes = /#/route
-  // Ex: /song/123 → /#/song/123 (sans ça → page 404 serveur)
-  const hashTarget = targetUrl === '/' ? '/#/' : ('/#' + (targetUrl.startsWith('/') ? targetUrl : '/' + targetUrl));
-  const fullUrl = self.location.origin + hashTarget;
+  // ✅ FIX: Construction correcte du hash pour HashRouter.
+  // Les query params DOIVENT rester DANS le hash, pas avant.
+  //   /song/123            → /#/song/123
+  //   /chat?highlight=abc  → /#/chat?highlight=abc   ← le ? reste dans le hash
+  //   /news?id=xyz         → /#/news?id=xyz
+  const buildHashUrl = (url) => {
+    if (!url || url === '/') return '/#/';
+    const path = url.startsWith('/') ? url : '/' + url;
+    return '/#' + path;
+  };
+  const fullUrl = self.location.origin + buildHashUrl(targetUrl);
   const notifId = e.notification.data?.notifId;
 
   // Effacer le badge
@@ -173,18 +179,25 @@ self.addEventListener('notificationclick', e => {
   } catch (_) {}
 
   e.waitUntil(
-    clients.matchAll({ type:'window', includeUncontrolled:true }).then(list => {
-      // Chercher un onglet/fenêtre déjà ouverte
+    clients.matchAll({ type: 'window', includeUncontrolled: true }).then(async list => {
+      // Chercher un onglet/fenêtre déjà ouverte sur ce domaine
       for (const client of list) {
         try {
-          if (new URL(client.url).origin === self.location.origin) {
-            client.focus();
-            client.postMessage({ type:'PUSH_NAVIGATE', url:targetUrl, notifId });
-            return;
-          }
-        } catch (_) {}
+          if (new URL(client.url).origin !== self.location.origin) continue;
+
+          // ✅ FIX: await client.focus() — OBLIGATOIRE avant postMessage.
+          // Sans await, le message peut partir avant que la fenêtre soit
+          // réellement focalisée et le handler PUSH_NAVIGATE dans
+          // NotificationContext n'est pas encore prêt à le recevoir.
+          const focused = await client.focus();
+          focused.postMessage({ type: 'PUSH_NAVIGATE', url: targetUrl, notifId });
+          return;
+        } catch (_) {
+          // focus() peut rejeter (Firefox, fenêtre minimisée) → fallback openWindow
+        }
       }
-      // Ouvrir une nouvelle fenêtre
+      // Aucune fenêtre ouverte ou focus refusé → ouvrir une nouvelle fenêtre
+      // L'URL contient déjà le hash complet avec query params
       return clients.openWindow(fullUrl);
     })
   );

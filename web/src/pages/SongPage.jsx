@@ -5,7 +5,7 @@
  *    bug fix edit commentaire inclus dans CommentSection
  */
 import React, { useState, useEffect, useCallback } from 'react';
-import { useParams, Link, useNavigate } from 'react-router-dom';
+import { useParams, Link, useNavigate, useLocation } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
 import { motion, AnimatePresence } from 'framer-motion';
 import { supabase } from '@/lib/supabaseClient';
@@ -97,6 +97,35 @@ const SuggestionCard = ({ s, onPlay }) => (
 
 const SongPage = () => {
   const { id } = useParams();
+  const location = useLocation();
+
+  // ✅ FIX deep link notif commentaire : /song/:id#comment-:commentId
+  // Avec HashRouter, l'URL est /#/song/123#comment-456
+  // → window.location.hash = "#/song/123#comment-456"
+  // → on extrait la partie après le dernier "#comment-"
+  useEffect(() => {
+    const fullHash = window.location.hash;
+    const commentMarker = '#comment-';
+    const markerIdx = fullHash.lastIndexOf(commentMarker);
+    if (markerIdx === -1) return;
+    const anchor = fullHash.slice(markerIdx + commentMarker.length);
+    if (!anchor) return;
+    let attempts = 0;
+    const tryScroll = () => {
+      const el = document.getElementById('comment-' + anchor);
+      if (el) {
+        el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        // Highlight visuel 3 secondes
+        el.style.transition = 'box-shadow 0.3s';
+        el.style.boxShadow = '0 0 0 2px #06b6d4, 0 0 20px rgba(6,182,212,0.3)';
+        el.style.borderRadius = '12px';
+        setTimeout(() => { el.style.boxShadow = ''; }, 3000);
+      } else if (attempts++ < 20) {
+        setTimeout(tryScroll, 300);
+      }
+    };
+    setTimeout(tryScroll, 700);
+  }, [location.hash]);
   const navigate = useNavigate();
   const { playSong, currentSong, isVisible, isPlayingGlobal } = usePlayer();
   const { audioCurrentTime } = usePlayerTime(); // ← contexte isolé pour éviter re-renders

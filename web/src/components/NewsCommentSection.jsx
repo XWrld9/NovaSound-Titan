@@ -215,7 +215,7 @@ const NewsCommentSection = ({ newsId, newsAuthorId }) => {
             type:     'comment_news',
             title:    `💬 ${senderName} a commenté ton actualité`,
             body:     `${senderName} : "${preview}"`,
-            url:      `/news/${newsId}`,
+            url:      `/news?id=${newsId}`,
             icon_url: currentUser.avatar_url || currentUser.user_metadata?.avatar_url || '/icon-192.png',
             from_user_id: currentUser.id,
             metadata: meta,
@@ -226,7 +226,7 @@ const NewsCommentSection = ({ newsId, newsAuthorId }) => {
         notifyMentions(supabase, content, currentUser.id, {
           title:    `🏷 ${senderName} t'a mentionné dans un commentaire`,
           body:     `${senderName} : "${preview}"`,
-          url:      `/news/${newsId}`,
+          url:      `/news?id=${newsId}`,
           icon_url: currentUser.avatar_url || '/icon-192.png',
           from_user_id: currentUser.id,
           metadata: meta,

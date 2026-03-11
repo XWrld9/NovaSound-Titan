@@ -79,7 +79,9 @@ const TrendingPage = () => {
         const byUser = {};
         for (const s of songs || []) {
           if (!s.uploader_id || !s.users) continue;
-          if (!byUser[s.uploader_id]) byUser[s.uploader_id] = { ...s.users, period_plays: 0 };
+          // ✅ FIX: s.users contient {id,username,avatar_url} — on ajoute user_id
+          // pour que le template <Link to={`/artist/${artist.user_id}`}> fonctionne
+          if (!byUser[s.uploader_id]) byUser[s.uploader_id] = { ...s.users, user_id: s.uploader_id, period_plays: 0 };
           byUser[s.uploader_id].period_plays += s.plays_count || 0;
         }
         setArtists(Object.values(byUser).sort((a,b) => b.period_plays - a.period_plays).slice(0,15));

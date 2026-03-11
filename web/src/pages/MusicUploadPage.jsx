@@ -329,7 +329,7 @@ const MusicUploadPage = () => {
         }], { onConflict: 'id', ignoreDuplicates: true });
       } catch { /* non-bloquant — si ça échoue le profil existe déjà */ }
 
-      const { error: insertError } = await supabase.from('songs').insert({
+      const { data: insertedSong, error: insertError } = await supabase.from('songs').insert({
         title:       formData.title.trim(),
         artist:      formData.artist.trim(),
         uploader_id: currentUser.id,
@@ -342,7 +342,7 @@ const MusicUploadPage = () => {
         ...(formData.genre       ? { genre:       formData.genre }                        : {}),
         ...(audioDuration        ? { duration_s:  audioDuration }                         : {}),
         ...(formData.description ? { description: formData.description.trim() || null }   : {}),
-      });
+      }).select('id').single();
       if (insertError) {
         // Retry sans les colonnes optionnelles si erreur schéma
         if (insertError.message?.includes('column') || insertError.code === 'PGRST204') {
@@ -362,12 +362,15 @@ const MusicUploadPage = () => {
         }
       }
 
+      const newSongId = insertedSong?.id;
+
       // Notifier UNIQUEMENT les abonnés de cet artiste (pas de spam global)
       notifyFollowers(supabase, currentUser.id, {
         type:     'new_song',
         title:    `🎵 ${currentUser.username || formData.artist} vient de publier un son`,
         body:     `"${formData.title.trim()}" est maintenant disponible`,
-        url:      '/',
+        url:      newSongId ? `/song/${newSongId}` : `/artist/${currentUser.id}`,
+        song_id:  newSongId || null,
         icon_url: albumCoverUrl || '/icon-192.png',
         from_user_id: currentUser.id,
         metadata: {

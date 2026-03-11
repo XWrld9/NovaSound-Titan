@@ -325,8 +325,15 @@ const NotifPanel = ({ panelRef, panelPos, onClose, mobile }) => {
     if (!notif.is_read) markAsRead(notif.id);
     onClose();
     if (notif.url) {
+      // ✅ FIX: Passage par window.location.hash pour préserver les anchors
+      // et query params (#comment-:id, ?highlight=:id) avec HashRouter
       const path = notif.url.replace(/^#\//, '/').replace(/^#/, '/');
-      navigate(path);
+      const newHash = '#' + (path.startsWith('/') ? path : '/' + path);
+      if (window.location.hash === newHash) {
+        window.dispatchEvent(new HashChangeEvent('hashchange'));
+      } else {
+        window.location.hash = newHash;
+      }
     }
   };
 

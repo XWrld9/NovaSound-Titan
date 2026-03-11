@@ -251,6 +251,7 @@ export const ChatProvider = ({ children }) => {
               body:     finalContent.slice(0, 200),
               url:      `/chat?highlight=${data.id}&tagger=${encodeURIComponent(senderName)}`,
               icon_url: '/icon-192.png',
+              from_user_id: currentUser.id,
               is_read:  false,
               metadata: JSON.stringify({ msgId: data.id, senderId: currentUser.id, senderName }),
             }));
@@ -293,6 +294,7 @@ export const ChatProvider = ({ children }) => {
               body:     finalContent.slice(0, 200),
               url:      `/chat?highlight=${data.id}&tagger=${encodeURIComponent(senderName)}`,
               icon_url: currentUser.avatar_url || '/icon-192.png',
+              from_user_id: currentUser.id,
               metadata: { msgId: data.id, senderId: currentUser.id, senderName },
             }).catch(() => {});
           }

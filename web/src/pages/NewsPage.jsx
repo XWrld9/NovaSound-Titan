@@ -8,6 +8,7 @@ import NewsForm from '@/components/NewsForm';
 import ReportButton from '@/components/ReportButton';
 import NewsLikeButton from '@/components/NewsLikeButton';
 import { useAuth } from '@/contexts/AuthContext';
+import { useLocation } from 'react-router-dom';
 import { Newspaper, User, X, ChevronRight, Trash2 } from 'lucide-react';
 import NewsShareButton from '@/components/NewsShareButton';
 import NewsCommentSection from '@/components/NewsCommentSection';
@@ -17,6 +18,7 @@ const ADMIN_EMAIL = 'eloadxfamily@gmail.com';
 
 const NewsPage = () => {
   const { isAuthenticated, currentUser } = useAuth();
+  const location = useLocation();
   const isAdmin = currentUser?.email === ADMIN_EMAIL;
   const [news, setNews] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -25,6 +27,15 @@ const NewsPage = () => {
   const [confirmDialog, setConfirmDialog] = useState({ isOpen: false });
 
   useEffect(() => { fetchNews(); }, []);
+
+  // ✅ FIX: deep link depuis notif — /news?id=:id → ouvre automatiquement l'article
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const deepId = params.get('id');
+    if (!deepId || !news.length) return;
+    const target = news.find(n => n.id === deepId);
+    if (target) setSelectedNews(target);
+  }, [location.search, news]);
 
   const fetchNews = async () => {
     try {
