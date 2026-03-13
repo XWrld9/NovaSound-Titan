@@ -35,8 +35,6 @@ import { useAuth } from '@/contexts/AuthContext';
 import { markAsRead, markAllAsRead, deleteNotification } from '@/lib/notificationService';
 import AchievementNotification from '@/components/AchievementNotification';
 
-import { useAuth } from '@/contexts/AuthContext';
-
 // ── Config par type — V70000 : tous les types couverts ───────────────
 const TYPE_CONFIG = {
   // ── Likes ──
