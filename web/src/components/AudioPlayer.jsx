@@ -1378,7 +1378,7 @@ const AudioPlayerDesktop = ({ currentSong, playlist = [], onNext, onPrevious, on
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="text-white text-sm font-semibold flex items-center gap-1 overflow-hidden">
-                    <span className="truncate cursor-pointer" onClick={() => currentSong?.is_local ? setShowNowPlaying(true) : setIsExpanded(true)}>{currentSong.title}</span>
+                    <span className="truncate cursor-pointer notranslate" translate="no" onClick={() => currentSong?.is_local ? setShowNowPlaying(true) : setIsExpanded(true)}>{currentSong.title}</span>
                     {isPlaying && <LottieAnimation animationData={playAnimation} style={{ width: 16, height: 16 }} loop autoplay className="flex-shrink-0" />}
                     {currentSong?.id && (
                       <a href={`/#/song/${currentSong.id}`} onClick={e => e.stopPropagation()}
@@ -1387,7 +1387,7 @@ const AudioPlayerDesktop = ({ currentSong, playlist = [], onNext, onPrevious, on
                       </a>
                     )}
                   </div>
-                  <div className="text-gray-500 text-xs truncate cursor-pointer flex items-center gap-1" onClick={() => currentSong?.is_local ? setShowNowPlaying(true) : setIsExpanded(true)}>
+                  <div className="text-gray-500 text-xs truncate cursor-pointer flex items-center gap-1 notranslate" translate="no" onClick={() => currentSong?.is_local ? setShowNowPlaying(true) : setIsExpanded(true)}>
                     {currentSong.artist}
                     {sleepTimer !== null && (
                       <span className="text-amber-400 text-[9px] font-bold ml-1">🌙 {fmtSleep(sleepTimer)}</span>

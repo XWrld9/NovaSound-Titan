@@ -180,7 +180,7 @@ const AdminPanel = () => {
     try {
       const { data } = await supabase.from('user_roles')
         .select('*, user:user_id(username, avatar_url, email)')
-        .eq('role', 'admin').order('created_at', { ascending:false });
+        .eq('role', 'admin').order('granted_at', { ascending:false });
       setAdminRoles(data || []);
     } catch { setAdminRoles([]); }
   }, []);

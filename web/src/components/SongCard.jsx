@@ -165,18 +165,19 @@ const SongCard = memo(({ song: initialSong, onPlay, isPlaying: isPlayingProp, se
         {/* Infos */}
         <div className="p-3.5">
           <Link to={`/song/${song.id}`} onClick={e => e.stopPropagation()}
-            className="text-white font-semibold truncate text-sm block hover:text-cyan-400 transition-colors">
+            className="text-white font-semibold truncate text-sm block hover:text-cyan-400 transition-colors notranslate"
+            translate="no">
             {song.title}
           </Link>
 
           {song.uploader_id ? (
             <Link to={`/artist/${song.uploader_id}`}
-              className="text-gray-400 text-xs truncate block hover:text-cyan-400 transition-colors mt-0.5"
-              onClick={e => e.stopPropagation()}>
+              className="text-gray-400 text-xs truncate block hover:text-cyan-400 transition-colors mt-0.5 notranslate"
+              onClick={e => e.stopPropagation()} translate="no">
               {song.artist}
             </Link>
           ) : (
-            <p className="text-gray-400 text-xs truncate mt-0.5" title={song?.artist}>{song.artist}</p>
+            <p className="text-gray-400 text-xs truncate mt-0.5 notranslate" title={song?.artist} translate="no">{song.artist}</p>
           )}
 
           {/* Genre badge — couleur dynamique par genre */}
