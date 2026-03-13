@@ -354,47 +354,50 @@ export const getUserAchievements = async (userId) => {
 
 /**
  * Récupère le classement des trophées
+ * Syntaxe PostgREST correcte : embedded join via FK implicite
  */
 export const getAchievementsLeaderboard = async (limit = 10) => {
   try {
-    const { data } = await supabase
+    // Récupérer tous les achievements avec les infos liées via FK PostgREST
+    const { data, error } = await supabase
       .from('user_achievements')
       .select(`
         user_id,
-        achievement_definitions(points, rarity),
-        users(username, avatar_url)
+        unlocked_at,
+        achievement_definitions:achievement(points, rarity),
+        users!user_achievements_user_id_fkey(username, avatar_url)
       `)
-      .join('achievement_definitions', 'achievement = achievement_definitions.code')
-      .join('users', 'user_id = users.id')
-      .order('achievement_definitions(points', { ascending: false })
-      .limit(limit);
-    
-    // Grouper par utilisateur et calculer le total de points
+      .order('unlocked_at', { ascending: false })
+      .limit(limit * 20); // On récupère plus pour grouper ensuite
+
+    if (error) throw error;
+    if (!data?.length) return [];
+
+    // Grouper par utilisateur et calculer le total de points côté JS
     const userPoints = {};
     data.forEach(item => {
       const userId = item.user_id;
       if (!userPoints[userId]) {
         userPoints[userId] = {
           userId,
-          username: item.users?.username,
-          avatar_url: item.users?.avatar_url,
-          totalPoints: 0,
-          achievementsCount: 0,
-          rareAchievements: 0,
-          epicAchievements: 0,
-          legendaryAchievements: 0
+          username:            item.users?.username,
+          avatar_url:          item.users?.avatar_url,
+          totalPoints:         0,
+          achievementsCount:   0,
+          rareAchievements:    0,
+          epicAchievements:    0,
+          legendaryAchievements: 0,
         };
       }
-      
-      userPoints[userId].totalPoints += item.achievement_definitions?.points || 0;
+      userPoints[userId].totalPoints    += item.achievement_definitions?.points || 0;
       userPoints[userId].achievementsCount += 1;
-      
+
       const rarity = item.achievement_definitions?.rarity;
-      if (rarity === 'rare') userPoints[userId].rareAchievements += 1;
-      if (rarity === 'epic') userPoints[userId].epicAchievements += 1;
+      if (rarity === 'rare')      userPoints[userId].rareAchievements      += 1;
+      if (rarity === 'epic')      userPoints[userId].epicAchievements      += 1;
       if (rarity === 'legendary') userPoints[userId].legendaryAchievements += 1;
     });
-    
+
     return Object.values(userPoints)
       .sort((a, b) => b.totalPoints - a.totalPoints)
       .slice(0, limit);

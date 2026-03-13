@@ -26,7 +26,8 @@ import { useNetworkDetector } from '@/components/OfflineBanner';
 
 const LocalPlayerPageNative = () => {
   const navigate = useNavigate();
-  const { status: networkStatus } = useNetworkDetector();
+  const { isOnline: networkOnline } = useNetworkDetector();
+  const networkStatus = networkOnline ? 'online' : 'offline';
   
   // 🎵 États principaux
   const [activeView, setActiveView] = useState('player'); // player, library, folders

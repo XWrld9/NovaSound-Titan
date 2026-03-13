@@ -6,6 +6,7 @@
  */
 import React, { createContext, useContext, useState, useRef, useCallback, useEffect } from 'react';
 import { supabase } from '@/lib/supabaseClient';
+import { useAuth } from '@/contexts/AuthContext';
 
 const PlayerContext = createContext(null);
 
@@ -16,6 +17,7 @@ export const usePlayer = () => {
 };
 
 export const PlayerProvider = ({ children }) => {
+  const { currentUser } = useAuth();
   const [currentSong,       setCurrentSong]       = useState(null);
   const [playlist,          setPlaylist]           = useState([]);
   const [queue,             setQueue]              = useState([]);

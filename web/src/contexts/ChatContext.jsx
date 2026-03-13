@@ -10,7 +10,7 @@
 import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
 import { supabase } from '@/lib/supabaseClient';
 import { useAuth } from './AuthContext';
-import { offlineStore } from '@/lib/offlineStore';
+import { offlineMessages } from '@/lib/offlineStore';
 import { notifyUser } from '@/lib/notifUtils';
 import { triggerAchievementCheck } from '@/lib/achievementUtils';
 
@@ -310,10 +310,10 @@ export const ChatProvider = ({ children }) => {
       // Si hors-ligne → sauvegarder localement pour envoi ultérieur
       if (!navigator.onLine) {
         try {
-          await offlineStore.addMessage(finalContent, replyTo);
+          await offlineMessages.addMessage(finalContent, replyTo);
           console.info('[Chat] Message sauvegardé hors-ligne pour envoi ultérieur');
         } catch (storeErr) {
-          console.error('[Chat] offlineStore.addMessage:', storeErr);
+          console.error('[Chat] offlineMessages.addMessage:', storeErr);
         }
       }
       setMessages(prev => prev.filter(m => m.id !== tempId));

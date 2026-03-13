@@ -4,7 +4,7 @@
  */
 
 import { useState, useEffect } from 'react';
-import { offlineStore } from '@/lib/offlineStore';
+import { offlineMessages } from '@/lib/offlineStore';
 
 export const useNetworkDetector = () => {
   const [isOnline, setIsOnline] = useState(navigator.onLine);
@@ -59,15 +59,43 @@ export const useNetworkDetector = () => {
     };
   }, []);
 
-  // Synchroniser les données hors-ligne
+  // Synchroniser les messages hors-ligne au retour de connexion
   const syncOfflineData = async () => {
     try {
-      // Récupérer les messages en attente
-      const pendingMessages = await offlineStore.get('pending_messages') || [];
-      
-      if (pendingMessages.length > 0) {
-        console.info(`[Network] Syncing ${pendingMessages.length} offline messages`);
-        // La synchronisation sera gérée par les composants concernés
+      const pending = await offlineMessages.getPendingMessages();
+      if (!pending?.length) return;
+
+      console.info(`[Network] Syncing ${pending.length} offline message(s)…`);
+
+      // Import dynamique pour éviter une dépendance circulaire au top-level
+      const { supabase } = await import('@/lib/supabaseClient');
+
+      for (const msg of pending) {
+        try {
+          const { data: { user } } = await supabase.auth.getUser();
+          if (!user?.id) break; // pas connecté, on arrête
+
+          const { error } = await supabase
+            .from('chat_messages')
+            .insert({
+              user_id: user.id,
+              content: msg.content,
+              ...(msg.replyTo ? {
+                reply_to_id:       msg.replyTo.id,
+                reply_to_content:  msg.replyTo.content?.slice(0, 120),
+                reply_to_username: msg.replyTo.reply_to_username || null,
+              } : {}),
+            });
+
+          if (!error) {
+            await offlineMessages.removeMessage(msg.id);
+            console.info(`[Network] Message offline ${msg.id} synchronisé ✅`);
+          } else {
+            console.warn(`[Network] Échec sync message ${msg.id}:`, error.message);
+          }
+        } catch (msgErr) {
+          console.warn(`[Network] Erreur sync message ${msg.id}:`, msgErr);
+        }
       }
     } catch (error) {
       console.error('[Network] Sync error:', error);
