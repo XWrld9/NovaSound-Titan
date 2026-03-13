@@ -87,12 +87,6 @@ if (typeof window !== 'undefined') {
   window.addEventListener('click',       _unlockAudio, { once: false });
 }
 
-// ── Wrapper unique — résout les Rules of Hooks ───────────────────────────────
-// AudioPlayerDesktop gère TOUJOURS l'audio (contient le <audio> element).
-// Sur mobile, il affiche l'UI de AudioPlayerMobile tout en conservant son audio.
-// JAMAIS de hooks appelés après un return conditionnel.
-const AudioPlayer = (props) => <AudioPlayerDesktop {...props} />;
-
 // ── Composant desktop complet ─────────────────────────────────────────────────
 const AudioPlayerDesktop = ({ currentSong, playlist = [], onNext, onPrevious, onClose, shouldAutoPlay = false, resetAutoPlay }) => {
   const { currentUser } = useAuth();
@@ -1681,5 +1675,11 @@ const AudioPlayerDesktop = ({ currentSong, playlist = [], onNext, onPrevious, on
     </>
   );
 };
+
+// ── Wrapper unique — résout les Rules of Hooks ───────────────────────────────
+// AudioPlayerDesktop gère TOUJOURS l'audio (contient le <audio> element).
+// Sur mobile, il affiche l'UI de AudioPlayerMobile tout en conservant son audio.
+// JAMAIS de hooks appelés après un return conditionnel.
+const AudioPlayer = (props) => <AudioPlayerDesktop {...props} />;
 
 export default AudioPlayer;
