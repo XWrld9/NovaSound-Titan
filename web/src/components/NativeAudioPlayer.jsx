@@ -617,7 +617,7 @@ const NativeAudioPlayer = () => {
                   repeatMode === 'off' ? 'text-gray-400 hover:text-white' : 'text-purple-400'
                 }`}
               >
-                {repeatMode === 'one' ? <Repeat1 className="w-5 h-5" : <Repeat className="w-5 h-5" />}
+                {repeatMode === 'one' ? <Repeat1 className="w-5 h-5" /> : <Repeat className="w-5 h-5" />}
               </button>
               
               <button
