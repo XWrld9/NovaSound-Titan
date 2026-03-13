@@ -254,6 +254,19 @@ export const NotificationProvider = ({ children }) => {
         writePersistedPush(currentUser.id, true);
       }
 
+      // ✅ FIX v63000 — Chunk Vite périmé après deploy Vercel
+      // Le SW détecte qu'un chunk JS retourne 404/503 (nouveau build déployé,
+      // l'ancien hash n'existe plus sur le CDN). On recharge la page pour que
+      // le navigateur récupère le nouveau index.html et les nouveaux chunks.
+      if (e.data?.type === 'SW_CHUNK_STALE') {
+        const lastReload = parseInt(sessionStorage.getItem('_sw_last_reload') || '0', 10);
+        if (Date.now() - lastReload > 30_000) {
+          sessionStorage.setItem('_sw_last_reload', String(Date.now()));
+          window.location.reload();
+        }
+        return;
+      }
+
       // Background Sync — messages en attente
       if (e.data?.type === 'SYNC_PENDING_MESSAGES' && currentUser?.id) {
         try {

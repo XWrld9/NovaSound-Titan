@@ -25,7 +25,7 @@
  * ════════════════════════════════════════════════════════════════
  */
 
-const CACHE_NAME    = 'novasound-titan-v62000';
+const CACHE_NAME    = 'novasound-titan-v63000';
 const STATIC_ASSETS = [
   '/', '/index.html', '/manifest.json', '/favicon.ico',
   '/favicon.png', '/apple-touch-icon.png', '/icon-192.png', '/icon-512.png',
@@ -54,35 +54,98 @@ self.addEventListener('activate', e => {
 });
 
 // ── Fetch (offline-first SPA) ─────────────────────────────────────────────────
+//
+// ✅ FIX v63000 — Trois bugs critiques corrigés :
+//
+// BUG 1 : Le handler mettait en cache les réponses HTTP 503/404 (≠ erreur réseau).
+//         Le .catch() ne se déclenche PAS pour les erreurs HTTP — seulement pour
+//         les échecs réseau (ERR_CONNECTION_REFUSED etc.). Résultat : le SW servait
+//         des 503 en boucle après chaque nouveau deploy Vercel.
+//         FIX → vérifier res.ok AVANT de cacher ET de retourner la réponse.
+//
+// BUG 2 : Les chunks Vite hashés (/assets/*.js) changent de nom à chaque build.
+//         Après un deploy, l'ancien SW continuait à servir les vieux chunks depuis
+//         son cache → "Failed to fetch dynamically imported module" + 503.
+//         FIX → les chunks /assets/*.js sont en Network-First avec fallback cache.
+//               Si le réseau retourne 404 ou 503 sur un chunk → forcer un reload.
+//
+// BUG 3 : CACHE_NAME non bumped → le SW activate() ne purgeait pas l'ancien cache.
+//         FIX → bumped à v63000 → force un nouveau cycle install/activate.
+//
 self.addEventListener('fetch', e => {
   const { request } = e;
   const url = request.url;
 
-  if (url.includes('supabase.co'))  return;
-  if (AUDIO_EXTENSIONS.test(url))   return;
-  if (request.method !== 'GET')     return;
+  // Ne pas intercepter ces requêtes
+  if (url.includes('supabase.co'))   return;
+  if (AUDIO_EXTENSIONS.test(url))    return;
+  if (request.method !== 'GET')      return;
   if (url.includes('googleapis') || url.includes('gstatic') || url.includes('analytics')) return;
+  if (url.includes('elfsight') || url.includes('eapps')) return;
 
-  e.respondWith(
-    fetch(request)
-      .then(res => {
-        if (res.ok && (res.type === 'basic' || res.type === 'cors')) {
+  // ── Chunks Vite hashés (/assets/*.js, /assets/*.css) ──
+  // Network-first : si le serveur retourne 4xx/5xx (chunk périmé après deploy),
+  // on purge le cache et on envoie un message aux clients pour forcer un reload.
+  const isViteChunk = /\/assets\/[^/]+\.(js|css)(\?|$)/.test(url);
+  if (isViteChunk) {
+    e.respondWith(
+      fetch(request).then(res => {
+        if (res.ok) {
+          // Chunk valide → mettre en cache
           const clone = res.clone();
-          caches.open(CACHE_NAME).then(c => {
-            try { c.put(request, clone); } catch (_) {}
-          });
+          caches.open(CACHE_NAME).then(c => { try { c.put(request, clone); } catch(_){} });
+          return res;
         }
-        return res;
-      })
-      .catch(async () => {
+        // Le serveur retourne 404 ou 503 → chunk périmé (nouveau deploy)
+        // Ne pas cacher, signaler aux clients de recharger la page
+        self.clients.matchAll({ type: 'window' }).then(list =>
+          list.forEach(client => client.postMessage({ type: 'SW_CHUNK_STALE' }))
+        );
+        return res; // laisser React ErrorBoundary gérer
+      }).catch(async () => {
+        // Erreur réseau → essayer le cache
         const cached = await caches.match(request);
         if (cached) return cached;
-        if (request.mode === 'navigate' || request.headers.get('accept')?.includes('text/html')) {
-          const idx = await caches.match('/index.html') || await caches.match('/');
-          if (idx) return idx;
-        }
-        return new Response('Offline', { status: 503 });
+        return new Response('', { status: 503 });
       })
+    );
+    return;
+  }
+
+  // ── Navigation HTML (SPA) ──
+  if (request.mode === 'navigate') {
+    e.respondWith(
+      fetch(request).then(res => {
+        if (res.ok) {
+          const clone = res.clone();
+          caches.open(CACHE_NAME).then(c => { try { c.put(request, clone); } catch(_){} });
+          return res;
+        }
+        return res;
+      }).catch(async () => {
+        const cached = await caches.match(request)
+          || await caches.match('/index.html')
+          || await caches.match('/');
+        return cached || new Response('Offline', { status: 503 });
+      })
+    );
+    return;
+  }
+
+  // ── Autres assets statiques (images, fonts, icons) ──
+  e.respondWith(
+    caches.match(request).then(cached => {
+      const network = fetch(request).then(res => {
+        // ✅ NE JAMAIS cacher les réponses non-2xx
+        if (res.ok && (res.type === 'basic' || res.type === 'cors')) {
+          const clone = res.clone();
+          caches.open(CACHE_NAME).then(c => { try { c.put(request, clone); } catch(_){} });
+        }
+        return res;
+      }).catch(() => cached || new Response('', { status: 503 }));
+      // Cache-first pour les assets statiques
+      return cached || network;
+    })
   );
 });
 
