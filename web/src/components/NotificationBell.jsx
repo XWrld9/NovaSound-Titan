@@ -31,6 +31,7 @@ import {
   Trophy,
   Zap
 } from 'lucide-react';
+import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { useNotifications } from '@/contexts/NotificationContext';
 import { markAsRead, markAllAsRead, deleteNotification } from '@/lib/notificationService';
