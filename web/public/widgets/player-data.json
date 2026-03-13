@@ -1,0 +1,9 @@
+{
+  "title": "NovaSound",
+  "artist": "Prêt à écouter",
+  "cover_url": "/icon-192.png",
+  "is_playing": false,
+  "progress": 0,
+  "current_time": "0:00",
+  "duration": "0:00"
+}

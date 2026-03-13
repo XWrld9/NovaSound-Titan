@@ -235,3 +235,63 @@ button {
     --ns-bottom-nav-h: calc(3.5rem + env(safe-area-inset-bottom, 0px));
   }
 }
+
+/* ── android-player-fixed ─────────────────────────────────────────────────────
+   Garantit que le mini player reste fixé à l'écran même dans :
+   - PWA standalone (Android & iOS)
+   - WebView APK (Capacitor/Cordova/TWA)
+   - Safari iOS standalone
+   - Chrome Android standalone
+   Le translate3d force le GPU compositing pour éviter le clignotement Android.
+   ---------------------------------------------------------------------------- */
+.android-player-fixed {
+  position: fixed !important;
+  left: 0 !important;
+  right: 0 !important;
+  /* Évite le bug de position:fixed dans les overflow:scroll parents sur iOS */
+  -webkit-transform: translate3d(0, 0, 0);
+  transform: translate3d(0, 0, 0);
+  /* Priorité maximale de stacking au-dessus de tout */
+  isolation: isolate;
+  /* Optimisation rendu GPU */
+  will-change: transform;
+  /* Évite que la WebView APK coupe le player lors du resize clavier virtuel */
+  touch-action: pan-x;
+}
+
+/* En mode standalone/PWA, on évite que l'env safe-area soit appliqué deux fois */
+@media (display-mode: standalone) {
+  .android-player-fixed {
+    /* Déjà géré via paddingBottom: env(safe-area-inset-bottom) inline */
+    bottom: var(--player-bottom, 0) !important;
+  }
+}
+
+/* Bulle minimisée — toujours visible par-dessus tout y compris les modales */
+.ns-bubble-fixed {
+  position: fixed !important;
+  z-index: 9999 !important;
+  -webkit-transform: translate3d(0, 0, 0);
+  transform: translate3d(0, 0, 0);
+  will-change: transform;
+  /* Pas de pointer-events sur le fond (laisse traverser les clics) */
+  pointer-events: none;
+}
+.ns-bubble-fixed > * {
+  pointer-events: auto;
+}
+
+/* Correction overflow hidden iOS qui coupe position:fixed */
+html, body {
+  /* Ne jamais mettre overflow:hidden sur html/body sur iOS */
+  -webkit-overflow-scrolling: touch;
+}
+
+/* PWA widget pin button animation */
+@keyframes ns-pin-pulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(6, 182, 212, 0.4); }
+  50%       { box-shadow: 0 0 0 8px rgba(6, 182, 212, 0); }
+}
+.ns-pin-active {
+  animation: ns-pin-pulse 2s ease-in-out infinite;
+}

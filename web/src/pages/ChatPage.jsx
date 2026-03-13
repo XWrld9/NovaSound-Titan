@@ -103,28 +103,132 @@ const ReactionBar = memo(({ msgId, reactions, currentUserId, onToggle }) => {
   );
 });
 
-// Rendu du contenu avec mentions colorées
-const renderContent = (text) => {
+// Styles chat premium + effets mentions
+const CHAT_STYLES = `
+  @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&display=swap');
+  @keyframes mentionPulse{0%,100%{box-shadow:0 0 0 0 rgba(6,182,212,.5)}60%{box-shadow:0 0 0 6px rgba(6,182,212,0)}}
+  @keyframes mentionAllPulse{0%,100%{box-shadow:0 0 0 0 rgba(234,179,8,.5)}60%{box-shadow:0 0 0 6px rgba(234,179,8,0)}}
+  @keyframes selfMentionShine{0%{background-position:0% 50%}100%{background-position:200% 50%}}
+  @keyframes chatFadeIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+  @keyframes topBarGlow{0%,100%{border-bottom-color:rgba(6,182,212,.12)}50%{border-bottom-color:rgba(168,85,247,.18)}}
+  @keyframes liveRing{0%{transform:scale(1);opacity:.7}100%{transform:scale(2.2);opacity:0}}
+
+  .chat-mention-user{
+    display:inline-flex;align-items:center;
+    background:linear-gradient(135deg,rgba(6,182,212,.18),rgba(6,182,212,.08));
+    border:1px solid rgba(6,182,212,.35);
+    color:#67e8f9;font-weight:700;
+    padding:0 5px;border-radius:6px;
+    font-size:.88em;letter-spacing:.01em;
+    transition:all .15s;cursor:pointer;
+    animation:mentionPulse 2.5s ease-in-out 1;
+    text-decoration:none;
+  }
+  .chat-mention-user:hover{
+    background:linear-gradient(135deg,rgba(6,182,212,.28),rgba(6,182,212,.14));
+    border-color:rgba(6,182,212,.6);color:#a5f3fc;
+  }
+  .chat-mention-all{
+    display:inline-flex;align-items:center;gap:3px;
+    background:linear-gradient(135deg,rgba(234,179,8,.22),rgba(251,146,60,.12));
+    border:1px solid rgba(234,179,8,.4);
+    color:#fde047;font-weight:800;
+    padding:0 6px;border-radius:6px;
+    font-size:.88em;letter-spacing:.01em;
+    animation:mentionAllPulse 2s ease-in-out 1;
+  }
+  .chat-mention-self{
+    display:inline-flex;align-items:center;
+    background:linear-gradient(90deg,rgba(6,182,212,.3),rgba(168,85,247,.25),rgba(6,182,212,.3));
+    background-size:200% 100%;
+    border:1px solid rgba(168,85,247,.45);
+    color:#d8b4fe;font-weight:800;
+    padding:0 5px;border-radius:6px;
+    font-size:.88em;
+    animation:selfMentionShine 2s linear 3;
+  }
+  .chat-link{color:#22d3ee;text-decoration:underline;text-underline-offset:2px;word-break:break-all;}
+  .chat-link:hover{color:#67e8f9}
+  .chat-live-link{
+    display:inline-flex;align-items:center;gap:5px;
+    background:rgba(239,68,68,.12);border:1px solid rgba(239,68,68,.3);
+    color:#fca5a5;border-radius:8px;padding:1px 8px;font-size:.85em;font-weight:700;
+  }
+  .msg-bubble-own{
+    background:linear-gradient(135deg,#0891b2 0%,#7c3aed 100%) !important;
+    box-shadow:0 2px 16px rgba(8,145,178,.3);
+  }
+  .msg-bubble-other{
+    background:rgba(255,255,255,.06) !important;
+    border:1px solid rgba(255,255,255,.09) !important;
+    backdrop-filter:blur(8px);
+  }
+  .msg-bubble-mention-all{
+    background:linear-gradient(135deg,rgba(234,179,8,.14),rgba(251,146,60,.08)) !important;
+    border:1px solid rgba(234,179,8,.28) !important;
+  }
+  .mention-autocomplete-item:hover .mention-name{color:#67e8f9}
+  .mention-all-item:hover .mention-all-label{color:#fde047}
+  .chat-top-bar{
+    border-bottom:1px solid rgba(6,182,212,.1);
+    background:rgba(5,5,18,.94);
+    backdrop-filter:blur(28px) saturate(1.6);
+    animation:topBarGlow 5s ease-in-out infinite;
+  }
+  .chat-period-active{
+    background:linear-gradient(135deg,rgba(6,182,212,.2),rgba(168,85,247,.15));
+    border-color:rgba(6,182,212,.4) !important;
+    color:#67e8f9 !important;
+  }
+  .chat-tab-global-active{
+    background:linear-gradient(135deg,#0891b2,#7c3aed);
+    box-shadow:0 4px 20px rgba(8,145,178,.35);
+  }
+  .chat-tab-msg-active{
+    background:linear-gradient(135deg,#a855f7,#ec4899);
+    box-shadow:0 4px 20px rgba(168,85,247,.35);
+  }
+  .input-bubble{
+    background:rgba(255,255,255,.07);
+    border:1px solid rgba(255,255,255,.1);
+    transition:border-color .2s,background .2s;
+    border-radius:22px;
+  }
+  .input-bubble:focus-within{
+    background:rgba(255,255,255,.1);
+    border-color:rgba(6,182,212,.4);
+    box-shadow:0 0 0 3px rgba(6,182,212,.07);
+  }
+  .mention-popup{
+    background:rgba(10,10,26,.97);
+    border:1px solid rgba(255,255,255,.1);
+    backdrop-filter:blur(24px);
+    box-shadow:0 -8px 40px rgba(0,0,0,.6),0 0 0 1px rgba(6,182,212,.08);
+  }
+`;
+
+// Rendu du contenu avec mentions colorées premium
+const renderContent = (text, currentUserId, msgUserId) => {
   if (!text) return null;
-  // V110000 : détecter les URLs (live room links + autres) et les rendre cliquables
   const urlRegex = /(https?:\/\/[^\s]+|#\/live\/[^\s]+)/g;
   const parts = text.split(urlRegex);
   return parts.map((part, i) => {
     if (urlRegex.test(part) || part.startsWith('#/live/')) {
-      const href = part.startsWith('#/live/') ? part : part;
-      return (
-        <a key={i} href={href} target="_blank" rel="noopener noreferrer"
-          className="text-cyan-400 hover:text-cyan-300 break-all" onClick={e => e.stopPropagation()}>
-          {part.includes('/live/') ? '🔴 Rejoindre le live' : part}
-        </a>
-      );
+      if (part.includes('/live/')) {
+        return <a key={i} href={part} target="_blank" rel="noopener noreferrer" className="chat-live-link" onClick={e => e.stopPropagation()}>🔴 Rejoindre le live</a>;
+      }
+      return <a key={i} href={part} target="_blank" rel="noopener noreferrer" className="chat-link" onClick={e => e.stopPropagation()}>{part}</a>;
     }
-    if (!part.startsWith('@')) return <span key={i}>{part}</span>;
-    const lower = part.toLowerCase();
-    const isAll = ['@tous', '@all', '@everyone', '@todo', '@todos', '@tutti', '@allen', '@alle'].includes(lower);
-    return (
-      <span key={i} className={`font-bold ${isAll ? 'text-yellow-300' : 'text-cyan-300'}`}>{part}</span>
-    );
+    // Découper les @mentions dans cette partie
+    const mentionRegex = /(@[\w-]+)/g;
+    const subParts = part.split(mentionRegex);
+    return subParts.map((sub, j) => {
+      if (!sub.startsWith('@')) return <span key={`${i}-${j}`}>{sub}</span>;
+      const lower = sub.toLowerCase();
+      const isAll = ['@tous','@all','@everyone','@todo','@todos','@tutti','@allen','@alle'].includes(lower);
+      if (isAll) return <span key={`${i}-${j}`} className="chat-mention-all">📢{sub}</span>;
+      return <span key={`${i}-${j}`} className="chat-mention-user">{sub}</span>;
+    });
   });
 };
 
@@ -230,7 +334,7 @@ const ChatMessage = memo(({
               <input ref={editRef} id={`edit-msg-${msg?.id}`} name="chat-edit" value={editText}
                 onChange={e => setEditText(e.target.value.slice(0, 1000))}
                 onKeyDown={e => { if (e.key === 'Enter') handleSaveEdit(); if (e.key === 'Escape') setEditing(false); }}
-                className="flex-1 bg-[#0d1020] border border-cyan-500/40 rounded-xl px-3 py-1.5 text-sm text-white focus:outline-none focus:border-cyan-500/70 transition-colors" />
+                className="flex-1 bg-[#080818] border border-cyan-500/40 rounded-xl px-3 py-1.5 text-sm text-white focus:outline-none focus:border-cyan-500/60 transition-colors" />
               <button onClick={handleSaveEdit} disabled={savingEdit} className="p-1.5 text-cyan-400 hover:text-cyan-300 disabled:opacity-50">
                 {savingEdit ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Check className="w-3.5 h-3.5" />}
               </button>
@@ -239,16 +343,16 @@ const ChatMessage = memo(({
           ) : (
             <div className={`relative px-3.5 py-2.5 rounded-2xl max-w-full break-words ${
               isOwn
-                ? 'bg-gradient-to-br from-cyan-500 to-cyan-600 text-white rounded-br-sm shadow-lg shadow-cyan-500/20'
+                ? 'msg-bubble-own text-white rounded-br-sm'
                 : hasMentionAll
-                  ? 'bg-yellow-500/15 border border-yellow-500/30 text-gray-100 rounded-bl-sm'
-                  : 'bg-[#1a1f3a] border border-white/[0.10] text-gray-100 rounded-bl-sm'
-            } ${msg._pending ? 'opacity-60' : ''}`}>
+                  ? 'msg-bubble-mention-all text-gray-100 rounded-bl-sm'
+                  : 'msg-bubble-other text-gray-100 rounded-bl-sm'
+            } ${msg._pending ? 'opacity-55' : ''}`}>
               <p className="text-sm leading-relaxed whitespace-pre-wrap">
-                {renderContent(msg.content)}{msg._pending ? ' ···' : ''}
+                {renderContent(msg.content, currentUser?.id, msg.user_id)}{msg._pending ? <span className="opacity-50"> ···</span> : ''}
               </p>
               {msg.is_edited && (
-                <span className={`text-[9px] italic mt-0.5 block ${isOwn ? 'text-cyan-100/70' : 'text-gray-600'}`}>modifié</span>
+                <span className={`text-[9px] italic mt-0.5 block ${isOwn ? 'text-cyan-100/60' : 'text-gray-600'}`}>modifié</span>
               )}
             </div>
           )}
@@ -620,61 +724,70 @@ const ChatPage = () => {
         <title>{'Chat Global'} — NovaSound TITAN LUX</title>
         <meta name="description" content="Espace de conversation commun à toute la communauté NovaSound" />
       </Helmet>
+      <style>{CHAT_STYLES}</style>
 
-      <div className="min-h-screen bg-gray-950 flex flex-col">
+      <div className="min-h-screen bg-[#05050f] flex flex-col">
         <Header />
 
         <div
-          className={`flex-1 flex flex-col overflow-hidden relative`}
+          className="flex-1 flex flex-col overflow-hidden relative"
           style={{
             height: 'calc(100dvh - 64px)',
             backgroundImage: 'url(/chat-wallpaper.jpg)',
             backgroundSize: 'cover',
             backgroundPosition: 'center',
             backgroundRepeat: 'no-repeat',
-            transform: 'translateZ(0)',
-            WebkitTransform: 'translateZ(0)',
           }}
         >
-          {/* Overlay pour lisibilité du chat — sans blur pour garder les textes nets */}
-          <div className="absolute inset-0 bg-gray-950/85 pointer-events-none z-0" />
-          {/* Barre supérieure */}
-          <div className="flex-shrink-0 border-b border-white/[0.06] bg-gray-950/92 backdrop-blur-xl px-4 py-2.5 relative z-10">
+          {/* Overlay profond */}
+          <div className="absolute inset-0 bg-[#05050f]/88 pointer-events-none z-0" />
+
+          {/* ── Barre supérieure ── */}
+          <div className="flex-shrink-0 chat-top-bar px-4 py-3 relative z-10">
             <div className="max-w-3xl mx-auto">
               <div className="flex items-center justify-between mb-3">
+                {/* Titre */}
                 <div className="flex items-center gap-2.5">
-                  <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-cyan-500/30 to-fuchsia-500/30 border border-cyan-500/20 flex items-center justify-center shadow-lg shadow-cyan-500/10">
+                  <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-cyan-500/25 to-fuchsia-500/25 border border-cyan-500/20 flex items-center justify-center shadow-inner shadow-cyan-500/10">
                     <Globe className="w-4 h-4 text-cyan-400" />
                   </div>
                   <div>
-                    <h1 className="text-white font-black text-sm leading-none">Chat Global</h1>
-                    <p className="text-[10px] text-gray-500 mt-0.5">Communauté NovaSound · <span className="text-yellow-500/80">@tous</span> pour mentionner tout le monde</p>
+                    <h1 className="text-white font-black text-sm leading-none tracking-wide">Chat Global</h1>
+                    <p className="text-[10px] text-gray-500 mt-0.5">
+                      Communauté NovaSound · <span className="text-yellow-400/90 font-semibold">@tous</span> pour mentionner tout le monde
+                    </p>
                   </div>
                 </div>
-                {onlineCount > 0 && (
-                  <div
-                    className={`flex items-center gap-1.5 px-2.5 py-1 bg-green-500/10 border border-green-500/20 rounded-full ${isAdmin ? 'cursor-pointer hover:bg-green-500/20 transition-colors' : ''}`}
-                    onClick={() => isAdmin && setShowOnlinePanel(v => !v)}
-                    title={isAdmin ? 'Voir les utilisateurs connectés' : undefined}
-                  >
-                    <div className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse" />
-                    <Users className="w-3 h-3 text-green-400" />
-                    <span className="text-green-400 text-[11px] font-semibold">{onlineCount} en ligne</span>
-                    {isAdmin && <span className="text-green-500 text-[9px] ml-0.5">▼</span>}
-                  </div>
-                )}
-                {/* Bouton nettoyer le chat — ADMIN ONLY */}
-                {isAdmin && (
-                  <button
-                    onClick={() => setShowClearConfirm(true)}
-                    className="flex items-center gap-1.5 px-2.5 py-1 bg-red-500/10 border border-red-500/20 rounded-full hover:bg-red-500/20 transition-colors"
-                    title="{'Nettoyer'} le chat (Admin)"
-                  >
-                    <Trash2 className="w-3.5 h-3.5 text-red-400" />
-                    <span className="text-red-400 text-[11px] font-semibold hidden sm:inline">{'Nettoyer'}</span>
-                  </button>
-                )}
-                {/* Panel admin — utilisateurs connectés */}
+
+                <div className="flex items-center gap-2">
+                  {/* Compteur en ligne */}
+                  {onlineCount > 0 && (
+                    <div
+                      className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full border transition-all ${isAdmin ? 'cursor-pointer hover:bg-green-500/15' : ''} bg-green-500/8 border-green-500/20`}
+                      onClick={() => isAdmin && setShowOnlinePanel(v => !v)}
+                    >
+                      <span className="relative flex h-1.5 w-1.5">
+                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75" />
+                        <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-green-400" />
+                      </span>
+                      <Users className="w-3 h-3 text-green-400" />
+                      <span className="text-green-400 text-[11px] font-semibold">{onlineCount}</span>
+                      {isAdmin && <span className="text-green-500/60 text-[9px]">▼</span>}
+                    </div>
+                  )}
+                  {/* Bouton nettoyer (admin) */}
+                  {isAdmin && (
+                    <button
+                      onClick={() => setShowClearConfirm(true)}
+                      className="flex items-center gap-1.5 px-2.5 py-1 bg-red-500/8 border border-red-500/18 rounded-full hover:bg-red-500/18 transition-colors"
+                    >
+                      <Trash2 className="w-3.5 h-3.5 text-red-400" />
+                      <span className="text-red-400 text-[11px] font-semibold hidden sm:inline">Nettoyer</span>
+                    </button>
+                  )}
+                </div>
+
+                {/* Panel admin en ligne */}
                 <AnimatePresence>
                   {isAdmin && showOnlinePanel && (
                     <motion.div
@@ -682,17 +795,15 @@ const ChatPage = () => {
                       animate={{ opacity: 1, y: 0, scale: 1 }}
                       exit={{ opacity: 0, y: -8, scale: 0.96 }}
                       transition={{ duration: 0.15 }}
-                      className="absolute top-16 right-4 z-50 w-72 bg-gray-900 border border-green-500/30 rounded-2xl shadow-2xl shadow-black/60 overflow-hidden"
+                      className="absolute top-16 right-4 z-50 w-72 bg-gray-950/98 border border-green-500/25 rounded-2xl shadow-2xl overflow-hidden backdrop-blur-xl"
                       onClick={e => e.stopPropagation()}
                     >
-                      <div className="flex items-center justify-between px-4 py-3 border-b border-white/[0.07]">
+                      <div className="flex items-center justify-between px-4 py-3 border-b border-white/[0.06]">
                         <div className="flex items-center gap-2">
                           <div className="w-2 h-2 rounded-full bg-green-400 animate-pulse" />
                           <span className="text-white font-bold text-sm">{onlineCount} connecté{onlineCount > 1 ? 's' : ''}</span>
                         </div>
-                        <button onClick={() => setShowOnlinePanel(false)} className="p-1 text-gray-500 hover:text-white">
-                          <X className="w-3.5 h-3.5" />
-                        </button>
+                        <button onClick={() => setShowOnlinePanel(false)} className="p-1 text-gray-500 hover:text-white"><X className="w-3.5 h-3.5" /></button>
                       </div>
                       <div className="max-h-64 overflow-y-auto py-1">
                         {onlineUsers.length === 0 ? (
@@ -702,28 +813,20 @@ const ChatPage = () => {
                             <div key={u.user_id + idx} className="flex items-center gap-3 px-4 py-2.5 hover:bg-white/5 transition-colors">
                               {u.avatar_url
                                 ? <img src={u.avatar_url} alt="" className="w-8 h-8 rounded-full object-cover border border-green-500/30 flex-shrink-0" />
-                                : <div className="w-8 h-8 rounded-full bg-gray-800 border border-green-500/20 flex items-center justify-center flex-shrink-0">
-                                    <Users className="w-3.5 h-3.5 text-gray-500" />
-                                  </div>
+                                : <div className="w-8 h-8 rounded-full bg-gray-900 border border-green-500/20 flex items-center justify-center flex-shrink-0"><Users className="w-3.5 h-3.5 text-gray-500" /></div>
                               }
                               <div className="flex-1 min-w-0">
                                 <p className="text-white text-sm font-semibold truncate">{u.username || 'Anonyme'}</p>
                                 {u.email && <p className="text-gray-500 text-[10px] truncate">{u.email}</p>}
-                                {u.joined_at && <p className="text-gray-600 text-[9px]">Connecté {new Date(u.joined_at).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}</p>}
                               </div>
-                              <a
-                                href={"mailto:" + (u.email || '')}
-                                className="p-1.5 rounded-full bg-cyan-500/10 text-cyan-400 hover:bg-cyan-500/20 transition-colors flex-shrink-0"
-                                title={"Contacter " + (u.username || 'cet utilisateur')}
-                                onClick={e => e.stopPropagation()}
-                              >
+                              <a href={"mailto:" + (u.email || '')} className="p-1.5 rounded-full bg-cyan-500/10 text-cyan-400 hover:bg-cyan-500/20 transition-colors flex-shrink-0" onClick={e => e.stopPropagation()}>
                                 <Mail className="w-3.5 h-3.5" />
                               </a>
                             </div>
                           ))
                         )}
                       </div>
-                      <div className="px-4 py-2 border-t border-white/[0.06] bg-gray-950/50">
+                      <div className="px-4 py-2 border-t border-white/[0.05]">
                         <p className="text-[10px] text-gray-600 text-center">Visible uniquement par l'administrateur</p>
                       </div>
                     </motion.div>
@@ -731,26 +834,26 @@ const ChatPage = () => {
                 </AnimatePresence>
               </div>
 
-              {/* Onglets */}
+              {/* ── Onglets ── */}
               <div className="flex items-center gap-2 mb-3">
                 <button onClick={() => setActiveTab('global')}
-                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold transition-all border ${
+                  className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-bold transition-all border ${
                     activeTab === 'global'
-                      ? 'bg-gradient-to-r from-cyan-500 to-cyan-600 text-white border-transparent shadow-lg shadow-cyan-500/20'
-                      : 'bg-white/5 text-gray-500 border-white/[0.07] hover:bg-white/10 hover:text-gray-300'
+                      ? 'chat-tab-global-active text-white border-transparent'
+                      : 'bg-white/[0.04] text-gray-500 border-white/[0.07] hover:bg-white/8 hover:text-gray-300'
                   }`}>
                   <Globe className="w-3 h-3" />Chat global
                 </button>
                 {currentUser && (
                   <button onClick={() => setActiveTab('messages')}
-                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold transition-all border relative ${
+                    className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-bold transition-all border relative ${
                       activeTab === 'messages'
-                        ? 'bg-gradient-to-r from-fuchsia-500 to-pink-600 text-white border-transparent'
-                        : 'bg-white/5 text-gray-500 border-white/[0.07] hover:bg-white/10 hover:text-gray-300'
+                        ? 'chat-tab-msg-active text-white border-transparent'
+                        : 'bg-white/[0.04] text-gray-500 border-white/[0.07] hover:bg-white/8 hover:text-gray-300'
                     }`}>
                     <Bell className="w-3 h-3" />Mes messages
                     {unreadMsg > 0 && (
-                      <span className="ml-1 min-w-[16px] h-4 text-[9px] bg-pink-500 text-white rounded-full px-1 py-0.5 font-bold flex items-center justify-center">
+                      <span className="ml-1 min-w-[16px] h-4 text-[9px] bg-pink-500 text-white rounded-full px-1 font-black flex items-center justify-center">
                         {unreadMsg > 99 ? '99+' : unreadMsg}
                       </span>
                     )}
@@ -765,8 +868,8 @@ const ChatPage = () => {
                     <button key={p.key} onClick={() => changePeriod(p.key)}
                       className={`flex-shrink-0 px-3 py-1.5 rounded-full text-xs font-semibold transition-all border ${
                         period === p.key
-                          ? 'bg-gradient-to-r from-cyan-500 to-cyan-600 text-white border-transparent shadow-lg shadow-cyan-500/20'
-                          : 'bg-white/5 text-gray-500 border-white/[0.07] hover:bg-white/10 hover:text-gray-300'
+                          ? 'chat-period-active'
+                          : 'bg-white/[0.03] text-gray-600 border-white/[0.06] hover:bg-white/8 hover:text-gray-400'
                       }`}>
                       {p.label}
                     </button>
@@ -934,10 +1037,13 @@ const ChatPage = () => {
                 )}
               </AnimatePresence>
 
-              {/* Zone de saisie — style WhatsApp/Instagram */}
+              {/* Zone de saisie */}
               <div
-                className="flex-shrink-0 border-t border-white/[0.08] bg-gray-900/95 backdrop-blur-xl px-3 py-2 relative z-10"
+                className="flex-shrink-0 px-3 py-2.5 relative z-10"
                 style={{
+                  background: 'rgba(5,5,18,.97)',
+                  borderTop: '1px solid rgba(255,255,255,.06)',
+                  backdropFilter: 'blur(28px)',
                   paddingBottom: `calc(${playerVisible ? '72px + ' : ''}56px + env(safe-area-inset-bottom, 6px) + 6px)`,
                 }}
               >
@@ -946,7 +1052,7 @@ const ChatPage = () => {
                   <AnimatePresence>
                     {replyTo && (
                       <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }} className="overflow-hidden">
-                        <div className="flex items-center gap-2 px-3 py-2 mb-2 bg-cyan-500/5 border-l-2 border-l-cyan-500 border border-white/[0.07] rounded-xl">
+                        <div className="flex items-center gap-2 px-3 py-2 mb-2 rounded-xl" style={{ background: 'rgba(6,182,212,.07)', borderLeft: '2px solid #22d3ee', border: '1px solid rgba(6,182,212,.15)' }}>
                           <Reply className="w-3.5 h-3.5 text-cyan-400 flex-shrink-0" />
                           <div className="flex-1 min-w-0">
                             <p className="text-[11px] font-semibold text-cyan-400 truncate">
@@ -960,38 +1066,57 @@ const ChatPage = () => {
                     )}
                   </AnimatePresence>
 
-                  {/* Autocomplete mention */}
+                  {/* Autocomplete mention — popup premium */}
                   <AnimatePresence>
                     {showMention && (mentionUsers.length > 0 || showMentionAll) && (
                       <motion.div
                         initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 8 }}
-                        className="absolute bottom-full left-4 right-4 mb-1 bg-gray-900 border border-white/10 rounded-2xl shadow-2xl overflow-hidden z-50"
-                        style={{ maxHeight: 260 }}>
-                        <div className="p-1.5 space-y-0.5">
-                          {/* Suggestions @tous */}
+                        transition={{ duration: 0.14 }}
+                        className="mention-popup absolute bottom-full left-3 right-3 mb-2 rounded-2xl overflow-hidden z-50"
+                        style={{ maxHeight: 280 }}
+                      >
+                        {/* Header popup */}
+                        <div className="flex items-center gap-2 px-3 py-2" style={{ borderBottom: '1px solid rgba(255,255,255,.06)', background: 'rgba(255,255,255,.03)' }}>
+                          <AtSign className="w-3 h-3 text-cyan-400/70" />
+                          <span className="text-[10px] text-gray-500 font-semibold uppercase tracking-widest">Mentions</span>
+                        </div>
+                        <div className="p-1.5 space-y-0.5 overflow-y-auto" style={{ maxHeight: 220 }}>
+                          {/* @tous */}
                           {showMentionAll && MENTION_ALL_SUGGESTIONS.map(s => (
                             <button key={s.label}
-                              className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl hover:bg-yellow-500/10 transition-colors text-left"
+                              className="mention-all-item w-full flex items-center gap-3 px-3 py-2.5 rounded-xl transition-colors text-left"
+                              style={{ background: 'transparent' }}
                               onMouseDown={e => { e.preventDefault(); insertMention(s.label.slice(1)); }}>
-                              <div className="w-7 h-7 rounded-full bg-yellow-500/15 border border-yellow-500/30 flex items-center justify-center text-sm flex-shrink-0">
+                              <div className="w-8 h-8 rounded-full flex items-center justify-center text-base flex-shrink-0" style={{ background: 'rgba(234,179,8,.15)', border: '1px solid rgba(234,179,8,.3)' }}>
                                 📢
                               </div>
-                              <div className="min-w-0">
-                                <span className="text-yellow-400 text-sm font-bold">{s.label}</span>
-                                <span className="text-gray-600 text-xs ml-2">{s.desc}</span>
+                              <div className="min-w-0 flex-1">
+                                <div className="mention-all-label text-yellow-300 text-sm font-black">{s.label}</div>
+                                <div className="text-gray-500 text-[11px]">{s.desc}</div>
                               </div>
+                              <span className="text-[9px] px-1.5 py-0.5 rounded-full font-bold text-yellow-400" style={{ background: 'rgba(234,179,8,.12)', border: '1px solid rgba(234,179,8,.2)' }}>TOUS</span>
                             </button>
                           ))}
+                          {/* Séparateur si les deux */}
+                          {showMentionAll && mentionUsers.length > 0 && (
+                            <div style={{ height: 1, background: 'rgba(255,255,255,.05)', margin: '4px 8px' }} />
+                          )}
                           {/* Utilisateurs */}
                           {mentionUsers.map(u => (
                             <button key={u.id}
-                              className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl hover:bg-white/10 transition-colors text-left"
+                              className="mention-autocomplete-item w-full flex items-center gap-3 px-3 py-2.5 rounded-xl transition-colors text-left"
+                              style={{ background: 'transparent' }}
                               onMouseDown={e => { e.preventDefault(); insertMention(u.username); }}>
                               {u.avatar_url
-                                ? <img src={u.avatar_url} alt="" className="w-7 h-7 rounded-full object-cover border border-white/10 flex-shrink-0" />
-                                : <div className="w-7 h-7 rounded-full bg-gradient-to-br from-cyan-500/30 to-fuchsia-500/30 border border-white/10 flex items-center justify-center flex-shrink-0"><User className="w-3.5 h-3.5 text-gray-400" /></div>
+                                ? <img src={u.avatar_url} alt="" className="w-8 h-8 rounded-full object-cover flex-shrink-0" style={{ border: '1px solid rgba(6,182,212,.25)' }} />
+                                : <div className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0" style={{ background: 'rgba(6,182,212,.12)', border: '1px solid rgba(6,182,212,.2)' }}>
+                                    <User className="w-3.5 h-3.5 text-cyan-400/60" />
+                                  </div>
                               }
-                              <span className="text-white text-sm font-semibold">@{u.username}</span>
+                              <div className="min-w-0 flex-1">
+                                <div className="mention-name text-white text-sm font-bold transition-colors">@{u.username}</div>
+                              </div>
+                              <Reply className="w-3 h-3 text-gray-600 flex-shrink-0" />
                             </button>
                           ))}
                         </div>
@@ -1002,9 +1127,7 @@ const ChatPage = () => {
                   {currentUser ? (
                     <div className="flex items-end gap-2">
                       <Avatar user={currentUser} size={8} />
-                      {/* Bubble input — style WhatsApp */}
-                      <div className="flex-1 relative flex items-end gap-2 px-3 py-2 rounded-[22px] border border-white/[0.09] transition-all"
-                        style={{ background: 'rgba(255,255,255,0.08)', minHeight: 44 }}>
+                      <div className="flex-1 relative flex items-end gap-2 px-3 py-2 input-bubble" style={{ minHeight: 44 }}>
                         <textarea
                           ref={inputRef}
                           id="chat-input"
@@ -1016,7 +1139,7 @@ const ChatPage = () => {
                           maxLength={MAX}
                           rows={1}
                           style={{ resize: 'none', minHeight: 24, maxHeight: 120, overflowY: 'auto', lineHeight: '1.5' }}
-                          className="flex-1 bg-transparent text-sm text-white placeholder-gray-400 focus:outline-none leading-relaxed self-center"
+                          className="flex-1 bg-transparent text-sm text-white placeholder-gray-500 focus:outline-none leading-relaxed self-center"
                           onInput={e => {
                             e.target.style.height = 'auto';
                             e.target.style.height = Math.min(e.target.scrollHeight, 120) + 'px';
@@ -1027,8 +1150,12 @@ const ChatPage = () => {
                         )}
                       </div>
                       <button onClick={handleSend} disabled={!text.trim() || sending}
-                        className="w-10 h-10 rounded-full bg-gradient-to-br from-cyan-500 to-cyan-600 hover:from-cyan-400 hover:to-cyan-500 flex items-center justify-center flex-shrink-0 disabled:opacity-30 transition-all shadow-lg shadow-cyan-500/20 active:scale-90"
-                        style={{ marginBottom: 2 }}>
+                        className="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 disabled:opacity-30 transition-all active:scale-90"
+                        style={{
+                          background: 'linear-gradient(135deg,#0891b2,#7c3aed)',
+                          boxShadow: '0 4px 16px rgba(8,145,178,.35)',
+                          marginBottom: 2,
+                        }}>
                         {sending
                           ? <div className="w-4 h-4 rounded-full border-2 border-white/30 border-t-white animate-spin" />
                           : <Send className="w-4 h-4 text-white" />
@@ -1036,9 +1163,9 @@ const ChatPage = () => {
                       </button>
                     </div>
                   ) : (
-                    <div className="flex items-center justify-center gap-3 py-3.5 px-4 bg-white/[0.03] rounded-2xl border border-white/[0.06]">
+                    <div className="flex items-center justify-center gap-3 py-3.5 px-4 rounded-2xl" style={{ background: 'rgba(255,255,255,.03)', border: '1px solid rgba(255,255,255,.06)' }}>
                       <p className="text-gray-500 text-sm">Tu dois être connecté pour participer</p>
-                      <Link to="/login" className="px-4 py-1.5 bg-cyan-500 hover:bg-cyan-400 text-white text-sm font-bold rounded-full transition-all">Connexion</Link>
+                      <Link to="/login" className="px-4 py-1.5 text-white text-sm font-bold rounded-full transition-all" style={{ background: 'linear-gradient(135deg,#0891b2,#7c3aed)' }}>Connexion</Link>
                     </div>
                   )}
                 </div>

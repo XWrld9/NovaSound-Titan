@@ -1,0 +1,102 @@
+{
+  "$schema": "http://adaptivecards.io/schemas/adaptive-card.json",
+  "type": "AdaptiveCard",
+  "version": "1.5",
+  "body": [
+    {
+      "type": "ColumnSet",
+      "columns": [
+        {
+          "type": "Column",
+          "width": "auto",
+          "items": [
+            {
+              "type": "Image",
+              "url": "${cover_url}",
+              "altText": "${title}",
+              "size": "Medium",
+              "style": "RoundedCorners"
+            }
+          ]
+        },
+        {
+          "type": "Column",
+          "width": "stretch",
+          "items": [
+            {
+              "type": "TextBlock",
+              "text": "${title}",
+              "weight": "Bolder",
+              "size": "Medium",
+              "wrap": false,
+              "maxLines": 1
+            },
+            {
+              "type": "TextBlock",
+              "text": "${artist}",
+              "isSubtle": true,
+              "size": "Small",
+              "wrap": false,
+              "maxLines": 1
+            }
+          ],
+          "verticalContentAlignment": "Center"
+        }
+      ]
+    },
+    {
+      "type": "ColumnSet",
+      "columns": [
+        {
+          "type": "Column",
+          "width": "stretch",
+          "items": [
+            {
+              "type": "ProgressBar",
+              "value": "${progress}",
+              "label": "${current_time} / ${duration}"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "ActionSet",
+      "actions": [
+        {
+          "type": "Action.Execute",
+          "title": "⏮",
+          "verb": "previous",
+          "tooltip": "Précédent"
+        },
+        {
+          "type": "Action.Execute",
+          "title": "${is_playing ? '⏸' : '▶'}",
+          "verb": "toggle_play",
+          "tooltip": "${is_playing ? 'Pause' : 'Lecture'}"
+        },
+        {
+          "type": "Action.Execute",
+          "title": "⏭",
+          "verb": "next",
+          "tooltip": "Suivant"
+        },
+        {
+          "type": "Action.OpenUrl",
+          "title": "Ouvrir",
+          "url": "https://nova-sound-titan.vercel.app/#/"
+        }
+      ]
+    }
+  ],
+  "backgroundColor": "#030712",
+  "$data": {
+    "title": "NovaSound",
+    "artist": "Prêt à écouter",
+    "cover_url": "/icon-192.png",
+    "is_playing": false,
+    "progress": 0,
+    "current_time": "0:00",
+    "duration": "0:00"
+  }
+}

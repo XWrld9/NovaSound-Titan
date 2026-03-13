@@ -21,6 +21,7 @@ import SongShareModal from '@/components/SongShareModal';
 import NowPlayingScreen from '@/components/NowPlayingScreen';
 import AddToPlaylistModal from '@/components/AddToPlaylistModal';
 import { notifyOwner, notifyUser } from '@/lib/notifUtils';
+import PinPlayerWidget from '@/components/PinPlayerWidget';
 
 
 const isIOS = () =>
@@ -802,7 +803,7 @@ const AudioPlayerDesktop = ({ currentSong, playlist = [], onNext, onPrevious, on
             // Swipe-up prononcé → ouvrir le grand lecteur
             if (info.offset.y < -90 || info.velocity.y < -600) { setIsExpanded(true); }
           }}
-          className="fixed right-4 z-[47] flex flex-col items-end gap-2 touch-none"
+          className="ns-bubble-fixed right-4 z-[9998] flex flex-col items-end gap-2 touch-none"
           style={{ bottom: isNavHiddenPage ? '1rem' : 'calc(var(--ns-bottom-nav-h) + 1rem)', cursor: 'grab' }}
         >
           {/* Grip handle — indique visuellement la déplaçabilité */}
@@ -832,8 +833,8 @@ const AudioPlayerDesktop = ({ currentSong, playlist = [], onNext, onPrevious, on
             )}
           </motion.button>
 
-          {/* Boutons play/next rapides */}
-          <div className="flex gap-1">
+          {/* Boutons play/next rapides + Épingler */}
+          <div className="flex gap-1 items-center">
             <button
               onClick={e => { e.stopPropagation(); togglePlay(); }}
               onPointerDown={e => e.stopPropagation()}
@@ -848,6 +849,17 @@ const AudioPlayerDesktop = ({ currentSong, playlist = [], onNext, onPrevious, on
             >
               <SkipForward className="w-3.5 h-3.5" />
             </button>
+            {/* Widget épinglage */}
+            <div className="relative" onPointerDown={e => e.stopPropagation()}>
+              <PinPlayerWidget
+                currentSong={currentSong}
+                isPlaying={isPlaying}
+                onTogglePlay={togglePlay}
+                onNext={goNext}
+                onPrev={goPrevious}
+                audioRef={audioRef}
+              />
+            </div>
           </div>
         </motion.div>
       </>

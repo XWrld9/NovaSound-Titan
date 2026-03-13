@@ -25,7 +25,7 @@
  * ════════════════════════════════════════════════════════════════
  */
 
-const CACHE_NAME    = 'novasound-titan-v63000';
+const CACHE_NAME    = 'novasound-titan-v64000';
 const STATIC_ASSETS = [
   '/', '/index.html', '/manifest.json', '/favicon.ico',
   '/favicon.png', '/apple-touch-icon.png', '/icon-192.png', '/icon-512.png',
@@ -326,4 +326,83 @@ self.addEventListener('periodicsync', e => {
       )
     );
   }
+});
+
+// ── Message handler (client → SW) ─────────────────────────────────────────────
+// Permet au client de garder le SW actif pendant la lecture audio
+// et de persister l'état du lecteur pour le mini-player persistant.
+self.addEventListener('message', e => {
+  const { type, payload } = e.data || {};
+
+  // KeepAlive : le client ping le SW pour éviter qu'il soit suspendu
+  // pendant la lecture audio en arrière-plan (surtout iOS Safari)
+  if (type === 'PLAYER_KEEPALIVE') {
+    e.ports?.[0]?.postMessage({ type: 'PLAYER_KEEPALIVE_ACK' });
+    return;
+  }
+
+  // Persister l'état du lecteur en cache pour le restaurer au reload
+  if (type === 'PLAYER_STATE_SAVE' && payload) {
+    caches.open(CACHE_NAME).then(cache => {
+      const body = JSON.stringify({ ...payload, savedAt: Date.now() });
+      cache.put(
+        new Request('/__novasound_player_state__'),
+        new Response(body, { headers: { 'Content-Type': 'application/json' } })
+      );
+    }).catch(() => {});
+    return;
+  }
+
+  // Lire l'état du lecteur persisté
+  if (type === 'PLAYER_STATE_LOAD') {
+    caches.open(CACHE_NAME).then(async cache => {
+      try {
+        const res = await cache.match(new Request('/__novasound_player_state__'));
+        const state = res ? await res.json() : null;
+        e.ports?.[0]?.postMessage({ type: 'PLAYER_STATE_LOADED', state });
+      } catch {
+        e.ports?.[0]?.postMessage({ type: 'PLAYER_STATE_LOADED', state: null });
+      }
+    }).catch(() => e.ports?.[0]?.postMessage({ type: 'PLAYER_STATE_LOADED', state: null }));
+    return;
+  }
+
+  // Forcer skipWaiting (mise à jour SW immédiate)
+  if (type === 'SKIP_WAITING') {
+    self.skipWaiting();
+    return;
+  }
+});
+
+// ── Widget Actions (Android Home Screen Widget — Adaptive Cards) ───────────────
+// Déclenché quand l'utilisateur appuie sur un bouton du widget sur l'écran d'accueil
+self.addEventListener('widgetclick', e => {
+  const { action, instanceId, verb } = e;
+
+  e.waitUntil(
+    clients.matchAll({ type: 'window', includeUncontrolled: true }).then(async list => {
+      // Mapper le verbe widget → action interne NovaSound
+      const actionMap = {
+        'toggle_play': 'novasound:toggle-play',
+        'next':        'novasound:pip-next',
+        'previous':    'novasound:pip-prev',
+      };
+      const customEvent = actionMap[verb];
+
+      // Chercher une fenêtre ouverte sur NovaSound
+      for (const client of list) {
+        try {
+          if (new URL(client.url).origin !== self.location.origin) continue;
+          const focused = await client.focus().catch(() => client);
+          if (customEvent) {
+            focused.postMessage({ type: 'WIDGET_ACTION', event: customEvent, verb });
+          }
+          return;
+        } catch (_) {}
+      }
+
+      // Aucune fenêtre → ouvrir l'app
+      return clients.openWindow(self.location.origin + '/#/');
+    })
+  );
 });

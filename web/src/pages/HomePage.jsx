@@ -11,7 +11,7 @@ import React, { useState, useEffect } from 'react';
 import { usePlayer } from '@/contexts/PlayerContext';
 import { Link } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
-import { Music, Play, TrendingUp, Newspaper, X, User, Headphones, ExternalLink, Trophy, History, Radio, UserCheck } from 'lucide-react';
+import { Music, Play, Pause, TrendingUp, Newspaper, X, User, Headphones, ExternalLink, Trophy, History, Radio, UserCheck } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { supabase } from '@/lib/supabaseClient';
 import { formatPlays } from '@/lib/utils';

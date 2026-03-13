@@ -145,15 +145,19 @@ const logPlayHistory = async (song, userId) => {
 };
 const startSession = async (userId, filesCount) => {
   try {
-    const { data } = await supabase.from('local_player_sessions').insert({ user_id:userId, files_count:filesCount, started_at:new Date().toISOString(), platform:navigator.userAgent.slice(0,80) }).select('id').single();
-    if (data?.id) localStorage.setItem('_lps_id', data.id);
+    const { data, error } = await supabase.from('local_player_sessions')
+      .insert({ user_id:userId, files_count:filesCount, started_at:new Date().toISOString(), platform:navigator.userAgent.slice(0,80) })
+      .select('id').single();
+    // Table peut ne pas exister (42P01) ou RLS peut bloquer (42501) → silencieux
+    if (!error && data?.id) localStorage.setItem('_lps_id', data.id);
   } catch(_){}
 };
 const endSession = async () => {
   try {
     const id=localStorage.getItem('_lps_id'); if(!id) return;
-    await supabase.from('local_player_sessions').update({ ended_at:new Date().toISOString() }).eq('id',id);
-    localStorage.removeItem('_lps_id');
+    const { error } = await supabase.from('local_player_sessions')
+      .update({ ended_at:new Date().toISOString() }).eq('id',id);
+    if (!error) localStorage.removeItem('_lps_id');
   } catch(_){}
 };
 

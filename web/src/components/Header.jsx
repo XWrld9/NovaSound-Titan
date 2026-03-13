@@ -140,26 +140,71 @@ const Header = () => {
 
   return (
     <>
+      {/* ── Styles brand globaux ── */}
+      <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&display=swap');
+        @keyframes novaBrandShimmer{0%{background-position:0% 50%}50%{background-position:100% 50%}100%{background-position:0% 50%}}
+        @keyframes novaGlow{0%,100%{filter:drop-shadow(0 0 6px rgba(6,182,212,.85)) drop-shadow(0 0 16px rgba(6,182,212,.35))}50%{filter:drop-shadow(0 0 10px rgba(168,85,247,.9)) drop-shadow(0 0 24px rgba(168,85,247,.45))}}
+        @keyframes novaScan{0%{transform:translateX(-110%)}100%{transform:translateX(210%)}}
+        @keyframes novaDot{0%,100%{opacity:1;transform:scale(1);box-shadow:0 0 5px #22d3ee,0 0 10px rgba(6,182,212,.6)}50%{opacity:.45;transform:scale(.65);box-shadow:0 0 3px #a855f7}}
+        .nova-logo-text{
+          font-family:'Orbitron','Share Tech Mono','Courier New',monospace;
+          font-weight:900;
+          letter-spacing:.12em;
+          background:linear-gradient(90deg,#22d3ee 0%,#a855f7 32%,#f0abfc 52%,#22d3ee 78%,#06b6d4 100%);
+          background-size:260% 100%;
+          -webkit-background-clip:text;
+          -webkit-text-fill-color:transparent;
+          background-clip:text;
+          animation:novaBrandShimmer 3.8s ease infinite,novaGlow 3s ease-in-out infinite;
+        }
+        .nova-logo-text-lg{font-size:clamp(14px,1.1vw,17px)}
+        .nova-logo-text-sm{font-size:13px}
+        .nova-scan-wrap{position:relative;overflow:hidden;border-radius:2px}
+        .nova-scan-line{
+          position:absolute;top:0;left:0;right:0;bottom:0;
+          background:linear-gradient(90deg,transparent 0%,rgba(255,255,255,.13) 50%,transparent 100%);
+          animation:novaScan 4.2s ease-in-out infinite;
+          pointer-events:none;
+        }
+        .nova-dot-hdr{
+          display:inline-block;width:5px;height:5px;border-radius:50%;background:#22d3ee;
+          animation:novaDot 1.6s ease-in-out infinite;flex-shrink:0;
+        }
+      `}</style>
+
       <header
-        className="sticky top-0 z-40 bg-gray-950 border-b border-cyan-500/20 shadow-lg shadow-cyan-900/10"
+        className="sticky top-0 z-40 bg-gray-950/95 border-b border-cyan-500/15 shadow-lg shadow-cyan-900/10 backdrop-blur-xl"
         style={{ paddingTop: 'env(safe-area-inset-top, 0px)' }}
       >
         <div className="w-full max-w-screen-2xl mx-auto px-4 md:px-6 py-3">
           <div className="flex items-center gap-3">
 
             {/* Logo */}
-            <Link to="/" className="flex items-center gap-3 group flex-shrink-0 z-50 mr-2">
+            <Link to="/" className="flex items-center gap-2.5 group flex-shrink-0 z-50 mr-2">
               <img
                 src="https://horizons-cdn.hostinger.com/83c37f40-fa54-4cc6-8247-95b1353f3eba/a4885bba5290b1958f05bcdb82731c39.jpg"
                 alt="NovaSound Logo"
-                className="w-10 h-10 rounded-full border-2 border-cyan-400 shadow-[0_0_10px_rgba(0,217,255,0.5)]"
+                className="w-9 h-9 rounded-full border-2 border-cyan-400/80 shadow-[0_0_10px_rgba(0,217,255,0.45)] group-hover:shadow-[0_0_16px_rgba(0,217,255,0.65)] transition-all duration-300"
               />
-              <span className="text-xl font-bold text-white tracking-wide hidden lg:block">
-                NovaSound TITAN LUX
-              </span>
-              <span className="text-xl font-bold text-white tracking-wide lg:hidden">
-                NovaSound
-              </span>
+              {/* Desktop : nom complet avec effets */}
+              <div className="items-center gap-1.5 hidden lg:flex">
+                <span className="nova-dot-hdr" />
+                <div className="nova-scan-wrap">
+                  <span className="nova-logo-text nova-logo-text-lg">NovaSound TITAN LUX</span>
+                  <div className="nova-scan-line" />
+                </div>
+                <span className="nova-dot-hdr" style={{animationDelay:'.8s'}} />
+              </div>
+              {/* Mobile : nom complet aussi avec effets */}
+              <div className="items-center gap-1 flex lg:hidden">
+                <span className="nova-dot-hdr" style={{width:4,height:4}} />
+                <div className="nova-scan-wrap">
+                  <span className="nova-logo-text nova-logo-text-sm">NovaSound TITAN LUX</span>
+                  <div className="nova-scan-line" />
+                </div>
+                <span className="nova-dot-hdr" style={{width:4,height:4,animationDelay:'.8s'}} />
+              </div>
             </Link>
 
             {/* Desktop nav */}

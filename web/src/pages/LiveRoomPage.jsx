@@ -30,6 +30,100 @@ import {
 } from 'lucide-react';
 
 /* ══════════════════════════════════════════════════════════════════════════
+   CSS BRAND EFFECTS
+   ══════════════════════════════════════════════════════════════════════════ */
+const BRAND_STYLES = `
+  @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&display=swap');
+  @keyframes brandShimmer {
+    0%   { background-position: 0% 50%; }
+    50%  { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
+  }
+  @keyframes brandGlow {
+    0%,100%{ filter: drop-shadow(0 0 8px rgba(6,182,212,0.8)) drop-shadow(0 0 20px rgba(6,182,212,0.4)); }
+    50%    { filter: drop-shadow(0 0 12px rgba(168,85,247,0.9)) drop-shadow(0 0 30px rgba(168,85,247,0.5)); }
+  }
+  @keyframes brandScan {
+    0%   { transform: translateX(-110%); }
+    100% { transform: translateX(210%); }
+  }
+  @keyframes brandDot {
+    0%,100%{ opacity:1; transform:scale(1); box-shadow:0 0 6px #22d3ee,0 0 12px rgba(6,182,212,0.6); }
+    50%    { opacity:0.5; transform:scale(0.7); box-shadow:0 0 3px #a855f7; }
+  }
+  @keyframes borderFlow {
+    0%   { background-position: 0% 50%; }
+    100% { background-position: 200% 50%; }
+  }
+  @keyframes particleFloat {
+    0%,100%{ transform:translateY(0) translateX(0); opacity:0.7; }
+    33%    { transform:translateY(-6px) translateX(3px); opacity:1; }
+    66%    { transform:translateY(-3px) translateX(-2px); opacity:0.5; }
+  }
+
+  .nova-brand {
+    font-family: 'Orbitron', 'Share Tech Mono', 'Courier New', monospace;
+    font-weight: 900;
+    letter-spacing: 0.14em;
+    background: linear-gradient(90deg,#22d3ee 0%,#a855f7 35%,#f0abfc 55%,#22d3ee 80%,#06b6d4 100%);
+    background-size: 250% 100%;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    animation: brandShimmer 3.5s ease infinite, brandGlow 3s ease-in-out infinite;
+  }
+  .nova-brand-sm {
+    font-size: clamp(13px, 3.5vw, 18px);
+  }
+  .nova-brand-lg {
+    font-size: 13px;
+  }
+  .nova-scan-line {
+    position: absolute; top:0; left:0; right:0; bottom:0;
+    background: linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.12) 50%, transparent 100%);
+    animation: brandScan 4s ease-in-out infinite;
+    pointer-events: none; border-radius: inherit;
+    overflow: hidden;
+  }
+  .nova-dot {
+    display: inline-block; width:6px; height:6px; border-radius:50%;
+    background: #22d3ee;
+    animation: brandDot 1.5s ease-in-out infinite;
+  }
+  .nova-mobile-bar {
+    position: relative; overflow: hidden;
+    background: linear-gradient(135deg, rgba(6,182,212,0.07) 0%, rgba(168,85,247,0.07) 100%);
+    border-bottom: 0 !important;
+  }
+  .nova-mobile-bar::before {
+    content:''; position:absolute; bottom:0; left:0; right:0; height:1px;
+    background: linear-gradient(90deg, transparent, rgba(6,182,212,0.5), rgba(168,85,247,0.5), transparent);
+  }
+  .nova-particle {
+    position: absolute; width:3px; height:3px; border-radius:50%;
+    animation: particleFloat ease-in-out infinite;
+  }
+  .room-glass-bar {
+    background: rgba(5,5,18,0.93) !important;
+    backdrop-filter: blur(24px) saturate(1.5) !important;
+    position: relative;
+  }
+  .room-glass-bar::after {
+    content:''; position:absolute; bottom:0; left:0; right:0; height:1px;
+    background: linear-gradient(90deg, transparent, rgba(6,182,212,0.25), rgba(168,85,247,0.25), transparent);
+  }
+  .nowplaying-glass {
+    background: rgba(10,10,25,0.96) !important;
+    backdrop-filter: blur(20px) !important;
+    border-bottom: 1px solid rgba(255,255,255,0.05) !important;
+  }
+  .chat-glass-input {
+    background: rgba(7,7,20,0.99) !important;
+    backdrop-filter: blur(24px) !important;
+  }
+`;
+
+/* ══════════════════════════════════════════════════════════════════════════
    CONSTANTES
    ══════════════════════════════════════════════════════════════════════════ */
 const MAX_PARTICIPANTS = 50;
@@ -272,6 +366,26 @@ const SysMsg = ({ text, icon: Icon = Zap }) => (
     <div className="h-px flex-1 bg-gray-800" />
     <div className="flex items-center gap-1.5 text-xs text-gray-600 px-2"><Icon className="w-3 h-3" />{text}</div>
     <div className="h-px flex-1 bg-gray-800" />
+  </div>
+);
+
+/* ── BrandHeader — "NovaSound TITAN LUX" avec effets visuels ── */
+const BrandHeader = ({ variant = 'mobile' }) => (
+  <div className={`nova-mobile-bar flex items-center justify-center ${variant === 'mobile' ? 'py-3' : 'py-3'}`}>
+    <div className="nova-particle" style={{ left:'7%', top:'20%', background:'#22d3ee', animationDuration:'3.1s', opacity:0.45 }} />
+    <div className="nova-particle" style={{ left:'22%', top:'68%', background:'#a855f7', animationDuration:'2.4s', animationDelay:'0.7s', opacity:0.35 }} />
+    <div className="nova-particle" style={{ right:'18%', top:'25%', background:'#06b6d4', animationDuration:'3.8s', animationDelay:'1.2s', opacity:0.45 }} />
+    <div className="nova-particle" style={{ right:'6%', top:'58%', background:'#f0abfc', animationDuration:'2.9s', animationDelay:'0.4s', opacity:0.35 }} />
+    <div className="relative flex items-center gap-2.5 select-none">
+      <span className="nova-dot" />
+      <div className="relative overflow-hidden">
+        <span className={`nova-brand ${variant === 'mobile' ? 'nova-brand-sm' : 'nova-brand-lg'}`}>
+          NovaSound TITAN LUX
+        </span>
+        <div className="nova-scan-line" />
+      </div>
+      <span className="nova-dot" style={{ animationDelay: '0.75s' }} />
+    </div>
   </div>
 );
 
@@ -1081,6 +1195,7 @@ const LiveRoomPage = () => {
   if (phase === 'lobby' || phase === 'creating') return (
     <>
       <Helmet><title>Live Rooms — NovaSound TITAN LUX</title></Helmet>
+      <style>{BRAND_STYLES}</style>
       <div className="min-h-screen bg-gray-950 flex flex-col">
         <Header />
         <main className="flex-1 w-full max-w-screen-xl mx-auto px-4 md:px-8 lg:px-12 py-4 sm:py-8 pb-28">
@@ -1258,8 +1373,13 @@ const LiveRoomPage = () => {
   return (
     <>
       <Helmet><title>{room?.name || 'Live Room'} — NovaSound TITAN LUX</title></Helmet>
+      <style>{BRAND_STYLES}</style>
       <div className="min-h-screen bg-gray-950 flex flex-col">
         <Header />
+        {/* ── Bande de marque mobile ── */}
+        <div className="lg:hidden">
+          <BrandHeader variant="mobile" />
+        </div>
 
         <main className="flex-1 flex flex-col overflow-hidden"
           style={{
@@ -1271,7 +1391,7 @@ const LiveRoomPage = () => {
           <style>{`:root { --bottom-nav-h: 56px; } @media (min-width: 768px) { :root { --bottom-nav-h: 0px; } }`}</style>
 
           {/* ── Barre supérieure ──────────────────────────────────── */}
-          <div className="flex-shrink-0 flex items-center justify-between px-3 sm:px-4 py-2.5 border-b border-gray-800 bg-gray-950/95 backdrop-blur">
+          <div className="flex-shrink-0 flex items-center justify-between px-3 sm:px-4 py-2.5 room-glass-bar">
             <div className="flex items-center gap-2.5 sm:gap-3 min-w-0">
               <button onClick={() => setConfirmModal('leave')} className="text-gray-500 hover:text-white transition-colors flex-shrink-0">
                 <ArrowLeft className="w-4 h-4" />
@@ -1347,7 +1467,7 @@ const LiveRoomPage = () => {
 
               {/* Now Playing bar */}
               {nowPlaying && (
-                <div className="flex-shrink-0 bg-gray-900/80 border-b border-gray-800 px-3 sm:px-4 py-2.5 flex items-center gap-3">
+                <div className="flex-shrink-0 nowplaying-glass px-3 sm:px-4 py-2.5 flex items-center gap-3">
                   {nowPlaying.cover_url
                     ? <img src={nowPlaying.cover_url} alt={nowPlaying.title} className="w-9 h-9 sm:w-10 sm:h-10 rounded-lg object-cover flex-shrink-0" />
                     : <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-lg bg-gray-800 flex items-center justify-center flex-shrink-0"><Music className="w-4 h-4 sm:w-5 sm:h-5 text-gray-600" /></div>
@@ -1425,7 +1545,7 @@ const LiveRoomPage = () => {
 
               {/* Input chat — zone expansive qui comble l'espace disponible */}
               <div
-                className="flex-shrink-0 flex flex-col px-3 pt-2 bg-gray-900/98 border-t border-gray-800"
+                className="flex-shrink-0 flex flex-col px-3 pt-2 chat-glass-input border-t border-white/[0.05]"
                 style={{
                   paddingBottom: `calc(env(safe-area-inset-bottom, 10px) + 10px${playerVisible && playerSong ? ' + 72px' : ''})`,
                   /* Comble l'espace restant : au moins 28vh pour être généreux, plafonné à 45vh */
@@ -1498,9 +1618,11 @@ const LiveRoomPage = () => {
             </div>
 
             {/* ── SIDEBAR desktop ───────────────────────────────────── */}
-            <div className="hidden lg:flex w-72 xl:w-80 flex-col border-l border-gray-800 bg-gray-950/50 overflow-y-auto">
+            <div className="hidden lg:flex w-72 xl:w-80 flex-col border-l border-white/[0.05] sidebar-glass overflow-y-auto">
+              {/* Brand desktop */}
+              <BrandHeader variant="desktop" />
               {/* Tabs */}
-              <div className="flex-shrink-0 flex bg-gray-900 border-b border-gray-800 p-1 gap-1">
+              <div className="flex-shrink-0 flex bg-gray-900/80 border-b border-white/[0.05] p-1 gap-1">
                 {[['participants', '👥'], ['queue', '🎵'], ['controls', '⚙️']].map(([id, emoji]) => (
                   <button key={id} onClick={() => setSideTab(id)}
                     className={`flex-1 flex items-center justify-center py-1.5 rounded-lg text-xs font-medium transition-all ${sideTab === id ? 'bg-gray-800 text-white' : 'text-gray-500 hover:text-gray-300'}`}>

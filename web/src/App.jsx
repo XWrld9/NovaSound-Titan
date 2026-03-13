@@ -1,4 +1,4 @@
-import React, { lazy, Suspense } from 'react';
+import React, { lazy, Suspense, useEffect } from 'react';
 import { Route, Routes, HashRouter as Router, useNavigate, useLocation } from 'react-router-dom';
 import { AuthProvider } from '@/contexts/AuthContext';
 import { NotificationProvider } from '@/contexts/NotificationContext';
@@ -59,7 +59,43 @@ const NotificationsPage  = lazy(() => import('@/pages/NotificationsPage'));
 
 /* ── Player global — monté UNE SEULE FOIS, survit à toute navigation ── */
 const GlobalPlayer = () => {
-  const { currentSong, playlist, isVisible, handleNext, handlePrevious, closePlayer, shouldAutoPlay, resetAutoPlay } = usePlayer();
+  const {
+    currentSong, playlist, isVisible,
+    handleNext, handlePrevious, closePlayer,
+    shouldAutoPlay, resetAutoPlay,
+    playSong, loadSavedState,
+  } = usePlayer();
+
+  // ── Écouter les actions venant du widget Android ──────────────────
+  useEffect(() => {
+    if (!navigator.serviceWorker) return;
+    const handler = (e) => {
+      if (e.data?.type === 'WIDGET_ACTION' && e.data?.event) {
+        window.dispatchEvent(new CustomEvent(e.data.event));
+      }
+    };
+    navigator.serviceWorker.addEventListener('message', handler);
+    return () => navigator.serviceWorker.removeEventListener('message', handler);
+  }, []);
+
+  // ── Restaurer la dernière lecture au démarrage ──────────────────
+  useEffect(() => {
+    if (currentSong) return; // déjà une song en cours → pas besoin de restaurer
+    const restore = async () => {
+      try {
+        const state = await loadSavedState?.();
+        if (state?.song?.id) {
+          // Restaurer silencieusement sans autoplay (l'utilisateur reprend manuellement)
+          playSong?.(state.song, state.playlist || [state.song], { autoPlay: false });
+        }
+      } catch (_) {}
+    };
+    // Délai court pour laisser l'app s'initialiser
+    const t = setTimeout(restore, 1200);
+    return () => clearTimeout(t);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   if (!isVisible || !currentSong) return null;
   return (
     <AudioPlayer

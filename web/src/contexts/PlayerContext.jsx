@@ -7,6 +7,7 @@
 import React, { createContext, useContext, useState, useRef, useCallback, useEffect } from 'react';
 import { supabase } from '@/lib/supabaseClient';
 import { useAuth } from '@/contexts/AuthContext';
+import usePlayerPersistence from '@/hooks/usePlayerPersistence';
 
 const PlayerContext = createContext(null);
 
@@ -30,6 +31,14 @@ export const PlayerProvider = ({ children }) => {
   const [shouldAutoPlay,    setShouldAutoPlay]     = useState(false);
   // ── État lecture global (synchronisé par AudioPlayer) ──────────
   const [isPlayingGlobal,   setIsPlayingGlobal]   = useState(false);
+
+  // ── Persistance + KeepAlive SW ─────────────────────────────────
+  const { loadSavedState, clearSavedState } = usePlayerPersistence({
+    currentSong:   currentSong,
+    playlist:      playlist,
+    currentTime:   0, // sera mis à jour par AudioPlayer via contexte temps
+    isPlaying:     isPlayingGlobal,
+  });
   // ── Shuffle & Repeat — partagés entre AudioPlayer + LocalPlayerPage ──
   const [shuffle,           setShuffle]           = useState(false);
   const [repeat,            setRepeat]            = useState('off'); // off | one | all
@@ -349,6 +358,8 @@ export const PlayerProvider = ({ children }) => {
       // activeSong alias for LocalPlayerPageMobile
       activeSong: currentSong,
       isPlaying: isPlayingGlobal,
+      // Persistance SW
+      loadSavedState, clearSavedState,
     }}>
       {children}
     </PlayerContext.Provider>
