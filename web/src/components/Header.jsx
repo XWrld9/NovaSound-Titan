@@ -237,6 +237,11 @@ const Header = () => {
                 </div>
               )}
 
+              {/* 🌐 Traducteur de langue */}
+              <div className="flex items-center">
+                <div className="elfsight-app-ecd9a18a-4b49-4096-9313-ac3acc662fef" data-elfsight-app-lazy />
+              </div>
+
               {isAuthenticated ? (
                 <>
                   <NotificationBell />
@@ -494,6 +499,10 @@ const Header = () => {
                   </button>
                 )}
                 {/* Language switcher mobile */}
+                {/* 🌐 Traducteur */}
+                <div className="flex justify-center py-1">
+                  <div className="elfsight-app-ecd9a18a-4b49-4096-9313-ac3acc662fef" data-elfsight-app-lazy />
+                </div>
                 {isAuthenticated ? (
                   <Button onClick={handleLogout} variant="outline" className="w-full border-red-500/30 text-red-400 hover:bg-red-500/10 hover:text-red-300 justify-start">
                     <LogOut className="w-4 h-4 mr-2" />{'Déconnexion'}
