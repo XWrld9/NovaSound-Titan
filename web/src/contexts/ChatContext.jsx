@@ -12,6 +12,7 @@ import { supabase } from '@/lib/supabaseClient';
 import { useAuth } from './AuthContext';
 import { offlineStore } from '@/lib/offlineStore';
 import { notifyUser } from '@/lib/notifUtils';
+import { triggerAchievementCheck } from '@/lib/achievementUtils';
 
 const ChatContext = createContext(null);
 export const useChat = () => {
@@ -212,6 +213,9 @@ export const ChatProvider = ({ children }) => {
       if (error) throw error;
 
       setMessages(prev => prev.map(m => m.id === tempId ? { ...data, _pending: false } : m));
+
+      // 🏆 Vérifier les trophées pour l'utilisateur
+      triggerAchievementCheck(currentUser.id, 'CHAT_MESSAGE');
 
       // ── Post-envoi : notifications ──────────────────────────────
 

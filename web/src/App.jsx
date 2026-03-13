@@ -50,6 +50,7 @@ const LiveListPage      = lazy(() => import('@/pages/LiveListPage'));
 const LiveRoomPage      = lazy(() => import('@/pages/LiveRoomPage'));
 const LeaderboardPage   = lazy(() => import('@/pages/LeaderboardPage'));
 const LocalPlayerPage   = lazy(() => import('@/pages/LocalPlayerPage'));
+const LocalPlayerPageNative = lazy(() => import('@/pages/LocalPlayerPageNative'));
 const AdminPanel        = lazy(() => import('@/pages/AdminPanel'));
 const ResetPasswordPage = lazy(() => import('@/pages/ResetPasswordPage'));
 const ArtistsPage       = lazy(() => import('@/pages/ArtistsPage'));
@@ -134,6 +135,7 @@ function App() {
                           <Route path="/live/:roomId"    element={<LiveRoomPage />} />
                           <Route path="/leaderboard"     element={<LeaderboardPage />} />
                           <Route path="/local-player"    element={<LocalPlayerPage />} />
+                          <Route path="/local-player-native" element={<LocalPlayerPageNative />} />
                           <Route path="/admin"           element={<ProtectedRoute><AdminPanel /></ProtectedRoute>} />
                           <Route path="/reset-password"  element={<ResetPasswordPage />} />
                           <Route path="/artists"          element={<ArtistsPage />} />

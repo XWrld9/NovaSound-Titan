@@ -1,6 +1,11 @@
 /**
- * LocalPlayerPage — NovaSound TITAN LUX V2000000
+ * LocalPlayerPage — NovaSound TITAN LUX V3000000
  *
+ * ✅ MODE NATIF COMPLET - Accès fichiers audio appareil
+ * ✅ Remplacement total import manuel → scan automatique bibliothèque
+ * ✅ Interface lecteur natif (Spotify/Apple Music style)
+ * ✅ Support iOS/Android/Desktop avec accès natif
+ * ✅ Métadonnées complètes + organisation automatique
  * ✅ Refonte cinématique totale — fond cover blurré animé
  * ✅ Keyboard OSD — overlay visuel à chaque raccourci clavier
  * ✅ Media Session API — contrôles écran verrouillé desktop/Android
@@ -21,13 +26,16 @@ import {
   Save, CheckSquare, Square, Folder, ChevronUp,
   RefreshCw, AlertTriangle, RefreshCcw, Search, X, SlidersHorizontal,
   ArrowLeft, Home, ChevronDown, Music2,
-  Keyboard, GripVertical,
+  Keyboard, GripVertical, Smartphone, Headphones, Radio, Disc, Clock,
+  User, Library, Grid, List, Heart, MoreHorizontal, Settings
 } from 'lucide-react';
 import { useNavigate, Link } from 'react-router-dom';
 import { usePlayer } from '@/contexts/PlayerContext';
 import { usePlayerTime } from '@/contexts/PlayerTimeContext';
 import Footer from '@/components/Footer';
 import LocalPlayerPageMobile from './LocalPlayerPageMobile';
+import NativeAudioPlayer from '@/components/NativeAudioPlayer';
+import { nativeAudioAccess } from '@/lib/nativeAudioAccess';
 
 /* ═══════════════════════════════════════════════════════════════
    CONSTANTS & UTILS

@@ -1285,31 +1285,47 @@ const AudioPlayerDesktop = ({ currentSong, playlist = [], onNext, onPrevious, on
             initial={{ y: 100, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
             exit={{ y: 100, opacity: 0 }}
-            className={`fixed left-0 right-0 z-[45] border-t border-white/[0.06] shadow-2xl shadow-black/60 android-player-fixed`}
+            className={`fixed left-0 right-0 z-[45] shadow-2xl shadow-black/80 android-player-fixed`}
             style={{
               bottom: isNavHiddenPage ? 0 : 'var(--ns-bottom-nav-h)',
-              backgroundColor: 'rgb(18 18 18 / 0.97)',
-              backdropFilter: 'blur(24px)',
-              WebkitBackdropFilter: 'blur(24px)',
+              background: 'rgba(8, 10, 20, 0.97)',
+              backdropFilter: 'blur(32px)',
+              WebkitBackdropFilter: 'blur(32px)',
+              borderTop: '1px solid rgba(255,255,255,0.06)',
               paddingBottom: 'env(safe-area-inset-bottom, 0px)',
             }}
             onTouchStart={handleTouchStart}
             onTouchEnd={handleTouchEnd}
           >
+            {/* Glow cover art en fond — subtil */}
+            {currentSong?.cover_url && (
+              <div className="absolute inset-0 opacity-[0.07] pointer-events-none overflow-hidden"
+                style={{ backgroundImage: `url(${currentSong.cover_url})`, backgroundSize: 'cover', backgroundPosition: 'center', filter: 'blur(40px)', transform: 'scale(1.5)' }} />
+            )}
+
             {/* Indicateur swipe */}
             <div className="flex justify-center pt-1.5 pb-0 md:hidden">
-              <div className="w-8 h-1 rounded-full bg-white/15" />
+              <div className="w-8 h-1 rounded-full bg-white/10" />
             </div>
 
-            {/* Barre de progression */}
-            <div className="w-full h-1 bg-gray-800/80 cursor-pointer group relative"
+            {/* Barre de progression — plus visible avec glow */}
+            <div className="w-full h-[3px] bg-white/[0.06] cursor-pointer group relative"
               onClick={(e) => {
                 if (!duration) return;
                 const r = e.currentTarget.getBoundingClientRect();
                 handleSeek([(e.clientX - r.left) / r.width * duration]);
               }}>
-              <div className="h-full bg-gradient-to-r from-cyan-500 to-purple-500 transition-all duration-75 group-hover:h-1.5"
-                style={{ width: `${progress}%` }} />
+              <div
+                className="h-full transition-all duration-75 relative"
+                style={{
+                  width: `${progress}%`,
+                  background: `linear-gradient(90deg, ${genreTheme.primary}, ${genreTheme.secondary})`,
+                  boxShadow: `0 0 8px ${genreTheme.primary}80`,
+                }}
+              />
+              {/* Curseur au hover */}
+              <div className="absolute top-1/2 -translate-y-1/2 w-3 h-3 rounded-full bg-white shadow-lg opacity-0 group-hover:opacity-100 transition-opacity -translate-x-1/2"
+                style={{ left: `${progress}%` }} />
             </div>
 
             {/* MOBILE (< sm) */}

@@ -5,6 +5,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import Lottie from 'lottie-react';
 import heartAnimation from '@/animations/heart-animation.json';
 import { notifyOwner } from '@/lib/notifUtils';
+import { triggerAchievementCheck } from '@/lib/achievementUtils';
 
 const LikeButton = ({ songId, initialLikes = 0, initialLiked = false, compact = false }) => {
   const { currentUser, supabase } = useAuth();
@@ -120,6 +121,11 @@ const LikeButton = ({ songId, initialLikes = 0, initialLiked = false, compact = 
           from_user_id: currentUser.id,
           metadata: { senderId: currentUser.id, senderName: currentUser.username },
         }).catch(() => {});
+        
+        // 🏆 Vérifier les trophées pour le propriétaire du son
+        if (songData?.uploader_id) {
+          triggerAchievementCheck(songData.uploader_id, 'LIKE_RECEIVED');
+        }
       }
       // Le Realtime déclenchera loadLikesData() automatiquement
     } catch (error) {

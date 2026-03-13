@@ -448,7 +448,11 @@ const LiveRoomPage = () => {
             url:      `/live/${roomData.id}`,
             icon_url: currentUser.avatar_url || '/icon-192.png',
             from_user_id: currentUser.id,
+            metadata: { roomId: roomData.id, roomName: roomName.trim() },
           });
+          
+          // 🏆 Vérifier les trophées pour l'hôte
+          triggerAchievementCheck(currentUser.id, 'LIVE_STARTED');
         } catch (_) { /* non-fatal */ }
       }
       

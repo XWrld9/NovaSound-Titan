@@ -114,7 +114,7 @@ const renderContent = (text) => {
       const href = part.startsWith('#/live/') ? part : part;
       return (
         <a key={i} href={href} target="_blank" rel="noopener noreferrer"
-          className="text-cyan-400 underline hover:text-cyan-300 break-all" onClick={e => e.stopPropagation()}>
+          className="text-cyan-400 hover:text-cyan-300 break-all" onClick={e => e.stopPropagation()}>
           {part.includes('/live/') ? '🔴 Rejoindre le live' : part}
         </a>
       );
@@ -123,7 +123,7 @@ const renderContent = (text) => {
     const lower = part.toLowerCase();
     const isAll = ['@tous', '@all', '@everyone', '@todo', '@todos', '@tutti', '@allen', '@alle'].includes(lower);
     return (
-      <span key={i} className={`font-bold ${isAll ? 'text-yellow-400' : 'text-cyan-400'}`}>{part}</span>
+      <span key={i} className={`font-bold ${isAll ? 'text-yellow-300' : 'text-cyan-300'}`}>{part}</span>
     );
   });
 };
@@ -209,8 +209,8 @@ const ChatMessage = memo(({
             <div
               className={`flex items-start gap-2 mb-1.5 px-2.5 py-1.5 rounded-xl cursor-pointer max-w-full ${
                 isOwn
-                  ? 'bg-cyan-500/10 border border-cyan-500/20 self-end'
-                  : 'bg-white/[0.05] border border-white/10'
+                  ? 'bg-cyan-500/15 border border-cyan-500/30 self-end'
+                  : 'bg-white/[0.08] border border-white/[0.12]'
               }`}
               onClick={e => {
                 e.stopPropagation();
@@ -219,7 +219,7 @@ const ChatMessage = memo(({
               <Reply className="w-3 h-3 text-cyan-500/60 flex-shrink-0 mt-0.5" />
               <div className="min-w-0">
                 <p className="text-[10px] font-semibold text-cyan-400/80 truncate">↩ {msg.reply_to_username}</p>
-                <p className="text-[11px] text-gray-500 truncate">{msg.reply_to_content}</p>
+                <p className="text-[11px] text-gray-400 truncate">{msg.reply_to_content}</p>
               </div>
             </div>
           )}
@@ -241,8 +241,8 @@ const ChatMessage = memo(({
               isOwn
                 ? 'bg-gradient-to-br from-cyan-500 to-cyan-600 text-white rounded-br-sm shadow-lg shadow-cyan-500/20'
                 : hasMentionAll
-                  ? 'bg-yellow-500/10 border border-yellow-500/20 text-gray-100 rounded-bl-sm'
-                  : 'bg-[#161a2e] border border-white/[0.06] text-gray-100 rounded-bl-sm'
+                  ? 'bg-yellow-500/15 border border-yellow-500/30 text-gray-100 rounded-bl-sm'
+                  : 'bg-[#1a1f3a] border border-white/[0.10] text-gray-100 rounded-bl-sm'
             } ${msg._pending ? 'opacity-60' : ''}`}>
               <p className="text-sm leading-relaxed whitespace-pre-wrap">
                 {renderContent(msg.content)}{msg._pending ? ' ···' : ''}
@@ -255,7 +255,7 @@ const ChatMessage = memo(({
 
           {/* Heure + statut — sous la bulle */}
           <div className={`flex items-center gap-1.5 mt-0.5 px-1 ${isOwn ? 'flex-row-reverse' : 'flex-row'}`}>
-            <span className="text-[10px] text-gray-600">{timeAgo(msg.created_at)}</span>
+            <span className="text-[10px] text-gray-500">{timeAgo(msg.created_at)}</span>
             {isOwn && msg._pending && <span className="text-[10px] text-gray-600">•••</span>}
           </div>
         </div>
@@ -936,7 +936,7 @@ const ChatPage = () => {
 
               {/* Zone de saisie — style WhatsApp/Instagram */}
               <div
-                className="flex-shrink-0 border-t border-white/[0.06] bg-gray-950/98 backdrop-blur-xl px-3 py-2 relative z-10"
+                className="flex-shrink-0 border-t border-white/[0.08] bg-gray-900/95 backdrop-blur-xl px-3 py-2 relative z-10"
                 style={{
                   paddingBottom: `calc(${playerVisible ? '72px + ' : ''}56px + env(safe-area-inset-bottom, 6px) + 6px)`,
                 }}
@@ -1004,7 +1004,7 @@ const ChatPage = () => {
                       <Avatar user={currentUser} size={8} />
                       {/* Bubble input — style WhatsApp */}
                       <div className="flex-1 relative flex items-end gap-2 px-3 py-2 rounded-[22px] border border-white/[0.09] transition-all"
-                        style={{ background: 'rgba(255,255,255,0.06)', minHeight: 44 }}>
+                        style={{ background: 'rgba(255,255,255,0.08)', minHeight: 44 }}>
                         <textarea
                           ref={inputRef}
                           id="chat-input"
@@ -1016,7 +1016,7 @@ const ChatPage = () => {
                           maxLength={MAX}
                           rows={1}
                           style={{ resize: 'none', minHeight: 24, maxHeight: 120, overflowY: 'auto', lineHeight: '1.5' }}
-                          className="flex-1 bg-transparent text-sm text-white placeholder-gray-500 focus:outline-none leading-relaxed self-center"
+                          className="flex-1 bg-transparent text-sm text-white placeholder-gray-400 focus:outline-none leading-relaxed self-center"
                           onInput={e => {
                             e.target.style.height = 'auto';
                             e.target.style.height = Math.min(e.target.scrollHeight, 120) + 'px';

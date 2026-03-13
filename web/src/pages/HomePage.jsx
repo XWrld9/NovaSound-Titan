@@ -170,36 +170,48 @@ const HomePage = () => {
   };
 
   // ── Mini carte son (réutilisée dans plusieurs sections) ──────
-  const SongMiniCard = ({ song, index, onPlay }) => (
-    <motion.div
-      key={song.id}
-      initial={{ opacity: 0, scale: 0.9 }}
-      animate={{ opacity: 1, scale: 1 }}
-      transition={{ delay: index * 0.06 }}
-      className="group cursor-pointer"
-      onClick={() => onPlay(song)}
-    >
-      <div className="relative aspect-square rounded-xl overflow-hidden bg-gray-800 mb-2">
-        {song.cover_url
-          ? <img src={song.cover_url} alt={song.title} className="w-full h-full object-cover" loading="lazy" />
-          : <div className="w-full h-full flex items-center justify-center"><Music className="w-6 h-6 text-gray-600" /></div>
-        }
-        <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity">
-          {loadingHistorySong === song.id ? (
-            <div className="w-9 h-9 rounded-full bg-cyan-500 flex items-center justify-center shadow-lg">
-              <div className="w-4 h-4 rounded-full border-2 border-white/30 border-t-white animate-spin" />
+  const SongMiniCard = ({ song, index, onPlay }) => {
+    const isPlaying = currentSong?.id === song.id;
+    return (
+      <motion.div
+        key={song.id}
+        initial={{ opacity: 0, scale: 0.88, y: 8 }}
+        animate={{ opacity: 1, scale: 1, y: 0 }}
+        transition={{ delay: index * 0.05, type: 'spring', stiffness: 300, damping: 24 }}
+        className="group cursor-pointer"
+        onClick={() => onPlay(song)}
+      >
+        <div className={`relative aspect-square rounded-xl overflow-hidden bg-gray-800/80 mb-2 shadow-lg transition-all duration-300 group-hover:scale-[1.04] group-hover:shadow-cyan-500/20 group-hover:shadow-xl ${isPlaying ? 'ring-2 ring-cyan-500 ring-offset-1 ring-offset-gray-950' : ''}`}>
+          {song.cover_url
+            ? <img src={song.cover_url} alt={song.title} className="w-full h-full object-cover" loading="lazy" />
+            : <div className="w-full h-full bg-gradient-to-br from-cyan-600/30 to-purple-600/40 flex items-center justify-center"><Music className="w-6 h-6 text-cyan-400/50" /></div>
+          }
+          {/* Gradient bottom pour lisibilité */}
+          <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+          {/* Bouton play */}
+          <div className="absolute inset-0 flex items-center justify-center">
+            <div className={`transition-all duration-200 ${isPlaying ? 'opacity-100 scale-100' : 'opacity-0 scale-75 group-hover:opacity-100 group-hover:scale-100'}`}>
+              {loadingHistorySong === song.id ? (
+                <div className="w-9 h-9 rounded-full bg-cyan-500 shadow-lg shadow-cyan-500/40 flex items-center justify-center">
+                  <div className="w-4 h-4 rounded-full border-2 border-white/30 border-t-white animate-spin" />
+                </div>
+              ) : isPlaying ? (
+                <div className="w-9 h-9 rounded-full bg-cyan-500 shadow-lg shadow-cyan-500/50 flex items-center justify-center animate-pulse">
+                  <Pause className="w-4 h-4 text-white fill-white" />
+                </div>
+              ) : (
+                <div className="w-9 h-9 rounded-full bg-gradient-to-br from-cyan-500 to-purple-500 shadow-lg shadow-cyan-500/40 flex items-center justify-center">
+                  <Play className="w-4 h-4 text-white fill-white ml-0.5" />
+                </div>
+              )}
             </div>
-          ) : (
-            <div className="w-9 h-9 rounded-full bg-cyan-500 flex items-center justify-center shadow-lg">
-              <Play className="w-4 h-4 text-white fill-white ml-0.5" />
-            </div>
-          )}
+          </div>
         </div>
-      </div>
-      <p className="text-white text-xs font-medium truncate">{song.title}</p>
-      <p className="text-gray-500 text-xs truncate">{song.artist}</p>
-    </motion.div>
-  );
+        <p className={`text-xs font-semibold truncate transition-colors ${isPlaying ? 'text-cyan-400' : 'text-white group-hover:text-cyan-300'}`}>{song.title}</p>
+        <p className="text-gray-500 text-xs truncate">{song.artist}</p>
+      </motion.div>
+    );
+  };
 
   return (
     <>
@@ -215,33 +227,45 @@ const HomePage = () => {
 
         <main className="flex-1">
           {/* Hero Section */}
-          <section className="relative h-[500px] md:h-[600px] overflow-hidden">
-            <div className="absolute inset-0 bg-gradient-to-b from-gray-950/80 via-gray-950/60 to-gray-950 bg-cover bg-center"
+          <section className="relative h-[480px] md:h-[580px] overflow-hidden">
+            <div className="absolute inset-0 bg-cover bg-center"
               style={{ backgroundImage: 'url(https://horizons-cdn.hostinger.com/83c37f40-fa54-4cc6-8247-95b1353f3eba/e8ebebbd32c0e37f6ab462c275dd560a.jpg)' }} />
-            <div className="absolute inset-0 bg-gradient-to-b from-gray-950/80 via-gray-950/60 to-gray-950" />
-            <div className="absolute inset-0 bg-gradient-to-r from-cyan-500/20 to-fuchsia-500/20" />
+            <div className="absolute inset-0 bg-gradient-to-b from-[#060810]/70 via-[#060810]/50 to-[#060810]" />
+            <div className="absolute inset-0 bg-gradient-to-r from-cyan-500/10 via-transparent to-fuchsia-500/10" />
+            {/* Noise texture overlay */}
+            <div className="absolute inset-0 opacity-[0.03]" style={{ backgroundImage: 'url("data:image/svg+xml,%3Csvg viewBox=\'0 0 256 256\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cfilter id=\'noise\'%3E%3CfeTurbulence type=\'fractalNoise\' baseFrequency=\'0.9\' numOctaves=\'4\' stitchTiles=\'stitch\'/%3E%3C/filter%3E%3Crect width=\'100%25\' height=\'100%25\' filter=\'url(%23noise)\'/%3E%3C/svg%3E")' }} />
             <div className="relative w-full max-w-7xl mx-auto px-4 md:px-8 lg:px-12 h-full flex items-center justify-center md:justify-start text-center md:text-left">
-              <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }} className="max-w-3xl">
-                <h1 className="text-4xl sm:text-5xl md:text-7xl font-bold mb-4 md:mb-6 bg-gradient-to-r from-cyan-400 via-white to-fuchsia-500 bg-clip-text text-transparent leading-tight">
-                  Ressens la vague sonore
+              <motion.div initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, ease: 'easeOut' }} className="max-w-3xl">
+                {/* Badge */}
+                <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}
+                  className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/[0.06] border border-white/10 text-xs text-gray-400 font-medium mb-5 backdrop-blur-sm">
+                  <span className="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-pulse" />
+                  Streaming musical · Cameroun & Monde
+                </motion.div>
+                <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-black mb-5 leading-[1.05] tracking-tight">
+                  <span className="bg-gradient-to-r from-white via-gray-100 to-gray-300 bg-clip-text text-transparent">Ressens la</span>
+                  <br />
+                  <span className="bg-gradient-to-r from-cyan-400 via-cyan-300 to-fuchsia-400 bg-clip-text text-transparent">vague sonore</span>
                 </h1>
-                <p className="text-lg md:text-2xl text-gray-300 mb-6 md:mb-8 max-w-xl mx-auto md:mx-0">
+                <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.3 }}
+                  className="text-base md:text-lg text-gray-400 mb-8 max-w-lg mx-auto md:mx-0 leading-relaxed">
                   Découvre, écoute et partage la musique qui te fait vibrer. Rejoins la révolution.
-                </p>
-                <div className="flex flex-col sm:flex-row gap-4 justify-center md:justify-start">
+                </motion.p>
+                <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4 }}
+                  className="flex flex-col sm:flex-row gap-3 justify-center md:justify-start">
                   {!isAuthenticated && (
-                    <Link to="/signup" className="w-full sm:w-auto">
-                      <Button className="w-full sm:w-auto bg-gradient-to-r from-cyan-500 to-fuchsia-500 hover:from-cyan-600 hover:to-fuchsia-600 text-white text-lg px-8 py-6 font-semibold shadow-lg shadow-cyan-500/30">
-                        Commencer
+                    <Link to="/signup">
+                      <Button className="w-full sm:w-auto bg-cyan-500 hover:bg-cyan-400 text-white text-base px-7 py-5 font-bold shadow-lg shadow-cyan-500/25 rounded-xl transition-all hover:shadow-cyan-500/40 hover:-translate-y-0.5">
+                        Commencer gratuitement
                       </Button>
                     </Link>
                   )}
-                  <Link to="/upload" className="w-full sm:w-auto">
-                    <Button variant="outline" className="w-full sm:w-auto border-cyan-500/50 text-cyan-400 hover:bg-cyan-500/10 text-lg px-8 py-6 font-semibold">
+                  <Link to="/upload">
+                    <Button variant="outline" className="w-full sm:w-auto border-white/15 text-white hover:bg-white/8 hover:border-white/30 text-base px-7 py-5 font-semibold rounded-xl backdrop-blur-sm transition-all">
                       Uploader un son
                     </Button>
                   </Link>
-                </div>
+                </motion.div>
               </motion.div>
             </div>
           </section>
@@ -388,53 +412,65 @@ const HomePage = () => {
               </div>
 
               {loading ? (
-                <div className="text-center py-12">
-                  <div className="w-8 h-8 rounded-full border-2 border-cyan-500/30 border-t-cyan-500 animate-spin mx-auto mb-3" />
-                  <p className="text-cyan-400">Chargement des morceaux...</p>
+                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-4 gap-4 md:gap-5">
+                  {[1,2,3,4,5,6,7,8].map(i => (
+                    <div key={i} className="rounded-2xl overflow-hidden bg-gray-800/60 animate-pulse">
+                      <div className="aspect-square" />
+                      <div className="p-3 space-y-2">
+                        <div className="h-3 bg-gray-700/60 rounded-full w-3/4" />
+                        <div className="h-2.5 bg-gray-700/40 rounded-full w-1/2" />
+                      </div>
+                    </div>
+                  ))}
                 </div>
               ) : featuredSongs.length > 0 ? (
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 md:gap-5">
+                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-3 xl:grid-cols-4 gap-4 md:gap-5">
                   {featuredSongs.map((song, index) => (
                     <motion.div key={song.id}
-                      initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: index * 0.03, duration: 0.3 }}
-                      className="bg-gray-800/90 border border-cyan-500/40 rounded-2xl hover:border-cyan-400 hover:bg-gray-800 transition-all group hover:shadow-lg hover:shadow-cyan-500/15 relative"
-                      style={{ overflow: 'visible' }}
+                      initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: index * 0.03, duration: 0.3 }}
+                      className="bg-[#0e1222]/90 border border-white/[0.07] rounded-2xl hover:border-white/20 hover:bg-[#111827] transition-all group hover:shadow-xl hover:shadow-black/40 relative overflow-hidden"
                     >
+                      {/* Glow cover en fond au hover */}
+                      {song.cover_url && (
+                        <div className="absolute inset-0 opacity-0 group-hover:opacity-20 transition-opacity duration-500 pointer-events-none"
+                          style={{ backgroundImage: `url(${song.cover_url})`, backgroundSize: 'cover', backgroundPosition: 'center', filter: 'blur(20px)', transform: 'scale(1.2)' }} />
+                      )}
                       {newSongIds.has(song.id) && (
-                        <div className="absolute -top-2 -right-2 z-30 bg-gradient-to-r from-cyan-500 to-fuchsia-500 text-white text-[9px] font-black px-2 py-0.5 rounded-full shadow-lg animate-pulse pointer-events-none">NEW</div>
+                        <div className="absolute top-2.5 left-2.5 z-30 bg-gradient-to-r from-cyan-500 to-fuchsia-500 text-white text-[9px] font-black px-2 py-0.5 rounded-full shadow-lg animate-pulse pointer-events-none">NEW</div>
                       )}
                       <div className="relative aspect-square rounded-t-2xl overflow-hidden">
                         {song.cover_url ? (
-                          <img src={song.cover_url} alt={song.title} className="w-full h-full object-cover" loading="lazy" decoding="async" />
+                          <img src={song.cover_url} alt={song.title} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" loading="lazy" decoding="async" />
                         ) : (
-                          <div className="w-full h-full bg-gradient-to-br from-cyan-600/40 to-cyan-900/60 flex items-center justify-center">
-                            <Music className="w-16 h-16 text-cyan-400/60" />
+                          <div className="w-full h-full bg-gradient-to-br from-cyan-600/30 to-purple-900/60 flex items-center justify-center">
+                            <Music className="w-16 h-16 text-cyan-400/40" />
                           </div>
                         )}
-                        <div className="absolute inset-0 bg-black/40 md:bg-transparent md:group-hover:bg-black/60 flex items-center justify-center transition-all duration-200">
+                        {/* Overlay play */}
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-all duration-200 flex flex-col items-center justify-center">
                           <button onClick={() => playSong(song)}
-                            className="p-4 rounded-full bg-gradient-to-r from-cyan-500 to-fuchsia-500 hover:from-cyan-600 hover:to-fuchsia-600 transform md:scale-90 md:opacity-0 md:group-hover:scale-100 md:group-hover:opacity-100 active:scale-95 transition-all duration-200 shadow-xl shadow-cyan-500/40"
+                            className="p-4 rounded-full bg-white/95 hover:bg-white transform scale-90 group-hover:scale-100 transition-all duration-200 shadow-2xl"
                             aria-label="Lancer la lecture">
-                            <Play className="w-6 h-6 text-white fill-current" />
+                            <Play className="w-5 h-5 text-gray-900 fill-current ml-0.5" />
                           </button>
                         </div>
-                        <Link to={`/song/${song.id}`}
-                          className="absolute top-2 right-2 p-1.5 rounded-full bg-black/70 text-white hover:bg-cyan-500 transition-all z-20"
-                          title="Voir la page du son" style={{ boxShadow: '0 2px 8px rgba(0,0,0,0.5)' }}
-                          onClick={e => e.stopPropagation()}>
-                          <ExternalLink className="w-3.5 h-3.5" />
-                        </Link>
-                        <div className="absolute bottom-2 left-2 flex items-center gap-1 bg-black/60 backdrop-blur-sm px-2 py-0.5 rounded-full">
+                        {/* Badge écoutes */}
+                        <div className="absolute bottom-2 left-2 flex items-center gap-1 bg-black/70 backdrop-blur-sm px-2 py-0.5 rounded-full opacity-0 group-hover:opacity-100 transition-opacity">
                           <Headphones className="w-3 h-3 text-cyan-400" />
                           <span className="text-xs text-cyan-300 font-medium">{formatPlays(song.plays_count)}</span>
                         </div>
+                        <Link to={`/song/${song.id}`}
+                          className="absolute top-2 right-2 p-1.5 rounded-full bg-black/70 text-white opacity-0 group-hover:opacity-100 hover:bg-cyan-500 transition-all z-20"
+                          onClick={e => e.stopPropagation()}>
+                          <ExternalLink className="w-3.5 h-3.5" />
+                        </Link>
                       </div>
-                      <div className="p-3 border-t border-gray-700/50">
+                      <div className="relative p-3">
                         <Link to={`/song/${song.id}`} className="text-white font-semibold truncate text-sm block hover:text-cyan-400 transition-colors">{song.title}</Link>
                         {song.uploader_id ? (
-                          <Link to={`/artist/${song.uploader_id}`} className="text-gray-400 text-xs truncate block hover:text-cyan-400 transition-colors mt-0.5">{song.artist}</Link>
+                          <Link to={`/artist/${song.uploader_id}`} className="text-gray-500 text-xs truncate block hover:text-gray-300 transition-colors mt-0.5">{song.artist}</Link>
                         ) : (
-                          <p className="text-gray-400 text-xs truncate mt-0.5">{song.artist}</p>
+                          <p className="text-gray-500 text-xs truncate mt-0.5">{song.artist}</p>
                         )}
                         <div className="flex items-center justify-end mt-1.5">
                           <SongActionsMenu song={song}

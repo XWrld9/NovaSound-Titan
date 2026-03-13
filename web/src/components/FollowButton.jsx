@@ -3,6 +3,7 @@ import { UserPlus, UserMinus, Loader2 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useAuth } from '@/contexts/AuthContext';
 import { notifyUser } from '@/lib/notifUtils';
+import { triggerAchievementCheck } from '@/lib/achievementUtils';
 
 const FollowButton = ({ userId, initialFollowers = 0, onFollowChange }) => {
   const { currentUser, supabase } = useAuth();
@@ -75,12 +76,15 @@ const FollowButton = ({ userId, initialFollowers = 0, onFollowChange }) => {
         notifyUser(supabase, userId, {
           type:     'follow',
           title:    `👤 ${currentUser.username || 'Quelqu\'un'} te suit`,
-          body:     `${currentUser.username || 'Quelqu\'un'} vient de s'abonner à ton profil`,
+          body:     `${currentUser.username || 'Un utilisateur'} vient de s'abonner à ton profil`,
           url:      `/artist/${currentUser.id}`,
           icon_url: currentUser.avatar_url || '/icon-192.png',
           from_user_id: currentUser.id,
           metadata: { senderId: currentUser.id, senderName: currentUser.username },
         }).catch(() => {});
+        
+        // 🏆 Vérifier les trophées pour l'utilisateur suivi
+        triggerAchievementCheck(userId, 'NEW_FOLLOWER');
       }
 
       // Resync depuis la DB (source de vérité)

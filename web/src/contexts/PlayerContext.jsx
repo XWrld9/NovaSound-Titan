@@ -278,7 +278,21 @@ export const PlayerProvider = ({ children }) => {
       setIsVisible(true);
       setShouldAutoPlay(true);
     }
-  }, []);
+    // Notifier l'artiste que son son a été ajouté à la file
+    if (song.uploader_id && currentUser && currentUser.id !== song.uploader_id) {
+      import('@/lib/notifUtils').then(({ notifyUser }) => {
+        notifyUser(supabase, song.uploader_id, {
+          type:     'queue_song',
+          title:    `🎶 ${currentUser.username || 'Quelqu\'un'} a ajouté ton son à sa file`,
+          body:     `"${song.title}" est maintenant dans la file d'attente`,
+          url:      `/song/${song.id}`,
+          icon_url: currentUser.avatar_url || '/icon-192.png',
+          from_user_id: currentUser.id,
+          metadata: { songId: song.id, songTitle: song.title },
+        }).catch(() => {});
+      }).catch(() => {});
+    }
+  }, [currentUser, supabase]);
 
   const removeFromQueue = useCallback((index) => {
     setQueue(prev => {

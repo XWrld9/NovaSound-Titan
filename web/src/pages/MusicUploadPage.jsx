@@ -25,6 +25,7 @@ import { Upload, Image, AlertCircle, CheckCircle, Lock, FileAudio } from 'lucide
 import { motion, AnimatePresence } from 'framer-motion';
 import { supabase, supabaseUrl as _supabaseUrl, supabaseAnonKey as _supabaseAnonKey } from '@/lib/supabaseClient';
 import { notifyFollowers } from '@/lib/notifUtils';
+import { triggerAchievementCheck } from '@/lib/achievementUtils';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import { ALL_GENRES } from '@/hooks/useGenreTheme';
@@ -382,6 +383,10 @@ const MusicUploadPage = () => {
 
       setUploadProgress(100);
       setSuccess('🎉 Morceau publié avec succès ! Redirection...');
+      
+      // 🏆 Vérifier les trophées pour l'artiste
+      triggerAchievementCheck(currentUser.id, 'SONG_UPLOADED');
+      
       setTimeout(() => navigate('/'), 2000);
 
     } catch (err) {

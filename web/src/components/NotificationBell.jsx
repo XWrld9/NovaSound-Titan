@@ -10,16 +10,30 @@
  * - Swipe-to-dismiss sur les toasts mobile
  * - Son/vibration natif sur nouvelle notif (si permission OK)
  */
-import React, { useState, useRef, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import ReactDOM from 'react-dom';
-import { motion, AnimatePresence, useMotionValue, useTransform } from 'framer-motion';
-import { useNavigate, Link } from 'react-router-dom';
-import {
-  Bell, BellOff, Check, CheckCheck, Trash2, X,
-  Heart, MessageCircle, UserPlus, Music, Newspaper,
-  Reply, AtSign, Zap, Radio, Trophy, Volume2, Settings
+import { motion, AnimatePresence } from 'framer-motion';
+import { 
+  Bell, 
+  X, 
+  Check, 
+  Settings, 
+  Trash2, 
+  ExternalLink,
+  Heart,
+  MessageCircle,
+  Reply,
+  AtSign,
+  UserPlus,
+  Music,
+  Newspaper,
+  Radio,
+  Trophy,
+  Zap
 } from 'lucide-react';
-import { useNotifications } from '@/contexts/NotificationContext';
+import { useAuth } from '@/contexts/AuthContext';
+import { markAsRead, markAllAsRead, deleteNotification } from '@/lib/notificationService';
+import AchievementNotification from '@/components/AchievementNotification';
 
 import { useAuth } from '@/contexts/AuthContext';
 
@@ -225,8 +239,13 @@ export const NotificationToast = () => {
   );
 };
 
-// ── Notif item dans le panel ─────────────────────────────────────────
+// ── Item notification (desktop) ────────────────────────────────────────
 const NotifItem = ({ notif, onRead, onDelete, onClick }) => {
+  // 🏆 Cas spécial pour les achievements
+  if (notif.type === 'achievement') {
+    return <AchievementNotification notification={notif} onClick={onClick} />;
+  }
+  
   const cfg = getTypeConfig(notif.type);
   const Icon = cfg.icon;
 
@@ -236,7 +255,7 @@ const NotifItem = ({ notif, onRead, onDelete, onClick }) => {
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, height: 0, marginBottom: 0 }}
       transition={{ duration: 0.15 }}
-      className="relative group flex items-start gap-3 px-4 py-3 cursor-pointer transition-colors border-b border-white/[0.04] last:border-0"
+      className="relative group flex items-start gap-3 px-4 py-3 cursor-pointer transition-all border-b border-white/[0.04] last:border-0 hover:bg-white/[0.02]"
       style={{ background: notif.is_read ? 'transparent' : `${cfg.color}06` }}
       onClick={onClick}
     >
@@ -265,6 +284,8 @@ const NotifItem = ({ notif, onRead, onDelete, onClick }) => {
         <div className="flex items-center gap-1.5 mb-0.5">
           <span className="text-[9px] font-black uppercase tracking-widest" style={{ color: cfg.color }}>{cfg.label}</span>
           <span className="text-[10px] text-gray-600">{timeAgo(notif.created_at)}</span>
+          {/* Indicateur cliquable */}
+          <span className="text-[8px] text-gray-500 opacity-0 group-hover:opacity-100 transition-opacity">→</span>
         </div>
         <p className="text-sm font-semibold text-white leading-tight">{notif.title}</p>
         <p className="text-xs text-gray-400 leading-relaxed line-clamp-2 mt-0.5">{notif.body}</p>
@@ -321,31 +342,123 @@ const NotifPanel = ({ panelRef, panelPos, onClose, mobile }) => {
     countByType[k] = (countByType[k] || 0) + 1;
   });
 
-  const handleClick = (notif) => {
-    if (!notif.is_read) markAsRead(notif.id);
-    onClose(); // ferme le panel en premier
+  // Générer une URL par défaut selon le type de notification
+  const generateDefaultUrl = (notif) => {
+    if (!notif) return '/explore';
+    
+    // Si l'URL existe déjà, la retourner
+    if (notif.url) return notif.url;
+    
+    // Parser les metadata en cas de string
+    let metadata = {};
+    try {
+      metadata = typeof notif.metadata === 'string' ? JSON.parse(notif.metadata) : (notif.metadata || {});
+    } catch (e) {
+      metadata = {};
+    }
+    
+    // Générer une URL selon le type
+    switch (notif.type) {
+      // ── Likes ──
+      case 'like':
+      case 'like_song':
+        return metadata.song_id ? `#/song/${metadata.song_id}` : '/explore';
+      case 'like_news':
+        return metadata.news_id ? `#/news/${metadata.news_id}` : '/news';
+      
+      // ── Commentaires ──
+      case 'comment':
+      case 'comment_news':
+        return metadata.song_id ? `#/song/${metadata.song_id}` : '/explore';
+      case 'reply':
+        return metadata.song_id ? `#/song/${metadata.song_id}` : '/explore';
+      case 'mention':
+        return metadata.song_id ? `#/song/${metadata.song_id}` : '/explore';
+      
+      // ── Social ──
+      case 'follow':
+        return metadata.artist_id ? `#/artist/${metadata.artist_id}` : '/explore';
+      case 'repost':
+        return metadata.song_id ? `#/song/${metadata.song_id}` : '/explore';
+      
+      // ── Musique ──
+      case 'new_song':
+        return metadata.song_id ? `#/song/${metadata.song_id}` : '/trending';
+      case 'queue_song':
+        return metadata.song_id ? `#/song/${metadata.song_id}` : '/local-player';
+      case 'mood_vote':
+        return metadata.song_id ? `#/song/${metadata.song_id}` : '/explore';
+      
+      // ── News ──
+      case 'news':
+        return metadata.news_id ? `#/news/${metadata.news_id}` : '/news';
+      
+      // ── Chat ──
+      case 'chat_reply':
+      case 'chat_mention':
+        return metadata.message_id ? `#/chat?highlight=${metadata.message_id}` : '/chat';
+      case 'chat_mention_all':
+        return '/chat';
+      
+      // ── Live ──
+      case 'live_start':
+      case 'live_started':
+      case 'live_invite':
+      case 'live_join':
+      case 'live_comment':
+      case 'live_like':
+      case 'live_leave':
+        return metadata.room_id ? `#/live/${metadata.room_id}` : '/live';
+      
+      // ── Autres ──
+      case 'broadcast':
+        return '/explore';
+      case 'achievement':
+        return '/profile';
+      
+      // ── Fallback pour types inconnus ──
+      default:
+        console.warn(`[Notification] Type inconnu: ${notif.type}, fallback vers /explore`);
+        return '/explore';
+    }
+  };
 
-    if (!notif.url) return;
+  const handleClick = async (notif) => {
+    // ✅ FIX: Marquer comme lu D'ABORD (attendre la fin)
+    if (!notif.is_read) {
+      await markAsRead(notif.id);
+    }
+    
+    // ✅ FIX: Générer une URL si aucune n'existe
+    const url = generateDefaultUrl(notif);
+    
+    // Toutes les notifications sont maintenant cliquables
+    if (!url) {
+      console.warn('[Notification] URL générée invalide, fallback vers /explore');
+      window.location.hash = '#/explore';
+      onClose();
+      return;
+    }
 
-    // ✅ FIX: setTimeout 0 laisse React finir le re-render de fermeture
-    // du panel AVANT de changer le hash. Sans ça, les deux opérations
-    // se télescopent et déclenchent l'ErrorBoundary.
-    const url = notif.url;
+    // ✅ FIX: Navigation D'ABORD, puis fermeture
+    const path = url.replace(/^#\//, '/').replace(/^#/, '/');
+    const newHash = '#' + (path.startsWith('/') ? path : '/' + path);
+    
+    if (window.location.hash === newHash) {
+      window.dispatchEvent(new Event('hashchange'));
+    } else {
+      window.location.hash = newHash;
+    }
+    
+    // ✅ FIX: Fermer le panel APRÈS la navigation (évite le conflit)
     setTimeout(() => {
-      const path = url.replace(/^#\//, '/').replace(/^#/, '/');
-      const newHash = '#' + (path.startsWith('/') ? path : '/' + path);
-      if (window.location.hash === newHash) {
-        // Même URL : force un hashchange pour que React Router re-route
-        window.dispatchEvent(new Event('hashchange'));
-      } else {
-        window.location.hash = newHash;
-      }
-    }, 50);
+      onClose();
+    }, 100);
   };
 
   // Tous les types supportés — seuls ceux qui ont des notifs sont affichés (+ "Tout")
   // V70000 : like_song/like_news groupés avec 'like', comment_news groupé avec 'comment',
-  // reply et mention ajoutés, live_invite ajouté, broadcast ajouté
+  // reply et mention ajoutés, live_invite ajouté, broadcast ajouté, achievement ajouté
   const ALL_TYPE_FILTERS = [
     { key: 'all',              emoji: '🔔', label: 'Tout'    },
     { key: 'like',             emoji: '❤️', label: 'Likes'   },
@@ -361,6 +474,7 @@ const NotifPanel = ({ panelRef, panelPos, onClose, mobile }) => {
     { key: 'news',             emoji: '📰', label: 'News'    },
     { key: 'live_start',       emoji: '🔴', label: 'Live'    },
     { key: 'live_invite',      emoji: '🔴', label: 'Invit.'  },
+    { key: 'achievement',      emoji: '🏆', label: 'Trophées'},
     { key: 'broadcast',        emoji: '📢', label: 'Annonce' },
   ];
 
