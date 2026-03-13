@@ -716,6 +716,16 @@ const LocalPlayerPageMobile = memo(() => {
     await idbDelete('playlists',id); setSavedPlaylists(prev=>prev.filter(p=>p.id!==id));
   },[]);
 
+  /* Helper — trouver un fichier audio par nom dans un directory handle FSA */
+  const getFileByName = useCallback(async (dirHandle, fileName) => {
+    try {
+      for await (const {entry} of walkDir(dirHandle)) {
+        if (entry.name === fileName) return await entry.getFile();
+      }
+    } catch (_) {}
+    return null;
+  }, []);
+
   const handleSelectPlaylist = useCallback(async pl => {
     const restored = await Promise.all(pl.songs.map(async meta => {
       /* 1. iOS blob store */
@@ -754,16 +764,6 @@ const LocalPlayerPageMobile = memo(() => {
     await Promise.all([idbDelete('songs_meta',song.id),idbDelete('song_blobs',song.id)].map(p=>p.catch(()=>{})));
     setSongs(prev=>prev.filter(s=>s.id!==song.id));
   },[]);
-
-  /* Helper — trouver un fichier audio par nom dans un directory handle FSA */
-  const getFileByName = useCallback(async (dirHandle, fileName) => {
-    try {
-      for await (const {entry} of walkDir(dirHandle)) {
-        if (entry.name === fileName) return await entry.getFile();
-      }
-    } catch (_) {}
-    return null;
-  }, []);
 
   const handlePlaySong = useCallback(async song => {
     vibrate(8);
