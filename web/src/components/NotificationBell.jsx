@@ -325,6 +325,16 @@ const NotifPanel = ({ panelRef, panelPos, onClose, mobile }) => {
 
   useEffect(() => { loadNotifications?.(); }, []);
 
+  // comment_news → regroupé sous 'comment', chat_reply → sous 'chat_mention'
+  // live_join/live_comment/live_like/live_started → sous 'live_start'
+  const normalizeType = (type) => {
+    if (['like_song','like_news','live_like'].includes(type)) return 'like';
+    if (['comment_news'].includes(type))                      return 'comment';
+    if (['chat_reply'].includes(type))                        return 'chat_mention';
+    if (['live_started','live_join','live_comment','live_leave'].includes(type)) return 'live_start';
+    return type;
+  };
+
   // Base filtered (lu/non-lu uniquement)
   const baseFiltered = notifications.filter(n => {
     if (tab === 'unread' && n.is_read) return false;
@@ -481,16 +491,6 @@ const NotifPanel = ({ panelRef, panelPos, onClose, mobile }) => {
   ];
 
   // Pour les filtres : like_song + like_news → regroupés sous 'like'
-  // comment_news → regroupé sous 'comment', chat_reply → sous 'chat_mention'
-  // live_join/live_comment/live_like/live_started → sous 'live_start'
-  const normalizeType = (type) => {
-    if (['like_song','like_news','live_like'].includes(type)) return 'like';
-    if (['comment_news'].includes(type))                      return 'comment';
-    if (['chat_reply'].includes(type))                        return 'chat_mention';
-    if (['live_started','live_join','live_comment','live_leave'].includes(type)) return 'live_start';
-    return type;
-  };
-
   // countByType normalisé
   const countByTypeNorm = {};
   notifications.forEach(n => {

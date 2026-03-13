@@ -14,52 +14,8 @@ const dialogStyles = {
 
 const icons = { success: CheckCircle, error: AlertCircle, warning: AlertTriangle, info: Info, loading: Loader2 };
 
-// ─── Provider ─────────────────────────────────────────────────────────────────
-export const DialogProvider = ({ children }) => {
-  const [dialogs, setDialogs] = useState([]);
-
-  const showDialog = (config) => {
-    const id = Date.now() + Math.random();
-    setDialogs(prev => [...prev, { ...config, id }]);
-    if (!config.actions?.length && config.duration !== 0) {
-      setTimeout(() => closeDialog(id), config.duration ?? 4000);
-    }
-    return id;
-  };
-
-  const closeDialog = (id) => setDialogs(prev => prev.filter(d => d.id !== id));
-  const closeAll = () => setDialogs([]);
-
-  const api = {
-    success: (title, message, opts) => showDialog({ title, message, type: 'success', ...opts }),
-    error:   (title, message, opts) => showDialog({ title, message, type: 'error',   ...opts }),
-    warning: (title, message, opts) => showDialog({ title, message, type: 'warning', ...opts }),
-    info:    (title, message, opts) => showDialog({ title, message, type: 'info',    ...opts }),
-    loading: (title, message, opts) => showDialog({ title, message, type: 'loading', showCloseButton: false, duration: 0, ...opts }),
-    closeDialog,
-    closeAll,
-  };
-
-  return (
-    <DialogContext.Provider value={api}>
-      {children}
-      <AnimatePresence>
-        {dialogs.map(dialog => (
-          <DialogItem key={dialog.id} {...dialog} onClose={() => closeDialog(dialog.id)} />
-        ))}
-      </AnimatePresence>
-    </DialogContext.Provider>
-  );
-};
-
-// ─── Hook ─────────────────────────────────────────────────────────────────────
-export const useDialog = () => {
-  const ctx = useContext(DialogContext);
-  if (!ctx) throw new Error('useDialog must be used within DialogProvider');
-  return ctx;
-};
-
 // ─── Dialog item ──────────────────────────────────────────────────────────────
+// DOIT être déclaré AVANT DialogProvider qui l'utilise (évite TDZ après minification)
 const DialogItem = ({ title, message, type = 'info', actions = [], showCloseButton = true, onClose }) => {
   const style = dialogStyles[type] || dialogStyles.info;
   const Icon  = icons[type] || Info;
@@ -114,6 +70,51 @@ const DialogItem = ({ title, message, type = 'info', actions = [], showCloseButt
       </motion.div>
     </div>
   );
+};
+
+// ─── Provider ─────────────────────────────────────────────────────────────────
+export const DialogProvider = ({ children }) => {
+  const [dialogs, setDialogs] = useState([]);
+
+  const showDialog = (config) => {
+    const id = Date.now() + Math.random();
+    setDialogs(prev => [...prev, { ...config, id }]);
+    if (!config.actions?.length && config.duration !== 0) {
+      setTimeout(() => closeDialog(id), config.duration ?? 4000);
+    }
+    return id;
+  };
+
+  const closeDialog = (id) => setDialogs(prev => prev.filter(d => d.id !== id));
+  const closeAll = () => setDialogs([]);
+
+  const api = {
+    success: (title, message, opts) => showDialog({ title, message, type: 'success', ...opts }),
+    error:   (title, message, opts) => showDialog({ title, message, type: 'error',   ...opts }),
+    warning: (title, message, opts) => showDialog({ title, message, type: 'warning', ...opts }),
+    info:    (title, message, opts) => showDialog({ title, message, type: 'info',    ...opts }),
+    loading: (title, message, opts) => showDialog({ title, message, type: 'loading', showCloseButton: false, duration: 0, ...opts }),
+    closeDialog,
+    closeAll,
+  };
+
+  return (
+    <DialogContext.Provider value={api}>
+      {children}
+      <AnimatePresence>
+        {dialogs.map(dialog => (
+          <DialogItem key={dialog.id} {...dialog} onClose={() => closeDialog(dialog.id)} />
+        ))}
+      </AnimatePresence>
+    </DialogContext.Provider>
+  );
+};
+
+// ─── Hook ─────────────────────────────────────────────────────────────────────
+export const useDialog = () => {
+  const ctx = useContext(DialogContext);
+  if (!ctx) throw new Error('useDialog must be used within DialogProvider');
+  return ctx;
 };
 
 export default DialogItem;

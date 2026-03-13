@@ -70,7 +70,39 @@ export const checkAudioCapabilities = async () => {
 };
 
 // 📁 Accès aux fichiers audio - Desktop
-export const getAudioFilesDesktop = async (options = {}) => {
+const getAudioFilesFromDirectory = async (dirHandle, path = '') => {
+  const files = [];
+  
+  for await (const entry of dirHandle.values()) {
+    const entryPath = path ? `${path}/${entry.name}` : entry.name;
+    
+    if (entry.kind === 'file') {
+      // 🎵 Vérifier si c'est un fichier audio
+      const extension = entry.name.split('.').pop()?.toLowerCase();
+      const audioExtensions = ['mp3', 'wav', 'flac', 'aac', 'ogg', 'm4a', 'wma', 'aiff'];
+      
+      if (audioExtensions.includes(extension)) {
+        const file = await entry.getFile();
+        files.push({
+          file,
+          path: entryPath,
+          name: entry.name,
+          size: file.size,
+          type: file.type,
+          lastModified: file.lastModified
+        });
+      }
+    } else if (entry.kind === 'directory') {
+      // 📁 Récursion sur sous-dossiers
+      const subFiles = await getAudioFilesFromDirectory(entry, entryPath);
+      files.push(...subFiles);
+    }
+  }
+  
+  return files;
+};
+
+// 📱 Accès aux fichiers audio - Mobileexport const getAudioFilesDesktop = async (options = {}) => {
   const {
     multiple = true,
     accept = 'audio/*',
@@ -128,41 +160,7 @@ export const getAudioFilesDesktop = async (options = {}) => {
   }
 };
 
-// 📁 Récursif - fichiers audio depuis dossier
-const getAudioFilesFromDirectory = async (dirHandle, path = '') => {
-  const files = [];
-  
-  for await (const entry of dirHandle.values()) {
-    const entryPath = path ? `${path}/${entry.name}` : entry.name;
-    
-    if (entry.kind === 'file') {
-      // 🎵 Vérifier si c'est un fichier audio
-      const extension = entry.name.split('.').pop()?.toLowerCase();
-      const audioExtensions = ['mp3', 'wav', 'flac', 'aac', 'ogg', 'm4a', 'wma', 'aiff'];
-      
-      if (audioExtensions.includes(extension)) {
-        const file = await entry.getFile();
-        files.push({
-          file,
-          path: entryPath,
-          name: entry.name,
-          size: file.size,
-          type: file.type,
-          lastModified: file.lastModified
-        });
-      }
-    } else if (entry.kind === 'directory') {
-      // 📁 Récursion sur sous-dossiers
-      const subFiles = await getAudioFilesFromDirectory(entry, entryPath);
-      files.push(...subFiles);
-    }
-  }
-  
-  return files;
-};
-
-// 📱 Accès aux fichiers audio - Mobile
-export const getAudioFilesMobile = async () => {
+// 📁 Récursif - fichiers audio depuis dossierexport const getAudioFilesMobile = async () => {
   const platform = getPlatform();
   
   try {
@@ -183,8 +181,7 @@ export const getAudioFilesMobile = async () => {
   }
 };
 
-// 🍎 iOS - Accès bibliothèque musicale
-const getIOSAudioFiles = async () => {
+// 🍎 iOS - Accès bibliothèque musicaleconst getIOSAudioFiles = async () => {
   // 🎯 iOS 14+ File Picker avec filtre audio
   if ('showOpenFilePicker' in window) {
     try {
@@ -247,8 +244,7 @@ const getIOSAudioFiles = async () => {
   throw new Error('iOS File Picker not available');
 };
 
-// 🤖 Android - Accès MediaStore
-const getAndroidAudioFiles = async () => {
+// 🤖 Android - Accès MediaStoreconst getAndroidAudioFiles = async () => {
   // 🎯 Android File Picker avec accès stockage
   if ('showOpenFilePicker' in window) {
     try {
