@@ -323,18 +323,24 @@ const NotifPanel = ({ panelRef, panelPos, onClose, mobile }) => {
 
   const handleClick = (notif) => {
     if (!notif.is_read) markAsRead(notif.id);
-    onClose();
-    if (notif.url) {
-      // ✅ FIX: Passage par window.location.hash pour préserver les anchors
-      // et query params (#comment-:id, ?highlight=:id) avec HashRouter
-      const path = notif.url.replace(/^#\//, '/').replace(/^#/, '/');
+    onClose(); // ferme le panel en premier
+
+    if (!notif.url) return;
+
+    // ✅ FIX: setTimeout 0 laisse React finir le re-render de fermeture
+    // du panel AVANT de changer le hash. Sans ça, les deux opérations
+    // se télescopent et déclenchent l'ErrorBoundary.
+    const url = notif.url;
+    setTimeout(() => {
+      const path = url.replace(/^#\//, '/').replace(/^#/, '/');
       const newHash = '#' + (path.startsWith('/') ? path : '/' + path);
       if (window.location.hash === newHash) {
-        window.dispatchEvent(new HashChangeEvent('hashchange'));
+        // Même URL : force un hashchange pour que React Router re-route
+        window.dispatchEvent(new Event('hashchange'));
       } else {
         window.location.hash = newHash;
       }
-    }
+    }, 50);
   };
 
   // Tous les types supportés — seuls ceux qui ont des notifs sont affichés (+ "Tout")

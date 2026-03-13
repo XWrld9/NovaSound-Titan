@@ -166,82 +166,111 @@ const ChatMessage = memo(({
   return (
     <motion.div
       id={`msg-${msg.id}`}
-      initial={{ opacity: 0, y: 6 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.15 }}
+      initial={{ opacity: 0, y: 8, scale: 0.97 }}
+      animate={{ opacity: 1, y: 0, scale: 1 }}
+      transition={{ duration: 0.18, ease: 'easeOut' }}
       style={{ willChange: 'auto' }}
-      className={`group flex gap-2.5 px-3 py-2 rounded-2xl transition-colors ${
-        isHighlighted
-          ? 'bg-cyan-500/10 border border-cyan-500/30'
-          : hasMentionAll
-            ? 'bg-yellow-500/5 hover:bg-yellow-500/10'
-            : 'hover:bg-white/[0.025]'
+      className={`group flex flex-col px-2 py-0.5 ${isOwn ? 'items-end' : 'items-start'} ${
+        isHighlighted ? 'bg-cyan-500/8 rounded-2xl' : ''
       }`}
       onClick={() => !editing && setShowActions(v => !v)}
     >
-      {user?.id
-        ? <Link to={`/artist/${user.id}`} onClick={e => e.stopPropagation()} className="flex-shrink-0 mt-0.5"><Avatar user={user} size={8} /></Link>
-        : <div className="flex-shrink-0 mt-0.5"><Avatar user={user} size={8} /></div>
-      }
+      {/* ── Rangée principale : avatar + bulle ── */}
+      <div className={`flex items-end gap-2 max-w-[82%] ${isOwn ? 'flex-row-reverse' : 'flex-row'}`}>
 
-      <div className="flex-1 min-w-0">
-        <div className="flex items-center gap-2 mb-0.5">
-          {user?.id
-            ? <Link to={`/artist/${user.id}`} onClick={e => e.stopPropagation()}
-                className="text-xs font-bold text-cyan-400 hover:text-cyan-300 truncate transition-colors">
-                {user.username || 'Utilisateur'}
+        {/* Avatar — masqué pour ses propres messages */}
+        {!isOwn && (
+          user?.id
+            ? <Link to={`/artist/${user.id}`} onClick={e => e.stopPropagation()} className="flex-shrink-0 mb-0.5">
+                <Avatar user={user} size={7} />
               </Link>
-            : <span className="text-xs font-bold text-gray-500 truncate">{user?.username || 'Utilisateur'}</span>
-          }
-          <span className="text-[10px] text-gray-600 flex-shrink-0">{timeAgo(msg.created_at)}</span>
-          {msg.is_edited && <span className="text-[9px] text-gray-600 italic">(modifié)</span>}
-          {isAdmin && !isOwn && <span className="text-[9px] px-1.5 py-0.5 bg-yellow-500/15 text-yellow-400 rounded-full border border-yellow-500/20 flex-shrink-0">ADMIN</span>}
-          {isOwn && <span className="text-[9px] px-1.5 py-0.5 bg-cyan-500/10 text-cyan-500 rounded-full border border-cyan-500/20 flex-shrink-0">Moi</span>}
-          {hasMentionAll && <span className="text-[9px] px-1.5 py-0.5 bg-yellow-500/20 text-yellow-400 rounded-full border border-yellow-500/30 flex-shrink-0">📢 @tous</span>}
-        </div>
+            : <div className="flex-shrink-0 mb-0.5"><Avatar user={user} size={7} /></div>
+        )}
 
-        {msg.reply_to_id && msg.reply_to_content && (
-          <div className="flex items-start gap-2 mb-1.5 px-2.5 py-1.5 bg-white/[0.04] border-l-2 border-cyan-500/50 rounded-r-xl rounded-l-sm cursor-pointer"
-            onClick={e => {
-              e.stopPropagation();
-              document.getElementById(`msg-${msg.reply_to_id}`)?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-            }}>
-            <Reply className="w-3 h-3 text-cyan-500/60 flex-shrink-0 mt-0.5" />
-            <div className="min-w-0">
-              <p className="text-[10px] font-semibold text-cyan-400/80 truncate">↩ {msg.reply_to_username}</p>
-              <p className="text-[11px] text-gray-500 truncate">{msg.reply_to_content}</p>
+        <div className={`flex flex-col ${isOwn ? 'items-end' : 'items-start'} min-w-0`}>
+
+          {/* Nom + badges — uniquement pour les messages des autres */}
+          {!isOwn && (
+            <div className="flex items-center gap-1.5 mb-1 px-1">
+              {user?.id
+                ? <Link to={`/artist/${user.id}`} onClick={e => e.stopPropagation()}
+                    className="text-[11px] font-bold text-cyan-400 hover:text-cyan-300 truncate transition-colors">
+                    {user.username || 'Utilisateur'}
+                  </Link>
+                : <span className="text-[11px] font-bold text-gray-500 truncate">{user?.username || 'Utilisateur'}</span>
+              }
+              {isAdmin && <span className="text-[9px] px-1.5 py-0.5 bg-yellow-500/20 text-yellow-400 rounded-full border border-yellow-500/30">ADMIN</span>}
+              {hasMentionAll && <span className="text-[9px] px-1.5 py-0.5 bg-yellow-500/20 text-yellow-400 rounded-full border border-yellow-500/30">📢 @tous</span>}
             </div>
-          </div>
-        )}
+          )}
 
-        {editing ? (
-          <div className="flex items-center gap-2 mt-1" onClick={e => e.stopPropagation()}>
-            <input ref={editRef} id={`edit-msg-${msg?.id}`} name="chat-edit" value={editText}
-              onChange={e => setEditText(e.target.value.slice(0, 1000))}
-              onKeyDown={e => { if (e.key === 'Enter') handleSaveEdit(); if (e.key === 'Escape') setEditing(false); }}
-              className="flex-1 bg-gray-800 border border-cyan-500/40 rounded-xl px-3 py-1.5 text-sm text-white focus:outline-none focus:border-cyan-500/70 transition-colors" />
-            <button onClick={handleSaveEdit} disabled={savingEdit} className="p-1.5 text-cyan-400 hover:text-cyan-300 disabled:opacity-50">
-              {savingEdit ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Check className="w-3.5 h-3.5" />}
-            </button>
-            <button onClick={() => setEditing(false)} className="p-1.5 text-gray-600 hover:text-white"><X className="w-3.5 h-3.5" /></button>
-          </div>
-        ) : (
-          <div>
-            <p className={`text-sm leading-relaxed break-words whitespace-pre-wrap ${msg._pending ? 'text-gray-500 italic' : 'text-gray-200'}`}>
-              {renderContent(msg.content)}{msg._pending ? ' ···' : ''}
-            </p>
-            {msg.is_edited && (
-              <span className="text-[10px] text-gray-600 italic ml-2">modifié</span>
-            )}
-          </div>
-        )}
+          {/* Citation reply */}
+          {msg.reply_to_id && msg.reply_to_content && (
+            <div
+              className={`flex items-start gap-2 mb-1.5 px-2.5 py-1.5 rounded-xl cursor-pointer max-w-full ${
+                isOwn
+                  ? 'bg-cyan-500/10 border border-cyan-500/20 self-end'
+                  : 'bg-white/[0.05] border border-white/10'
+              }`}
+              onClick={e => {
+                e.stopPropagation();
+                document.getElementById(`msg-${msg.reply_to_id}`)?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+              }}>
+              <Reply className="w-3 h-3 text-cyan-500/60 flex-shrink-0 mt-0.5" />
+              <div className="min-w-0">
+                <p className="text-[10px] font-semibold text-cyan-400/80 truncate">↩ {msg.reply_to_username}</p>
+                <p className="text-[11px] text-gray-500 truncate">{msg.reply_to_content}</p>
+              </div>
+            </div>
+          )}
 
+          {/* Bulle principale */}
+          {editing ? (
+            <div className="flex items-center gap-2 w-full" onClick={e => e.stopPropagation()}>
+              <input ref={editRef} id={`edit-msg-${msg?.id}`} name="chat-edit" value={editText}
+                onChange={e => setEditText(e.target.value.slice(0, 1000))}
+                onKeyDown={e => { if (e.key === 'Enter') handleSaveEdit(); if (e.key === 'Escape') setEditing(false); }}
+                className="flex-1 bg-[#0d1020] border border-cyan-500/40 rounded-xl px-3 py-1.5 text-sm text-white focus:outline-none focus:border-cyan-500/70 transition-colors" />
+              <button onClick={handleSaveEdit} disabled={savingEdit} className="p-1.5 text-cyan-400 hover:text-cyan-300 disabled:opacity-50">
+                {savingEdit ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Check className="w-3.5 h-3.5" />}
+              </button>
+              <button onClick={() => setEditing(false)} className="p-1.5 text-gray-600 hover:text-white"><X className="w-3.5 h-3.5" /></button>
+            </div>
+          ) : (
+            <div className={`relative px-3.5 py-2.5 rounded-2xl max-w-full break-words ${
+              isOwn
+                ? 'bg-gradient-to-br from-cyan-500 to-cyan-600 text-white rounded-br-sm shadow-lg shadow-cyan-500/20'
+                : hasMentionAll
+                  ? 'bg-yellow-500/10 border border-yellow-500/20 text-gray-100 rounded-bl-sm'
+                  : 'bg-[#161a2e] border border-white/[0.06] text-gray-100 rounded-bl-sm'
+            } ${msg._pending ? 'opacity-60' : ''}`}>
+              <p className="text-sm leading-relaxed whitespace-pre-wrap">
+                {renderContent(msg.content)}{msg._pending ? ' ···' : ''}
+              </p>
+              {msg.is_edited && (
+                <span className={`text-[9px] italic mt-0.5 block ${isOwn ? 'text-cyan-100/70' : 'text-gray-600'}`}>modifié</span>
+              )}
+            </div>
+          )}
+
+          {/* Heure + statut — sous la bulle */}
+          <div className={`flex items-center gap-1.5 mt-0.5 px-1 ${isOwn ? 'flex-row-reverse' : 'flex-row'}`}>
+            <span className="text-[10px] text-gray-600">{timeAgo(msg.created_at)}</span>
+            {isOwn && msg._pending && <span className="text-[10px] text-gray-600">•••</span>}
+          </div>
+        </div>
+      </div>
+
+      {/* Reactions */}
+      <div className={`mt-0.5 ${isOwn ? 'pr-2' : 'pl-9'}`}>
         <ReactionBar msgId={msg.id} reactions={reactions} currentUserId={currentUser?.id} onToggle={onToggleReaction} />
+      </div>
 
         <AnimatePresence>
           {(showActions || showEmoji) && currentUser && !editing && (
             <motion.div initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -4 }}
-              className="flex items-center gap-1 mt-1.5 flex-wrap" onClick={e => e.stopPropagation()}>
+              className={`flex items-center gap-1 mt-1.5 flex-wrap ${isOwn ? 'justify-end pr-2' : 'justify-start pl-9'}`}
+              onClick={e => e.stopPropagation()}>
               <button onClick={() => { onReply(msg); setShowActions(false); }}
                 className="flex items-center gap-1 px-2 py-1 rounded-lg bg-white/5 hover:bg-cyan-500/15 text-gray-500 hover:text-cyan-400 text-[11px] transition-all">
                 <Reply className="w-3 h-3" /> Répondre
@@ -273,7 +302,6 @@ const ChatMessage = memo(({
             </motion.div>
           )}
         </AnimatePresence>
-      </div>
     </motion.div>
   );
 });

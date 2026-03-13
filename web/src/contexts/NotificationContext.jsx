@@ -21,13 +21,13 @@ const pushNavigate = (url) => {
   if (!url) return;
   const path  = url.startsWith('/') ? url : '/' + url;
   const newHash = '#' + path;
-  if (window.location.hash === newHash) {
-    // ✅ Même URL : déclencher manuellement un hashchange pour forcer le re-render
-    // (HashRouter n'émet pas de nouvel event si le hash est identique)
-    window.dispatchEvent(new HashChangeEvent('hashchange'));
-  } else {
-    window.location.hash = newHash;
-  }
+  setTimeout(() => {
+    if (window.location.hash === newHash) {
+      window.dispatchEvent(new Event('hashchange'));
+    } else {
+      window.location.hash = newHash;
+    }
+  }, 50);
 };
 
 // ⚠️ Doit correspondre exactement à la clé dans send-push-notification/index.ts
