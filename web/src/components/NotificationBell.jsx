@@ -32,6 +32,7 @@ import {
   Zap
 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
+import { useNotifications } from '@/contexts/NotificationContext';
 import { markAsRead, markAllAsRead, deleteNotification } from '@/lib/notificationService';
 import AchievementNotification from '@/components/AchievementNotification';
 

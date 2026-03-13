@@ -98,7 +98,7 @@ export const notifyUser = async (sb, userId, payload) => {
       title:    payload.title,
       body:     (payload.body || '').slice(0, 200),
       url:      payload.url || '/',
-      icon_url: payload.icon_url || '/icon-192.png',
+      icon: payload.icon_url || '/icon-192.png',
       type:     payload.type,
     });
   } catch (err) {
@@ -199,7 +199,7 @@ export const notifyFollowers = async (sb, artistId, payload, excludeIds = []) =>
       title:    payload.title,
       body:     (payload.body || '').slice(0, 200),
       url:      payload.url || '/',
-      icon_url: payload.icon_url || '/icon-192.png',
+      icon: payload.icon_url || '/icon-192.png',
       type:     payload.type,
     });
 
@@ -301,7 +301,7 @@ export const notifyAll = async (sb, payload, exclude = []) => {
       title:    payload.title,
       body:     (payload.body || '').slice(0, 200),
       url:      payload.url || '/',
-      icon_url: payload.icon_url || '/icon-192.png',
+      icon: payload.icon_url || '/icon-192.png',
       type:     payload.type,
     });
   } catch (err) {

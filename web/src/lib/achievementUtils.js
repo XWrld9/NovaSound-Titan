@@ -321,7 +321,7 @@ export const triggerAchievementCheck = async (userId, actionType, actionData = {
     
     // Afficher les notifications de trophées
     if (newlyUnlocked.length > 0) {
-      console.log(`🏆 ${newlyUnlocked.length} achievement(s) unlocked for user ${userId}`);
+      console.info(`🏆 ${newlyUnlocked.length} achievement(s) unlocked for user ${userId}`);
     }
   } catch (error) {
     console.error('[Achievements] Error triggering check:', error);

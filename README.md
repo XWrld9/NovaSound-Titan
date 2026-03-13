@@ -1,4 +1,4 @@
-# NovaSound TITAN LUX — v1000000
+# NovaSound TITAN LUX — v1000001
 
 > **La plateforme musicale nouvelle génération avec système de notifications parfait.**  
 > Streamez, uploadez, connectez-vous avec des artistes, et profitez d'un lecteur audio natif complet.  
@@ -8,33 +8,36 @@
 
 ## 🌟 Caractéristiques Principales
 
-### � **Notifications Parfaites (22/22 types)**
+### 🔔 **Notifications Parfaites (22/22 types)**
 - **Système complet** avec 22 types de notifications fonctionnels
 - **Gamification** : 18 trophées avec 4 niveaux de rareté
 - **Broadcast admin** : 6 types d'annonces avec ciblage avancé
-- **Interface moderne** : Filtres, tri, et composants spécialisés
-- **Push notifications** : Support complet desktop/mobile
+- **Push notifications** : Support complet desktop/mobile (VAPID Web Push)
+- **Interface moderne** : Filtres avancés, animations, badge dynamique
 
-### 🎵 **Lecteur Audio Natif**
-- **Scan automatique** de toute votre bibliothèque musicale
+### 🎵 **Lecteur Audio Global**
+- **Persistant** : survit à toute navigation (monté une seule fois)
+- **Auto-skip sur erreur** : avance au son suivant après 2s si inaccessible
+- **File d'attente dédupliquée** : impossible d'ajouter le même son deux fois
+- **Bulle minimisée** : draggable, contrôles rapides play/next
+- **Mode radio** : lecture infinie par genre/artiste
+
+### 🎵 **Lecteur Audio Natif (hors-ligne)**
+- **Scan automatique** de votre bibliothèque musicale locale
 - **Support multi-plateformes** : iOS, Android, Desktop
-- **Interface moderne** : Type Spotify/Apple Music
 - **Métadonnées riches** : Extraction automatique ID3
-- **Performance optimisée** : IndexedDB + lazy loading
+- **100% offline** : aucune connexion requise
 
 ### 🏆 **Gamification Complète**
 - **18 trophées** : Music, Social, Chat, Live, Spéciaux
 - **4 niveaux de rareté** : Common, Rare, Epic, Legendary
-- **Points et classements** : Système de progression
+- **Points et classements** : Système de progression XP
 - **Notifications spéciales** : Animations et brillance
-- **Intégration automatique** : Déblocage lors des actions
 
 ### 👑 **Administration Avancée**
-- **Broadcasts ciblés** : Par abonnés, plays, date d'inscription
-- **6 types de messages** : Maintenance, Update, Event, etc.
+- **Broadcasts ciblés** : Maintenance, Update, Event, Announcement…
 - **Interface admin** : Panneau complet avec historique
-- **Permissions sécurisées** : Admin/Moderator roles
-- **Monitoring complet** : Logs et statistiques détaillées
+- **Permissions sécurisées** : Admin/Moderator roles (RLS)
 
 ---
 
@@ -46,32 +49,34 @@ NovaSound TITAN LUX/
 │   ├── src/
 │   │   ├── App.jsx               # Router, providers globaux
 │   │   ├── contexts/
-│   │   │   ├── PlayerContext.jsx      # État lecteur
-│   │   │   ├── NotificationContext.jsx# Notifications + push
-│   │   │   ├── AuthContext.jsx        # Session Supabase Auth
-│   │   │   └── ChatContext.jsx        # Chat global + realtime
+│   │   │   ├── PlayerContext.jsx       # État lecteur global
+│   │   │   ├── NotificationContext.jsx # Notifications + push VAPID
+│   │   │   ├── AuthContext.jsx         # Session Supabase Auth
+│   │   │   ├── ChatContext.jsx         # Chat global + realtime
+│   │   │   └── PlayerTimeContext.jsx   # Temps lecture (anti re-render)
 │   │   ├── components/
-│   │   │   ├── NotificationBell.jsx   # ✅ Interface notifications 22 types
-│   │   │   ├── AchievementNotification.jsx # ✅ Composant trophées animé
-│   │   │   ├── AdminBroadcastPanel.jsx   # ✅ Panneau admin broadcasts
-│   │   │   ├── NativeAudioPlayer.jsx    # ✅ Lecteur audio natif
-│   │   │   └── OfflineBanner.jsx       # ✅ Gestion mode offline
+│   │   │   ├── AudioPlayer.jsx         # Lecteur audio global (persistant)
+│   │   │   ├── NotificationBell.jsx    # Interface notifications 22 types
+│   │   │   ├── AchievementNotification.jsx # Composant trophées animé
+│   │   │   ├── AdminBroadcastPanel.jsx # Panneau admin broadcasts
+│   │   │   ├── NativeAudioPlayer.jsx   # Lecteur audio natif
+│   │   │   ├── BottomNav.jsx           # Navigation mobile
+│   │   │   └── OfflineBanner.jsx       # Gestion mode offline
 │   │   ├── lib/
-│   │   │   ├── achievementUtils.js     # ✅ Système de trophées
-│   │   │   ├── broadcastUtils.js       # ✅ Système broadcasts admin
-│   │   │   ├── nativeAudioAccess.js    # ✅ Accès fichiers audio natif
-│   │   │   └── offlineStore.js         # ✅ Stockage offline robuste
+│   │   │   ├── notifUtils.js           # Notifications DB + push Edge Fn
+│   │   │   ├── notificationService.js  # CRUD notifications (client partagé)
+│   │   │   ├── achievementUtils.js     # Système de trophées
+│   │   │   ├── broadcastUtils.js       # Broadcasts admin
+│   │   │   ├── offlineStore.js         # Stockage offline localStorage
+│   │   │   └── networkDetector.js      # Détection réseau + sync offline
 │   │   └── pages/
-│   │       ├── LocalPlayerPageNative.jsx # ✅ Page lecteur natif
+│   │       ├── LocalPlayerPageNative.jsx # Lecteur local natif
 │   │       └── ...
 │   └── package.json
 ├── supabase/
-│   ├── functions/
-│   │   └── send-push-notification/
-│   │       └── index.ts                # ✅ Edge Function 22 types
-│   ├── migrations/
-│   │   └── ...                       # Database schema complet
-│   └── ...
+│   └── functions/
+│       └── send-push-notification/
+│           └── index.ts              # Edge Function v2.0 — 22 types VAPID
 └── README.md
 ```
 
@@ -90,359 +95,190 @@ NovaSound TITAN LUX/
 git clone <repository-url>
 cd NovaSound-TITAN-LUX
 
-# Installer les dépendances
+# Installer les dépendances frontend
+cd web
 npm install
-
-# Configurer Supabase
-supabase login
-supabase link --project-ref <your-project-ref>
 
 # Démarrer le développement
 npm run dev
 ```
 
-### Configuration
+### Variables d'environnement
 ```bash
-# Variables d'environnement
-cp .env.example .env.local
+cp .env.example .env
 
-# Configurer les clés Supabase et VAPID
-VITE_SUPABASE_URL=your_supabase_url
+VITE_SUPABASE_URL=https://YOUR_REF.supabase.co
 VITE_SUPABASE_ANON_KEY=your_anon_key
 VITE_VAPID_PUBLIC_KEY=your_vapid_public_key
-VITE_VAPID_PRIVATE_KEY=your_vapid_private_key
-```
-
----
-
-## 📱 Utilisation
-
-### 🎵 Lecteur Audio Natif
-1. Allez sur `/local-player-native`
-2. Cliquez sur "Scanner ma bibliothèque musicale"
-3. Autorisez l'accès aux fichiers audio
-4. Profitez de toute votre musique nativement !
-
-### 🏆 Système de Trophées
-Les trophées se débloquent automatiquement lors de vos actions :
-- **Like reçu** → Premier like, Music Lover, Trending Artist
-- **Nouvel abonné** → Premier abonné, Social Butterfly, Influencer
-- **Upload de son** → Premier upload, Producer, Hitmaker
-- **Message chat** → Premier message, Chatterbox
-- **Live démarré** → Premier live, Streamer
-- **Spéciaux** → Early Adopter, Veteran
-
-### � Broadcasts Admin
-1. Accédez au panneau admin
-2. Choisissez le type de broadcast
-3. Rédigez votre message
-4. Ciblez les utilisateurs (optionnel)
-5. Envoyez à tous les utilisateurs concernés
-
-### 📱 Notifications
-- **22 types** de notifications couvrent toutes les interactions
-- **Filtres** par type pour une organisation parfaite
-- **Navigation** automatique vers le contenu concerné
-- **Push notifications** sur desktop et mobile
-
----
-
-## 🔧 Configuration
-
-### Edge Function
-```typescript
-// Types supportés (22/22)
-const SUPPORTED_TYPES = [
-  'like', 'like_song', 'like_news',
-  'comment', 'comment_news', 'reply', 'mention',
-  'follow', 'repost',
-  'new_song', 'queue_song', 'mood_vote',
-  'news',
-  'chat_reply', 'chat_mention', 'chat_mention_all',
-  'live_start', 'live_started', 'live_invite', 'live_join', 
-  'live_comment', 'live_like', 'live_leave',
-  'achievement', 'broadcast'
-];
-```
-
-### Database
-```sql
--- Tables principales
-notifications (22 types)
-achievement_definitions (18 trophées)
-user_achievements (trophées débloqués)
-push_subscriptions (VAPID)
-push_notification_logs (monitoring)
-user_roles (permissions admin)
-```
-
----
-
-## 🛡️ Sécurité et Performance
-
-### Sécurité
-- **RLS (Row Level Security)** sur toutes les tables
-- **Validation stricte** des types de notifications
-- **Permissions admin** sécurisées
-- **Rate limiting** sur les Edge Functions
-
-### Performance
-- **Lazy loading** des composants
-- **IndexedDB** pour le stockage offline
-- **Virtual scrolling** pour les longues listes
-- **Memoization** des calculs coûteux
-- **Triple sauvegarde** des données
-
----
-
-## 📊 Monitoring
-
-### Logs et Métriques
-- **Push notifications** : Logs détaillés avec taux de succès
-- **Trophées** : Statistiques de déblocage
-- **Broadcasts** : Historique et performance
-- **Audio natif** : Utilisation et performance
-
-### Health Checks
-```javascript
-// Vérification automatique de la santé du système
-const health = await healthCheck.checkSystemHealth();
-// Retourne : status, checks, timestamp
-```
-
----
-
-## 🎯 Points Forts
-
-### ✅ **Système de Notifications Parfait**
-- **22/22 types** fonctionnels avec interface moderne
-- **Gamification intégrée** avec 18 trophées
-- **Broadcast admin** complet et sécurisé
-- **Performance optimisée** et robustesse absolue
-
-### ✅ **Lecteur Audio Natif Révolutionnaire**
-- **Scan automatique** : Plus besoin d'import manuel
-- **Multi-plateformes** : iOS, Android, Desktop
-- **Interface moderne** : Type Spotify/Apple Music
-- **Métadonnées riches** : Organisation automatique
-
-### ✅ **Architecture de Classe Mondiale**
-- **Code propre** et maintenable
-- **Sécurité niveau entreprise**
-- **Performance optimisée**
-- **Documentation complète**
-
----
-
-## 🚀 Déploiement
-
-### Production
-```bash
-# Builder le projet
-npm run build
-
-# Déployer les Edge Functions
-supabase functions deploy send-push-notification
-
-# Déployer le frontend
-npm run deploy
-```
-
-### Environment Variables
-```bash
-# Production
-VITE_SUPABASE_URL=your_production_url
-VITE_SUPABASE_ANON_KEY=your_production_anon_key
-VITE_VAPID_PUBLIC_KEY=your_production_vapid_public
-VITE_VAPID_PRIVATE_KEY=your_production_vapid_private
-```
-
----
-
-## 📞 Support
-
-### Contact
-- **Email** : eloadxfamily@gmail.com
-- **GitHub** : Issues et pull requests
-
-### Documentation
-- **API** : Documentation complète des endpoints
-- **Components** : Guide d'utilisation des composants
-- **Database** : Schéma et migrations
-
----
-
-## 📄 Licence
-
-© 2026 NovaSound TITAN LUX — ELOADXFAMILY
-
----
-
-## 🏆 Conclusion
-
-**NovaSound TITAN LUX représente l'excellence dans les plateformes musicales modernes :**
-
-✅ **Notifications parfaites** avec 22 types et gamification  
-✅ **Lecteur audio natif** révolutionnaire  
-✅ **Architecture robuste** et sécurisée  
-✅ **Performance optimisée** pour millions d'utilisateurs  
-✅ **Interface moderne** et intuitive  
-
-**Score final : 100/100** 🌟
-
----
-
-*NovaSound TITAN LUX - La musique réinventée.* 🎵✨
-│   │   │   ├── AudioPlayer.jsx        # Lecteur audio global (persistant)
-│   │   │   ├── SongCard.jsx           # Carte chanson (ne re-render plus pendant lecture)
-│   │   │   ├── BottomNav.jsx          # Navigation mobile (masquée sur live/local-player)
-│   │   │   └── Footer.jsx             # Pied de page (max-w-7xl)
-│   │   ├── pages/
-│   │   │   ├── LocalPlayerPage.jsx    # Lecteur hors-ligne IndexedDB + FSA
-│   │   │   ├── LiveRoomPage.jsx       # Live room chat (textarea v500000)
-│   │   │   ├── ChatPage.jsx           # Chat global (padding mobile corrigé)
-│   │   │   ├── ArtistsPage.jsx        # Liste artistes (max-w-6xl)
-│   │   │   └── NotificationsPage.jsx  # Notifications (max-w-5xl)
-│   │   └── lib/
-│   │       ├── notifUtils.js          # ✅ FIX: notif_id (était: id)
-│   │       └── supabaseClient.js      # Client Supabase
-│   └── public/
-│       └── sw.js                      # Service Worker push + cache offline
-├── supabase/
-│   └── functions/
-│       └── send-push-notification/
-│           ├── index.ts               # Edge Function v410000 (ancienne)
-│           └── index_v500000.ts       # ✨ Edge Function v500000 (nouvelle)
-└── migration_v500000.sql              # ✨ Migration DB à exécuter dans Supabase
-```
-
----
-
-## 🚀 Déploiement
-
-### 1. Migration SQL
-```sql
--- Dans Supabase SQL Editor, exécuter migration_v500000.sql
--- Puis configurer les clés pour le DB Trigger :
-INSERT INTO public.app_meta (key, value) VALUES
-  ('supabase_url',      'https://VOTRE_REF.supabase.co'),
-  ('service_role_key',  'VOTRE_SERVICE_ROLE_KEY')
-ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value;
-```
-
-### 2. Edge Function
-```bash
-# Remplacer l'ancienne Edge Function par la v500000
-cp supabase/functions/send-push-notification/index_v500000.ts \
-   supabase/functions/send-push-notification/index.ts
-
-# Déployer
-supabase functions deploy send-push-notification
-```
-
-### 3. Variables d'environnement Edge Function
-```
-SUPABASE_URL=https://VOTRE_REF.supabase.co
-SUPABASE_SERVICE_ROLE_KEY=eyJ...
-SUPABASE_ANON_KEY=eyJ...
-VAPID_PUBLIC_KEY=BFCdXh1JM5vELnaw7GolQNKPEc-CJRafU2QC3r1lTdyCSSBl5QL6nJfU3HXbnhqm_krsVViGLJ8nf2VpYBjt38o
-VAPID_PRIVATE_KEY=VOTRE_VAPID_PRIVATE_KEY
-VAPID_SUBJECT=mailto:eloadxfamily@gmail.com
-PUSH_WEBHOOK_SECRET=VOTRE_SECRET_WEBHOOK  (optionnel)
-PUSH_BATCH_SIZE=10  (optionnel, défaut 10)
-```
-
-### 4. Frontend (Vercel)
-```bash
-cd web
-npm install
-npm run build
-# Déployer le dossier dist/ sur Vercel
 ```
 
 ---
 
 ## 🔔 Système de Notifications
 
-### Flux complet (v500000)
+### Flux complet
 ```
 Action utilisateur (like, follow, commentaire…)
-  → INSERT dans public.notifications (via notifUtils.js)
-  → DB Trigger trg_push_on_notification (AFTER INSERT)
-  → pg_net appel HTTP non-bloquant → Edge Function
-  → Edge Function récupère les push_subscriptions de l'user
+  → INSERT dans public.notifications (notifUtils.js)
+  → _push() appelle Edge Function send-push-notification
+  → Edge Fn récupère push_subscriptions de l'user
   → Envoie push VAPID chiffré (Web Push Protocol)
-  → Service Worker reçoit l'event 'push'
+  → Service Worker reçoit 'push' event
   → Affiche notification système Android/iOS/PC
-  → NotificationContext lit les nouvelles notifs via Realtime Supabase
-  → Badge in-app mis à jour
+  → NotificationContext lit les nouvelles notifs via Realtime
+  → Badge in-app mis à jour (setAppBadge)
 ```
 
-### Types de notifications supportés
-`like` · `comment` · `follow` · `new_song` · `repost` · `news` · `chat_reply` · `chat_mention` · `chat_mention_all` · `mood_vote` · `live_start` · `live_started` · `live_invite` · `queue_song` · `achievement`
+### 22 types supportés
+```
+like · like_song · like_news
+comment · comment_news · reply · mention
+follow · repost
+new_song · queue_song · mood_vote
+news
+chat_reply · chat_mention · chat_mention_all
+live_start · live_started · live_invite · live_join · live_comment · live_like · live_leave
+achievement · broadcast
+```
+
+### Champs DB (table `notifications`)
+| Champ | Type | Description |
+|---|---|---|
+| `user_id` | text | Destinataire |
+| `type` | text | Type parmi les 22 supportés |
+| `title` | text | Titre (max 120 chars) |
+| `body` | text | Contenu (max 200 chars) |
+| `url` | text | Lien de navigation |
+| `icon_url` | text | Icône de la notification |
+| `is_read` | boolean | Lu ou non |
+| `from_user_id` | text | Expéditeur |
+| `song_id` | text | Deep link son |
+| `metadata` | jsonb | Données supplémentaires |
 
 ---
 
-## 📱 Lecteur Local (hors-ligne)
+## 🎵 Lecteur Audio
 
-- **100% offline** — aucune connexion requise
-- **FSA (File System Access API)** : persistance automatique des handles sur PC
-- **IndexedDB** : sauvegarde playlists entre sessions
-- **ID3v2** : lecture automatique des métadonnées (titre, artiste, album, couverture)
-- **Formats** : MP3, M4A, WAV, FLAC, AAC, OGG, OPUS, WMA
-- **Raccourcis clavier** : Space, ←→ ±10s, ↑↓ volume, M muet, N suivant, P précédent
+### Fonctionnalités
+- **Persistant** : l'élément `<audio>` n'est jamais démonté
+- **Auto-skip erreur** : si un fichier est inaccessible, skip automatique après 2s
+- **File dédupliquée** : `addToQueue()` refuse les doublons
+- **Mode radio** : lecture infinie par genre/artiste (Supabase queries)
+- **Bulle minimisée** : draggable verticalement, quick controls
+- **Sleep timer** : pause automatique après X minutes
+- **Vitesse lecture** : 0.75× à 2×
 
----
-
-## 🎵 Fonctionnalités principales
-
-| Fonctionnalité | Description |
+### Événements CustomEvent
+| Événement | Description |
 |---|---|
-| **Streaming** | Lecture en ligne de sons hébergés sur Supabase Storage |
-| **Upload** | MP3/M4A/WAV/FLAC jusqu'à 50 MB, couverture optionnelle |
-| **Live Rooms** | Salles de live avec chat temps réel, file d'attente, réactions |
-| **Chat global** | Messagerie communautaire, mentions @tous, réponses, réactions |
-| **Notifications** | Push Web (Android PWA, iOS 16.4+ Safari PWA, PC Chrome/Edge) |
-| **Explorer** | Navigation par genre, artiste, tendances, playlists |
-| **Leaderboard** | Classement artistes par écoutes, likes, abonnés |
-| **Mode radio** | Lecture automatique de sons similaires |
-| **Lecteur local** | Lecture fichiers locaux sans connexion |
+| `novasound:force-play` | Lancer la lecture |
+| `novasound:force-pause` | Mettre en pause |
+| `novasound:toggle-play` | Basculer play/pause |
+| `novasound:seek-to` | Sauter à `detail.time` |
+| `novasound:audio-error` | Erreur → skip automatique |
+| `novasound:close-player` | Fermer le lecteur |
+| `novasound:sleep-end` | Fin du sleep timer |
 
 ---
 
-## 🔧 Stack technique
+## 🏆 Système de Trophées
+
+Les trophées se débloquent automatiquement lors de vos actions :
+
+| Trophée | Condition | Rareté | Points |
+|---|---|---|---|
+| Premier Like | 1 like reçu | Common | 10 |
+| Première Écoute | 1 play | Common | 5 |
+| Amoureux de la Musique | 100 sons différents | Rare | 50 |
+| Artiste en Tendance | 1000+ plays sur un son | Epic | 100 |
+| Premier Abonné | 1 follower | Common | 20 |
+| Papillon Social | 50 followers | Rare | 75 |
+| Influenceur | 100 followers | Epic | 150 |
+| Premier Message | 1 message chat | Common | 5 |
+| Bavard | 100 messages chat | Rare | 30 |
+| Premier Upload | 1 son uploadé | Common | 15 |
+| Producteur | 10 sons uploadés | Rare | 60 |
+| Créateur de Hits | 25 sons uploadés | Epic | 100 |
+| Premier Live | 1 live hébergé | Common | 25 |
+| Streamer | 10 lives hébergés | Rare | 80 |
+| Pionnier | Inscrit dans les 30 premiers jours | Legendary | 100 |
+| Vétéran | Actif depuis 6 mois | Legendary | 200 |
+
+---
+
+## 📱 Mode Offline
+
+- **Messages chat** : stockés dans localStorage si hors-ligne, synchronisés au retour
+- **Détection réseau** : `useNetworkDetector()` → events `online`/`offline`
+- **Sync automatique** : reprise des messages pendants au reconnect
+
+---
+
+## 🔧 Stack Technique
 
 | Couche | Technologie |
 |---|---|
 | Frontend | React 18, Vite, Tailwind CSS, Framer Motion |
 | Backend | Supabase (PostgreSQL, Auth, Storage, Realtime) |
-| Edge Functions | Deno (TypeScript) |
-| Push notifications | Web Push Protocol (VAPID), Service Worker |
-| Offline | IndexedDB, File System Access API, Cache API |
+| Edge Functions | Deno (TypeScript) — VAPID custom crypto |
+| Push | Web Push Protocol (VAPID), Service Worker |
+| Offline | localStorage, File System Access API |
 | Déploiement | Vercel (frontend), Supabase Cloud (backend) |
+
+---
+
+## 🚀 Déploiement Production
+
+```bash
+# 1. Builder le frontend
+cd web && npm run build
+
+# 2. Déployer l'Edge Function
+supabase functions deploy send-push-notification
+
+# 3. Déployer le frontend (Vercel)
+vercel --prod
+```
 
 ---
 
 ## 📋 Changelog
 
-### v500000 (2026-03-07)
-- Fix : clignotement des SongCards pendant la lecture (`PlayerTimeContext`)
-- Fix : redirection offline synchrone (`useLayoutEffect`)
-- Fix : zone de saisie Live Room (textarea expandable, placeholder correct)
-- Fix : zone de saisie Chat mobile (padding conditionnel)
-- Fix : push notifications (`notif_id` au lieu de `id` dans notifUtils.js)
-- Fix : responsivité des pages Artistes, Notifications, Pied de page
-- Nouveau : DB Trigger automatique push sur chaque notification
-- Nouveau : 15 index DB pour les performances
-- Nouveau : RLS renforcé, crons nettoyage automatique
-- Edge Function : support `notif_id` + `id`, rate limit 120/hr, logs JSON
+### v1000001 (2026-03-13) — Corrections critiques
+- **FIX CRASH** : `useNotifications` manquant dans `NotificationBell.jsx` → `ReferenceError` corrigé
+- **FIX** : `addToQueue` — déduplication pour éviter la file cassée (même son ajouté N fois)
+- **FIX** : `AudioPlayer.onError` — auto-skip automatique après 2s sur fichier inaccessible
+- **FIX** : `PlayerContext` — listener `novasound:audio-error` → `handleNext()` global
+- **FIX** : `notifUtils._push()` — champ `icon_url` → `icon` (alignement avec Edge Function v2.0)
+- **FIX** : `notificationService.js` — suppression du champ `read_at` inexistant en DB
+- **FIX** : `notificationService.js` — suppression du client Supabase dupliqué (import partagé)
+- **FIX** : `console.log` → `console.info` dans tous les fichiers de production
+
+### v1000000
+- Système de notifications complet (22/22 types)
+- Gamification : 18 trophées, 4 raretés
+- Lecteur audio natif multi-plateformes
+- Broadcast admin avec ciblage avancé
+- Edge Function VAPID v2.0 custom crypto
+- Push notifications Android/iOS/PC PWA
+
+### v500000
+- Push notifications via DB Trigger + pg_net
+- 15 index DB pour les performances
+- RLS renforcé, crons nettoyage automatique
 
 ### v410000
-- Refonte complète LocalPlayerPage (layout 3 colonnes, FSA handles, ID3v2)
-- Chat : support `@tous/@all/@everyone`, suppressions, éditions
-- Live Room : réactions burst, file d'attente, historique
-- Notifications : types achievement, live_started, queue_song
+- Refonte complète LocalPlayerPage (FSA, ID3v2)
+- Chat : @tous/@all, suppressions, éditions
+- Live Room : réactions, file d'attente, historique
 
 ---
 
-*NovaSound TITAN LUX — ELOADXFAMILY · v500000*
+## 📞 Support
+
+- **Email** : eloadxfamily@gmail.com
+- **Licence** : © 2026 NovaSound TITAN LUX — ELOADXFAMILY
+
+---
+
+*NovaSound TITAN LUX — La musique réinventée.* 🎵✨

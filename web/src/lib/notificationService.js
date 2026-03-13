@@ -1,16 +1,12 @@
 /**
- * 📱 Notification Service - NovaSound TITAN LUX v1000000
- * 
- * Service pour gérer les notifications côté client
- * Marquer comme lu, supprimer, et autres opérations
+ * 📱 Notification Service - NovaSound TITAN LUX v1000001
+ *
+ * Service pour gérer les notifications côté client.
+ * ✅ FIX B2 : suppression du champ 'read_at' inexistant dans la DB
+ * ✅ FIX B3 : utilisation du client Supabase partagé (plus de doublon)
  */
 
-import { createClient } from '@supabase/supabase-js';
-
-const supabaseUrl = 'https://tleuzlyfelrnykpbwhkc.supabase.co';
-const supabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRsZXV6bHlmZWxybnlrcGJ3aGtjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzE1ODY4OTUsImV4cCI6MjA4NzE2Mjg5NX0.PEXcdsykNhIhtXOmprBkshqZfZ9qkc8WKmFbBNSn-II';
-
-const supabase = createClient(supabaseUrl, supabaseAnonKey);
+import { supabase } from '@/lib/supabaseClient';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Marquer une notification comme lue
@@ -19,19 +15,15 @@ export const markAsRead = async (notificationId) => {
   try {
     const { data, error } = await supabase
       .from('notifications')
-      .update({ is_read: true, read_at: new Date().toISOString() })
+      .update({ is_read: true })   // ✅ FIX : 'read_at' n'existe pas dans la DB
       .eq('id', notificationId)
       .select()
       .single();
 
-    if (error) {
-      console.error('[NotificationService] markAsRead error:', error);
-      throw error;
-    }
-
+    if (error) throw error;
     return data;
   } catch (error) {
-    console.error('[NotificationService] markAsRead failed:', error);
+    console.warn('[NotificationService] markAsRead failed:', error?.message);
     throw error;
   }
 };
@@ -43,19 +35,15 @@ export const markAllAsRead = async (userId) => {
   try {
     const { data, error } = await supabase
       .from('notifications')
-      .update({ is_read: true, read_at: new Date().toISOString() })
+      .update({ is_read: true })   // ✅ FIX : 'read_at' n'existe pas dans la DB
       .eq('user_id', userId)
       .eq('is_read', false)
       .select();
 
-    if (error) {
-      console.error('[NotificationService] markAllAsRead error:', error);
-      throw error;
-    }
-
+    if (error) throw error;
     return data;
   } catch (error) {
-    console.error('[NotificationService] markAllAsRead failed:', error);
+    console.warn('[NotificationService] markAllAsRead failed:', error?.message);
     throw error;
   }
 };
@@ -72,14 +60,10 @@ export const deleteNotification = async (notificationId) => {
       .select()
       .single();
 
-    if (error) {
-      console.error('[NotificationService] deleteNotification error:', error);
-      throw error;
-    }
-
+    if (error) throw error;
     return data;
   } catch (error) {
-    console.error('[NotificationService] deleteNotification failed:', error);
+    console.warn('[NotificationService] deleteNotification failed:', error?.message);
     throw error;
   }
 };
@@ -89,12 +73,7 @@ export const deleteNotification = async (notificationId) => {
 // ─────────────────────────────────────────────────────────────────────────────
 export const getNotifications = async (userId, options = {}) => {
   try {
-    const {
-      limit = 50,
-      offset = 0,
-      unreadOnly = false,
-      type = null
-    } = options;
+    const { limit = 50, offset = 0, unreadOnly = false, type = null } = options;
 
     let query = supabase
       .from('notifications')
@@ -103,24 +82,14 @@ export const getNotifications = async (userId, options = {}) => {
       .order('created_at', { ascending: false })
       .range(offset, offset + limit - 1);
 
-    if (unreadOnly) {
-      query = query.eq('is_read', false);
-    }
-
-    if (type) {
-      query = query.eq('type', type);
-    }
+    if (unreadOnly) query = query.eq('is_read', false);
+    if (type)       query = query.eq('type', type);
 
     const { data, error } = await query;
-
-    if (error) {
-      console.error('[NotificationService] getNotifications error:', error);
-      throw error;
-    }
-
+    if (error) throw error;
     return data;
   } catch (error) {
-    console.error('[NotificationService] getNotifications failed:', error);
+    console.warn('[NotificationService] getNotifications failed:', error?.message);
     throw error;
   }
 };
@@ -130,20 +99,16 @@ export const getNotifications = async (userId, options = {}) => {
 // ─────────────────────────────────────────────────────────────────────────────
 export const getUnreadCount = async (userId) => {
   try {
-    const { data, error } = await supabase
+    const { count, error } = await supabase
       .from('notifications')
       .select('id', { count: 'exact', head: true })
       .eq('user_id', userId)
       .eq('is_read', false);
 
-    if (error) {
-      console.error('[NotificationService] getUnreadCount error:', error);
-      throw error;
-    }
-
-    return data?.length || 0;
+    if (error) throw error;
+    return count || 0;
   } catch (error) {
-    console.error('[NotificationService] getUnreadCount failed:', error);
+    console.warn('[NotificationService] getUnreadCount failed:', error?.message);
     throw error;
   }
 };
@@ -155,34 +120,23 @@ export const createNotification = async (notification) => {
   try {
     const { data, error } = await supabase
       .from('notifications')
-      .insert({
-        ...notification,
-        created_at: new Date().toISOString(),
-        is_read: false
-      })
+      .insert({ ...notification, is_read: false })
       .select()
       .single();
 
-    if (error) {
-      console.error('[NotificationService] createNotification error:', error);
-      throw error;
-    }
-
+    if (error) throw error;
     return data;
   } catch (error) {
-    console.error('[NotificationService] createNotification failed:', error);
+    console.warn('[NotificationService] createNotification failed:', error?.message);
     throw error;
   }
 };
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Service complet exporté
-// ─────────────────────────────────────────────────────────────────────────────
 export default {
   markAsRead,
   markAllAsRead,
   deleteNotification,
   getNotifications,
   getUnreadCount,
-  createNotification
+  createNotification,
 };

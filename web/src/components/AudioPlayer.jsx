@@ -162,8 +162,27 @@ const AudioPlayerDesktop = ({ currentSong, playlist = [], onNext, onPrevious, on
   const playlistRef   = useRef(playlist); // ← fix closure périmée dans handleEnded
   // Ref vers toggleImmersive pour éviter les stale closures dans les useEffect clavier
   const toggleImmersiveRef = useRef(null);
+  // Timer pour auto-skip sur erreur audio
+  const errorSkipTimerRef = useRef(null);
 
-  // ── toggleMute déclaré ici (avant les useEffect qui l'utilisent) ── TDZ FIX ──
+  // ── Gestionnaire d'erreur audio → pause + skip automatique après 2s ─────
+  const handleAudioError = useCallback(() => {
+    setIsBuffering(false);
+    setIsPlaying(false);
+    setIsPlayingGlobal(false);
+    // Annuler tout timer précédent
+    if (errorSkipTimerRef.current) clearTimeout(errorSkipTimerRef.current);
+    // Déclencher skip après 2s pour laisser le temps à un retry réseau éventuel
+    errorSkipTimerRef.current = setTimeout(() => {
+      autoPlayRef.current = true;
+      // Signaler au contexte de passer au suivant (Fix #7)
+      window.dispatchEvent(new CustomEvent('novasound:audio-error'));
+      goNextRef.current?.();
+    }, 2000);
+  }, [setIsPlayingGlobal]);
+
+  // Nettoyer le timer au démontage
+  useEffect(() => () => { if (errorSkipTimerRef.current) clearTimeout(errorSkipTimerRef.current); }, []);
   // ⚠️ DOIT rester avant tout useEffect référençant toggleMute dans ses deps ──
   const toggleMute = useCallback((e) => {
     e?.stopPropagation();
@@ -764,7 +783,7 @@ const AudioPlayerDesktop = ({ currentSong, playlist = [], onNext, onPrevious, on
           onWaiting={() => setIsBuffering(true)}
           onCanPlay={() => setIsBuffering(false)}
           onPlaying={() => setIsBuffering(false)}
-          onError={() => { setIsBuffering(false); setIsPlaying(false); setIsPlayingGlobal(false); }}
+          onError={handleAudioError}
           loop={repeat === 'one'} playsInline preload="auto"
           webkit-playsinline="true" x-webkit-airplay="allow"
           style={{ display: 'none' }}
@@ -869,7 +888,7 @@ const AudioPlayerDesktop = ({ currentSong, playlist = [], onNext, onPrevious, on
         onWaiting={() => setIsBuffering(true)}
         onCanPlay={() => setIsBuffering(false)}
         onPlaying={() => setIsBuffering(false)}
-        onError={() => { setIsBuffering(false); setIsPlaying(false); setIsPlayingGlobal(false); }}
+        onError={handleAudioError}
         loop={repeat === 'one'}
         playsInline
         preload="auto"

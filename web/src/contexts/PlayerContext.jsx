@@ -47,6 +47,17 @@ export const PlayerProvider = ({ children }) => {
   useEffect(() => { radioModeRef.current = radioMode; }, [radioMode]);
   useEffect(() => { currentPlaylistIdRef.current = currentPlaylistId; }, [currentPlaylistId]);
 
+  // ── Gestionnaire d'erreur audio → skip automatique ──────────────────────
+  // Si AudioPlayer signale une erreur (fichier inaccessible, réseau coupé),
+  // on avance au son suivant via handleNext pour éviter que le lecteur se fige.
+  useEffect(() => {
+    const handler = () => {
+      handleNext().catch(() => {});
+    };
+    window.addEventListener('novasound:audio-error', handler);
+    return () => window.removeEventListener('novasound:audio-error', handler);
+  }, [handleNext]);
+
   // ── Sync song-updated event ──────────────────────────────────────
   useEffect(() => {
     const handler = (e) => {
@@ -270,6 +281,8 @@ export const PlayerProvider = ({ children }) => {
   const addToQueue = useCallback((song) => {
     if (!song) return;
     setQueue(prev => {
+      // Déduplication : évite d'ajouter le même son plusieurs fois → file cassée
+      if (prev.some(s => s.id === song.id)) return prev;
       const next = [...prev, song];
       queueRef.current = next;
       return next;

@@ -165,7 +165,7 @@ export const sendBroadcast = async (adminId, broadcastType, title, body, options
       created_at: new Date().toISOString()
     });
     
-    console.log(`📢 Broadcast sent by ${adminName}: ${title} to ${result} users`);
+    console.info(`📢 Broadcast sent by ${adminName}: ${title} to ${result} users`);
     
     return {
       success: true,

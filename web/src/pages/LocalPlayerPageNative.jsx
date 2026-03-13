@@ -66,7 +66,7 @@ const LocalPlayerPageNative = () => {
       
       setIsInitialized(true);
       
-      console.log(`[NativePlayer] Initialized on ${detectedPlatform}`, {
+      console.info(`[NativePlayer] Initialized on ${detectedPlatform}`, {
         platform: detectedPlatform,
         capabilities: detectedCapabilities,
         storage: savedFiles
@@ -107,7 +107,7 @@ const LocalPlayerPageNative = () => {
         }
       });
 
-      console.log(`[NativePlayer] Library scan completed: ${files.length} files`);
+      console.info(`[NativePlayer] Library scan completed: ${files.length} files`);
       
       // 🎉 Afficher un message de succès
       alert(`Bibliothèque scannée avec succès !\n\n${files.length} fichiers audio trouvés`);

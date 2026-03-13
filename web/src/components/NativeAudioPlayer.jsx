@@ -84,7 +84,7 @@ const NativeAudioPlayer = () => {
         analyserNode.connect(ctx.destination);
       }
       
-      console.log(`[NativeAudioPlayer] Initialized on ${detectedPlatform}`, detectedCapabilities);
+      console.info(`[NativeAudioPlayer] Initialized on ${detectedPlatform}`, detectedCapabilities);
     } catch (error) {
       console.error('[NativeAudioPlayer] Initialization failed:', error);
     }
@@ -96,7 +96,7 @@ const NativeAudioPlayer = () => {
       const savedFiles = await offlineStore.get('nativeAudioFiles');
       if (savedFiles && savedFiles.length > 0) {
         setAudioFiles(savedFiles);
-        console.log(`[NativeAudioPlayer] Loaded ${savedFiles.length} saved files`);
+        console.info(`[NativeAudioPlayer] Loaded ${savedFiles.length} saved files`);
       }
     } catch (error) {
       console.error('[NativeAudioPlayer] Failed to load saved files:', error);
@@ -139,7 +139,7 @@ const NativeAudioPlayer = () => {
       // 💾 Sauvegarder pour la prochaine session
       await offlineStore.save('nativeAudioFiles', enrichedFiles);
       
-      console.log(`[NativeAudioPlayer] Scanned ${enrichedFiles.length} audio files`);
+      console.info(`[NativeAudioPlayer] Scanned ${enrichedFiles.length} audio files`);
     } catch (error) {
       console.error('[NativeAudioPlayer] Scan failed:', error);
       alert('Échec du scan des fichiers audio: ' + error.message);
@@ -186,7 +186,7 @@ const NativeAudioPlayer = () => {
         // 💾 Sauvegarder les stats
         await offlineStore.save('nativeAudioFiles', updatedFiles);
         
-        console.log(`[NativeAudioPlayer] Playing: ${track.metadata.title || track.name}`);
+        console.info(`[NativeAudioPlayer] Playing: ${track.metadata.title || track.name}`);
       }
     } catch (error) {
       console.error('[NativeAudioPlayer] Play failed:', error);
