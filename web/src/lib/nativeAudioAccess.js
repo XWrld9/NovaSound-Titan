@@ -159,9 +159,6 @@ const getAudioFilesFromDirectory = async (dirHandle, path = '') => {
     throw error;
   }
 };
-
-// 📁 Récursif - fichiers audio depuis dossier
-export const getAudioFilesMobile = async () => {
   const platform = getPlatform();
   
   try {
