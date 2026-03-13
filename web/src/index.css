@@ -19,12 +19,12 @@ html, body {
 	-webkit-overflow-scrolling: touch;
 }
 
-/* Empêcher le scroll horizontal sur tous les conteneurs */
+/* Empecher le scroll horizontal sur tous les conteneurs */
 * {
 	box-sizing: border-box;
 }
 
-/* Corriger les éléments qui débordent */
+/* Corriger les elements qui debordent */
 img, video, iframe {
 	max-width: 100%;
 	height: auto;
@@ -52,7 +52,7 @@ img, video, iframe {
   display: none;
 }
 
-/* Masquer TOUTES les scrollbars par défaut — elles restent fonctionnelles */
+/* Masquer TOUTES les scrollbars par defaut -- elles restent fonctionnelles */
 ::-webkit-scrollbar {
   width: 0px;
   height: 0px;
@@ -69,7 +69,7 @@ img, video, iframe {
   -ms-overflow-style: none;
 }
 
-/* ── Animation marquee pour titres longs dans le player ──────────────────── */
+/* -- Animation marquee pour titres longs dans le player -------------------- */
 @keyframes marquee {
   0%   { transform: translateX(0); }
   20%  { transform: translateX(0); }
@@ -77,12 +77,12 @@ img, video, iframe {
   100% { transform: translateX(-100%); }
 }
 
-/* Pause le défilement si l'utilisateur survole (desktop) */
+/* Pause le defilement si l'utilisateur survole (desktop) */
 .marquee-container:hover .marquee-text {
   animation-play-state: paused;
 }
 
-/* Fix backdrop-blur sur iOS Safari — doit être couplé à un bg solide */
+/* Fix backdrop-blur sur iOS Safari -- doit etre couple a un bg solide */
 @supports (-webkit-touch-callout: none) {
   .backdrop-blur-xl,
   .backdrop-blur-2xl,
@@ -90,7 +90,7 @@ img, video, iframe {
     -webkit-backdrop-filter: blur(24px);
     backdrop-filter: blur(24px);
   }
-  /* Forcer l'opacité du bg du player sur iOS */
+  /* Forcer l'opacite du bg du player sur iOS */
   .ios-player-bg {
     background-color: rgb(3, 7, 18) !important; /* gray-950 */
   }
@@ -104,7 +104,7 @@ img, video, iframe {
   padding-top: env(safe-area-inset-top);
 }
 
-/* Fix inputs sur iOS — empêche le zoom auto */
+/* Fix inputs sur iOS -- empeche le zoom auto */
 input[type="text"],
 input[type="email"],
 input[type="password"],
@@ -114,7 +114,7 @@ select {
   font-size: 16px !important;
 }
 
-/* Fix boutons iOS — supprimer le style natif */
+/* Fix boutons iOS -- supprimer le style natif */
 button {
   -webkit-appearance: none;
   appearance: none;
@@ -128,18 +128,18 @@ button {
   min-height: 100dvh;
 }
 
-/* Spinner utilisé dans ShareModal */
+/* Spinner utilise dans ShareModal */
 @keyframes spin {
   to { transform: rotate(360deg); }
 }
 
-/* Animation égaliseur — SongCard "En lecture" */
+/* Animation egaliseur -- SongCard "En lecture" */
 @keyframes equalizer {
   0%   { transform: scaleY(0.4); }
   100% { transform: scaleY(1.0); }
 }
 
-/* Masquer scrollbar sur mobile (tabs profil) — accessibilité */
+/* Masquer scrollbar sur mobile (tabs profil) - accessibilite */
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
     animation-duration: 0.01ms !important;
@@ -148,7 +148,7 @@ button {
   }
 }
 
-/* Fix input zoom iOS — fontSize minimum 16px (déjà dans le CSS mais renforcement) */
+/* Fix input zoom iOS -- fontSize minimum 16px (deja dans le CSS mais renforcement) */
 @media screen and (-webkit-min-device-pixel-ratio: 0) {
   select, textarea, input[type="text"], input[type="search"],
   input[type="email"], input[type="password"] {
@@ -156,12 +156,12 @@ button {
   }
 }
 
-/* ── Chat Page — Zone de saisie mobile ──────────────────────────────
+/* -- Chat Page -- Zone de saisie mobile ------------------------------
    Sur mobile (md-), la BottomNav est fixed en bas (~56px) + safe-area iOS.
    Le padding-bottom de la zone input doit compenser pour que le textarea
    reste visible au-dessus de la BottomNav et du mini-player.
-   Sur desktop (md+), BottomNav est cachée → padding normal.
-   ─────────────────────────────────────────────────────────────────── */
+   Sur desktop (md+), BottomNav est cachee → padding normal.
+   ------------------------------------------------------------------- */
 .chat-input-zone {
   padding-bottom: calc(56px + env(safe-area-inset-bottom, 0px) + 0.75rem);
 }
@@ -177,18 +177,18 @@ button {
   padding-bottom: calc(56px + 80px + env(safe-area-inset-bottom, 0px) + 0.75rem);
 }
 
-/* ── NovaSound v20000 — Local Player waveform animation ─────────────────── */
+/* -- NovaSound v20000 -- Local Player waveform animation ------------------- */
 @keyframes novaWave {
   0%   { transform: scaleY(0.4); }
   100% { transform: scaleY(1.0); }
 }
 
-/* ── Admin Panel scrollbar ──────────────────────────────────────────────── */
+/* -- Admin Panel scrollbar ------------------------------------------------ */
 .admin-scroll::-webkit-scrollbar { width: 4px; }
 .admin-scroll::-webkit-scrollbar-track { background: transparent; }
 .admin-scroll::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.08); border-radius: 2px; }
 
-/* ── V400000 Responsive Improvements ─────────────────────────── */
+/* -- V400000 Responsive Improvements --------------------------- */
 /* Ensure content uses full width on large screens */
 .page-container {
   width: 100%;
@@ -221,11 +221,11 @@ button {
 }
 .notif-stats-bar::-webkit-scrollbar { display: none; }
 
-/* ── NovaSound — BottomNav height token avec safe-area iOS ──────────────────
-   Utilisé par le mini player et la bulle pour se positionner EXACTEMENT
-   au-dessus de la BottomNav, même sur iPhone avec home indicator.
+/* -- NovaSound -- BottomNav height token avec safe-area iOS ------------------
+   Utilise par le mini player et la bulle pour se positionner EXACTEMENT
+   au-dessus de la BottomNav, meme sur iPhone avec home indicator.
    Desktop (md+) : pas de BottomNav → 0px.
-   ─────────────────────────────────────────────────────────────────────────── */
+   --------------------------------------------------------------------------- */
 :root {
   --ns-bottom-nav-h: 0px;
 }
