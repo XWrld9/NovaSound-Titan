@@ -14,9 +14,11 @@ import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react'
 import ReactDOM from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
-  Bell, 
+  Bell,
+  BellOff,
   X, 
-  Check, 
+  Check,
+  CheckCheck,
   Settings, 
   Trash2, 
   ExternalLink,
