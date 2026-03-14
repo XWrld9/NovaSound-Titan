@@ -18,10 +18,13 @@ const FloatingUploadButton = () => {
   if (hide.includes(location.pathname)) return null;
   if (location.pathname.startsWith('/live/')) return null;
 
+  // Desktop uniquement — ≥ 768px
+  if (typeof window !== 'undefined' && window.innerWidth < 768) return null;
+
   return (
     <Link
       to="/upload"
-      className="upload-floating hidden md:flex group"
+      className="upload-floating group"
       title="Uploader un son"
       aria-label="Uploader un son"
     >
