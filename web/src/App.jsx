@@ -21,7 +21,6 @@ import InstallBanner from '@/components/InstallBanner';
 import AudioPlayer from '@/components/AudioPlayer';
 import OnboardingToast from '@/components/OnboardingToast';
 import BottomNav from '@/components/BottomNav';
-import FloatingUploadButton from '@/components/FloatingUploadButton';
 
 // Pages chargées immédiatement (critiques)
 import HomePage from '@/pages/HomePage';
@@ -87,7 +86,7 @@ const GlobalPlayer = () => {
         const state = await loadSavedState?.();
         if (state?.song?.id) {
           // Restaurer silencieusement sans autoplay (l'utilisateur reprend manuellement)
-          playSong?.(state.song, state.playlist || [state.song], { autoPlay: false });
+          playSong?.(state.song, state.playlist || [state.song], null, { autoPlay: false });
         }
       } catch (_) {}
     };
@@ -187,7 +186,6 @@ function App() {
                       </ErrorBoundary>
                       {/* Bottom nav mobile — masqué sur /local-player (lecteur standalone) */}
                       <BottomNavConditional />
-                      <FloatingUploadButton />
                       <OnboardingToast />
                     </Router>
                     </NotificationProvider>

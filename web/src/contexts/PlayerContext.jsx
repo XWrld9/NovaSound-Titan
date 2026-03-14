@@ -159,9 +159,10 @@ export const PlayerProvider = ({ children }) => {
   }, []);
 
   // ── playSong ────────────────────────────────────────────────────
-  const playSong = useCallback((song, songList = [], playlistId = null) => {
+  const playSong = useCallback((song, songList = [], playlistId = null, options = {}) => {
     if (!song) return;
-    const list = (songList.length ? songList : [song]).filter(s => !s.is_archived);
+    const { autoPlay = true } = options;
+    const list = (songList.length ? songList : [song]).filter(s => s.id && !s.is_archived);
     if (!list.find(s => s.id === song.id)) list.unshift(song);
     playlistRef.current    = list;
     currentSongRef.current = song;
@@ -169,12 +170,11 @@ export const PlayerProvider = ({ children }) => {
     setCurrentSong(song);
     setIsVisible(true);
     setCurrentPlaylistId(playlistId || null);
-    setShouldAutoPlay(true);
-    // Déclencher force-play DANS LE MÊME TICK que le geste utilisateur.
-    // Sur mobile, audio.play() appelé depuis useEffect (tick suivant) perd le
-    // contexte de geste et obtient NotAllowedError. En dispatchant ici, l'event
-    // arrive dans AudioPlayer pendant que le contexte geste est encore actif.
-    window.dispatchEvent(new CustomEvent('novasound:force-play'));
+    if (autoPlay) {
+      setShouldAutoPlay(true);
+      // Déclencher force-play DANS LE MÊME TICK que le geste utilisateur.
+      window.dispatchEvent(new CustomEvent('novasound:force-play'));
+    }
   }, []);
 
   // ── removeFromPlaylist ──────────────────────────────────────────

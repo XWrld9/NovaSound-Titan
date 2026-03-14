@@ -290,8 +290,8 @@ const Header = () => {
               {isAuthenticated ? (
                 <>
                   <NotificationBell />
-                  <Link to="/upload" className="hidden">
-                    <button className="bg-gradient-to-r from-cyan-500 to-fuchsia-500 hover:from-cyan-600 hover:to-fuchsia-600 text-white rounded-full px-4 font-medium shadow-lg shadow-cyan-500/20 text-sm flex items-center">
+                  <Link to="/upload" className="hidden md:block">
+                    <button className="bg-gradient-to-r from-cyan-500 to-fuchsia-500 hover:from-cyan-600 hover:to-fuchsia-600 text-white rounded-full px-4 py-1.5 font-medium shadow-lg shadow-cyan-500/20 text-sm flex items-center">
                       <Upload className="w-4 h-4 mr-1.5" />{'Uploader un son'}
                     </button>
                   </Link>

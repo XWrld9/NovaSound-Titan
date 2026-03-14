@@ -400,22 +400,26 @@ const LocalPlayerPageMobile = memo(() => {
       setSavedPlaylists(playlists);
       if (savedMeta.length > 0) {
         const restored = await Promise.all(savedMeta.map(async meta => {
-          if (!meta._hasBlobStored) return meta;
+          // Régénérer les cover blob URLs périmées après reload de page
+          let cover = meta.cover_url;
+          if (!cover || cover.startsWith('blob:')) {
+            cover = makeCoverSvg(meta.title||'', meta.artist||'');
+          }
+          const fixedMeta = {...meta, cover_url: cover, coverUrl: cover};
+
+          if (!fixedMeta._hasBlobStored) return fixedMeta;
           try {
-            const rec = await idbGet('song_blobs', meta.id);
+            const rec = await idbGet('song_blobs', fixedMeta.id);
             if (rec?.buffer) {
-              const url = URL.createObjectURL(new Blob([rec.buffer],{type:meta._mimeType||'audio/mpeg'}));
-              return {...meta, url, audio_url:url};
+              const url = URL.createObjectURL(new Blob([rec.buffer],{type:fixedMeta._mimeType||'audio/mpeg'}));
+              return {...fixedMeta, url, audio_url:url};
             }
           } catch(_){}
-          return meta;
+          return fixedMeta;
         }));
         setSongs(restored);
         setAccessGranted(true);
-        // Auto-play first song if nothing playing
-        if (!currentSong && restored.length > 0) {
-          setTimeout(() => { playSong(restored[0], restored); }, 300);
-        }
+        // Ne pas jouer automatiquement — l'utilisateur choisit son son
       }
       setLibReady(true);
       if (FSA_SUPPORTED && !isIOS()) autoReconnectFSA();
