@@ -112,6 +112,7 @@ const AudioPlayerDesktop = ({ currentSong, playlist = [], onNext, onPrevious, on
     shuffle, setShuffle, toggleShuffle,
     repeat, setRepeat, cycleRepeat,
     isMinimized, minimizePlayer, restorePlayer,
+    localFavoriteIds, toggleLocalFavorite,
   } = usePlayer();
 
   // Temps de lecture dans contexte séparé pour éviter re-renders en masse
@@ -561,8 +562,15 @@ const AudioPlayerDesktop = ({ currentSong, playlist = [], onNext, onPrevious, on
   };
 
   const checkLikeStatus = async () => {
+    // Sons locaux : statut depuis le contexte des favoris locaux
+    if (currentSong?.is_local) { setIsLiked(localFavoriteIds.has(currentSong.id)); setLikeId(null); return; }
     try { const { data } = await retryFetch(() => supabase.from('likes').select('id').eq('user_id', currentUser.id).eq('song_id', currentSong.id).maybeSingle()); setIsLiked(!!data); setLikeId(data?.id || null); } catch {}
   };
+
+  // Sync isLiked en temps réel quand localFavoriteIds change (ex: depuis LocalPlayerPage)
+  useEffect(() => {
+    if (currentSong?.is_local) setIsLiked(localFavoriteIds.has(currentSong.id));
+  }, [localFavoriteIds, currentSong?.id, currentSong?.is_local]);
   const checkFollowStatus = async () => {
     const uid = currentSong?.uploader_id;
     if (!uid || uid === currentUser?.id) return;
@@ -571,6 +579,12 @@ const AudioPlayerDesktop = ({ currentSong, playlist = [], onNext, onPrevious, on
 
   const handleLike = async (e) => {
     e?.stopPropagation();
+    // Sons locaux → favoris locaux (pas Supabase)
+    if (currentSong?.is_local) {
+      toggleLocalFavorite(currentSong);
+      setIsLiked(v => !v);
+      return;
+    }
     if (!currentUser) return;
     try {
       if (isLiked && likeId) {
@@ -579,12 +593,11 @@ const AudioPlayerDesktop = ({ currentSong, playlist = [], onNext, onPrevious, on
       } else {
         const { data } = await supabase.from('likes').insert({ user_id: currentUser.id, song_id: currentSong.id }).select('id').single();
         setIsLiked(true); setLikeId(data?.id || null);
-        // Notifier le propriétaire du son
         notifyOwner(supabase, currentSong.id, currentUser.id, {
           type: 'like_song',
-          title: `❤️ ${currentUser.username || 'Quelqu\'un'} a aimé ton son`,
-          body: `"${currentSong.title}" vient d\'être liké`,
-          url: `/song/${currentSong.id}`,
+          title: "❤️ " + (currentUser.username || 'Quelqu\'un') + " a aimé ton son",
+          body: '"' + currentSong.title + '" vient d\'être liké',
+          url: '/song/' + currentSong.id,
           icon_url: currentUser.avatar_url || '/icon-192.png',
           from_user_id: currentUser.id,
           metadata: { senderId: currentUser.id, senderName: currentUser.username, songId: currentSong.id },

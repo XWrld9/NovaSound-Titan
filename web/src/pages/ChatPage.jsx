@@ -25,6 +25,7 @@ import {
   Loader2, X, Smile, Users, Music, AtSign, Edit2, Check, Bell, Mail,
   Sparkles, AlertTriangle, Zap,
 } from 'lucide-react';
+import NoTranslate from '@/components/NoTranslate';
 
 const ADMIN_EMAIL    = 'eloadxfamily@gmail.com';
 const EMOJI_LIST     = ['❤️', '🔥', '🎵', '👏', '😂', '🙌', '💯', '😍'];

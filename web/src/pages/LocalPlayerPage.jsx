@@ -215,7 +215,7 @@ KeyboardOSD.displayName='KeyboardOSD';
    ═══════════════════════════════════════════════════════════════ */
 const LocalPlayerPage=()=>{
   const inputRef=useRef(null),reimportRef=useRef(null),osdTimerRef=useRef(null),canvasRef=useRef(null);
-  const{playSong,currentSong,isPlayingGlobal,seekTo,togglePlayPause,handleNext,handlePrevious,shuffle,toggleShuffle,repeat,cycleRepeat}=usePlayer();
+  const{playSong,currentSong,isPlayingGlobal,seekTo,togglePlayPause,handleNext,handlePrevious,shuffle,toggleShuffle,repeat,cycleRepeat,localFavoriteIds,localFavoriteSongs,toggleLocalFavorite}=usePlayer();
   const{audioCurrentTime,audioDuration}=usePlayerTime();
   const navigate=useNavigate();
   const isPlayingGlobalRef=useRef(false);
@@ -243,8 +243,9 @@ const LocalPlayerPage=()=>{
   const[showSleepPanel,setShowSleepPanel]=useState(false);
   const[speed,setSpeed]=useState(1);
   const[showSpeedPanel,setShowSpeedPanel]=useState(false);
-  const[favorited,setFavorited]=useState(false);
   const[dominantColor,setDominantColor]=useState(null);
+  // Favoris : calculé depuis le contexte partagé
+  const favorited = activeSong ? localFavoriteIds.has(activeSong.id) : false;
   const osdIdRef=useRef(0);
   const sleepIntervalRef=useRef(null);
 
@@ -323,6 +324,12 @@ const LocalPlayerPage=()=>{
     if(audioDuration>0)try{navigator.mediaSession.setPositionState?.({duration:audioDuration,playbackRate:1,position:Math.min(audioCurrentTime||0,audioDuration)});}catch(_){}
     return()=>Object.keys(handlers).forEach(a=>{try{navigator.mediaSession.setActionHandler(a,null);}catch(_){};});
   },[currentSong,isPlayingGlobal,audioCurrentTime,audioDuration,handleNext,handlePrevious,seekTo]);
+
+  /* Media Session — playbackState (bouton play/pause du mini lecteur OS) */
+  useEffect(()=>{
+    if(!('mediaSession' in navigator)||!currentSong?.is_local)return;
+    try{navigator.mediaSession.playbackState=isPlayingGlobal?'playing':'paused';}catch(_){}
+  },[isPlayingGlobal,currentSong?.is_local]);
 
   /* Keyboard shortcuts */
   useEffect(()=>{
@@ -483,13 +490,41 @@ const LocalPlayerPage=()=>{
         <div className="w-full max-w-5xl grid grid-cols-1 lg:grid-cols-2 gap-8 items-center">
 
           <motion.div initial={{opacity:0,x:-30}} animate={{opacity:1,x:0}} className="flex flex-col gap-6">
-            <div className="relative">
-              <div className="w-32 h-32 rounded-3xl flex items-center justify-center"
-                style={{background:'linear-gradient(135deg,#0e7490,#7c3aed)',boxShadow:'0 0 100px rgba(6,182,212,0.35),0 0 50px rgba(124,58,237,0.2)'}}>
-                {loading?<div className="w-12 h-12 rounded-full border-2 border-white/30 border-t-white animate-spin"/>:<HardDrive className="w-14 h-14 text-white"/>}
-              </div>
-              <motion.div animate={{rotate:360}} transition={{duration:12,repeat:Infinity,ease:'linear'}} className="absolute inset-0 pointer-events-none">
-                <div className="absolute -top-2 left-1/2 -translate-x-1/2 w-3.5 h-3.5 rounded-full bg-cyan-400 shadow-lg shadow-cyan-400/60"/>
+            <div className="relative w-36 h-36">
+              {/* Anneaux orbitaux */}
+              <motion.div animate={{rotate:360}} transition={{duration:16,repeat:Infinity,ease:'linear'}}
+                className="absolute inset-0 rounded-full pointer-events-none"
+                style={{border:'1.5px dashed rgba(6,182,212,0.25)'}}>
+                <div className="absolute -top-1.5 left-1/2 -translate-x-1/2 w-3 h-3 rounded-full bg-cyan-400 shadow-lg shadow-cyan-400/80"/>
+              </motion.div>
+              <motion.div animate={{rotate:-360}} transition={{duration:10,repeat:Infinity,ease:'linear'}}
+                className="absolute inset-3 rounded-full pointer-events-none"
+                style={{border:'1.5px dashed rgba(168,85,247,0.3)'}}>
+                <div className="absolute -top-1.5 left-1/2 -translate-x-1/2 w-2.5 h-2.5 rounded-full bg-fuchsia-400 shadow-lg shadow-fuchsia-400/80"/>
+              </motion.div>
+              <motion.div animate={{rotate:360}} transition={{duration:6,repeat:Infinity,ease:'linear'}}
+                className="absolute inset-6 rounded-full pointer-events-none"
+                style={{border:'1px dashed rgba(34,211,238,0.2)'}}>
+                <div className="absolute -top-1 left-1/2 -translate-x-1/2 w-2 h-2 rounded-full bg-cyan-300 shadow-md shadow-cyan-300/80"/>
+              </motion.div>
+              {/* Halo pulse */}
+              <motion.div animate={{scale:[1,1.18,1],opacity:[0.15,0.35,0.15]}} transition={{duration:3,repeat:Infinity,ease:'easeInOut'}}
+                className="absolute inset-0 rounded-3xl pointer-events-none"
+                style={{background:'radial-gradient(circle,rgba(6,182,212,0.4) 0%,transparent 70%)'}}/>
+              <motion.div animate={{scale:[1,1.3,1],opacity:[0.1,0.25,0.1]}} transition={{duration:3,repeat:Infinity,ease:'easeInOut',delay:1.5}}
+                className="absolute inset-0 rounded-3xl pointer-events-none"
+                style={{background:'radial-gradient(circle,rgba(168,85,247,0.35) 0%,transparent 70%)'}}/>
+              {/* Icône centrale */}
+              <motion.div
+                animate={{boxShadow:['0 0 40px rgba(6,182,212,0.3),0 0 20px rgba(124,58,237,0.2)','0 0 80px rgba(6,182,212,0.6),0 0 40px rgba(124,58,237,0.4)','0 0 40px rgba(6,182,212,0.3),0 0 20px rgba(124,58,237,0.2)']}}
+                transition={{duration:3,repeat:Infinity,ease:'easeInOut'}}
+                className="absolute inset-6 rounded-2xl flex items-center justify-center"
+                style={{background:'linear-gradient(135deg,#0e7490,#7c3aed)'}}>
+                <motion.div animate={loading?{rotate:360}:{scale:[1,1.08,1]}} transition={loading?{duration:1,repeat:Infinity,ease:'linear'}:{duration:2,repeat:Infinity,ease:'easeInOut'}}>
+                  {loading
+                    ?<div className="w-8 h-8 rounded-full border-2 border-white/30 border-t-white animate-spin"/>
+                    :<HardDrive className="w-9 h-9 text-white drop-shadow-lg"/>}
+                </motion.div>
               </motion.div>
             </div>
             <div>
@@ -674,7 +709,7 @@ const LocalPlayerPage=()=>{
                     <NoTranslate tag="p" className="text-cyan-400/80 text-sm truncate notranslate mt-0.5"><NoTranslate className="truncate">{activeSong.artist}</NoTranslate></NoTranslate>
                     {activeSong.album&&<p className="text-gray-600 text-xs truncate mt-0.5">{activeSong.album}</p>}
                   </div>
-                  <button onClick={()=>setFavorited(v=>!v)} className={`flex-shrink-0 p-2 rounded-full transition-all ${favorited?'text-pink-500':'text-gray-600 hover:text-pink-400'}`}>
+                  <button onClick={()=>toggleLocalFavorite(activeSong)} className={`flex-shrink-0 p-2 rounded-full transition-all ${favorited?'text-pink-500':'text-gray-600 hover:text-pink-400'}`}>
                     <Heart className={`w-4 h-4 ${favorited?'fill-current':''}`}/>
                   </button>
                 </div>
@@ -781,7 +816,7 @@ const LocalPlayerPage=()=>{
           <div className="flex-shrink-0 flex items-center gap-3 px-4 py-2.5 border-b"
             style={{background:'rgba(255,255,255,0.02)',backdropFilter:'blur(12px)',borderColor:'rgba(255,255,255,0.05)'}}>
             <div className="flex items-center gap-1 p-1 rounded-xl" style={{background:'rgba(255,255,255,0.04)'}}>
-              {[{k:'library',l:'Bibliothèque'},{k:'playlists',l:'Playlists'}].map(({k,l})=>(
+              {[{k:'library',l:'Bibliothèque'},{k:'playlists',l:'Playlists'},{k:'favoris',l:'❤ Favoris'}].map(({k,l})=>(
                 <button key={k} onClick={()=>setActiveTab(k)}
                   className="px-3 py-1.5 rounded-lg text-xs font-semibold transition-all"
                   style={activeTab===k?{background:'rgba(6,182,212,0.18)',color:'#22d3ee',border:'1px solid rgba(6,182,212,0.25)'}:{color:'rgba(255,255,255,0.4)'}}>
@@ -887,6 +922,62 @@ const LocalPlayerPage=()=>{
                         </div>
                       </motion.div>
                     ))}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {activeTab==='favoris'&&(
+              <div className="p-4">
+                {localFavoriteSongs.length===0?(
+                  <div className="flex flex-col items-center justify-center py-20 text-center">
+                    <motion.div animate={{scale:[1,1.15,1]}} transition={{duration:2,repeat:Infinity,ease:'easeInOut'}}>
+                      <Heart className="w-12 h-12 text-pink-500/30 mb-3"/>
+                    </motion.div>
+                    <p className="text-gray-500 text-sm">Aucun favori pour l'instant.<br/>Clique sur ❤ pour ajouter un son.</p>
+                  </div>
+                ):(
+                  <div className="space-y-1">
+                    {/* En-tête */}
+                    <div className="flex items-center justify-between px-3 py-2 mb-2">
+                      <p className="text-gray-600 text-[10px] font-bold uppercase tracking-widest">{localFavoriteSongs.length} titre{localFavoriteSongs.length>1?'s':''}</p>
+                      <button
+                        onClick={()=>{
+                          const playable=localFavoriteSongs.filter(s=>!s._needsReimport);
+                          if(playable.length>0)playSong(playable[0],playable);
+                        }}
+                        className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold transition-all"
+                        style={{background:'rgba(236,72,153,0.12)',color:'#f472b6',border:'1px solid rgba(236,72,153,0.2)'}}>
+                        <Play className="w-3 h-3 fill-current"/>Tout lire
+                      </button>
+                    </div>
+                    {localFavoriteSongs.map((song,i)=>{
+                      const isActive=currentSong?.id===song.id;
+                      const coverSrc=song.cover_url||song.cover_svg||makeCoverSvg(song.title,song.artist);
+                      return(
+                        <motion.div key={song.id} layout initial={{opacity:0,x:-8}} animate={{opacity:1,x:0}} transition={{delay:i*0.03}}
+                          className={`group flex items-center gap-3 px-3 py-2.5 rounded-xl cursor-pointer transition-all ${isActive?'bg-white/[0.08] border border-pink-500/20':'hover:bg-white/[0.05] border border-transparent'}`}
+                          onClick={()=>{const live=songs.find(s=>s.id===song.id);if(live)playSong(live,songs.filter(s=>localFavoriteIds.has(s.id)));}}> 
+                          {/* Cover */}
+                          <div className="w-9 h-9 rounded-lg overflow-hidden flex-shrink-0 relative">
+                            <img src={coverSrc} alt="" className="w-full h-full object-cover"/>
+                            {isActive&&<div className="absolute inset-0 bg-black/40 flex items-center justify-center"><EQBars active bars={3}/></div>}
+                          </div>
+                          {/* Info */}
+                          <div className="flex-1 min-w-0">
+                            <NoTranslate tag="p" className={`text-xs font-semibold truncate ${isActive?'text-pink-400':'text-white'}`}>{song.title}</NoTranslate>
+                            <NoTranslate tag="p" className="text-[10px] text-gray-600 truncate">{song.artist}</NoTranslate>
+                          </div>
+                          {/* Bouton retirer */}
+                          <button
+                            onClick={e=>{e.stopPropagation();toggleLocalFavorite(song);}}
+                            className="opacity-0 group-hover:opacity-100 p-1.5 rounded-lg text-pink-400 hover:text-pink-300 hover:bg-pink-500/10 transition-all flex-shrink-0"
+                            title="Retirer des favoris">
+                            <Heart className="w-3.5 h-3.5 fill-current"/>
+                          </button>
+                        </motion.div>
+                      );
+                    })}
                   </div>
                 )}
               </div>

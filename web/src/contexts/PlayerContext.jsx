@@ -45,6 +45,44 @@ export const PlayerProvider = ({ children }) => {
   const toggleShuffle = useCallback(() => setShuffle(s => !s), []);
   const cycleRepeat   = useCallback(() => setRepeat(r => r === 'off' ? 'all' : r === 'all' ? 'one' : 'off'), []);
 
+  // ── Favoris locaux — partagés entre LocalPlayerPage + AudioPlayer ──
+  const LOCAL_FAV_KEY = 'novasound_local_favorites';
+  const [localFavoriteIds, setLocalFavoriteIds] = useState(() => {
+    try { return new Set(JSON.parse(localStorage.getItem(LOCAL_FAV_KEY) || '[]')); }
+    catch { return new Set(); }
+  });
+  const [localFavoriteSongs, setLocalFavoriteSongs] = useState(() => {
+    try { return JSON.parse(localStorage.getItem(LOCAL_FAV_KEY + '_songs') || '[]'); }
+    catch { return []; }
+  });
+  const toggleLocalFavorite = useCallback((song) => {
+    if (!song) return;
+    setLocalFavoriteIds(prev => {
+      const next = new Set(prev);
+      if (next.has(song.id)) {
+        next.delete(song.id);
+        setLocalFavoriteSongs(ps => {
+          const updated = ps.filter(s => s.id !== song.id);
+          try { localStorage.setItem(LOCAL_FAV_KEY + '_songs', JSON.stringify(updated)); } catch {}
+          return updated;
+        });
+      } else {
+        next.add(song.id);
+        const safe = { id: song.id, title: song.title, artist: song.artist, album: song.album || '',
+          cover_url: song.cover_svg || song.cover_url || '', cover_svg: song.cover_svg || song.cover_url || '',
+          is_local: true, _needsReimport: !song._fileHandle, _fileHandle: song._fileHandle || null };
+        setLocalFavoriteSongs(ps => {
+          if (ps.find(s => s.id === song.id)) return ps;
+          const updated = [...ps, safe];
+          try { localStorage.setItem(LOCAL_FAV_KEY + '_songs', JSON.stringify(updated)); } catch {}
+          return updated;
+        });
+      }
+      try { localStorage.setItem(LOCAL_FAV_KEY, JSON.stringify([...next])); } catch {}
+      return next;
+    });
+  }, []);
+
   const playlistRef          = useRef([]);
   const currentSongRef       = useRef(null);
   const queueRef             = useRef([]);
@@ -352,6 +390,8 @@ export const PlayerProvider = ({ children }) => {
       setSleepTimer, clearSleepTimer, toggleRadio, resetAutoPlay,
       shuffle, setShuffle, toggleShuffle,
       repeat, setRepeat, cycleRepeat,
+      // Favoris locaux
+      localFavoriteIds, localFavoriteSongs, toggleLocalFavorite,
       // Compat aliases
       play, pause, seek, next, previous,
       setVolume, toggleMute, setRepeatMode, setPlaybackSpeed,
