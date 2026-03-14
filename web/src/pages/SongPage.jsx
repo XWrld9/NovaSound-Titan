@@ -370,7 +370,7 @@ const SongPage = () => {
                           {artist.avatar_url
                             ? <img src={artist.avatar_url} alt={artist.username} className="w-7 h-7 rounded-full object-cover" />
                             : <div className="w-7 h-7 rounded-full bg-gray-800 flex items-center justify-center"><User className="w-4 h-4 text-gray-500" /></div>}
-                          <span className="font-semibold group-hover:opacity-80 transition-opacity" style={{color}}>{artist.username||song.artist}</span>
+                          <NoTranslate className="font-semibold group-hover:opacity-80 transition-opacity" style={{color}}>{artist.username||song.artist}</NoTranslate>
                         </Link>
                       ) : (
                         <NoTranslate tag="p" className="text-gray-400 mt-1 mb-4 font-medium notranslate">{song.artist}</NoTranslate>

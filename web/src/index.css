@@ -384,13 +384,16 @@ html, body {
    au CSS généré — seulement aux noeuds texte DOM.
    L'élément est vide côté DOM → RIEN à traduire.
    ══════════════════════════════════════════════════════════════════ */
+
+/* L'élément lui-même hérite tout de son parent */
 .ns-notrans {
-  /* Afficher le texte depuis l'attribut data-ns via CSS */
   display: inline;
+  color: inherit;
+  font: inherit;
 }
 .ns-notrans::before {
   content: attr(data-ns);
-  /* Hériter exactement du style parent */
+  /* Hériter exactement du style parent — pas de surcharge de couleur */
   font: inherit;
   color: inherit;
   letter-spacing: inherit;
@@ -398,15 +401,33 @@ html, body {
   white-space: inherit;
   unicode-bidi: inherit;
 }
-/* Couper proprement si truncate Tailwind est utilisé */
-.truncate > .ns-notrans,
+
+/* Couper proprement quand truncate Tailwind est utilisé */
+.truncate .ns-notrans,
 .ns-notrans.truncate {
   display: block;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  max-width: 100%;
 }
-/* Version block (tag=p, h1, etc.) */
+.truncate .ns-notrans::before,
+.ns-notrans.truncate::before {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Version block (tag=p, h1, div...) */
+.ns-notrans-block {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: inherit;
+  font: inherit;
+}
 .ns-notrans-block::before {
   content: attr(data-ns);
   font: inherit;

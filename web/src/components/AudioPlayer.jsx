@@ -1479,8 +1479,8 @@ const AudioPlayerDesktop = ({ currentSong, playlist = [], onNext, onPrevious, on
                 </div>
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center gap-1.5 overflow-hidden">
-                    <span className="text-white text-sm font-semibold truncate cursor-pointer hover:underline"
-                      onClick={() => currentSong?.is_local ? setShowNowPlaying(true) : setIsExpanded(true)} title={currentSong.title} data-ns={currentSong.title} className="ns-notrans" />
+                    <span className="ns-notrans text-white text-sm font-semibold truncate cursor-pointer hover:underline"
+                      onClick={() => currentSong?.is_local ? setShowNowPlaying(true) : setIsExpanded(true)} title={currentSong.title} data-ns={currentSong.title} />
                     {isPlaying && <LottieAnimation animationData={playAnimation} style={{ width: 18, height: 18 }} loop autoplay className="flex-shrink-0 opacity-80" />}
                     {currentSong?.id && (
                       <a href={`/#/song/${currentSong.id}`} onClick={e => e.stopPropagation()}
