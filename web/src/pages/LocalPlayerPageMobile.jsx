@@ -23,6 +23,7 @@ import {
 import { usePlayer }     from '@/contexts/PlayerContext';
 import { usePlayerTime } from '@/contexts/PlayerTimeContext';
 import { supabase }      from '@/lib/supabaseClient';
+import NoTranslate from '@/components/NoTranslate';
 
 /* ═══════════════════════════════════════════════════════════════════
    CONSTANTS
@@ -251,8 +252,8 @@ const SongRow = memo(({ song, isPlaying, isActive, onPlay, onRemove, selectionMo
       )}
     </div>
     <div className="flex-1 min-w-0">
-      <p className={`text-sm font-semibold truncate notranslate ${isActive?'text-cyan-400':'text-white'}`} translate="no">{song.title}</p>
-      <p className="text-gray-500 text-xs truncate notranslate" translate="no">{song.artist}</p>
+      <p className={`text-sm font-semibold truncate notranslate ${isActive?'text-cyan-400':'text-white'}`} translate="no"><NoTranslate className="truncate">{song.title}</NoTranslate></p>
+      <NoTranslate tag="p" className="text-gray-500 text-xs truncate notranslate"><NoTranslate className="truncate">{song.artist}</NoTranslate></NoTranslate>
     </div>
     <button
       className="flex-shrink-0 p-2 text-gray-700 hover:text-red-400 active:scale-90 transition-all"
@@ -825,12 +826,8 @@ const LocalPlayerPageMobile = memo(() => {
               {/* Song info + like */}
               <div className="flex-shrink-0 flex items-start justify-between gap-3 mb-3">
                 <div className="flex-1 min-w-0">
-                  <p className="text-white font-black text-xl truncate notranslate leading-tight" translate="no">
-                    {activeSong.title}
-                  </p>
-                  <p className="text-cyan-400/80 text-sm truncate notranslate mt-0.5" translate="no">
-                    {activeSong.artist}
-                  </p>
+                  <p className="text-white font-black text-xl truncate notranslate leading-tight" translate="no"><NoTranslate className="truncate">{activeSong.title}</NoTranslate></p>
+                  <p className="text-cyan-400/80 text-sm truncate notranslate mt-0.5" translate="no"><NoTranslate className="truncate">{activeSong.artist}</NoTranslate></p>
                   {activeSong.album && <p className="text-gray-600 text-xs truncate mt-0.5">{activeSong.album}</p>}
                 </div>
                 <div className="flex items-center gap-2 flex-shrink-0 mt-1">
@@ -1049,7 +1046,7 @@ const LocalPlayerPageMobile = memo(() => {
                       <img src={pl.songs[0]?.cover_url||pl.songs[0]?.coverUrl||makeCoverSvg(pl.name,'')} alt="" className="w-full h-full object-cover"/>
                       <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent"/>
                       <div className="absolute bottom-0 left-0 right-0 p-2">
-                        <p className="text-white text-xs font-bold truncate notranslate" translate="no">{pl.name}</p>
+                        <p className="text-white text-xs font-bold truncate notranslate" translate="no"><NoTranslate className="truncate">{pl.name}</NoTranslate></p>
                         <p className="text-gray-400 text-[10px]">{pl.songs.length} titre{pl.songs.length!==1?'s':''}</p>
                       </div>
                     </div>

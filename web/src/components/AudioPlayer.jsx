@@ -22,6 +22,7 @@ import NowPlayingScreen from '@/components/NowPlayingScreen';
 import AddToPlaylistModal from '@/components/AddToPlaylistModal';
 import { notifyOwner, notifyUser } from '@/lib/notifUtils';
 import PinPlayerWidget from '@/components/PinPlayerWidget';
+import NoTranslate from '@/components/NoTranslate';
 
 
 const isIOS = () =>
@@ -1043,7 +1044,7 @@ const AudioPlayerDesktop = ({ currentSong, playlist = [], onNext, onPrevious, on
                 {/* Titre + artiste + actions */}
                 <div className="flex items-start justify-between gap-3">
                   <div className="min-w-0 flex-1">
-                    <h2 className="text-white text-xl sm:text-2xl font-bold leading-tight break-words drop-shadow-lg">{currentSong.title}</h2>
+                    <NoTranslate tag="h2" className="text-white text-xl sm:text-2xl font-bold leading-tight break-words drop-shadow-lg">{currentSong.title}</NoTranslate>
                     <div className="flex items-center gap-2 mt-1 flex-wrap">
                       <span className="text-gray-300 text-sm hover:text-white cursor-pointer transition-colors"
                         onClick={() => currentSong?.uploader_id && navigate(`/artist/${currentSong.uploader_id}`)}>
@@ -1283,8 +1284,8 @@ const AudioPlayerDesktop = ({ currentSong, playlist = [], onNext, onPrevious, on
                             : <div className="w-10 h-10 rounded-lg bg-gray-800 flex items-center justify-center flex-shrink-0"><Music className="w-4 h-4 text-gray-600" /></div>
                           }
                           <div className="flex-1 min-w-0">
-                            <p className="text-white text-sm font-semibold truncate notranslate" translate="no">{s.title}</p>
-                            <p className="text-gray-500 text-xs truncate notranslate" translate="no">{s.artist}</p>
+                            <NoTranslate tag="p" className="text-white text-sm font-semibold truncate notranslate">{s.title}</NoTranslate>
+                            <NoTranslate tag="p" className="text-gray-500 text-xs truncate notranslate">{s.artist}</NoTranslate>
                           </div>
                           <button onClick={() => removeFromQueue(i)}
                             className="opacity-0 group-hover:opacity-100 p-1.5 text-gray-600 hover:text-red-400 transition-all rounded-lg hover:bg-red-500/10"
@@ -1378,7 +1379,7 @@ const AudioPlayerDesktop = ({ currentSong, playlist = [], onNext, onPrevious, on
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="text-white text-sm font-semibold flex items-center gap-1 overflow-hidden">
-                    <span className="truncate cursor-pointer notranslate" translate="no" onClick={() => currentSong?.is_local ? setShowNowPlaying(true) : setIsExpanded(true)}>{currentSong.title}</span>
+                    <NoTranslate className="truncate cursor-pointer" onClick={() => currentSong?.is_local ? setShowNowPlaying(true) : setIsExpanded(true)}>{currentSong.title}</NoTranslate>
                     {isPlaying && <LottieAnimation animationData={playAnimation} style={{ width: 16, height: 16 }} loop autoplay className="flex-shrink-0" />}
                     {currentSong?.id && (
                       <a href={`/#/song/${currentSong.id}`} onClick={e => e.stopPropagation()}
@@ -1431,7 +1432,7 @@ const AudioPlayerDesktop = ({ currentSong, playlist = [], onNext, onPrevious, on
               <div className="flex-1 min-w-0">
                 <div className="flex items-center justify-between mb-1">
                   <div className="flex items-center gap-1.5 min-w-0 flex-1">
-                    <span className="text-white text-sm font-semibold truncate cursor-pointer" onClick={() => currentSong?.is_local ? setShowNowPlaying(true) : setIsExpanded(true)}>{currentSong.title}</span>
+                    <NoTranslate className="text-white text-sm font-semibold truncate cursor-pointer" onClick={() => currentSong?.is_local ? setShowNowPlaying(true) : setIsExpanded(true)}>{currentSong.title}</NoTranslate>
                     {isPlaying && <LottieAnimation animationData={playAnimation} style={{ width: 16, height: 16 }} loop autoplay className="flex-shrink-0" />}
                   </div>
                   <div className="flex items-center gap-0.5 flex-shrink-0 ml-2">
@@ -1444,7 +1445,7 @@ const AudioPlayerDesktop = ({ currentSong, playlist = [], onNext, onPrevious, on
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
-                  <span className="text-gray-500 text-xs truncate flex-1">{currentSong.artist}</span>
+                  <NoTranslate className="text-gray-500 text-xs truncate flex-1">{currentSong.artist}</NoTranslate>
                   <div className="flex items-center gap-1 flex-shrink-0">
                     <button onClick={(e) => { e.stopPropagation(); goPrevious(); }} className="p-1 text-gray-400 hover:text-white transition-colors">
                       <SkipBack className="w-4 h-4" />
@@ -1479,7 +1480,7 @@ const AudioPlayerDesktop = ({ currentSong, playlist = [], onNext, onPrevious, on
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center gap-1.5 overflow-hidden">
                     <span className="text-white text-sm font-semibold truncate cursor-pointer hover:underline"
-                      onClick={() => currentSong?.is_local ? setShowNowPlaying(true) : setIsExpanded(true)} title={currentSong.title}>{currentSong.title}</span>
+                      onClick={() => currentSong?.is_local ? setShowNowPlaying(true) : setIsExpanded(true)} title={currentSong.title} data-ns={currentSong.title} className="ns-notrans" />
                     {isPlaying && <LottieAnimation animationData={playAnimation} style={{ width: 18, height: 18 }} loop autoplay className="flex-shrink-0 opacity-80" />}
                     {currentSong?.id && (
                       <a href={`/#/song/${currentSong.id}`} onClick={e => e.stopPropagation()}
@@ -1491,7 +1492,7 @@ const AudioPlayerDesktop = ({ currentSong, playlist = [], onNext, onPrevious, on
                   <div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
                     <span className="text-gray-500 text-xs truncate hover:text-white cursor-pointer transition-colors"
                       onClick={() => currentSong?.uploader_id && navigate(`/artist/${currentSong.uploader_id}`)}>
-                      {currentSong.artist}
+                      <NoTranslate className="text-gray-500 text-xs truncate">{currentSong.artist}</NoTranslate>
                     </span>
                     {currentSong.genre && (
                       <span className="text-[9px] px-1.5 py-px rounded-full bg-cyan-500/10 text-cyan-500 border border-cyan-500/20">{currentSong.genre}</span>
@@ -1644,8 +1645,8 @@ const AudioPlayerDesktop = ({ currentSong, playlist = [], onNext, onPrevious, on
                           : <div className="w-11 h-11 rounded-xl bg-gray-800 flex items-center justify-center flex-shrink-0"><Music className="w-5 h-5 text-gray-600" /></div>
                         }
                         <div className="flex-1 min-w-0">
-                          <p className="text-white text-sm font-semibold truncate notranslate" translate="no">{s.title}</p>
-                          <p className="text-gray-500 text-xs truncate notranslate" translate="no">{s.artist}</p>
+                          <NoTranslate tag="p" className="text-white text-sm font-semibold truncate notranslate">{s.title}</NoTranslate>
+                          <NoTranslate tag="p" className="text-gray-500 text-xs truncate notranslate">{s.artist}</NoTranslate>
                         </div>
                         {s.genre && (
                           <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-cyan-500/10 text-cyan-500 border border-cyan-500/20 flex-shrink-0">{s.genre}</span>

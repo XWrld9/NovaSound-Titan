@@ -371,11 +371,48 @@ html, body {
    ══════════════════════════════════════════════════════════════════ */
 .notranslate,
 [translate="no"] {
-  /* Empêche Google Translate de wrapper le texte */
   -webkit-user-select: none;
 }
-/* Forcer la visibilité des éléments wrappés par Google Translate */
 .notranslate font,
 [translate="no"] font {
   color: inherit !important;
+}
+
+/* ══════════════════════════════════════════════════════════════════
+   ns-notrans — texte affiché via CSS content:attr(data-ns)
+   Les traducteurs (Elfsight, Google, DeepL) ne touchent JAMAIS
+   au CSS généré — seulement aux noeuds texte DOM.
+   L'élément est vide côté DOM → RIEN à traduire.
+   ══════════════════════════════════════════════════════════════════ */
+.ns-notrans {
+  /* Afficher le texte depuis l'attribut data-ns via CSS */
+  display: inline;
+}
+.ns-notrans::before {
+  content: attr(data-ns);
+  /* Hériter exactement du style parent */
+  font: inherit;
+  color: inherit;
+  letter-spacing: inherit;
+  text-transform: inherit;
+  white-space: inherit;
+  unicode-bidi: inherit;
+}
+/* Couper proprement si truncate Tailwind est utilisé */
+.truncate > .ns-notrans,
+.ns-notrans.truncate {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+/* Version block (tag=p, h1, etc.) */
+.ns-notrans-block::before {
+  content: attr(data-ns);
+  font: inherit;
+  color: inherit;
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }

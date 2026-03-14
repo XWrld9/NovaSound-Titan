@@ -31,6 +31,7 @@ import { usePlayerTime } from '@/contexts/PlayerTimeContext';
 import { useAuth } from '@/contexts/AuthContext';
 
 import { GENRE_THEMES_MAP } from '@/hooks/useGenreTheme';
+import NoTranslate from '@/components/NoTranslate';
 
 // vibeColor — résout la couleur primaire d'un genre
 // Priorité : GENRE_THEMES_MAP (centralisé) → fallback carte locale → cyan par défaut
@@ -85,8 +86,8 @@ const SuggestionCard = ({ s, onPlay }) => (
       </div>
     </div>
     <div className="flex-1 min-w-0">
-      <p className="text-white text-xs font-semibold truncate notranslate" translate="no">{s.title}</p>
-      <p className="text-gray-500 text-xs truncate notranslate" translate="no">{s.artist}</p>
+      <NoTranslate tag="p" className="text-white text-xs font-semibold truncate notranslate"><NoTranslate className="truncate">{s.title}</NoTranslate></NoTranslate>
+      <NoTranslate tag="p" className="text-gray-500 text-xs truncate notranslate"><NoTranslate className="truncate">{s.artist}</NoTranslate></NoTranslate>
     </div>
     <Link to={`/song/${s.id}`} onClick={e=>e.stopPropagation()}
       className="opacity-0 group-hover:opacity-100 p-1 rounded hover:bg-gray-700 text-gray-500 hover:text-cyan-400 transition-all">
@@ -362,7 +363,7 @@ const SongPage = () => {
                         </span>
                       )}
 
-                      <h1 className="text-2xl sm:text-3xl font-black text-white leading-tight mb-2 notranslate" translate="no">{song.title}</h1>
+                      <NoTranslate tag="h1" className="text-2xl sm:text-3xl font-black text-white leading-tight mb-2 notranslate"><NoTranslate className="truncate">{song.title}</NoTranslate></NoTranslate>
 
                       {artist ? (
                         <Link to={`/artist/${artist.id}`} className="flex items-center gap-2 mt-1 mb-4 w-fit group">
@@ -372,7 +373,7 @@ const SongPage = () => {
                           <span className="font-semibold group-hover:opacity-80 transition-opacity" style={{color}}>{artist.username||song.artist}</span>
                         </Link>
                       ) : (
-                        <p className="text-gray-400 mt-1 mb-4 font-medium notranslate" translate="no">{song.artist}</p>
+                        <NoTranslate tag="p" className="text-gray-400 mt-1 mb-4 font-medium notranslate"><NoTranslate className="truncate">{song.artist}</NoTranslate></NoTranslate>
                       )}
 
                       {/* Stats */}
@@ -468,7 +469,7 @@ const SongPage = () => {
                         ? <img src={artist.avatar_url} alt={artist.username} className="w-12 h-12 rounded-full object-cover ring-2 ring-cyan-500/20" />
                         : <div className="w-12 h-12 rounded-full bg-gray-800 flex items-center justify-center"><User className="w-6 h-6 text-gray-600" /></div>}
                       <div>
-                        <p className="text-white font-bold text-sm group-hover:text-cyan-400 transition-colors notranslate" translate="no">{artist.username}</p>
+                        <NoTranslate tag="p" className="text-white font-bold text-sm group-hover:text-cyan-400 transition-colors notranslate">{artist.username}</NoTranslate>
                         <p className="text-gray-600 text-xs flex items-center gap-1"><Radio className="w-3 h-3" />Artiste NovaSound</p>
                       </div>
                     </div>

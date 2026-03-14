@@ -22,6 +22,7 @@ import LiveLikeButton from '@/components/LiveLikeButton';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { notifyFollowers, notifyUser, notifyMentions, notifyAll } from '@/lib/notifUtils';
 import {
+import NoTranslate from '@/components/NoTranslate';
   Radio, Users, Music, Send, Heart, Crown, Copy, Check, Plus, Lock, Unlock,
   Headphones, Zap, X, ArrowLeft, Loader2, WifiOff, RefreshCw, Search, Upload,
   Pencil, Trash2, CheckCircle2, XCircle, Play, ListMusic, SkipForward, LogOut,
@@ -109,22 +110,28 @@ const BRAND_STYLES = `
     animation: particleFloat ease-in-out infinite;
   }
   .room-glass-bar {
-    background: rgba(5,5,18,0.93) !important;
-    backdrop-filter: blur(24px) saturate(1.5) !important;
+    background: rgba(3,3,13,0.92) !important;
+    backdrop-filter: blur(32px) saturate(1.8) !important;
+    border-bottom: 1px solid rgba(255,255,255,0.06) !important;
     position: relative;
   }
   .room-glass-bar::after {
     content:''; position:absolute; bottom:0; left:0; right:0; height:1px;
-    background: linear-gradient(90deg, transparent, rgba(6,182,212,0.25), rgba(168,85,247,0.25), transparent);
+    background: linear-gradient(90deg, transparent, rgba(6,182,212,0.3), rgba(168,85,247,0.3), transparent);
   }
   .nowplaying-glass {
-    background: rgba(10,10,25,0.96) !important;
-    backdrop-filter: blur(20px) !important;
-    border-bottom: 1px solid rgba(255,255,255,0.05) !important;
+    background: rgba(3,3,13,0.88) !important;
+    backdrop-filter: blur(24px) saturate(1.6) !important;
+    border-bottom: 1px solid rgba(6,182,212,0.12) !important;
   }
   .chat-glass-input {
-    background: rgba(7,7,20,0.99) !important;
+    background: rgba(3,3,13,0.95) !important;
+    backdrop-filter: blur(28px) !important;
+  }
+  .side-panel-glass {
+    background: rgba(5,5,16,0.92) !important;
     backdrop-filter: blur(24px) !important;
+    border-left: 1px solid rgba(255,255,255,0.06) !important;
   }
 `;
 
@@ -267,42 +274,76 @@ const RoomCard = ({ room, onJoin }) => {
   const full = (room.participants_count || 0) >= MAX_PARTICIPANTS;
   const pct  = Math.min((room.participants_count || 0) / MAX_PARTICIPANTS, 1);
   return (
-    <motion.div whileHover={{ scale: full ? 1 : 1.02, y: full ? 0 : -2 }} whileTap={{ scale: full ? 1 : 0.97 }}
+    <motion.div
+      whileHover={{ scale: full ? 1 : 1.02, y: full ? 0 : -3 }}
+      whileTap={{ scale: full ? 1 : 0.97 }}
       onClick={() => !full && onJoin(room.id)}
-      className={`relative bg-gray-900/80 backdrop-blur border rounded-2xl p-5 transition-all overflow-hidden
-        ${full ? 'border-gray-800 opacity-60 cursor-not-allowed' : 'border-gray-800 hover:border-green-500/50 cursor-pointer hover:shadow-lg hover:shadow-green-500/5'}`}>
-      {/* Indicateur LIVE — vert = actif */}
-      <div className="absolute top-4 right-4 flex items-center gap-1.5">
-        <span className="relative flex h-2.5 w-2.5">
+      className={`relative rounded-3xl p-5 overflow-hidden transition-all ${full ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
+      style={{
+        background: 'rgba(255,255,255,.04)',
+        border: full ? '1px solid rgba(255,255,255,.06)' : '1px solid rgba(34,197,94,.18)',
+        backdropFilter: 'blur(20px)',
+        boxShadow: full ? 'none' : '0 4px 32px rgba(34,197,94,.08)',
+      }}>
+      {/* Glow bg */}
+      {!full && <div className="absolute inset-0 opacity-5" style={{background:'radial-gradient(circle at 30% 30%,rgba(34,197,94,.8) 0%,transparent 60%)'}}/>}
+
+      {/* Live badge */}
+      <div className="absolute top-4 right-4 flex items-center gap-1.5 px-2.5 py-1 rounded-full"
+        style={{background:'rgba(34,197,94,.1)',border:'1px solid rgba(34,197,94,.25)'}}>
+        <span className="relative flex h-1.5 w-1.5">
           <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75" />
-          <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-green-500" />
+          <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-green-400" />
         </span>
-        <span className="text-xs text-green-400 font-bold">LIVE</span>
+        <span className="text-[10px] text-green-400 font-bold tracking-widest">LIVE</span>
       </div>
-      <div className="flex items-center gap-3 mb-4">
+
+      {/* Host */}
+      <div className="flex items-center gap-3 mb-4 pr-16">
         <Avatar user={room.host} size={10} crown />
         <div className="min-w-0">
-          <h3 className="text-white font-bold text-base truncate">{room.title || room.name}</h3>
+          <h3 className="text-white font-black text-base truncate">{room.title || room.name}</h3>
           <p className="text-xs text-gray-500 truncate">par {room.host?.username || 'Anonyme'}</p>
         </div>
       </div>
+
+      {/* Now playing */}
       {room.current_song && (
-        <div className="flex items-center gap-2 mb-3 p-2 bg-gray-800/60 rounded-xl">
+        <div className="flex items-center gap-2 mb-4 p-2.5 rounded-2xl"
+          style={{background:'rgba(255,255,255,.04)',border:'1px solid rgba(255,255,255,.06)'}}>
           <Eq active={!full} />
           <div className="min-w-0">
-            <p className="text-xs text-gray-300 truncate font-medium">{room.current_song.title}</p>
-            <p className="text-xs text-gray-500 truncate">{room.current_song.artist}</p>
+            <p className="text-xs text-white truncate font-semibold notranslate" translate="no">{room.current_song.title}</p>
+            <p className="text-xs text-gray-500 truncate notranslate" translate="no">{room.current_song.artist}</p>
           </div>
         </div>
       )}
-      <div className="flex justify-between text-xs text-gray-500 mb-1.5">
+
+      {/* Genre */}
+      {room.genre && room.genre !== 'music' && (
+        <span className="inline-block text-[10px] font-bold px-2 py-0.5 rounded-full mb-3"
+          style={{background:'rgba(6,182,212,.1)',border:'1px solid rgba(6,182,212,.2)',color:'#22d3ee'}}>
+          {room.genre}
+        </span>
+      )}
+
+      {/* Participants bar */}
+      <div className="flex justify-between text-[10px] text-gray-600 mb-1.5">
         <span className="flex items-center gap-1"><Users className="w-3 h-3" />{room.participants_count || 0} / {MAX_PARTICIPANTS}</span>
-        <span>{full ? 'Salle pleine' : `${MAX_PARTICIPANTS - (room.participants_count || 0)} libres`}</span>
+        <span className={full ? 'text-red-400 font-semibold' : ''}>{full ? '🔴 Salle pleine' : `${MAX_PARTICIPANTS - (room.participants_count || 0)} places libres`}</span>
       </div>
-      <div className="h-1 bg-gray-800 rounded-full overflow-hidden">
-        <motion.div className={`h-full rounded-full ${full ? 'bg-red-500' : 'bg-gradient-to-r from-green-500 to-cyan-500'}`}
-          initial={{ width: 0 }} animate={{ width: `${pct * 100}%` }} transition={{ duration: 0.6 }} />
+      <div className="h-1 rounded-full overflow-hidden" style={{background:'rgba(255,255,255,.06)'}}>
+        <motion.div
+          className={`h-full rounded-full ${full ? 'bg-red-500' : 'bg-gradient-to-r from-green-400 to-cyan-400'}`}
+          initial={{ width: 0 }} animate={{ width: `${pct * 100}%` }} transition={{ duration: 0.8 }} />
       </div>
+
+      {/* CTA */}
+      {!full && (
+        <div className="mt-3 text-center">
+          <span className="text-xs text-green-400 font-semibold">Rejoindre →</span>
+        </div>
+      )}
     </motion.div>
   );
 };
@@ -319,8 +360,8 @@ const QueueItem = ({ song, index, isHost, isNowPlaying, onPlay, onRemove }) => (
       : <div className="w-8 h-8 rounded-lg bg-gray-700 flex items-center justify-center flex-shrink-0"><Music className="w-4 h-4 text-gray-500" /></div>
     }
     <div className="flex-1 min-w-0">
-      <p className={`text-xs font-medium truncate ${isNowPlaying ? 'text-cyan-300' : 'text-white'}`}>{song.title}</p>
-      <p className="text-gray-500 text-xs truncate">{song.artist}</p>
+      <p className={`text-xs font-medium truncate ${isNowPlaying ? 'text-cyan-300' : 'text-white'}`}><NoTranslate className="truncate">{song.title}</NoTranslate></p>
+      <p className="text-gray-500 text-xs truncate"><NoTranslate className="truncate">{song.artist}</NoTranslate></p>
     </div>
     {isHost && (
       <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
@@ -1422,7 +1463,7 @@ const LiveRoomPage = () => {
     <>
       <Helmet><title>{room?.name || 'Live Room'} — NovaSound TITAN LUX</title></Helmet>
       <style>{BRAND_STYLES}</style>
-      <div className="min-h-screen bg-gray-950 flex flex-col">
+      <div className="min-h-screen flex flex-col" style={{background:'#03030d'}}>
         <Header />
         {/* ── Bande de marque mobile ── */}
         <div className="lg:hidden">
@@ -1666,7 +1707,7 @@ const LiveRoomPage = () => {
             </div>
 
             {/* ── SIDEBAR desktop ───────────────────────────────────── */}
-            <div className="hidden lg:flex w-72 xl:w-80 flex-col border-l border-white/[0.05] sidebar-glass overflow-y-auto">
+            <div className="hidden lg:flex w-72 xl:w-80 flex-col side-panel-glass overflow-y-auto">
               {/* Brand desktop */}
               <BrandHeader variant="desktop" />
               {/* Tabs */}
@@ -1785,8 +1826,8 @@ const LiveRoomPage = () => {
                                   : <div className="w-8 h-8 rounded-lg bg-gray-700 flex items-center justify-center flex-shrink-0"><Music className="w-4 h-4 text-gray-500" /></div>
                                 }
                                 <div className="flex-1 min-w-0" onClick={() => broadcastSong(s)}>
-                                  <p className="text-white text-xs font-medium truncate">{s.title}</p>
-                                  <p className="text-gray-500 text-xs truncate">{s.artist}</p>
+                                  <p className="text-white text-xs font-medium truncate"><NoTranslate className="truncate">{s.title}</NoTranslate></p>
+                                  <p className="text-gray-500 text-xs truncate"><NoTranslate className="truncate">{s.artist}</NoTranslate></p>
                                 </div>
                                 <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                                   <button onClick={() => broadcastSong(s)} className="p-1.5 text-cyan-400 hover:text-cyan-300 bg-cyan-500/10 rounded-lg" title="Jouer maintenant"><Play className="w-3 h-3" /></button>
@@ -1820,7 +1861,7 @@ const LiveRoomPage = () => {
                                         : <div className="w-9 h-9 rounded-lg bg-gray-700 flex items-center justify-center flex-shrink-0"><ListMusic className="w-4 h-4 text-gray-500" /></div>
                                       }
                                       <div className="flex-1 min-w-0">
-                                        <p className="text-white text-xs font-semibold truncate group-hover:text-fuchsia-300 transition-colors">{pl.name}</p>
+                                        <p className="text-white text-xs font-semibold truncate group-hover:text-fuchsia-300 transition-colors"><NoTranslate className="truncate">{pl.name}</NoTranslate></p>
                                         <p className="text-gray-500 text-[10px]">{(pl.playlist_songs || []).length} son{(pl.playlist_songs || []).length !== 1 ? 's' : ''}</p>
                                       </div>
                                       <Plus className="w-4 h-4 text-gray-600 group-hover:text-fuchsia-400 flex-shrink-0 transition-colors" />
@@ -1966,7 +2007,7 @@ const LiveRoomPage = () => {
                                 <div key={s.id} className="flex items-center gap-2 p-2 rounded-xl hover:bg-gray-700 cursor-pointer transition-colors"
                                   onClick={() => { broadcastSong(s); setMobileSideOpen(false); }}>
                                   {s.cover_url ? <img src={s.cover_url} alt="" className="w-8 h-8 rounded-lg object-cover flex-shrink-0" /> : <div className="w-8 h-8 rounded-lg bg-gray-600 flex items-center justify-center flex-shrink-0"><Music className="w-3 h-3 text-gray-400" /></div>}
-                                  <div className="flex-1 min-w-0"><p className="text-white text-xs font-medium truncate">{s.title}</p><p className="text-gray-400 text-[10px] truncate">{s.artist}</p></div>
+                                  <div className="flex-1 min-w-0"><p className="text-white text-xs font-medium truncate"><NoTranslate className="truncate">{s.title}</NoTranslate></p><p className="text-gray-400 text-[10px] truncate"><NoTranslate className="truncate">{s.artist}</NoTranslate></p></div>
                                   <div className="flex gap-1">
                                     <button onClick={e => { e.stopPropagation(); broadcastSong(s); setMobileSideOpen(false); }} className="p-1 text-cyan-400 hover:bg-cyan-500/10 rounded"><Play className="w-3 h-3" /></button>
                                     <button onClick={e => { e.stopPropagation(); addToQueue(s); }} className="p-1 text-fuchsia-400 hover:bg-fuchsia-500/10 rounded"><Plus className="w-3 h-3" /></button>
@@ -1989,7 +2030,7 @@ const LiveRoomPage = () => {
                                   <div key={pl.id} onClick={() => { addPlaylistToQueue(pl); setMobileSideOpen(false); }}
                                     className="flex items-center gap-2.5 p-2.5 rounded-xl hover:bg-gray-700 cursor-pointer transition-colors mb-1">
                                     {pl.cover_url ? <img src={pl.cover_url} alt="" className="w-9 h-9 rounded-lg object-cover flex-shrink-0" /> : <div className="w-9 h-9 rounded-lg bg-gray-600 flex items-center justify-center flex-shrink-0"><ListMusic className="w-4 h-4 text-gray-400" /></div>}
-                                    <div className="flex-1 min-w-0"><p className="text-white text-xs font-semibold truncate">{pl.name}</p><p className="text-gray-500 text-[10px]">{(pl.playlist_songs || []).length} sons</p></div>
+                                    <div className="flex-1 min-w-0"><p className="text-white text-xs font-semibold truncate"><NoTranslate className="truncate">{pl.name}</NoTranslate></p><p className="text-gray-500 text-[10px]">{(pl.playlist_songs || []).length} sons</p></div>
                                     <Plus className="w-4 h-4 text-fuchsia-400 flex-shrink-0" />
                                   </div>
                                 ))

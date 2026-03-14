@@ -24,6 +24,7 @@ import { useNavigate, Link } from 'react-router-dom';
 import { usePlayer } from '@/contexts/PlayerContext';
 import { usePlayerTime } from '@/contexts/PlayerTimeContext';
 import LocalPlayerPageMobile from './LocalPlayerPageMobile';
+import NoTranslate from '@/components/NoTranslate';
 
 /* ═══════════════════════════════════════════════════════════════
    CONSTANTS
@@ -158,7 +159,9 @@ const SeekBar=({currentTime,duration,onSeek,color='#22d3ee'})=>{
 
 /* Song row */
 const SongRow=memo(({song,index,isActive,isSelected,onPlay,onRemove,selectionMode,onToggleSelect,duration})=>{
-  const nr=!!song._needsReimport,cover=song.cover_url||song.cover_svg;
+  const nr=!!song._needsReimport;
+  const rawCover=song.cover_url||song.cover_svg;
+  const cover=(!rawCover||rawCover.startsWith('blob:'))?makeCoverSvg(song.title||'',song.artist||''):rawCover;
   return(
     <motion.div initial={{opacity:0,y:4}} animate={{opacity:1,y:0}} transition={{duration:0.12,delay:Math.min(index*0.015,0.25)}}
       onClick={nr?undefined:(selectionMode?onToggleSelect:onPlay)}
@@ -176,7 +179,7 @@ const SongRow=memo(({song,index,isActive,isSelected,onPlay,onRemove,selectionMod
         {nr&&<div className="absolute inset-0 bg-black/70 flex items-center justify-center"><AlertTriangle className="w-3.5 h-3.5 text-amber-400"/></div>}
       </div>
       <div className="flex-1 min-w-0">
-        <p className={`text-sm font-medium truncate notranslate ${isActive?'text-white':nr?'text-gray-500':'text-gray-200'}`} translate="no">{song.title}</p>
+        <p className={`text-sm font-medium truncate notranslate ${isActive?'text-white':nr?'text-gray-500':'text-gray-200'}`} translate="no"><NoTranslate className="truncate">{song.title}</NoTranslate></p>
         <p className="text-[11px] text-gray-500 truncate notranslate" translate="no">{nr?<span className="text-amber-400/80">⚠ Reload needed</span>:song.artist}</p>
       </div>
       <span className="hidden lg:block text-[11px] text-gray-700 w-24 truncate flex-shrink-0">{song.album||''}</span>
@@ -278,7 +281,8 @@ const LocalPlayerPage=()=>{
 
   /* Dominant color from cover */
   const activeSong=!!currentSong?.is_local?currentSong:(songs[0]||null);
-  const cover=activeSong?.cover_url||activeSong?.cover_svg||makeCoverSvg(activeSong?.title||'',activeSong?.artist||'');
+  const rawActiveCover=activeSong?.cover_url||activeSong?.cover_svg;
+  const cover=(!rawActiveCover||rawActiveCover.startsWith('blob:'))?makeCoverSvg(activeSong?.title||'',activeSong?.artist||''):rawActiveCover;
   useEffect(()=>{
     if(!cover||cover.startsWith('data:image/svg'))return;
     const img=new Image();img.crossOrigin='anonymous';
@@ -519,7 +523,7 @@ const LocalPlayerPage=()=>{
                         <img src={pl.songs[0]?.cover_url||pl.songs[0]?.cover_svg||makeCoverSvg(pl.name,'')} alt="" className="w-full h-full object-cover"/>
                       </div>
                       <div className="flex-1 min-w-0">
-                        <p className="text-white text-xs font-semibold truncate">{pl.name}</p>
+                        <p className="text-white text-xs font-semibold truncate"><NoTranslate className="truncate">{pl.name}</NoTranslate></p>
                         <p className="text-gray-600 text-[10px]">{pl.songs.length} fichier{pl.songs.length>1?'s':''}</p>
                       </div>
                     </button>
@@ -666,8 +670,8 @@ const LocalPlayerPage=()=>{
               <div className="flex-shrink-0">
                 <div className="flex items-start justify-between gap-2">
                   <div className="flex-1 min-w-0">
-                    <p className="text-white font-black text-lg truncate notranslate leading-tight" translate="no">{activeSong.title}</p>
-                    <p className="text-cyan-400/80 text-sm truncate notranslate mt-0.5" translate="no">{activeSong.artist}</p>
+                    <NoTranslate tag="p" className="text-white font-black text-lg truncate notranslate leading-tight"><NoTranslate className="truncate">{activeSong.title}</NoTranslate></NoTranslate>
+                    <NoTranslate tag="p" className="text-cyan-400/80 text-sm truncate notranslate mt-0.5"><NoTranslate className="truncate">{activeSong.artist}</NoTranslate></NoTranslate>
                     {activeSong.album&&<p className="text-gray-600 text-xs truncate mt-0.5">{activeSong.album}</p>}
                   </div>
                   <button onClick={()=>setFavorited(v=>!v)} className={`flex-shrink-0 p-2 rounded-full transition-all ${favorited?'text-pink-500':'text-gray-600 hover:text-pink-400'}`}>
@@ -875,7 +879,7 @@ const LocalPlayerPage=()=>{
                           </div>
                         </div>
                         <div className="p-3">
-                          <p className="text-white text-sm font-bold truncate">{pl.name}</p>
+                          <p className="text-white text-sm font-bold truncate"><NoTranslate className="truncate">{pl.name}</NoTranslate></p>
                           <div className="flex items-center justify-between mt-1">
                             <p className="text-gray-600 text-[10px]">{pl.songs.length} titre{pl.songs.length>1?'s':''}</p>
                             <button onClick={e=>{e.stopPropagation();deletePlaylist(pl.id);}} className="text-gray-700 hover:text-red-400 transition-all p-1 rounded"><Trash2 className="w-3 h-3"/></button>
@@ -909,8 +913,8 @@ const LocalPlayerPage=()=>{
                     <img src={song.cover_url||song.cover_svg} alt="" className="w-full h-full object-cover"/>
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className={`text-xs font-semibold truncate notranslate ${isActive?'text-cyan-300':'text-gray-300'}`} translate="no">{song.title}</p>
-                    <p className="text-[10px] text-gray-600 truncate notranslate" translate="no">{song.artist}</p>
+                    <p className={`text-xs font-semibold truncate notranslate ${isActive?'text-cyan-300':'text-gray-300'}`} translate="no"><NoTranslate className="truncate">{song.title}</NoTranslate></p>
+                    <NoTranslate tag="p" className="text-[10px] text-gray-600 truncate notranslate"><NoTranslate className="truncate">{song.artist}</NoTranslate></NoTranslate>
                   </div>
                   {isActive&&<EQBars active bars={3}/>}
                 </div>

@@ -63,7 +63,7 @@ const GlobalPlayer = () => {
     currentSong, playlist, isVisible,
     handleNext, handlePrevious, closePlayer,
     shouldAutoPlay, resetAutoPlay,
-    playSong, loadSavedState,
+    playSong,
   } = usePlayer();
 
   // ── Écouter les actions venant du widget Android ──────────────────
@@ -79,22 +79,9 @@ const GlobalPlayer = () => {
   }, []);
 
   // ── Restaurer la dernière lecture au démarrage ──────────────────
-  useEffect(() => {
-    if (currentSong) return; // déjà une song en cours → pas besoin de restaurer
-    const restore = async () => {
-      try {
-        const state = await loadSavedState?.();
-        if (state?.song?.id) {
-          // Restaurer silencieusement sans autoplay (l'utilisateur reprend manuellement)
-          playSong?.(state.song, state.playlist || [state.song], null, { autoPlay: false });
-        }
-      } catch (_) {}
-    };
-    // Délai court pour laisser l'app s'initialiser
-    const t = setTimeout(restore, 1200);
-    return () => clearTimeout(t);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  // Pas de restauration automatique au démarrage — le mini player
+  // ne doit JAMAIS s'ouvrir seul au refresh. L'utilisateur choisit
+  // ce qu'il écoute.
 
   if (!isVisible || !currentSong) return null;
   return (

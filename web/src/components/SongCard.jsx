@@ -16,6 +16,7 @@ import AddToPlaylistModal from '@/components/AddToPlaylistModal';
 import CommentSection from '@/components/CommentSection';
 import RepostButton from '@/components/RepostButton';
 import { formatPlays } from '@/lib/utils';
+import NoTranslate from '@/components/NoTranslate';
 
 const fmtDuration = (s) => {
   if (!s || s <= 0 || isNaN(s)) return '--:--';
@@ -165,19 +166,18 @@ const SongCard = memo(({ song: initialSong, onPlay, isPlaying: isPlayingProp, se
         {/* Infos */}
         <div className="p-3.5">
           <Link to={`/song/${song.id}`} onClick={e => e.stopPropagation()}
-            className="text-white font-semibold truncate text-sm block hover:text-cyan-400 transition-colors notranslate"
-            translate="no">
-            {song.title}
+            className="text-white font-semibold truncate text-sm block hover:text-cyan-400 transition-colors">
+            <NoTranslate className="truncate">{song.title}</NoTranslate>
           </Link>
 
           {song.uploader_id ? (
             <Link to={`/artist/${song.uploader_id}`}
-              className="text-gray-400 text-xs truncate block hover:text-cyan-400 transition-colors mt-0.5 notranslate"
-              onClick={e => e.stopPropagation()} translate="no">
-              {song.artist}
+              className="text-gray-400 text-xs truncate block hover:text-cyan-400 transition-colors mt-0.5"
+              onClick={e => e.stopPropagation()}>
+              <NoTranslate className="truncate">{song.artist}</NoTranslate>
             </Link>
           ) : (
-            <p className="text-gray-400 text-xs truncate mt-0.5 notranslate" title={song?.artist} translate="no">{song.artist}</p>
+            <NoTranslate tag="p" className="text-gray-400 text-xs truncate mt-0.5">{song.artist}</NoTranslate>
           )}
 
           {/* Genre badge — couleur dynamique par genre */}
@@ -287,7 +287,7 @@ const SongCard = memo(({ song: initialSong, onPlay, isPlaying: isPlayingProp, se
                 <MessageCircle style={{ width: 18, height: 18, color: '#34d399' }} />
                 <div>
                   <p style={{ color: '#fff', fontWeight: 700, fontSize: 15, margin: 0 }}>Commentaires</p>
-                  <p style={{ color: 'rgba(156,163,175,1)', fontSize: 12, margin: 0 }} className="notranslate" translate="no">{song.title}</p>
+                  <NoTranslate tag="p" className="notranslate">{song.title}</NoTranslate>
                 </div>
               </div>
               <button
