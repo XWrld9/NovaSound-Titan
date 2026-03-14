@@ -57,19 +57,19 @@ const Header = () => {
 
   // Primary navigation links
   const PRIMARY_LINKS = [
-    { to: '/',           label: 'Accueil',     Icon: Music,      color: 'hover:text-cyan-400' },
-    { to: '/explorer',   label: 'Explorer', Icon: Globe,      color: 'hover:text-cyan-400' },
-    { to: '/trending',   label: 'Tendances', Icon: TrendingUp, color: 'hover:text-cyan-400' },
-    { to: '/live',       label: 'Live',      Icon: Radio,      color: 'hover:text-red-400', badge: true },
+    { to: '/',           label: 'Accueil',    title: 'Accueil — dernières musiques et actualités des artistes',              Icon: Music,      color: 'hover:text-cyan-400' },
+    { to: '/explorer',   label: 'Explorer',   title: 'Explorer — parcourir les genres, styles et artistes musicaux',         Icon: Globe,      color: 'hover:text-cyan-400' },
+    { to: '/trending',   label: 'Tendances',  title: 'Tendances — morceaux et artistes les plus écoutés du moment',          Icon: TrendingUp, color: 'hover:text-cyan-400' },
+    { to: '/live',       label: 'Live',       title: 'Live — diffusions audio en direct animées par des artistes',           Icon: Radio,      color: 'hover:text-red-400', badge: true },
   ];
 
   // Secondary navigation links (in "More" dropdown)
   const SECONDARY_LINKS = [
-    { to: '/artists',      label: 'Artistes',  Icon: Users,     color: 'hover:text-fuchsia-400' },
-    { to: '/news',         label: 'Actualités',     Icon: Newspaper, color: 'hover:text-cyan-400' },
-    { to: '/chat',         label: 'Global',   Icon: Globe,     color: 'hover:text-cyan-400' },
-    { to: '/leaderboard',  label: 'Top', Icon: Trophy, color: 'hover:text-amber-400' },
-    { to: '/local-player', label: 'Local',   Icon: HardDrive, color: 'hover:text-cyan-400' },
+    { to: '/artists',      label: 'Artistes',    title: 'Artistes — découvrir les musiciens et créateurs de la plateforme',   Icon: Users,     color: 'hover:text-fuchsia-400' },
+    { to: '/news',         label: 'Actualités',  title: 'Actualités — nouvelles et annonces des artistes musicaux',           Icon: Newspaper, color: 'hover:text-cyan-400' },
+    { to: '/chat',         label: 'Global',      title: 'Chat global — discussion communautaire sur la musique',              Icon: Globe,     color: 'hover:text-cyan-400' },
+    { to: '/leaderboard',  label: 'Top',         title: 'Classement — artistes et morceaux les plus populaires',              Icon: Trophy,    color: 'hover:text-amber-400' },
+    { to: '/local-player', label: 'Local',       title: 'Lecteur local — écouter les fichiers audio de ton appareil',         Icon: HardDrive, color: 'hover:text-cyan-400' },
   ];
 
   useEffect(() => {
@@ -210,12 +210,14 @@ const Header = () => {
 
             {/* Desktop nav */}
             <nav className="hidden md:flex items-center gap-1 flex-shrink-0">
-              {PRIMARY_LINKS.map(({ to, label, Icon, color, badge }) => (
+              {PRIMARY_LINKS.map(({ to, label, title, Icon, color, badge }) => (
                 <Link
                   key={to} to={to}
+                  title={title || label}
+                  aria-label={title || label}
                   className={`relative text-gray-300 ${color} transition-colors flex items-center gap-1.5 font-medium px-3 py-2 rounded-lg hover:bg-white/5 text-sm`}
                 >
-                  <Icon className="w-4 h-4" /><span className="notranslate" translate="no">{label}</span>
+                  <Icon className="w-4 h-4" /><span>{label}</span>
                   {badge && <span className="absolute top-1.5 right-1 w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse" />}
                 </Link>
               ))}
@@ -226,7 +228,7 @@ const Header = () => {
                   onClick={() => setShowMoreMenu(v => !v)}
                   className="flex items-center gap-1 text-gray-300 hover:text-cyan-400 transition-colors font-medium px-3 py-2 rounded-lg hover:bg-white/5 text-sm"
                 >
-                  <span className="notranslate" translate="no">Plus</span> <ChevronDown className={`w-3.5 h-3.5 transition-transform duration-200 ${showMoreMenu ? 'rotate-180' : ''}`} />
+                  <span>Plus</span> <ChevronDown className={`w-3.5 h-3.5 transition-transform duration-200 ${showMoreMenu ? 'rotate-180' : ''}`} />
                 </button>
                 <AnimatePresence>
                   {showMoreMenu && (
@@ -237,13 +239,15 @@ const Header = () => {
                       transition={{ duration: 0.15 }}
                       className="absolute left-0 top-full mt-2 w-52 bg-gray-900 border border-cyan-500/20 rounded-xl shadow-2xl overflow-hidden z-50"
                     >
-                      {SECONDARY_LINKS.map(({ to, label, Icon, color }) => (
+                      {SECONDARY_LINKS.map(({ to, label, title, Icon, color }) => (
                         <Link
                           key={to} to={to}
                           onClick={() => setShowMoreMenu(false)}
+                          title={title || label}
+                          aria-label={title || label}
                           className={`flex items-center gap-3 px-4 py-2.5 text-sm text-gray-300 ${color} hover:bg-white/5 transition-colors`}
                         >
-                          <Icon className="w-4 h-4" /><span className="notranslate" translate="no">{label}</span>
+                          <Icon className="w-4 h-4" /><span>{label}</span>
                         </Link>
                       ))}
                     </motion.div>
@@ -308,7 +312,7 @@ const Header = () => {
                     <div className="absolute right-0 top-full mt-2 w-52 bg-gray-900 border border-cyan-500/30 rounded-xl shadow-xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all translate-y-2 group-hover:translate-y-0 z-50">
                       <div className="p-2">
                         <div className="px-4 py-2 border-b border-white/[0.07] mb-1">
-                          <p className="text-white text-sm font-semibold truncate">{currentUser?.username || '—'}</p>
+                          <p className="text-white text-sm font-semibold truncate"><NoTranslate>{currentUser?.username || '—'}</NoTranslate></p>
                           <p className="text-gray-600 text-xs truncate">{currentUser?.email}</p>
                         </div>
                         <Link to="/profile" className="block px-4 py-2 text-sm text-gray-300 hover:bg-cyan-500/10 hover:text-cyan-400 rounded-lg">{'Mon profil'}</Link>
@@ -471,7 +475,7 @@ const Header = () => {
                       </div>
                     )}
                     <div className="min-w-0">
-                      <p className="text-white text-sm font-semibold truncate">{currentUser.username}</p>
+                      <p className="text-white text-sm font-semibold truncate"><NoTranslate>{currentUser.username}</NoTranslate></p>
                       <p className="text-gray-500 text-xs truncate">{currentUser.email}</p>
                     </div>
                   </div>
@@ -486,12 +490,14 @@ const Header = () => {
               {/* Navigation */}
               <div className="flex-1 overflow-y-auto p-4" style={{ scrollbarWidth: 'none' }}>
                 <nav className="space-y-1">
-                  {[...PRIMARY_LINKS, ...SECONDARY_LINKS].map(({ to, label, Icon, color, badge }) => (
+                  {[...PRIMARY_LINKS, ...SECONDARY_LINKS].map(({ to, label, title, Icon, color, badge }) => (
                     <Link
                       key={to} to={to} onClick={closeMenu}
+                      title={title || label}
+                      aria-label={title || label}
                       className={`flex items-center gap-3 px-4 py-3 text-gray-300 ${color} hover:bg-white/5 rounded-lg transition-colors relative`}
                     >
-                      <Icon className="w-5 h-5" /><span className="notranslate" translate="no">{label}</span>
+                      <Icon className="w-5 h-5" /><span>{label}</span>
                       {badge && <span className="ml-auto w-2 h-2 rounded-full bg-red-500 animate-pulse" />}
                     </Link>
                   ))}

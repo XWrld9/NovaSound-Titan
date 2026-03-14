@@ -208,7 +208,7 @@ const PlaylistPage = () => {
                         ? <img src={owner.avatar_url} alt="" className="w-5 h-5 rounded-full object-cover" />
                         : <Users className="w-4 h-4" />
                       }
-                      <span className="text-xs">{owner.username}</span>
+                      <span className="text-xs"><NoTranslate>{owner.username}</NoTranslate></span>
                     </Link>
                   )}
                 </div>

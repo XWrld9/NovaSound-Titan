@@ -15,6 +15,7 @@ import {
   Send, Search, ArrowLeft, MessageCircle, User, X,
   Trash2, CheckCheck, Check, Loader2
 } from 'lucide-react';
+import NoTranslate from '@/components/NoTranslate';
 
 // ── Helpers ──────────────────────────────────────────────────────
 const timeAgo = (dateStr) => {
@@ -87,7 +88,7 @@ const ConvList = memo(({
                   <button key={user.id} onClick={() => onSelectUser(user)}
                     className="w-full flex items-center gap-3 px-3 py-2.5 hover:bg-white/[0.05] transition-colors text-left">
                     <Avatar user={user} size={8} />
-                    <span className="text-white text-sm font-medium">{user.username}</span>
+                    <span className="text-white text-sm font-medium"><NoTranslate>{user.username}</NoTranslate></span>
                   </button>
                 ))}
               </div>
@@ -196,7 +197,7 @@ const ChatView = memo(({
           </div>
         ) : messages.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-full text-center">
-            <p className="text-gray-600 text-sm">Dis bonjour à {other?.username} 👋</p>
+            <p className="text-gray-600 text-sm">Dis bonjour à <NoTranslate tag="span">{other?.username}</NoTranslate> 👋</p>
           </div>
         ) : (
           Object.entries(groupedMessages).map(([day, dayMsgs]) => (

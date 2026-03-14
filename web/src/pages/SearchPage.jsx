@@ -437,7 +437,7 @@ const SearchPage = () => {
                                 </div>
                                 <div className="flex-1 min-w-0">
                                   <p className="text-white font-medium text-sm truncate group-hover:text-violet-300 transition-colors">{pl.name}</p>
-                                  <p className="text-gray-500 text-xs">par {pl.users?.username || 'Inconnu'}</p>
+                                  <p className="text-gray-500 text-xs">par <NoTranslate tag="span">{pl.users?.username || 'Inconnu'}</NoTranslate></p>
                                 </div>
                                 <ChevronRight className="w-4 h-4 text-gray-600 group-hover:text-violet-400 transition-colors flex-shrink-0" />
                               </Link>

@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Home, Upload, User, LogOut, LogIn, UserPlus, Search } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
+import NoTranslate from '@/components/NoTranslate';
 import { Button } from '@/components/ui/button';
 
 const MobileMenu = ({ isOpen, onClose }) => {
@@ -83,7 +84,7 @@ const MobileMenu = ({ isOpen, onClose }) => {
                     {currentUser.username?.[0]?.toUpperCase() || 'U'}
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="text-white font-medium truncate">{currentUser.username}</p>
+                    <p className="text-white font-medium truncate"><NoTranslate>{currentUser.username}</NoTranslate></p>
                     <p className="text-xs text-gray-400 truncate">{currentUser.email}</p>
                   </div>
                 </div>

@@ -18,6 +18,7 @@ import {
   Music,
   Newspaper
 } from 'lucide-react';
+import NoTranslate from '@/components/NoTranslate';
 
 const ModerationPanel = () => {
   const { currentUser } = useAuth();
@@ -253,7 +254,7 @@ const ModerationPanel = () => {
                             </div>
                           )}
                           <div className="flex items-center gap-4 text-xs text-gray-500">
-                            <span>Signalé par {report.reporter?.username}</span>
+                            <span>Signalé par <NoTranslate tag="span">{report.reporter?.username}</NoTranslate></span>
                             <span>•</span>
                             <span>{new Date(report.created_at).toLocaleDateString('fr-FR')}</span>
                           </div>
@@ -331,7 +332,7 @@ const ModerationPanel = () => {
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <label className="text-sm text-gray-400">Signalé par</label>
-                    <div className="text-white mt-1">{selectedReport.reporter?.username}</div>
+                    <div className="text-white mt-1"><NoTranslate>{selectedReport.reporter?.username}</NoTranslate></div>
                   </div>
                   <div>
                     <label className="text-sm text-gray-400">Date</label>

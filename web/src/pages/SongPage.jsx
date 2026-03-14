@@ -484,7 +484,7 @@ const SongPage = () => {
                   className="bg-gray-900/50 border border-gray-800/60 rounded-2xl p-4">
                   <div className="flex items-center justify-between mb-3">
                     <h3 className="text-sm font-bold text-white flex items-center gap-2">
-                      <User className="w-4 h-4 text-cyan-400" />Plus de {artist?.username||song.artist}
+                      <User className="w-4 h-4 text-cyan-400" />Plus de <NoTranslate tag="span">{artist?.username||song.artist}</NoTranslate>
                     </h3>
                     {artist && <Link to={`/artist/${artist.id}`} className="text-xs text-cyan-500 hover:text-cyan-400">Tout voir</Link>}
                   </div>

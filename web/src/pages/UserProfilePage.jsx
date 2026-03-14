@@ -474,7 +474,7 @@ const UserProfilePage = () => {
                         <Link to={`/artist/${follow.follower_id}`} className="flex items-center gap-3">
                           <img src={follow.users?.avatar_url || '/profil par defaut.png'} alt="" className="w-10 h-10 rounded-full object-cover" />
                           <div>
-                            <div className="font-bold text-white">{follow.users?.username || 'Utilisateur'}</div>
+                            <div className="font-bold text-white"><NoTranslate>{follow.users?.username || 'Utilisateur'}</NoTranslate></div>
                             <div className="text-sm text-gray-400">Abonné(e)</div>
                           </div>
                         </Link>
@@ -497,7 +497,7 @@ const UserProfilePage = () => {
                         <Link to={`/artist/${follow.following_id}`} className="flex items-center gap-3">
                           <img src={follow.users?.avatar_url || '/profil par defaut.png'} alt="" className="w-10 h-10 rounded-full object-cover" />
                           <div className="flex-1">
-                            <div className="font-bold text-white">{follow.users?.username || 'Utilisateur'}</div>
+                            <div className="font-bold text-white"><NoTranslate>{follow.users?.username || 'Utilisateur'}</NoTranslate></div>
                             <div className="text-sm text-gray-400">Abonnement</div>
                           </div>
                           <FollowButton userId={follow.following_id} initialFollowing={true} />

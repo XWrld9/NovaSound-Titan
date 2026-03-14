@@ -421,9 +421,9 @@ const ChatMessage = memo(({
               {user?.id
                 ? <Link to={`/artist/${user.id}`} onClick={e => e.stopPropagation()}
                     className="text-[11px] font-bold text-cyan-400 hover:text-cyan-300 truncate transition-colors">
-                    {user.username || 'Utilisateur'}
+                    <NoTranslate>{user.username || 'Utilisateur'}</NoTranslate>
                   </Link>
-                : <span className="text-[11px] font-bold text-gray-500 truncate">{user?.username || 'Utilisateur'}</span>
+                : <span className="text-[11px] font-bold text-gray-500 truncate"><NoTranslate>{user?.username || 'Utilisateur'}</NoTranslate></span>
               }
               {isAdmin && <span className="text-[9px] px-1.5 py-0.5 bg-yellow-500/20 text-yellow-400 rounded-full border border-yellow-500/30">ADMIN</span>}
               {hasMentionAll && <span className="text-[9px] px-1.5 py-0.5 bg-yellow-500/20 text-yellow-400 rounded-full border border-yellow-500/30">📢 @tous</span>}
@@ -444,7 +444,7 @@ const ChatMessage = memo(({
               }}>
               <Reply className="w-3 h-3 text-cyan-500/60 flex-shrink-0 mt-0.5" />
               <div className="min-w-0">
-                <p className="text-[10px] font-semibold text-cyan-400/80 truncate">↩ {msg.reply_to_username}</p>
+                <p className="text-[10px] font-semibold text-cyan-400/80 truncate">↩ <NoTranslate tag="span">{msg.reply_to_username}</NoTranslate></p>
                 <p className="text-[11px] text-gray-400 truncate">{msg.reply_to_content}</p>
               </div>
             </div>
@@ -951,7 +951,7 @@ const ChatPage = () => {
                                 : <div className="w-8 h-8 rounded-full bg-gray-900 border border-green-500/20 flex items-center justify-center flex-shrink-0"><Users className="w-3.5 h-3.5 text-gray-500" /></div>
                               }
                               <div className="flex-1 min-w-0">
-                                <p className="text-white text-sm font-semibold truncate">{u.username || 'Anonyme'}</p>
+                                <p className="text-white text-sm font-semibold truncate"><NoTranslate>{u.username || 'Anonyme'}</NoTranslate></p>
                                 {u.email && <p className="text-gray-500 text-[10px] truncate">{u.email}</p>}
                               </div>
                               <a href={"mailto:" + (u.email || '')} className="p-1.5 rounded-full bg-cyan-500/10 text-cyan-400 hover:bg-cyan-500/20 transition-colors flex-shrink-0" onClick={e => e.stopPropagation()}>
@@ -1191,7 +1191,7 @@ const ChatPage = () => {
                           <Reply className="w-3.5 h-3.5 text-cyan-400 flex-shrink-0" />
                           <div className="flex-1 min-w-0">
                             <p className="text-[11px] font-semibold text-cyan-400 truncate">
-                              ↩ Répondre à <span className="text-white">@{extractUser(replyTo).username || 'Utilisateur'}</span>
+                              ↩ Répondre à <span className="text-white"><NoTranslate>@{extractUser(replyTo).username || 'Utilisateur'}</NoTranslate></span>
                             </p>
                             <p className="text-[11px] text-gray-500 truncate">{replyTo.content}</p>
                           </div>
@@ -1249,7 +1249,7 @@ const ChatPage = () => {
                                   </div>
                               }
                               <div className="min-w-0 flex-1">
-                                <div className="mention-name text-white text-sm font-bold transition-colors">@{u.username}</div>
+                                <div className="mention-name text-white text-sm font-bold transition-colors"><NoTranslate>@{u.username}</NoTranslate></div>
                               </div>
                               <Reply className="w-3 h-3 text-gray-600 flex-shrink-0" />
                             </button>

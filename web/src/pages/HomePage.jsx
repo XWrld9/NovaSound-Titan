@@ -671,7 +671,7 @@ const HomePage = () => {
                         <span className="text-xs text-fuchsia-300 font-medium bg-fuchsia-500/15 px-2.5 py-0.5 rounded-full border border-fuchsia-500/30">
                           {new Date(news.created_at || Date.now()).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' })}
                         </span>
-                        {news.users?.username && <span className="text-xs text-gray-400 font-medium truncate max-w-[120px]">{news.users.username}</span>}
+                        {news.users?.username && <span className="text-xs text-gray-400 font-medium truncate max-w-[120px]"><NoTranslate>{news.users.username}</NoTranslate></span>}
                       </div>
                       <h3 className="text-base font-bold text-white mb-2 group-hover:text-fuchsia-300 transition-colors line-clamp-2 leading-snug">{news.title}</h3>
                       <p className="text-gray-300 text-sm mb-4 line-clamp-3 leading-relaxed">{news.content}</p>
@@ -726,7 +726,7 @@ const HomePage = () => {
                   <div className="flex items-center justify-between px-6 py-4 border-t border-gray-800 flex-shrink-0 bg-gray-800/30 rounded-b-2xl">
                     <div className="flex items-center gap-2 text-sm text-gray-400">
                       <User className="w-4 h-4" />
-                      <span className="font-medium">{selectedNews.users?.username || 'Anonyme'}</span>
+                      <span className="font-medium"><NoTranslate>{selectedNews.users?.username || 'Anonyme'}</NoTranslate></span>
                     </div>
                     <div className="flex items-center gap-2">
                       <NewsShareButton news={selectedNews} />

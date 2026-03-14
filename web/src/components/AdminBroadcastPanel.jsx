@@ -20,6 +20,7 @@ import {
   Loader2
 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
+import NoTranslate from '@/components/NoTranslate';
 import { 
   sendBroadcast, 
   sendTargetedBroadcast, 
@@ -541,7 +542,7 @@ const AdminBroadcastPanel = ({ onClose }) => {
                             <h4 className="text-white font-medium">{broadcast.title}</h4>
                             <p className="text-gray-300 text-sm mt-1 line-clamp-2">{broadcast.body}</p>
                             <div className="flex items-center gap-4 mt-2 text-xs text-gray-500">
-                              <span>{broadcast.users?.username}</span>
+                              <span><NoTranslate>{broadcast.users?.username}</NoTranslate></span>
                               <span>{new Date(broadcast.created_at).toLocaleString()}</span>
                               <span className="px-2 py-1 bg-purple-500/20 text-purple-400 rounded">
                                 {broadcast.metadata?.broadcastType || 'ANNOUNCEMENT'}

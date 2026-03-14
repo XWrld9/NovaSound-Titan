@@ -529,7 +529,7 @@ Il pourra accéder au panneau d'administration.`,
                     <div key={room.id} className="flex items-center justify-between py-2 border-b border-white/[0.04] last:border-0">
                       <div className="flex-1 min-w-0">
                         <p className="text-white text-xs font-semibold truncate">{room.title || room.name || 'Sans nom'}</p>
-                        <p className="text-gray-600 text-[10px]">{room.host?.username} · {room.participants_count} participant(s)</p>
+                        <p className="text-gray-600 text-[10px]"><NoTranslate tag="span">{room.host?.username}</NoTranslate> · {room.participants_count} participant(s)</p>
                       </div>
                       <button onClick={() => stopLiveRoom(room)} className="px-2.5 py-1 rounded-lg bg-red-500/15 text-red-400 text-[10px] font-bold border border-red-500/20 hover:bg-red-500/25 transition-all">
                         Stopper
@@ -617,7 +617,7 @@ Il pourra accéder au panneau d'administration.`,
                     }
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-1.5 flex-wrap">
-                        <span className="text-white font-semibold text-sm truncate">{user.username || '—'}</span>
+                        <span className="text-white font-semibold text-sm truncate"><NoTranslate>{user.username || '—'}</NoTranslate></span>
                         {user.is_banned && <span className="text-[9px] bg-red-500/20 text-red-400 border border-red-500/30 px-1.5 py-0.5 rounded-full font-black">BANNI</span>}
                         {user.email===ADMIN_EMAIL && <span className="text-[9px] bg-gradient-to-r from-cyan-500/25 to-purple-600/25 text-cyan-300 border border-cyan-500/30 px-1.5 py-0.5 rounded-full font-black">ADMIN</span>}
                       </div>
@@ -674,7 +674,7 @@ Il pourra accéder au panneau d'administration.`,
                         <NoTranslate tag="p" className="text-white font-semibold text-sm truncate truncate">{song.title}</NoTranslate>
                         {song.is_archived && <span className="text-[9px] bg-orange-500/20 text-orange-400 border border-orange-500/30 px-1.5 py-0.5 rounded-full font-black flex-shrink-0">ARCHIVÉ</span>}
                       </div>
-                      <p className="text-gray-500 text-xs">{song.artist} · <span className="text-gray-600">{(song.plays_count||0).toLocaleString()} écoutes</span></p>
+                      <p className="text-gray-500 text-xs"><NoTranslate tag="span">{song.artist}</NoTranslate> · <span className="text-gray-600">{(song.plays_count||0).toLocaleString()} écoutes</span></p>
                     </div>
                     <div className="flex items-center gap-1.5 flex-shrink-0">
                       {song.is_archived
@@ -711,7 +711,7 @@ Il pourra accéder au panneau d'administration.`,
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 mb-1">
-                      <span className="text-cyan-400 text-xs font-bold">{msg.user?.username||'?'}</span>
+                      <span className="text-cyan-400 text-xs font-bold"><NoTranslate>{msg.user?.username||'?'}</NoTranslate></span>
                       <span className="text-gray-700 text-[10px]">{new Date(msg.created_at).toLocaleString('fr-FR')}</span>
                     </div>
                     <p className="text-gray-300 text-sm break-words leading-relaxed">{msg.content}</p>
@@ -762,8 +762,8 @@ Il pourra accéder au panneau d'administration.`,
                         }`}>{report.status?.toUpperCase() || 'EN ATTENTE'}</span>
                       </div>
                       <p className="text-gray-500 text-xs">
-                        Signalé par <span className="text-gray-400">{report.reporter?.username || '?'}</span>
-                        {report.reported_user && <> · contre <span className="text-gray-400">{report.reported_user?.username}</span></>}
+                        Signalé par <span className="text-gray-400"><NoTranslate>{report.reporter?.username || '?'}</NoTranslate></span>
+                        {report.reported_user && <> · contre <span className="text-gray-400"><NoTranslate>{report.reported_user?.username}</NoTranslate></span></>}
                         {report.song && <> · musique : <span className="text-gray-400">"{report.song?.title}"</span></>}
                       </p>
                       {report.description && <p className="text-gray-600 text-xs mt-1 italic">"{report.description}"</p>}
@@ -810,7 +810,7 @@ Il pourra accéder au panneau d'administration.`,
                       }
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2">
-                          <span className="text-white font-semibold text-sm truncate">{role.user?.username || role.user_id}</span>
+                          <span className="text-white font-semibold text-sm truncate"><NoTranslate>{role.user?.username || role.user_id}</NoTranslate></span>
                           <span className="text-[9px] bg-gradient-to-r from-cyan-500/25 to-purple-600/25 text-cyan-300 border border-cyan-500/30 px-1.5 py-0.5 rounded-full font-black">ADMIN</span>
                         </div>
                         <p className="text-gray-500 text-xs">{role.user?.email}</p>
@@ -840,7 +840,7 @@ Il pourra accéder au panneau d'administration.`,
                       : <div className="w-9 h-9 rounded-full bg-white/[0.07] flex items-center justify-center flex-shrink-0 text-gray-400 font-bold text-sm">{(user.username||'?')[0].toUpperCase()}</div>
                     }
                     <div className="flex-1 min-w-0">
-                      <p className="text-white text-sm font-semibold truncate">{user.username || '—'}</p>
+                      <p className="text-white text-sm font-semibold truncate"><NoTranslate>{user.username || '—'}</NoTranslate></p>
                       <p className="text-gray-500 text-xs truncate">{user.email}</p>
                     </div>
                     <button onClick={() => grantAdmin(user)}

@@ -28,6 +28,7 @@ import {
   Loader2, WifiOff, RefreshCw, Mic, Headphones,
   Sparkles, Flame, Star, Heart, X, Plus, Lock, Globe
 } from 'lucide-react';
+import NoTranslate from '@/components/NoTranslate';
 
 const GENRES = [
   { id: 'all', name: 'Tous', color: 'from-cyan-500 to-purple-500' },
@@ -355,7 +356,7 @@ const LiveListPage = () => {
                         )}
                         <div className="flex-1 min-w-0">
                           <h3 className="text-white font-bold text-sm truncate">{room.title || room.name}</h3>
-                          <p className="text-white/70 text-xs">par @{room.host?.username}</p>
+                          <p className="text-white/70 text-xs">par <NoTranslate tag="span">@{room.host?.username}</NoTranslate></p>
                         </div>
                         <div className="flex items-center gap-1 flex-shrink-0">
                           {room.is_private

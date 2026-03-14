@@ -378,7 +378,7 @@ const ChatMsg = ({ m, isMine, currentUserId, isEditing, editContent, onStartEdit
     className={`flex gap-2 ${isMine ? 'justify-end' : 'justify-start'} group`}>
     {!isMine && <Avatar user={m.user} size={7} pulse />}
     <div className={`max-w-[78%] ${isMine ? 'text-right' : 'text-left'}`}>
-      {!isMine && <p className="text-xs text-gray-500 mb-1 ml-1">{m.user?.username || 'Anonyme'}</p>}
+      {!isMine && <p className="text-xs text-gray-500 mb-1 ml-1"><NoTranslate>{m.user?.username || 'Anonyme'}</NoTranslate></p>}
       <div className={`inline-block px-3.5 py-2.5 rounded-2xl text-sm leading-relaxed ${isMine ? 'bg-gradient-to-br from-cyan-500 to-fuchsia-500 text-white rounded-tr-sm' : 'bg-gray-800 text-gray-100 rounded-tl-sm'}`}>
         {isEditing ? (
           <div className="flex items-center gap-2">
@@ -1489,7 +1489,7 @@ const LiveRoomPage = () => {
               <div className="min-w-0">
                 <h1 className="text-white font-bold text-sm sm:text-base truncate">{room?.name}</h1>
                 <div className="flex items-center gap-2 flex-wrap">
-                  <p className="text-xs text-gray-500 hidden sm:block">par {room?.host?.username}</p>
+                  <p className="text-xs text-gray-500 hidden sm:block">par <NoTranslate tag="span">{room?.host?.username}</NoTranslate></p>
                   <ConnBadge status={channelStatus} />
                   {liveDuration > 0 && (
                     <span className="text-[10px] text-green-400 flex items-center gap-1">
@@ -1564,7 +1564,7 @@ const LiveRoomPage = () => {
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 mb-0.5">
                       <Eq active />
-                      <p className="text-white text-xs sm:text-sm font-semibold truncate">{nowPlaying.title}</p>
+                      <NoTranslate tag="p" className="text-white text-xs sm:text-sm font-semibold truncate">{nowPlaying.title}</NoTranslate>
                     </div>
                     <NoTranslate tag="p" className="text-gray-500 text-[11px] sm:text-xs truncate truncate">{nowPlaying.artist}</NoTranslate>
                     <div className="mt-1.5 h-1 bg-gray-800 rounded-full overflow-hidden">
@@ -1670,7 +1670,7 @@ const LiveRoomPage = () => {
                               ? <img src={u.avatar_url} alt="" className="w-6 h-6 rounded-full object-cover flex-shrink-0" />
                               : <div className="w-6 h-6 rounded-full bg-cyan-500/20 flex items-center justify-center text-xs text-cyan-400 flex-shrink-0">{u.username?.[0]?.toUpperCase()}</div>
                             }
-                            <span className="text-white text-sm font-medium">@{u.username}</span>
+                            <span className="text-white text-sm font-medium"><NoTranslate>@{u.username}</NoTranslate></span>
                           </button>
                         ))}
                       </div>
@@ -1733,7 +1733,7 @@ const LiveRoomPage = () => {
                         <div key={p.id} className="flex items-center gap-2.5 p-2 rounded-xl hover:bg-gray-800 transition-colors">
                           <Avatar user={p} size={7} pulse />
                           <div className="flex-1 min-w-0">
-                            <p className="text-white text-xs font-semibold truncate">{p.username}</p>
+                            <p className="text-white text-xs font-semibold truncate"><NoTranslate>{p.username}</NoTranslate></p>
                             {p.id === room?.host_id && <p className="text-amber-400 text-[10px]">Hôte</p>}
                           </div>
                           {p.id === room?.host_id && <Crown className="w-3.5 h-3.5 text-amber-400 flex-shrink-0" />}
@@ -1936,7 +1936,7 @@ const LiveRoomPage = () => {
                       <div key={p.id} className="flex items-center gap-2.5 p-2 rounded-xl hover:bg-gray-800 transition-colors">
                         <Avatar user={p} size={8} pulse />
                         <div className="flex-1 min-w-0">
-                          <p className="text-white text-sm font-semibold truncate">{p.username}</p>
+                          <p className="text-white text-sm font-semibold truncate"><NoTranslate>{p.username}</NoTranslate></p>
                           {p.id === room?.host_id && <p className="text-amber-400 text-xs">Hôte 👑</p>}
                         </div>
                       </div>
@@ -2043,7 +2043,7 @@ const LiveRoomPage = () => {
                         <div className="bg-gray-800 rounded-2xl p-4 text-center">
                           <Volume2 className="w-8 h-8 text-cyan-400 mx-auto mb-2" />
                           <p className="text-white text-sm font-semibold mb-1">Mode Auditeur</p>
-                          <p className="text-gray-500 text-xs">Tu écoutes le live de {room?.host?.username}</p>
+                          <p className="text-gray-500 text-xs">Tu écoutes le live de <NoTranslate tag="span">{room?.host?.username}</NoTranslate></p>
                           <div className="mt-3 flex items-center justify-center gap-2">
                             <span className="text-xs text-gray-500">Sync :</span>
                             <span className={`text-sm font-bold ${syncQuality > 70 ? 'text-green-400' : syncQuality > 40 ? 'text-amber-400' : 'text-red-400'}`}>{syncQuality}%</span>

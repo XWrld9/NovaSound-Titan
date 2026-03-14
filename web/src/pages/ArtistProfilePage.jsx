@@ -364,7 +364,7 @@ const ArtistProfilePage = () => {
               <div className="flex-1 min-w-0 sm:pb-2">
                 {/* Titre + live badge */}
                 <div className="flex items-center gap-2 mb-1 flex-wrap">
-                  <h1 className="text-xl sm:text-2xl md:text-3xl font-black text-white leading-tight">{artist.username || 'Artiste inconnu'}</h1>
+                  <h1 className="text-xl sm:text-2xl md:text-3xl font-black text-white leading-tight"><NoTranslate>{artist.username || 'Artiste inconnu'}</NoTranslate></h1>
                   {totalPlays >= 1000 && <span title="Artiste populaire" className="text-cyan-400 text-base sm:text-lg">✦</span>}
                   {liveRoom && (
                     <Link to={`/live/${liveRoom.id}`}
@@ -668,7 +668,7 @@ const ArtistProfilePage = () => {
                               : <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-gray-800 flex items-center justify-center flex-shrink-0 border border-white/10"><User className="w-4 h-4 text-gray-500" /></div>
                             }
                             <div className="min-w-0 flex-1">
-                              <p className="text-white text-xs sm:text-sm font-semibold truncate group-hover:text-cyan-400 transition-colors">{u.username || 'Utilisateur'}</p>
+                              <p className="text-white text-xs sm:text-sm font-semibold truncate group-hover:text-cyan-400 transition-colors"><NoTranslate>{u.username || 'Utilisateur'}</NoTranslate></p>
                               <p className="text-gray-600 text-[10px] sm:text-xs">{new Date(follow.created_at).toLocaleDateString('fr-FR')}</p>
                             </div>
                           </Link>

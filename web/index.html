@@ -54,8 +54,9 @@
         } catch(e) {}
       })();
     </script>
-		<!-- Protection traduction : données musicales jamais traduites -->
-		<meta name="google" content="notranslate">
+		<!-- SEO & traduction : contexte musical pour guider les moteurs de traduction -->
+		<meta name="description" content="NovaSound TITAN LUX — plateforme de streaming musical. Écoute, partage et découvre des morceaux, albums et mixtapes d'artistes indépendants. Rejoins des live audio, commente les musiques, explore les tendances et monte dans le classement." />
+		<meta name="keywords" content="streaming musical, écoute musique en ligne, artistes indépendants, live audio, playlist musicale, morceaux, mixtape, album, tendances musicales, uploader musique" />
 		<!-- Elfsight Website Translator -->
 		<script src="https://elfsightcdn.com/platform.js" async></script>
 		<script>
@@ -133,6 +134,37 @@
 		</script>
 	</head>
 	<body>
+		<!--
+		  Glossaire contextuel pour les moteurs de traduction.
+		  Ce bloc est invisible pour les utilisateurs mais lu par Google Translate,
+		  DeepL et Elfsight pour ancrer leurs traductions dans le domaine musical.
+		  Ne pas supprimer.
+		-->
+		<div
+		  aria-hidden="true"
+		  translate="yes"
+		  style="position:absolute;width:1px;height:1px;overflow:hidden;opacity:0;pointer-events:none"
+		>
+		  NovaSound est une plateforme de streaming musical où les artistes publient leurs morceaux, mixtapes et albums.
+		  La page Accueil affiche les dernières musiques et actualités des artistes.
+		  La page Explorer permet de découvrir de nouveaux genres musicaux et des artistes indépendants.
+		  La section Live propose des diffusions audio en direct animées par des artistes.
+		  Le Leaderboard est un classement des artistes et morceaux les plus populaires.
+		  Le bouton Uploader un son permet à un artiste de publier une nouvelle musique sur la plateforme.
+		  Mon profil affiche la bibliothèque musicale, les abonnements et les statistiques d'écoute.
+		  Les Notifications informent l'utilisateur des nouveaux commentaires, abonnés et mentions.
+		  Les Playlists sont des listes de lecture personnalisées créées par les utilisateurs.
+		  Explorer la musique signifie parcourir les genres, tendances et nouveautés musicales.
+		  Un like indique qu'un utilisateur apprécie un morceau de musique.
+		  Les Tendances affichent les morceaux et artistes les plus écoutés du moment.
+		  La Recherche permet de trouver des morceaux, artistes ou playlists musicales.
+		  Connexion permet à un utilisateur de se connecter à son compte sur la plateforme.
+		  Inscription permet de créer un nouveau compte utilisateur sur la plateforme musicale.
+		  Déconnexion permet à l'utilisateur de quitter son compte en toute sécurité.
+		  Les statistiques d'artiste affichent le nombre d'écoutes, de likes et d'abonnés.
+		  Un morceau est une piste audio musicale publiée par un artiste.
+		  Un artiste est un musicien ou créateur sonore qui publie sa musique sur la plateforme.
+		</div>
 		<div id="root"></div>
 		<script type="module" src="/src/main.jsx"></script>
 		<script>

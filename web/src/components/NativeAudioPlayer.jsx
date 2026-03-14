@@ -323,7 +323,7 @@ const MiniPlayer = memo(({ track, isPlaying, currentTime, duration, onTogglePlay
       <Artwork src={track?.artwork} size={40} />
 
       <div className="flex-1 min-w-0">
-        <p className="text-white font-semibold text-sm truncate">{track?.title || track?.name}</p>
+        <NoTranslate tag="p" className="text-white font-semibold text-sm truncate">{track?.title || track?.name}</NoTranslate>
         <NoTranslate tag="p" className="text-gray-500 text-xs truncate truncate">{track?.artist || 'Artiste inconnu'}</NoTranslate>
       </div>
 

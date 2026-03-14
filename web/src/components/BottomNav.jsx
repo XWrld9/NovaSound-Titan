@@ -15,10 +15,10 @@ import { supabase } from '@/lib/supabaseClient';
 import { motion } from 'framer-motion';
 
 const NAV_ITEMS = [
-  { to: '/',            icon: Home,   label: 'Accueil'        },
-  { to: '/explorer',    icon: Compass,label: 'Explorer'    },
-  { to: '/live',        icon: Radio,  label: 'Live', liveIndicator: true },
-  { to: '/leaderboard', icon: Trophy, label: 'Top' },
+  { to: '/',            icon: Home,   label: 'Accueil',  title: 'Accueil — dernières musiques et actualités'        },
+  { to: '/explorer',    icon: Compass,label: 'Explorer', title: 'Explorer — parcourir les genres et artistes musicaux' },
+  { to: '/live',        icon: Radio,  label: 'Live',     title: 'Live — diffusions audio en direct des artistes', liveIndicator: true },
+  { to: '/leaderboard', icon: Trophy, label: 'Top',      title: 'Classement — artistes et morceaux les plus populaires' },
 ];
 
 const BottomNav = () => {
@@ -91,12 +91,14 @@ const BottomNav = () => {
         paddingBottom: 'env(safe-area-inset-bottom)',
       }}
     >
-      {allItems.map(({ to, icon: Icon, label, liveIndicator, badge }) => {
+      {allItems.map(({ to, icon: Icon, label, title, liveIndicator, badge }) => {
         const active = isActive(to);
         return (
           <Link
             key={to}
             to={to}
+            title={title || label}
+            aria-label={title || label}
             className="flex-1 flex flex-col items-center justify-center py-2 gap-0.5 relative"
           >
             {active && (
@@ -135,7 +137,7 @@ const BottomNav = () => {
                 active ? 'text-cyan-400' : 'text-gray-600'
               }`}
             >
-              <span className="notranslate" translate="no">{label}</span>
+              {label}
             </span>
           </Link>
         );

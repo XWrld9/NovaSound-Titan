@@ -4,6 +4,7 @@ import { supabase } from '@/lib/supabaseClient';
 import { Button } from '@/components/ui/button';
 import { Send, AlertCircle, CheckCircle, AtSign, X } from 'lucide-react';
 import { notifyAll, notifyUser } from '@/lib/notifUtils';
+import NoTranslate from '@/components/NoTranslate';
 
 const NewsForm = ({ onNewsCreated }) => {
   const { currentUser } = useAuth();
@@ -270,7 +271,7 @@ const NewsForm = ({ onNewsCreated }) => {
                     ? <img src={user.avatar_url} alt={user.username} className="w-8 h-8 rounded-full object-cover flex-shrink-0 border border-white/10" />
                     : <div className="w-8 h-8 rounded-full bg-gray-800 border border-white/10 flex items-center justify-center flex-shrink-0"><span className="text-xs text-gray-400">{(user.username || '?')[0].toUpperCase()}</span></div>
                   }
-                  <p className="text-white text-sm font-semibold">@{user.username}</p>
+                  <p className="text-white text-sm font-semibold"><NoTranslate>@{user.username}</NoTranslate></p>
                 </button>
               ))}
               {tagMode === 'user' && tagResults.length === 0 && tagQuery && (
