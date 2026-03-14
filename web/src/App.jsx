@@ -21,6 +21,7 @@ import InstallBanner from '@/components/InstallBanner';
 import AudioPlayer from '@/components/AudioPlayer';
 import OnboardingToast from '@/components/OnboardingToast';
 import BottomNav from '@/components/BottomNav';
+import FloatingUploadButton from '@/components/FloatingUploadButton';
 
 // Pages chargées immédiatement (critiques)
 import HomePage from '@/pages/HomePage';
@@ -186,6 +187,7 @@ function App() {
                       </ErrorBoundary>
                       {/* Bottom nav mobile — masqué sur /local-player (lecteur standalone) */}
                       <BottomNavConditional />
+                      <FloatingUploadButton />
                       <OnboardingToast />
                     </Router>
                     </NotificationProvider>

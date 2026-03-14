@@ -11,7 +11,7 @@ import React, { useState, useEffect } from 'react';
 import { usePlayer } from '@/contexts/PlayerContext';
 import { Link } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
-import { Music, Play, Pause, TrendingUp, Newspaper, X, User, Headphones, ExternalLink, Trophy, History, Radio, UserCheck } from 'lucide-react';
+import { Music, Play, Pause, TrendingUp, Newspaper, X, User, Headphones, ExternalLink, Trophy, History, Radio, UserCheck, Flame, Globe, Sparkles } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { supabase } from '@/lib/supabaseClient';
 import { formatPlays } from '@/lib/utils';
@@ -58,6 +58,10 @@ const HomePage = () => {
   const [loading,          setLoading]          = useState(true);
   const [selectedNews,     setSelectedNews]     = useState(null);
   const [newSongIds,       setNewSongIds]       = useState(new Set());
+  // Sections découverte
+  const [trendingSongs,    setTrendingSongs]    = useState([]);
+  const [recommendedSongs, setRecommendedSongs] = useState([]);
+  const [africaSongs,      setAfricaSongs]      = useState([]);
   const [loadingHistorySong, setLoadingHistorySong] = useState(null);
 
   useEffect(() => { fetchData(); }, []);
@@ -146,6 +150,23 @@ const HomePage = () => {
       setFeaturedSongs(songs || []);
       setTopSongs((top || []).filter(s => !s.is_archived));
       setSpotlightSongs((spotlight || []).filter(s => !s.is_archived));
+
+      // Sections découverte — en parallèle, sans bloquer
+      Promise.all([
+        // 🔥 Tendances — top écoutes semaine
+        supabase.from('songs').select('id,title,artist,cover_url,audio_url,plays_count,genre,uploader_id')
+          .eq('is_archived', false).order('plays_count', { ascending: false }).limit(6),
+        // 🌍 Découverte Afrique — genres africains
+        supabase.from('songs').select('id,title,artist,cover_url,audio_url,plays_count,genre,uploader_id')
+          .eq('is_archived', false)
+          .in('genre', ['Bikutsi','Makossa','Assiko','Afrobeats','Amapiano','Coupé-Décalé','Ambas-Bay','Benskin','Mbolé','Drill'])
+          .order('plays_count', { ascending: false }).limit(6),
+      ]).then(([{ data: trending }, { data: africa }]) => {
+        setTrendingSongs(trending || []);
+        setAfricaSongs(africa || []);
+        // 🎧 Recommandé — récents non encore entendus (fallback : récents)
+        setRecommendedSongs((songs || []).slice(0, 6));
+      }).catch(() => {});
     } catch { setFeaturedSongs([]); setNewsItems([]); }
     finally { clearTimeout(loadingTimeout); setLoading(false); }
   };
@@ -466,11 +487,11 @@ const HomePage = () => {
                         </Link>
                       </div>
                       <div className="relative p-3">
-                        <Link to={`/song/${song.id}`} className="text-white font-semibold truncate text-sm block hover:text-cyan-400 transition-colors">{song.title}</Link>
+                        <Link to={`/song/${song.id}`} className="text-white font-semibold truncate text-sm block hover:text-cyan-400 transition-colors notranslate" translate="no">{song.title}</Link>
                         {song.uploader_id ? (
-                          <Link to={`/artist/${song.uploader_id}`} className="text-gray-500 text-xs truncate block hover:text-gray-300 transition-colors mt-0.5">{song.artist}</Link>
+                          <Link to={`/artist/${song.uploader_id}`} className="text-gray-500 text-xs truncate block hover:text-gray-300 transition-colors mt-0.5 notranslate" translate="no">{song.artist}</Link>
                         ) : (
-                          <p className="text-gray-500 text-xs truncate mt-0.5">{song.artist}</p>
+                          <p className="text-gray-500 text-xs truncate mt-0.5 notranslate" translate="no">{song.artist}</p>
                         )}
                         <div className="flex items-center justify-end mt-1.5">
                           <SongActionsMenu song={song}
@@ -490,6 +511,134 @@ const HomePage = () => {
               )}
             </div>
           </section>
+
+          {/* ═══════════════════════════════════════════════════
+              🔥 TENDANCES
+          ═══════════════════════════════════════════════════ */}
+          {trendingSongs.length > 0 && (
+            <section className="relative py-10 overflow-hidden">
+              <div className="absolute inset-0 bg-gradient-to-b from-transparent via-orange-950/15 to-transparent pointer-events-none" />
+              <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-orange-500/40 to-transparent" />
+              <div className="w-full max-w-screen-2xl mx-auto px-4 md:px-8 lg:px-12 relative">
+                <div className="flex items-center justify-between mb-6">
+                  <div className="flex items-center gap-3">
+                    <div className="w-1 h-8 bg-gradient-to-b from-orange-400 to-red-600 rounded-full" />
+                    <h2 className="text-xl md:text-2xl font-bold text-white flex items-center gap-2">
+                      <Flame className="w-6 h-6 text-orange-400" />🔥 Tendances
+                    </h2>
+                  </div>
+                  <Link to="/trending" className="text-sm text-orange-400 hover:text-orange-300 transition-colors font-medium">Voir tout →</Link>
+                </div>
+                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 md:gap-4">
+                  {trendingSongs.map((song, i) => (
+                    <motion.div key={song.id} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.04 }}
+                      className="group relative bg-gray-900/80 border border-gray-800 hover:border-orange-500/40 rounded-xl overflow-hidden cursor-pointer transition-all"
+                      onClick={() => playSong(song)}>
+                      <div className="relative aspect-square">
+                        {song.cover_url
+                          ? <img src={song.cover_url} alt="" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" loading="lazy" />
+                          : <div className="w-full h-full bg-gradient-to-br from-orange-600/30 to-red-900/50 flex items-center justify-center"><Music className="w-8 h-8 text-orange-400/50" /></div>}
+                        <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                          <Play className="w-8 h-8 text-white fill-current" />
+                        </div>
+                        <div className="absolute top-1.5 left-1.5 w-6 h-6 rounded-full bg-orange-500/90 flex items-center justify-center text-white text-[10px] font-black">
+                          {i + 1}
+                        </div>
+                      </div>
+                      <div className="p-2">
+                        <p className="text-white text-xs font-semibold truncate notranslate" translate="no">{song.title}</p>
+                        <p className="text-gray-500 text-[10px] truncate notranslate" translate="no">{song.artist}</p>
+                      </div>
+                    </motion.div>
+                  ))}
+                </div>
+              </div>
+            </section>
+          )}
+
+          {/* ═══════════════════════════════════════════════════
+              🎧 RECOMMANDÉ POUR VOUS
+          ═══════════════════════════════════════════════════ */}
+          {recommendedSongs.length > 0 && (
+            <section className="relative py-10 overflow-hidden">
+              <div className="absolute inset-0 bg-gradient-to-b from-transparent via-violet-950/15 to-transparent pointer-events-none" />
+              <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-violet-500/40 to-transparent" />
+              <div className="w-full max-w-screen-2xl mx-auto px-4 md:px-8 lg:px-12 relative">
+                <div className="flex items-center justify-between mb-6">
+                  <div className="flex items-center gap-3">
+                    <div className="w-1 h-8 bg-gradient-to-b from-violet-400 to-purple-600 rounded-full" />
+                    <h2 className="text-xl md:text-2xl font-bold text-white flex items-center gap-2">
+                      <Sparkles className="w-6 h-6 text-violet-400" />🎧 Recommandé pour vous
+                    </h2>
+                  </div>
+                </div>
+                <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-hide snap-x snap-mandatory">
+                  {recommendedSongs.map((song, i) => (
+                    <motion.div key={song.id} initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: i * 0.05 }}
+                      onClick={() => playSong(song)}
+                      className="group flex-shrink-0 w-36 sm:w-44 cursor-pointer snap-start">
+                      <div className="relative aspect-square rounded-xl overflow-hidden mb-2 border border-gray-800 group-hover:border-violet-500/40 transition-colors">
+                        {song.cover_url
+                          ? <img src={song.cover_url} alt="" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" loading="lazy" />
+                          : <div className="w-full h-full bg-gradient-to-br from-violet-600/30 to-purple-900/50 flex items-center justify-center"><Music className="w-8 h-8 text-violet-400/50" /></div>}
+                        <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center rounded-xl">
+                          <Play className="w-8 h-8 text-white fill-current" />
+                        </div>
+                      </div>
+                      <p className="text-white text-xs font-semibold truncate notranslate" translate="no">{song.title}</p>
+                      <p className="text-gray-500 text-[10px] truncate notranslate" translate="no">{song.artist}</p>
+                    </motion.div>
+                  ))}
+                </div>
+              </div>
+            </section>
+          )}
+
+          {/* ═══════════════════════════════════════════════════
+              🌍 DÉCOUVERTE AFRIQUE
+          ═══════════════════════════════════════════════════ */}
+          {africaSongs.length > 0 && (
+            <section className="relative py-10 overflow-hidden">
+              <div className="absolute inset-0 bg-gradient-to-b from-transparent via-green-950/15 to-transparent pointer-events-none" />
+              <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-green-500/40 to-transparent" />
+              <div className="w-full max-w-screen-2xl mx-auto px-4 md:px-8 lg:px-12 relative">
+                <div className="flex items-center justify-between mb-6">
+                  <div className="flex items-center gap-3">
+                    <div className="w-1 h-8 bg-gradient-to-b from-green-400 to-emerald-600 rounded-full" />
+                    <h2 className="text-xl md:text-2xl font-bold text-white flex items-center gap-2">
+                      <Globe className="w-6 h-6 text-green-400" />🌍 Découverte Afrique
+                    </h2>
+                  </div>
+                  <Link to="/explorer" className="text-sm text-green-400 hover:text-green-300 transition-colors font-medium">Explorer →</Link>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-4">
+                  {africaSongs.map((song, i) => (
+                    <motion.div key={song.id} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.04 }}
+                      onClick={() => playSong(song)}
+                      className="group flex items-center gap-3 bg-gray-900/80 border border-gray-800 hover:border-green-500/40 rounded-xl p-3 cursor-pointer transition-all">
+                      <div className="relative w-14 h-14 rounded-lg overflow-hidden flex-shrink-0">
+                        {song.cover_url
+                          ? <img src={song.cover_url} alt="" className="w-full h-full object-cover group-hover:scale-105 transition-transform" loading="lazy" />
+                          : <div className="w-full h-full bg-gradient-to-br from-green-600/30 to-emerald-900/50 flex items-center justify-center"><Music className="w-6 h-6 text-green-400/50" /></div>}
+                        <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                          <Play className="w-5 h-5 text-white fill-current" />
+                        </div>
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-white text-sm font-semibold truncate notranslate" translate="no">{song.title}</p>
+                        <p className="text-gray-400 text-xs truncate notranslate" translate="no">{song.artist}</p>
+                        {song.genre && <span className="text-[10px] text-green-400 font-medium bg-green-500/10 px-1.5 py-0.5 rounded-full mt-0.5 inline-block">{song.genre}</span>}
+                      </div>
+                      <div className="flex items-center gap-1 text-gray-600 flex-shrink-0">
+                        <Headphones className="w-3 h-3" />
+                        <span className="text-[10px]">{formatPlays(song.plays_count)}</span>
+                      </div>
+                    </motion.div>
+                  ))}
+                </div>
+              </div>
+            </section>
+          )}
 
           {/* News Feed */}
           <section className="relative py-12 md:py-16 overflow-hidden">

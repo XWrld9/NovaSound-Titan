@@ -344,8 +344,8 @@ const SearchPage = () => {
                               </div>
                               {/* Info */}
                               <div className="flex-1 min-w-0">
-                                <p className="text-white font-medium text-sm truncate">{song.title}</p>
-                                <p className="text-gray-500 text-xs truncate">{song.artist}</p>
+                                <p className="text-white font-medium text-sm truncate notranslate" translate="no">{song.title}</p>
+                                <p className="text-gray-500 text-xs truncate notranslate" translate="no">{song.artist}</p>
                               </div>
                               {/* Stats + lien */}
                               <div className="flex items-center gap-3 flex-shrink-0">
@@ -358,6 +358,7 @@ const SearchPage = () => {
                                 <Link
                                   to={`/song/${song.id}`}
                                   onClick={e => e.stopPropagation()}
+                                  translate="no"
                                   className="p-1.5 rounded-lg hover:bg-gray-700 text-gray-500 hover:text-cyan-400 transition-all"
                                 >
                                   <ChevronRight className="w-4 h-4" />
@@ -387,6 +388,7 @@ const SearchPage = () => {
                             >
                               <Link
                                 to={`/artist/${artist.id}`}
+                                translate="no"
                                 className="flex flex-col items-center gap-2 p-4 rounded-2xl bg-gray-900/50 hover:bg-gray-800/60 border border-transparent hover:border-fuchsia-500/20 transition-all group"
                               >
                                 <div className="w-14 h-14 rounded-full overflow-hidden bg-gray-800 flex-shrink-0 ring-2 ring-transparent group-hover:ring-fuchsia-500/30 transition-all">
@@ -396,7 +398,7 @@ const SearchPage = () => {
                                   }
                                 </div>
                                 <div className="text-center min-w-0 w-full">
-                                  <p className="text-white font-semibold text-sm truncate group-hover:text-fuchsia-300 transition-colors">{artist.username}</p>
+                                  <p className="text-white font-semibold text-sm truncate group-hover:text-fuchsia-300 transition-colors notranslate" translate="no">{artist.username}</p>
                                   {artist.bio && <p className="text-gray-600 text-xs truncate mt-0.5">{artist.bio}</p>}
                                 </div>
                               </Link>
