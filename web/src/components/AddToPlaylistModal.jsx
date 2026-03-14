@@ -7,6 +7,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { X, Plus, ListMusic, Check, Lock, Globe, Loader2, Music } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { usePlaylist } from '@/contexts/PlaylistContext';
+import NoTranslate from '@/components/NoTranslate';
 
 const AddToPlaylistModal = ({ song, onClose }) => {
   const { currentUser } = useAuth();
@@ -83,8 +84,8 @@ const AddToPlaylistModal = ({ song, onClose }) => {
               }
             </div>
             <div className="min-w-0">
-              <p className="text-white font-bold text-sm truncate">{song.title}</p>
-              <p className="text-gray-500 text-xs truncate">{song.artist}</p>
+              <NoTranslate tag="p" className="text-white font-bold text-sm truncate truncate">{song.title}</NoTranslate>
+              <NoTranslate tag="p" className="text-gray-500 text-xs truncate truncate">{song.artist}</NoTranslate>
             </div>
           </div>
           <button onClick={onClose} className="p-2 text-gray-500 hover:text-white transition-colors rounded-xl hover:bg-white/8">

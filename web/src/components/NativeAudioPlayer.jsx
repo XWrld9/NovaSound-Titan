@@ -27,6 +27,7 @@ import {
   getPlatform, isIOS, hasFSA
 } from '@/lib/nativeAudioAccess';
 import { tracks as tracksDB, playlists as playlistsDB, settings } from '@/lib/localMusicDB';
+import NoTranslate from '@/components/NoTranslate';
 
 // ── Helpers ─────────────────────────────────────────────────────────────────
 const fmt = (s) => {
@@ -221,9 +222,7 @@ const FullPlayer = memo(({
             <h2 className="text-white font-black text-xl leading-tight truncate">
               {track?.title || track?.name || 'Aucune piste'}
             </h2>
-            <p className="text-gray-400 mt-1 truncate">
-              {track?.artist || 'Artiste inconnu'}
-            </p>
+            <NoTranslate tag="p" className="text-gray-400 mt-1 truncate truncate">{track?.artist || 'Artiste inconnu'}</NoTranslate>
           </div>
           <button onClick={() => track && onToggleFav(track.id)}>
             <Heart className={`w-6 h-6 transition-colors ${track?.isFavorite ? 'text-red-400 fill-red-400' : 'text-gray-600'}`} />
@@ -325,7 +324,7 @@ const MiniPlayer = memo(({ track, isPlaying, currentTime, duration, onTogglePlay
 
       <div className="flex-1 min-w-0">
         <p className="text-white font-semibold text-sm truncate">{track?.title || track?.name}</p>
-        <p className="text-gray-500 text-xs truncate">{track?.artist || 'Artiste inconnu'}</p>
+        <NoTranslate tag="p" className="text-gray-500 text-xs truncate truncate">{track?.artist || 'Artiste inconnu'}</NoTranslate>
       </div>
 
       <button onClick={e => { e.stopPropagation(); onTogglePlay(); }}

@@ -11,6 +11,7 @@ import { supabase } from '@/lib/supabaseClient';
 import { formatPlays } from '@/lib/utils';
 import Header from '@/components/Header';
 import { usePlayer } from '@/contexts/PlayerContext';
+import NoTranslate from '@/components/NoTranslate';
 
 const ArtistsPage = () => {
   const { playSong } = usePlayer();
@@ -214,7 +215,7 @@ const ArtistsPage = () => {
                               <img src={song.cover_url || '/icon-192.png'} alt=""
                                 className="w-8 h-8 rounded-lg object-cover flex-shrink-0 opacity-80 group-hover:opacity-100 transition-opacity" />
                               <div className="flex-1 min-w-0">
-                                <p className="text-sm font-semibold text-gray-200 truncate group-hover:text-white transition-colors">{song.title}</p>
+                                <NoTranslate tag="p" className="text-sm font-semibold text-gray-200 truncate group-hover:text-white transition-colors truncate">{song.title}</NoTranslate>
                               </div>
                               <div className="flex items-center gap-1 text-xs text-gray-600 flex-shrink-0">
                                 <TrendingUp className="w-3 h-3" />

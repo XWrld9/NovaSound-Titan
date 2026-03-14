@@ -9,6 +9,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Play, Search, Upload, User, X, ChevronRight } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
+import NoTranslate from '@/components/NoTranslate';
 
 const STEPS = [
   {
@@ -111,7 +112,7 @@ const OnboardingToast = () => {
             </button>
           </div>
 
-          <h4 className="text-white font-bold text-sm mb-1">{s.title}</h4>
+          <NoTranslate tag="h4" className="text-white font-bold text-sm mb-1 truncate">{s.title}</NoTranslate>
           <p className="text-gray-400 text-xs leading-relaxed">{s.description}</p>
 
           <div className="flex items-center justify-between mt-4">

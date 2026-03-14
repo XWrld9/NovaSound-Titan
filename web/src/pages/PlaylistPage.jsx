@@ -16,6 +16,7 @@ import {
   Play, Pause, Music, ListMusic, Lock, Globe, Trash2,
   Edit2, Check, X, Loader2, ArrowLeft, Shuffle, Users,
 } from 'lucide-react';
+import NoTranslate from '@/components/NoTranslate';
 
 const PlaylistPage = () => {
   const { id }      = useParams();
@@ -326,8 +327,8 @@ const PlaylistPage = () => {
 
                   {/* Infos */}
                   <div className="flex-1 min-w-0">
-                    <p className={`font-semibold text-sm truncate ${isNowPlaying ? 'text-cyan-300' : 'text-white'}`}>{song.title}</p>
-                    <p className="text-gray-500 text-xs truncate">{song.artist}</p>
+                    <NoTranslate tag="p" className="`font-semibold text-sm truncate ${isNowPlaying ? 'text-cyan-300' : 'text-white' truncate" `}>{song.title}</NoTranslate>
+                    <NoTranslate tag="p" className="text-gray-500 text-xs truncate truncate">{song.artist}</NoTranslate>
                   </div>
 
                   {/* Durée + remove */}

@@ -22,6 +22,7 @@ import {
   Volume2, VolumeX, Volume1,
 } from 'lucide-react';
 import SongShareModal from '@/components/SongShareModal';
+import NoTranslate from '@/components/NoTranslate';
 
 const fmtTime = (s) => {
   if (!s || isNaN(s) || s < 0) return '0:00';
@@ -369,12 +370,12 @@ const NowPlayingScreen = ({
             <AnimatePresence mode="wait">
               <motion.p key={currentSong.title}
                 initial={{opacity:0,y:6}} animate={{opacity:1,y:0}} exit={{opacity:0,y:-6}}
-                className="text-white text-xl md:text-2xl lg:text-3xl font-black truncate">{currentSong.title}</motion.p>
+                className="text-white text-xl md:text-2xl lg:text-3xl font-black truncate"><NoTranslate className="truncate">{currentSong.title}</NoTranslate></motion.p>
             </AnimatePresence>
             {isLocal
-              ? <p className="text-gray-400 text-sm mt-0.5">{currentSong.artist}</p>
+              ? <NoTranslate tag="p" className="text-gray-400 text-sm mt-0.5 truncate">{currentSong.artist}</NoTranslate>
               : <Link to={`/artist/${currentSong.uploader_id}`} onClick={onClose}
-                  className="text-gray-400 text-sm hover:text-white transition-colors mt-0.5 block">{currentSong.artist}</Link>
+                  className="text-gray-400 text-sm hover:text-white transition-colors mt-0.5 block"><NoTranslate className="truncate">{currentSong.artist}</NoTranslate></Link>
             }
           </div>
 
@@ -514,8 +515,8 @@ const NowPlayingScreen = ({
                             : <div className="w-full h-full bg-gray-700 flex items-center justify-center"><Music className="w-3 h-3 text-gray-500" /></div>}
                         </div>
                         <div className="flex-1 min-w-0">
-                          <p className="text-white text-xs font-medium truncate">{s.title}</p>
-                          <p className="text-gray-500 text-[10px] truncate">{s.artist}</p>
+                          <NoTranslate tag="p" className="text-white text-xs font-medium truncate truncate">{s.title}</NoTranslate>
+                          <NoTranslate tag="p" className="text-gray-500 text-[10px] truncate truncate">{s.artist}</NoTranslate>
                         </div>
                       </div>
                     ))
@@ -545,7 +546,7 @@ const NowPlayingScreen = ({
             </div>
             <div className="space-y-3 text-center pb-12 max-w-2xl mx-auto">
               {lyricsContent.split('\n').map((line,i) => (
-                <p key={i} className={line.trim()?'text-white text-base leading-relaxed':'py-2'}>{line||'\u00A0'}</p>
+                <p key={i} translate="no" className={`notranslate ${line.trim()?'text-white text-base leading-relaxed':'py-2'}`}>{line||' '}</p>
               ))}
             </div>
           </motion.div>

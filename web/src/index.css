@@ -386,23 +386,39 @@ html, body {
    ══════════════════════════════════════════════════════════════════ */
 
 /* L'élément lui-même hérite tout de son parent */
+/* ══════════════════════════════════════════════════════════════════
+   ns-notrans — Protection anti-traduction TOTALE v5
+   Technique CSS custom property var(--nt) :
+   Les variables CSS inline ne sont JAMAIS modifiées par aucun
+   traducteur (Elfsight, Google Translate, DeepL...).
+   Double sécurité : var(--nt) ET attr(data-ns) en fallback.
+   ══════════════════════════════════════════════════════════════════ */
+
+/* Base shared */
+.ns-notrans,
+.ns-notrans-block {
+  /* Pas de color : Tailwind le gère via ses classes text-* */
+}
+
+/* ── Inline (span, a...) ── */
 .ns-notrans {
   display: inline;
-  color: inherit;
-  font: inherit;
 }
 .ns-notrans::before {
-  content: attr(data-ns);
-  /* Hériter exactement du style parent — pas de surcharge de couleur */
+  /* var(--nt) = CSS custom property → jamais traduit
+     attr(data-ns) = fallback si var() non supporté */
+  content: var(--nt, attr(data-ns));
+  color: currentColor;
   font: inherit;
-  color: inherit;
+  font-size: inherit;
+  font-weight: inherit;
+  line-height: inherit;
   letter-spacing: inherit;
   text-transform: inherit;
   white-space: inherit;
-  unicode-bidi: inherit;
 }
 
-/* Couper proprement quand truncate Tailwind est utilisé */
+/* Truncate dans un parent truncate */
 .truncate .ns-notrans,
 .ns-notrans.truncate {
   display: block;
@@ -413,25 +429,30 @@ html, body {
 }
 .truncate .ns-notrans::before,
 .ns-notrans.truncate::before {
+  content: var(--nt, attr(data-ns));
+  color: currentColor;
   display: block;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  font: inherit;
+  max-width: 100%;
 }
 
-/* Version block (tag=p, h1, div...) */
+/* ── Block (p, h1-h6, div, li...) ── */
 .ns-notrans-block {
   display: block;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  color: inherit;
-  font: inherit;
 }
 .ns-notrans-block::before {
-  content: attr(data-ns);
+  content: var(--nt, attr(data-ns));
+  color: currentColor;
   font: inherit;
-  color: inherit;
+  font-size: inherit;
+  font-weight: inherit;
+  line-height: inherit;
   display: block;
   overflow: hidden;
   text-overflow: ellipsis;

@@ -1046,10 +1046,8 @@ const AudioPlayerDesktop = ({ currentSong, playlist = [], onNext, onPrevious, on
                   <div className="min-w-0 flex-1">
                     <NoTranslate tag="h2" className="text-white text-xl sm:text-2xl font-bold leading-tight break-words drop-shadow-lg">{currentSong.title}</NoTranslate>
                     <div className="flex items-center gap-2 mt-1 flex-wrap">
-                      <span className="text-gray-300 text-sm hover:text-white cursor-pointer transition-colors"
-                        onClick={() => currentSong?.uploader_id && navigate(`/artist/${currentSong.uploader_id}`)}>
-                        {currentSong.artist}
-                      </span>
+                      <NoTranslate tag="span" className="text-gray-300 text-sm hover:text-white cursor-pointer transition-colors"
+                        onClick={() => currentSong?.uploader_id && navigate(`/artist/${currentSong.uploader_id}`)}>{currentSong.artist}</NoTranslate>
                       {/* Genre badge */}
                       {currentSong.genre && (
                         <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-cyan-500/15 text-cyan-400 border border-cyan-500/25">
@@ -1388,8 +1386,8 @@ const AudioPlayerDesktop = ({ currentSong, playlist = [], onNext, onPrevious, on
                       </a>
                     )}
                   </div>
-                  <div className="text-gray-500 text-xs truncate cursor-pointer flex items-center gap-1 notranslate" translate="no" onClick={() => currentSong?.is_local ? setShowNowPlaying(true) : setIsExpanded(true)}>
-                    {currentSong.artist}
+                  <div className="text-gray-500 text-xs truncate cursor-pointer flex items-center gap-1" onClick={() => currentSong?.is_local ? setShowNowPlaying(true) : setIsExpanded(true)}>
+                    <NoTranslate className="truncate">{currentSong.artist}</NoTranslate>
                     {sleepTimer !== null && (
                       <span className="text-amber-400 text-[9px] font-bold ml-1">🌙 {fmtSleep(sleepTimer)}</span>
                     )}

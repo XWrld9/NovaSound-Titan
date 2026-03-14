@@ -7,6 +7,7 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Play, ChevronLeft, ChevronRight, Headphones } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import NoTranslate from '@/components/NoTranslate';
 
 const SpotlightCarousel = ({ songs = [], onPlay, currentSong }) => {
   const [current, setCurrent] = useState(0);
@@ -94,10 +95,8 @@ const SpotlightCarousel = ({ songs = [], onPlay, currentSong }) => {
               {song.genre}
             </span>
           )}
-          <h3 className="text-white text-2xl md:text-3xl font-black leading-tight truncate drop-shadow-lg">
-            {song.title}
-          </h3>
-          <p className="text-gray-300 text-sm md:text-base mt-1 truncate">{song.artist}</p>
+          <NoTranslate tag="h3" className="text-white text-2xl md:text-3xl font-black leading-tight truncate drop-shadow-lg truncate">{song.title}</NoTranslate>
+          <NoTranslate tag="p" className="text-gray-300 text-sm md:text-base mt-1 truncate truncate">{song.artist}</NoTranslate>
           <div className="flex items-center gap-3 mt-3">
             <button
               onClick={() => onPlay?.(song)}

@@ -242,7 +242,7 @@ const LyricsPanel = ({ song, currentTime = 0, isExpanded = false }) => {
                       ref={el => { lineRefs.current[i] = el; }}
                       animate={isActive ? { scale: 1.04 } : { scale: 1 }}
                       transition={{ duration: 0.2 }}
-                      className={`text-center leading-relaxed transition-all duration-300 select-text cursor-default ${
+                      translate="no" className={`notranslate text-center leading-relaxed transition-all duration-300 select-text cursor-default ${
                         karaoke
                           ? isActive
                             ? 'text-2xl md:text-3xl font-black text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-fuchsia-400'
@@ -256,7 +256,7 @@ const LyricsPanel = ({ song, currentTime = 0, isExpanded = false }) => {
                               : 'text-gray-300 text-sm hover:text-white'
                       }`}
                     >
-                      {line.text}
+                      <span translate="no" className="notranslate">{line.text}</span>
                     </motion.p>
                   );
                 })}

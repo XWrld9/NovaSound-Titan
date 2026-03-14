@@ -30,6 +30,7 @@ import {
   Plus, Trash2, Check, ChevronRight, AlertTriangle, Save, PenLine,
 } from 'lucide-react';
 import { usePlayer } from '@/contexts/PlayerContext';
+import NoTranslate from '@/components/NoTranslate';
 
 // ════════════════════════════════════════════════════════════════════════════
 // SECTION 1 — IndexedDB helper (compatible iOS 14+)
@@ -603,7 +604,7 @@ const LocalFilePicker = ({ compact = false }) => {
                       <img src={song.cover_url} alt={song.title} className="w-full h-full object-cover"/>
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="text-white text-sm font-medium truncate">{song.title}</p>
+                      <NoTranslate tag="p" className="text-white text-sm font-medium truncate truncate">{song.title}</NoTranslate>
                       <p className="text-gray-500 text-[11px] truncate">
                         {song.artist}
                         {song.fileSize ? <span className="ml-1 text-gray-600">· {fmtSize(song.fileSize)}</span> : null}

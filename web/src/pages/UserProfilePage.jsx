@@ -32,6 +32,7 @@ import SongCard from '@/components/SongCard';
 import FollowButton from '@/components/FollowButton';
 import EditProfileModal from '@/components/EditProfileModal';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
+import NoTranslate from '@/components/NoTranslate';
 
 // ── Skeleton ─────────────────────────────────────────────────────────────────
 const SkeletonCard = () => (
@@ -447,8 +448,8 @@ const UserProfilePage = () => {
                                 : <div className="w-10 h-10 rounded-lg bg-gray-800 flex items-center justify-center flex-shrink-0"><Music className="w-4 h-4 text-gray-600" /></div>
                               }
                               <div className="flex-1 min-w-0">
-                                <p className="text-sm font-semibold text-white group-hover:text-teal-400 truncate">{song.title}</p>
-                                <p className="text-xs text-gray-500 truncate">{song.artist}</p>
+                                <NoTranslate tag="p" className="text-sm font-semibold text-white group-hover:text-teal-400 truncate truncate">{song.title}</NoTranslate>
+                                <NoTranslate tag="p" className="text-xs text-gray-500 truncate truncate">{song.artist}</NoTranslate>
                               </div>
                               <ExternalLink className="w-3.5 h-3.5 text-gray-600 group-hover:text-teal-400 flex-shrink-0" />
                             </Link>

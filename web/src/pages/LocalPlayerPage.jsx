@@ -179,8 +179,8 @@ const SongRow=memo(({song,index,isActive,isSelected,onPlay,onRemove,selectionMod
         {nr&&<div className="absolute inset-0 bg-black/70 flex items-center justify-center"><AlertTriangle className="w-3.5 h-3.5 text-amber-400"/></div>}
       </div>
       <div className="flex-1 min-w-0">
-        <NoTranslate tag="p" className={`text-sm font-medium truncate notranslate ${isActive?'text-white':nr?'text-gray-500':'text-gray-200'}`} translate="no">{song.title}</NoTranslate>
-        <p className="text-[11px] text-gray-500 truncate notranslate" translate="no">{nr?<span className="text-amber-400/80">⚠ Reload needed</span>:song.artist}</p>
+        <NoTranslate tag="p" className={`text-sm font-medium truncate notranslate ${isActive?'text-white':nr?'text-gray-500':'text-gray-200'}`} translate="no"><NoTranslate className="truncate">{song.title}</NoTranslate></NoTranslate>
+        <p className="text-[11px] text-gray-500 truncate notranslate" translate="no">{nr?<span className="text-amber-400/80">⚠ Reload needed</span>:<span translate="no" className="notranslate truncate">{song.artist}</span>}</p>
       </div>
       <span className="hidden lg:block text-[11px] text-gray-700 w-24 truncate flex-shrink-0">{song.album||''}</span>
       <span className="text-[11px] text-gray-600 tabular-nums w-10 text-right flex-shrink-0">{duration?fmtTime(duration):nr?'--:--':''}</span>
@@ -523,7 +523,7 @@ const LocalPlayerPage=()=>{
                         <img src={pl.songs[0]?.cover_url||pl.songs[0]?.cover_svg||makeCoverSvg(pl.name,'')} alt="" className="w-full h-full object-cover"/>
                       </div>
                       <div className="flex-1 min-w-0">
-                        <p className="text-white text-xs font-semibold truncate"><NoTranslate className="truncate">{pl.name}</NoTranslate></p>
+                        <NoTranslate tag="p" className="text-white text-xs font-semibold truncate truncate">{pl.name}</NoTranslate>
                         <p className="text-gray-600 text-[10px]">{pl.songs.length} fichier{pl.songs.length>1?'s':''}</p>
                       </div>
                     </button>
@@ -670,8 +670,8 @@ const LocalPlayerPage=()=>{
               <div className="flex-shrink-0">
                 <div className="flex items-start justify-between gap-2">
                   <div className="flex-1 min-w-0">
-                    <NoTranslate tag="p" className="text-white font-black text-lg truncate notranslate leading-tight">{activeSong.title}</NoTranslate>
-                    <NoTranslate tag="p" className="text-cyan-400/80 text-sm truncate notranslate mt-0.5">{activeSong.artist}</NoTranslate>
+                    <NoTranslate tag="p" className="text-white font-black text-lg truncate notranslate leading-tight"><NoTranslate className="truncate">{activeSong.title}</NoTranslate></NoTranslate>
+                    <NoTranslate tag="p" className="text-cyan-400/80 text-sm truncate notranslate mt-0.5"><NoTranslate className="truncate">{activeSong.artist}</NoTranslate></NoTranslate>
                     {activeSong.album&&<p className="text-gray-600 text-xs truncate mt-0.5">{activeSong.album}</p>}
                   </div>
                   <button onClick={()=>setFavorited(v=>!v)} className={`flex-shrink-0 p-2 rounded-full transition-all ${favorited?'text-pink-500':'text-gray-600 hover:text-pink-400'}`}>
@@ -879,7 +879,7 @@ const LocalPlayerPage=()=>{
                           </div>
                         </div>
                         <div className="p-3">
-                          <p className="text-white text-sm font-bold truncate"><NoTranslate className="truncate">{pl.name}</NoTranslate></p>
+                          <NoTranslate tag="p" className="text-white text-sm font-bold truncate truncate">{pl.name}</NoTranslate>
                           <div className="flex items-center justify-between mt-1">
                             <p className="text-gray-600 text-[10px]">{pl.songs.length} titre{pl.songs.length>1?'s':''}</p>
                             <button onClick={e=>{e.stopPropagation();deletePlaylist(pl.id);}} className="text-gray-700 hover:text-red-400 transition-all p-1 rounded"><Trash2 className="w-3 h-3"/></button>
@@ -913,8 +913,8 @@ const LocalPlayerPage=()=>{
                     <img src={song.cover_url||song.cover_svg} alt="" className="w-full h-full object-cover"/>
                   </div>
                   <div className="flex-1 min-w-0">
-                    <NoTranslate tag="p" className={`text-xs font-semibold truncate notranslate ${isActive?'text-cyan-300':'text-gray-300'}`} translate="no">{song.title}</NoTranslate>
-                    <NoTranslate tag="p" className="text-[10px] text-gray-600 truncate notranslate">{song.artist}</NoTranslate>
+                    <NoTranslate tag="p" className={`text-xs font-semibold truncate notranslate ${isActive?'text-cyan-300':'text-gray-300'}`} translate="no"><NoTranslate className="truncate">{song.title}</NoTranslate></NoTranslate>
+                    <NoTranslate tag="p" className="text-[10px] text-gray-600 truncate notranslate"><NoTranslate className="truncate">{song.artist}</NoTranslate></NoTranslate>
                   </div>
                   {isActive&&<EQBars active bars={3}/>}
                 </div>

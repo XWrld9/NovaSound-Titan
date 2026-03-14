@@ -5,6 +5,7 @@ import { MoreVertical, Archive, ArchiveRestore, Trash2, AlertTriangle, Edit2, Ch
 import { supabase } from '@/lib/supabaseClient';
 import { useAuth } from '@/contexts/AuthContext';
 import CommentSection from '@/components/CommentSection';
+import NoTranslate from '@/components/NoTranslate';
 
 const ADMIN_EMAIL = 'eloadxfamily@gmail.com';
 
@@ -662,7 +663,7 @@ const SongActionsMenu = ({ song, onArchived, onDeleted }) => {
                 <MessageCircle style={{ width: 18, height: 18, color: '#34d399' }} />
                 <div>
                   <p style={{ color: '#fff', fontWeight: 700, fontSize: 15, margin: 0 }}>Commentaires</p>
-                  <p style={{ color: 'rgba(156,163,175,1)', fontSize: 12, margin: 0 }}>{song.title}</p>
+                  <p style={{ color: 'rgba(156,163,175,1)', fontSize: 12, margin: 0 }}><NoTranslate className="truncate">{song.title}</NoTranslate></p>
                 </div>
               </div>
               <button

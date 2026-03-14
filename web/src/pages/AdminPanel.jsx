@@ -23,6 +23,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import AdminConfirmDialog from '@/components/AdminConfirmDialog';
+import NoTranslate from '@/components/NoTranslate';
 
 const ADMIN_EMAIL = 'eloadxfamily@gmail.com';
 
@@ -670,7 +671,7 @@ Il pourra accéder au panneau d'administration.`,
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-1.5">
-                        <p className="text-white font-semibold text-sm truncate">{song.title}</p>
+                        <NoTranslate tag="p" className="text-white font-semibold text-sm truncate truncate">{song.title}</NoTranslate>
                         {song.is_archived && <span className="text-[9px] bg-orange-500/20 text-orange-400 border border-orange-500/30 px-1.5 py-0.5 rounded-full font-black flex-shrink-0">ARCHIVÉ</span>}
                       </div>
                       <p className="text-gray-500 text-xs">{song.artist} · <span className="text-gray-600">{(song.plays_count||0).toLocaleString()} écoutes</span></p>

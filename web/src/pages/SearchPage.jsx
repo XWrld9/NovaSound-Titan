@@ -345,8 +345,8 @@ const SearchPage = () => {
                               </div>
                               {/* Info */}
                               <div className="flex-1 min-w-0">
-                                <NoTranslate tag="p" className="text-white font-medium text-sm truncate notranslate">{song.title}</NoTranslate>
-                                <NoTranslate tag="p" className="text-gray-500 text-xs truncate notranslate">{song.artist}</NoTranslate>
+                                <NoTranslate tag="p" className="text-white font-medium text-sm truncate notranslate"><NoTranslate className="truncate">{song.title}</NoTranslate></NoTranslate>
+                                <NoTranslate tag="p" className="text-gray-500 text-xs truncate notranslate"><NoTranslate className="truncate">{song.artist}</NoTranslate></NoTranslate>
                               </div>
                               {/* Stats + lien */}
                               <div className="flex items-center gap-3 flex-shrink-0">
@@ -399,7 +399,7 @@ const SearchPage = () => {
                                   }
                                 </div>
                                 <div className="text-center min-w-0 w-full">
-                                  <NoTranslate tag="p" className="text-white font-semibold text-sm truncate group-hover:text-fuchsia-300 transition-colors notranslate">{artist.username}</NoTranslate>
+                                  <NoTranslate tag="p" className="text-white font-semibold text-sm truncate group-hover:text-fuchsia-300 transition-colors notranslate"><NoTranslate className="truncate">{artist.username}</NoTranslate></NoTranslate>
                                   {artist.bio && <p className="text-gray-600 text-xs truncate mt-0.5">{artist.bio}</p>}
                                 </div>
                               </Link>

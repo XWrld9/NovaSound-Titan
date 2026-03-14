@@ -314,7 +314,7 @@ const RoomCard = ({ room, onJoin }) => {
           <Eq active={!full} />
           <div className="min-w-0">
             <p className="text-xs text-white truncate font-semibold notranslate" translate="no">{room.current_song.title}</p>
-            <p className="text-xs text-gray-500 truncate notranslate" translate="no">{room.current_song.artist}</p>
+            <NoTranslate tag="p" className="text-xs text-gray-500 truncate notranslate truncate" translate="no">{room.current_song.artist}</NoTranslate>
           </div>
         </div>
       )}
@@ -360,8 +360,8 @@ const QueueItem = ({ song, index, isHost, isNowPlaying, onPlay, onRemove }) => (
       : <div className="w-8 h-8 rounded-lg bg-gray-700 flex items-center justify-center flex-shrink-0"><Music className="w-4 h-4 text-gray-500" /></div>
     }
     <div className="flex-1 min-w-0">
-      <p className={`text-xs font-medium truncate ${isNowPlaying ? 'text-cyan-300' : 'text-white'}`}><NoTranslate className="truncate">{song.title}</NoTranslate></p>
-      <p className="text-gray-500 text-xs truncate"><NoTranslate className="truncate">{song.artist}</NoTranslate></p>
+      <p className={`text-xs font-medium truncate ${isNowPlaying ? 'text-cyan-300' : 'text-white'}`}><NoTranslate className="truncate"><NoTranslate className="truncate">{song.title}</NoTranslate></NoTranslate></p>
+      <p className="text-gray-500 text-xs truncate"><NoTranslate className="truncate"><NoTranslate className="truncate">{song.artist}</NoTranslate></NoTranslate></p>
     </div>
     {isHost && (
       <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
@@ -1566,7 +1566,7 @@ const LiveRoomPage = () => {
                       <Eq active />
                       <p className="text-white text-xs sm:text-sm font-semibold truncate">{nowPlaying.title}</p>
                     </div>
-                    <p className="text-gray-500 text-[11px] sm:text-xs truncate">{nowPlaying.artist}</p>
+                    <NoTranslate tag="p" className="text-gray-500 text-[11px] sm:text-xs truncate truncate">{nowPlaying.artist}</NoTranslate>
                     <div className="mt-1.5 h-1 bg-gray-800 rounded-full overflow-hidden">
                       <motion.div className="h-full bg-gradient-to-r from-green-500 to-cyan-500 rounded-full"
                         style={{ width: `${syncProgress * 100}%` }} transition={{ duration: 0.5 }} />
@@ -1826,8 +1826,8 @@ const LiveRoomPage = () => {
                                   : <div className="w-8 h-8 rounded-lg bg-gray-700 flex items-center justify-center flex-shrink-0"><Music className="w-4 h-4 text-gray-500" /></div>
                                 }
                                 <div className="flex-1 min-w-0" onClick={() => broadcastSong(s)}>
-                                  <p className="text-white text-xs font-medium truncate"><NoTranslate className="truncate">{s.title}</NoTranslate></p>
-                                  <p className="text-gray-500 text-xs truncate"><NoTranslate className="truncate">{s.artist}</NoTranslate></p>
+                                  <p className="text-white text-xs font-medium truncate"><NoTranslate className="truncate"><NoTranslate className="truncate">{s.title}</NoTranslate></NoTranslate></p>
+                                  <p className="text-gray-500 text-xs truncate"><NoTranslate className="truncate"><NoTranslate className="truncate">{s.artist}</NoTranslate></NoTranslate></p>
                                 </div>
                                 <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                                   <button onClick={() => broadcastSong(s)} className="p-1.5 text-cyan-400 hover:text-cyan-300 bg-cyan-500/10 rounded-lg" title="Jouer maintenant"><Play className="w-3 h-3" /></button>
@@ -1861,7 +1861,7 @@ const LiveRoomPage = () => {
                                         : <div className="w-9 h-9 rounded-lg bg-gray-700 flex items-center justify-center flex-shrink-0"><ListMusic className="w-4 h-4 text-gray-500" /></div>
                                       }
                                       <div className="flex-1 min-w-0">
-                                        <p className="text-white text-xs font-semibold truncate group-hover:text-fuchsia-300 transition-colors"><NoTranslate className="truncate">{pl.name}</NoTranslate></p>
+                                        <NoTranslate tag="p" className="text-white text-xs font-semibold truncate group-hover:text-fuchsia-300 transition-colors truncate">{pl.name}</NoTranslate>
                                         <p className="text-gray-500 text-[10px]">{(pl.playlist_songs || []).length} son{(pl.playlist_songs || []).length !== 1 ? 's' : ''}</p>
                                       </div>
                                       <Plus className="w-4 h-4 text-gray-600 group-hover:text-fuchsia-400 flex-shrink-0 transition-colors" />
@@ -2007,7 +2007,7 @@ const LiveRoomPage = () => {
                                 <div key={s.id} className="flex items-center gap-2 p-2 rounded-xl hover:bg-gray-700 cursor-pointer transition-colors"
                                   onClick={() => { broadcastSong(s); setMobileSideOpen(false); }}>
                                   {s.cover_url ? <img src={s.cover_url} alt="" className="w-8 h-8 rounded-lg object-cover flex-shrink-0" /> : <div className="w-8 h-8 rounded-lg bg-gray-600 flex items-center justify-center flex-shrink-0"><Music className="w-3 h-3 text-gray-400" /></div>}
-                                  <div className="flex-1 min-w-0"><p className="text-white text-xs font-medium truncate"><NoTranslate className="truncate">{s.title}</NoTranslate></p><p className="text-gray-400 text-[10px] truncate"><NoTranslate className="truncate">{s.artist}</NoTranslate></p></div>
+                                  <div className="flex-1 min-w-0"><p className="text-white text-xs font-medium truncate"><NoTranslate className="truncate"><NoTranslate className="truncate">{s.title}</NoTranslate></NoTranslate></p><p className="text-gray-400 text-[10px] truncate"><NoTranslate className="truncate"><NoTranslate className="truncate">{s.artist}</NoTranslate></NoTranslate></p></div>
                                   <div className="flex gap-1">
                                     <button onClick={e => { e.stopPropagation(); broadcastSong(s); setMobileSideOpen(false); }} className="p-1 text-cyan-400 hover:bg-cyan-500/10 rounded"><Play className="w-3 h-3" /></button>
                                     <button onClick={e => { e.stopPropagation(); addToQueue(s); }} className="p-1 text-fuchsia-400 hover:bg-fuchsia-500/10 rounded"><Plus className="w-3 h-3" /></button>
@@ -2030,7 +2030,7 @@ const LiveRoomPage = () => {
                                   <div key={pl.id} onClick={() => { addPlaylistToQueue(pl); setMobileSideOpen(false); }}
                                     className="flex items-center gap-2.5 p-2.5 rounded-xl hover:bg-gray-700 cursor-pointer transition-colors mb-1">
                                     {pl.cover_url ? <img src={pl.cover_url} alt="" className="w-9 h-9 rounded-lg object-cover flex-shrink-0" /> : <div className="w-9 h-9 rounded-lg bg-gray-600 flex items-center justify-center flex-shrink-0"><ListMusic className="w-4 h-4 text-gray-400" /></div>}
-                                    <div className="flex-1 min-w-0"><p className="text-white text-xs font-semibold truncate"><NoTranslate className="truncate">{pl.name}</NoTranslate></p><p className="text-gray-500 text-[10px]">{(pl.playlist_songs || []).length} sons</p></div>
+                                    <div className="flex-1 min-w-0"><NoTranslate tag="p" className="text-white text-xs font-semibold truncate truncate">{pl.name}</NoTranslate><p className="text-gray-500 text-[10px]">{(pl.playlist_songs || []).length} sons</p></div>
                                     <Plus className="w-4 h-4 text-fuchsia-400 flex-shrink-0" />
                                   </div>
                                 ))

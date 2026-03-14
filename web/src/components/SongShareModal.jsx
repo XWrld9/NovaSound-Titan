@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
 import { toPng } from 'html-to-image';
 import { WifiOff, Share2, Download, X } from 'lucide-react';
+import NoTranslate from '@/components/NoTranslate';
 
 /* ──────────────────────────────────────────────────────────────
    LOGO  — chargé en data URL depuis /icon-192.png (local = zéro CORS)
@@ -100,8 +101,8 @@ const SongShareModal = ({ song, onClose }) => {
           <div className="flex items-center gap-3 mb-4">
             {song.cover_url && <img src={song.cover_url} alt="" className="w-12 h-12 rounded-xl object-cover" />}
             <div className="flex-1 min-w-0">
-              <p className="text-white font-bold text-sm truncate">{song.title}</p>
-              <p className="text-gray-500 text-xs truncate">{song.artist}</p>
+              <NoTranslate tag="p" className="text-white font-bold text-sm truncate truncate">{song.title}</NoTranslate>
+              <NoTranslate tag="p" className="text-gray-500 text-xs truncate truncate">{song.artist}</NoTranslate>
             </div>
             <button onClick={onClose} className="p-1 text-gray-600 hover:text-white">
               <X className="w-4 h-4" />
@@ -347,8 +348,8 @@ const SongShareModal = ({ song, onClose }) => {
 
             {/* Infos + logo NovaSound */}
             <div style={{ padding: '12px 14px 14px', background: 'rgba(0,0,0,0.45)' }}>
-              <p style={{ color: '#fff', fontWeight: 700, fontSize: 14, lineHeight: 1.3, margin: '0 0 3px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{song.title}</p>
-              <p style={{ color: 'rgba(255,255,255,0.6)', fontSize: 12, margin: '0 0 10px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{song.artist}</p>
+              <p style={{ color: '#fff', fontWeight: 700, fontSize: 14, lineHeight: 1.3, margin: '0 0 3px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}><NoTranslate className="truncate">{song.title}</NoTranslate></p>
+              <p style={{ color: 'rgba(255,255,255,0.6)', fontSize: 12, margin: '0 0 10px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}><NoTranslate className="truncate">{song.artist}</NoTranslate></p>
 
               {/* Logo local = zéro CORS, s'affiche partout */}
               <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>

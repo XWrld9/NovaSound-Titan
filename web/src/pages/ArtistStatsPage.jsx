@@ -20,6 +20,7 @@ import {
   Music, ArrowLeft, BarChart2, Award, Eye
 } from 'lucide-react';
 import { formatPlays } from '@/lib/utils';
+import NoTranslate from '@/components/NoTranslate';
 
 // ── Micro composant graphe en barres SVG ────────────────────────
 // ── Graphique combiné : barres + courbe dans un seul SVG ────────────────────
@@ -394,7 +395,7 @@ const ArtistStatsPage = () => {
                           </div>
                           {/* Info */}
                           <div className="flex-1 min-w-0">
-                            <p className="text-white text-sm font-semibold truncate group-hover:text-cyan-400 transition-colors">{song.title}</p>
+                            <NoTranslate tag="p" className="text-white text-sm font-semibold truncate group-hover:text-cyan-400 transition-colors truncate">{song.title}</NoTranslate>
                             <div className="flex items-center gap-3 mt-1">
                               {/* Barre progression relative */}
                               <div className="flex-1 h-1.5 bg-gray-800 rounded-full overflow-hidden">

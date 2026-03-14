@@ -133,12 +133,12 @@ const SongRow = ({ song, index, onPlay, isPlaying, currentUser }) => {
 
         {/* Titre + artiste */}
         <div className="flex-1 min-w-0">
-          <NoTranslate tag="p" className={`font-semibold text-sm truncate leading-tight notranslate ${isPlaying ? 'text-cyan-300' : 'text-white'}`} translate="no">{song.title}</NoTranslate>
+          <NoTranslate tag="p" className={`font-semibold text-sm truncate leading-tight notranslate ${isPlaying ? 'text-cyan-300' : 'text-white'}`} translate="no"><NoTranslate className="truncate">{song.title}</NoTranslate></NoTranslate>
           <div className="flex items-center gap-1.5 mt-0.5">
             {song.uploader_id
               ? <Link to={`/artist/${song.uploader_id}`} onClick={e => e.stopPropagation()}
-                  className="text-gray-400 text-xs truncate hover:text-cyan-400 transition-colors notranslate" translate="no"><NoTranslate className="truncate">{song.artist}</NoTranslate></Link>
-              : <NoTranslate tag="span" className="text-gray-400 text-xs truncate notranslate">{song.artist}</NoTranslate>
+                  className="text-gray-400 text-xs truncate hover:text-cyan-400 transition-colors notranslate" translate="no"><NoTranslate className="truncate"><NoTranslate className="truncate">{song.artist}</NoTranslate></NoTranslate></Link>
+              : <NoTranslate tag="span" className="text-gray-400 text-xs truncate notranslate"><NoTranslate className="truncate">{song.artist}</NoTranslate></NoTranslate>
             }
             {song.genre && (
               <span className="flex-shrink-0 text-[9px] font-semibold px-1.5 py-px rounded-full bg-cyan-500/10 text-cyan-400 border border-cyan-500/15">

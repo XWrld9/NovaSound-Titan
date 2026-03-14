@@ -14,6 +14,7 @@ import usePWAInstall from '@/hooks/usePWAInstall';
 import NotificationBell from '@/components/NotificationBell';
 import AndroidInstallGuide from '@/components/AndroidInstallGuide';
 import { useNotifications } from '@/contexts/NotificationContext';
+import NoTranslate from '@/components/NoTranslate';
 
 
 const isIOS = () =>
@@ -423,8 +424,8 @@ const Header = () => {
                                 </div>
                               )}
                               <div className="flex-1 min-w-0">
-                                <div className="text-white font-medium truncate text-sm">{song.title}</div>
-                                <div className="text-gray-400 text-xs truncate">{song.artist}</div>
+                                <div className="text-white font-medium truncate text-sm"><NoTranslate className="truncate">{song.title}</NoTranslate></div>
+                                <div className="text-gray-400 text-xs truncate"><NoTranslate className="truncate">{song.artist}</NoTranslate></div>
                               </div>
                             </Link>
                           ))}
