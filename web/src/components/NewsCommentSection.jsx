@@ -12,6 +12,7 @@ import {
   X, Loader2, User, ChevronDown, ChevronUp,
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import NoTranslate from '@/components/NoTranslate';
 
 const ADMIN_EMAIL = 'eloadxfamily@gmail.com';
 const EDIT_WINDOW_MS = 20 * 60 * 1000;
@@ -75,8 +76,8 @@ const NewsComment = ({ comment, currentUser, currentUserEmail, onDelete, onEdit,
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2 mb-1">
           {user.id
-            ? <Link to={'/artist/' + user.id} className="text-xs font-bold text-fuchsia-400 hover:text-fuchsia-300 transition-colors truncate" translate="no"><span className="notranslate">{user.username || 'Utilisateur'}</span></Link>
-            : <span className="text-xs font-bold text-gray-500" translate="no"><span className="notranslate">{user.username || 'Utilisateur'}</span></span>
+            ? <Link to={'/artist/' + user.id} className="text-xs font-bold text-fuchsia-400 hover:text-fuchsia-300 transition-colors truncate"><NoTranslate className="truncate">{user.username || 'Utilisateur'}</NoTranslate></Link>
+            : <NoTranslate tag="span" className="text-xs font-bold text-gray-500">{user.username || 'Utilisateur'}</NoTranslate>
           }
           <span className="text-[10px] text-gray-600 flex-shrink-0">{timeAgo(comment.created_at)}</span>
           {comment._edited && <span className="text-[9px] text-gray-600 italic">(modifie)</span>}
@@ -97,7 +98,7 @@ const NewsComment = ({ comment, currentUser, currentUserEmail, onDelete, onEdit,
             <button onClick={() => setEditing(false)} className="p-1.5 text-gray-600 hover:text-white"><X className="w-3.5 h-3.5" /></button>
           </div>
         ) : (
-          <p className="text-sm text-gray-300 leading-relaxed break-words whitespace-pre-wrap" translate="no"><span className="notranslate">{comment.content}</span></p>
+          <p className="text-sm text-gray-300 leading-relaxed break-words whitespace-pre-wrap"><NoTranslate className="text-gray-300">{comment.content}</NoTranslate></p>
         )}
 
         {!editing && (

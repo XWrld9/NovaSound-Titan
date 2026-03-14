@@ -12,6 +12,7 @@ import { notifyOwner, notifyMentions, notifyCommentReply } from '@/lib/notifUtil
 import { useChat } from '@/contexts/ChatContext'; // Importer useChat pour accéder à insertNotification
 import { Link } from 'react-router-dom';
 import { useToast as useGlobalToast } from '@/components/ui/Toast';
+import NoTranslate from '@/components/NoTranslate';
 
 const ADMIN_EMAIL = 'eloadxfamily@gmail.com';
 const MAX_CHARS   = 800;
@@ -216,8 +217,8 @@ const CommentRow = ({ comment, currentUser, songUploaderEmail, onDeleted, onUpda
 
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2 mb-1">
-          <Link to={`/artist/${comment.user_id}`} className="text-sm font-semibold text-white hover:text-cyan-400 transition-colors truncate" onClick={e => e.stopPropagation()} translate="no">
-            <span className="notranslate">{authorName}</span>
+          <Link to={`/artist/${comment.user_id}`} className="text-sm font-semibold text-white hover:text-cyan-400 transition-colors truncate" onClick={e => e.stopPropagation()}>
+            <NoTranslate className="truncate">{authorName}</NoTranslate>
           </Link>
           <span className="text-xs text-gray-600 flex-shrink-0">{timeAgo(comment.created_at)}</span>
           {comment.is_edited && <span className="text-xs text-gray-600 flex-shrink-0 italic">(modifié)</span>}
@@ -244,7 +245,7 @@ const CommentRow = ({ comment, currentUser, songUploaderEmail, onDeleted, onUpda
             </div>
           </div>
         ) : (
-          <p className="text-sm text-gray-300 leading-relaxed break-words" style={{ wordBreak: 'break-word' }} translate="no"><span className="notranslate">{comment.content}</span></p>
+          <p className="text-sm text-gray-300 leading-relaxed break-words" style={{ wordBreak: 'break-word' }}><NoTranslate className="text-gray-300">{comment.content}</NoTranslate></p>
         )}
 
         {!editing && (
