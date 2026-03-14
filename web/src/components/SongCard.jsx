@@ -287,7 +287,7 @@ const SongCard = memo(({ song: initialSong, onPlay, isPlaying: isPlayingProp, se
                 <MessageCircle style={{ width: 18, height: 18, color: '#34d399' }} />
                 <div>
                   <p style={{ color: '#fff', fontWeight: 700, fontSize: 15, margin: 0 }}>Commentaires</p>
-                  <NoTranslate tag="p" className="notranslate">{song.title}</NoTranslate>
+                  <NoTranslate tag="p" className="notranslate" style={{ color: 'rgba(156,163,175,0.9)', fontSize: 12, marginTop: 1 }}>{song.title}</NoTranslate>
                 </div>
               </div>
               <button

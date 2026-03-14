@@ -67,7 +67,7 @@ const Header = () => {
   const SECONDARY_LINKS = [
     { to: '/artists',      label: 'Artistes',  Icon: Users,     color: 'hover:text-fuchsia-400' },
     { to: '/news',         label: 'Actualités',     Icon: Newspaper, color: 'hover:text-cyan-400' },
-    { to: '/chat',         label: 'Chat',     Icon: Globe,     color: 'hover:text-cyan-400' },
+    { to: '/chat',         label: 'Global',   Icon: Globe,     color: 'hover:text-cyan-400' },
     { to: '/leaderboard',  label: 'Top', Icon: Trophy, color: 'hover:text-amber-400' },
     { to: '/local-player', label: 'Local',   Icon: HardDrive, color: 'hover:text-cyan-400' },
   ];
