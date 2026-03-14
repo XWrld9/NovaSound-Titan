@@ -327,8 +327,8 @@ const PlaylistPage = () => {
 
                   {/* Infos */}
                   <div className="flex-1 min-w-0">
-                    <NoTranslate tag="p" className="`font-semibold text-sm truncate ${isNowPlaying ? 'text-cyan-300' : 'text-white' truncate" `}>{song.title}</NoTranslate>
-                    <NoTranslate tag="p" className="text-gray-500 text-xs truncate truncate">{song.artist}</NoTranslate>
+                    <NoTranslate tag="p" className={`font-semibold text-sm truncate ${isNowPlaying ? 'text-cyan-300' : 'text-white'}`}>{song.title}</NoTranslate>
+                    <NoTranslate tag="p" className="text-gray-500 text-xs truncate">{song.artist}</NoTranslate>
                   </div>
 
                   {/* Durée + remove */}
