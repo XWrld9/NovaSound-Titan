@@ -1,14 +1,36 @@
 /**
- * NoTranslate — NovaSound TITAN LUX v3
+ * NoTranslate — NovaSound TITAN LUX v4
  *
  * Technique CSS content:attr(data-ns) :
- *  • L'élément rendu est VIDE côté DOM (aucun nœud texte)
+ *  • L'élément est VIDE dans le DOM (aucun nœud texte à traduire)
  *  • CSS affiche le texte via ::before { content: attr(data-ns) }
- *  • Elfsight, Google Translate, DeepL ne traduisent que les
- *    nœuds texte du DOM — jamais le CSS généré
- *  → Protection absolue, sans JS runtime
+ *  • Elfsight/Google Translate ne traduisent que les nœuds texte DOM
+ *
+ * Robustesse v4 :
+ *  • Si children n'est pas une string, on extrait le texte proprement
+ *  • Jamais de [object Object]
  */
 import React from 'react';
+
+function toText(children) {
+  if (children == null) return '';
+  if (typeof children === 'string') return children;
+  if (typeof children === 'number') return String(children);
+  if (typeof children === 'boolean') return '';
+  // React element → ne pas afficher [object Object]
+  if (typeof children === 'object') {
+    // Array de children
+    if (Array.isArray(children)) {
+      return children.map(toText).join('');
+    }
+    // React element avec props.children (ex: <span>{song.title}</span>)
+    if (children.props?.children != null) {
+      return toText(children.props.children);
+    }
+    return '';
+  }
+  return String(children);
+}
 
 const NoTranslate = ({
   children,
@@ -17,23 +39,17 @@ const NoTranslate = ({
   style = {},
   onClick,
   title,
-  block = false, // true si l'élément doit être block (p, h1, div...)
 }) => {
-  const text =
-    typeof children === 'string' ? children
-    : typeof children === 'number' ? String(children)
-    : (children == null ? '' : String(children));
-
+  const text = toText(children);
   const Tag = tag;
-  // block=true ou tag bloc → classe ns-notrans-block pour ::before display:block
-  const isBlock = block || ['p','h1','h2','h3','h4','h5','h6','div'].includes(tag);
+  const isBlock = ['p','h1','h2','h3','h4','h5','h6','div','li'].includes(tag);
 
   return (
     <Tag
       className={`${isBlock ? 'ns-notrans-block' : 'ns-notrans'} ${className}`}
       style={style}
       onClick={onClick}
-      title={title}
+      title={title || text}
       data-ns={text}
       translate="no"
       aria-label={text}

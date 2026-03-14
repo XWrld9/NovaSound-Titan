@@ -18,6 +18,7 @@ import {
 import { formatPlays } from '@/lib/utils';
 import { toPng } from 'html-to-image';
 import { GENRE_THEMES_MAP } from '@/hooks/useGenreTheme';
+import NoTranslate from '@/components/NoTranslate';
 
 /* ══════════════════════════════════════════════════
    SHARE MODAL ARTISTE
@@ -125,7 +126,7 @@ const ArtistShareModal = ({ artist, onClose }) => {
         </div>
         <div ref={cardRef} style={{ background: theme.bg, borderRadius: 16, padding: 20, fontFamily: 'sans-serif', position: 'relative', overflow: 'hidden' }}>
           {avatarDataUrl && <img src={avatarDataUrl} alt="" style={{ width: 64, height: 64, borderRadius: '50%', objectFit: 'cover', border: `3px solid ${theme.logo}`, marginBottom: 12 }} />}
-          <p style={{ color: '#fff', fontWeight: 700, fontSize: 18 }} className="notranslate" translate="no">{artist.username}</p>
+          <NoTranslate tag="p" className="notranslate">{artist.username}</NoTranslate>
           {artist.bio && <p style={{ color: 'rgba(255,255,255,0.6)', fontSize: 12, marginTop: 4, lineHeight: 1.4 }}>{artist.bio.slice(0, 80)}{artist.bio.length > 80 ? '…' : ''}</p>}
           <p style={{ color: theme.logo, fontSize: 11, marginTop: 10, fontWeight: 600 }}>NovaSound TITAN LUX ✦</p>
           {logoDataUrl && <img src={logoDataUrl} alt="" style={{ position: 'absolute', top: 16, right: 16, width: 28, height: 28, borderRadius: 6, opacity: 0.8 }} />}
@@ -505,7 +506,7 @@ const ArtistProfilePage = () => {
                             }
                           </div>
                           <div className="flex-1 min-w-0">
-                            <p className={`font-semibold text-xs sm:text-sm truncate notranslate ${currentSong?.id === song.id ? 'text-cyan-300' : 'text-white'}`} translate="no">{song.title}</p>
+                            <NoTranslate tag="p" className={`font-semibold text-xs sm:text-sm truncate notranslate ${currentSong?.id === song.id ? 'text-cyan-300' : 'text-white'}`} translate="no">{song.title}</NoTranslate>
                             <div className="flex items-center gap-1 mt-px">
                               <Headphones className="w-2.5 h-2.5 sm:w-3 sm:h-3 text-gray-600" />
                               <span className="text-[10px] sm:text-xs text-gray-600 tabular-nums">{formatPlays(song.plays_count)}</span>

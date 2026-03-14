@@ -345,8 +345,8 @@ const SearchPage = () => {
                               </div>
                               {/* Info */}
                               <div className="flex-1 min-w-0">
-                                <NoTranslate tag="p" className="text-white font-medium text-sm truncate notranslate"><NoTranslate className="truncate">{song.title}</NoTranslate></NoTranslate>
-                                <NoTranslate tag="p" className="text-gray-500 text-xs truncate notranslate"><NoTranslate className="truncate">{song.artist}</NoTranslate></NoTranslate>
+                                <NoTranslate tag="p" className="text-white font-medium text-sm truncate notranslate">{song.title}</NoTranslate>
+                                <NoTranslate tag="p" className="text-gray-500 text-xs truncate notranslate">{song.artist}</NoTranslate>
                               </div>
                               {/* Stats + lien */}
                               <div className="flex items-center gap-3 flex-shrink-0">

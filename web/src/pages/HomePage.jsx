@@ -229,8 +229,8 @@ const HomePage = () => {
             </div>
           </div>
         </div>
-        <p className={`text-xs font-semibold truncate transition-colors notranslate ${isPlaying ? 'text-cyan-400' : 'text-white group-hover:text-cyan-300'}`} translate="no"><NoTranslate className="truncate">{song.title}</NoTranslate></p>
-        <NoTranslate tag="p" className="text-gray-500 text-xs truncate notranslate"><NoTranslate className="truncate">{song.artist}</NoTranslate></NoTranslate>
+        <NoTranslate tag="p" className={`text-xs font-semibold truncate transition-colors notranslate ${isPlaying ? 'text-cyan-400' : 'text-white group-hover:text-cyan-300'}`} translate="no">{song.title}</NoTranslate>
+        <NoTranslate tag="p" className="text-gray-500 text-xs truncate notranslate">{song.artist}</NoTranslate>
       </motion.div>
     );
   };
@@ -397,8 +397,8 @@ const HomePage = () => {
                             }
                           </div>
                           <div className="flex-1 min-w-0">
-                            <NoTranslate tag="p" className="text-white font-bold text-sm truncate group-hover:text-amber-300 transition-colors notranslate"><NoTranslate className="truncate">{song.title}</NoTranslate></NoTranslate>
-                            <NoTranslate tag="p" className="text-gray-400 text-xs truncate mt-0.5 notranslate"><NoTranslate className="truncate">{song.artist}</NoTranslate></NoTranslate>
+                            <NoTranslate tag="p" className="text-white font-bold text-sm truncate group-hover:text-amber-300 transition-colors notranslate">{song.title}</NoTranslate>
+                            <NoTranslate tag="p" className="text-gray-400 text-xs truncate mt-0.5 notranslate">{song.artist}</NoTranslate>
                             <div className="flex items-center gap-1 mt-1">
                               <Headphones className="w-3 h-3 text-amber-400" />
                               <span className="text-xs text-amber-400 font-semibold">{formatPlays(song.plays_count)}</span>
@@ -492,7 +492,7 @@ const HomePage = () => {
                         {song.uploader_id ? (
                           <Link to={`/artist/${song.uploader_id}`} className="text-gray-500 text-xs truncate block hover:text-gray-300 transition-colors mt-0.5 notranslate" translate="no"><NoTranslate className="truncate">{song.artist}</NoTranslate></Link>
                         ) : (
-                          <NoTranslate tag="p" className="text-gray-500 text-xs truncate mt-0.5 notranslate"><NoTranslate className="truncate">{song.artist}</NoTranslate></NoTranslate>
+                          <NoTranslate tag="p" className="text-gray-500 text-xs truncate mt-0.5 notranslate">{song.artist}</NoTranslate>
                         )}
                         <div className="flex items-center justify-end mt-1.5">
                           <SongActionsMenu song={song}
@@ -547,8 +547,8 @@ const HomePage = () => {
                         </div>
                       </div>
                       <div className="p-2">
-                        <NoTranslate tag="p" className="text-white text-xs font-semibold truncate notranslate"><NoTranslate className="truncate">{song.title}</NoTranslate></NoTranslate>
-                        <NoTranslate tag="p" className="text-gray-500 text-[10px] truncate notranslate"><NoTranslate className="truncate">{song.artist}</NoTranslate></NoTranslate>
+                        <NoTranslate tag="p" className="text-white text-xs font-semibold truncate notranslate">{song.title}</NoTranslate>
+                        <NoTranslate tag="p" className="text-gray-500 text-[10px] truncate notranslate">{song.artist}</NoTranslate>
                       </div>
                     </motion.div>
                   ))}
@@ -586,8 +586,8 @@ const HomePage = () => {
                           <Play className="w-8 h-8 text-white fill-current" />
                         </div>
                       </div>
-                      <NoTranslate tag="p" className="text-white text-xs font-semibold truncate notranslate"><NoTranslate className="truncate">{song.title}</NoTranslate></NoTranslate>
-                      <NoTranslate tag="p" className="text-gray-500 text-[10px] truncate notranslate"><NoTranslate className="truncate">{song.artist}</NoTranslate></NoTranslate>
+                      <NoTranslate tag="p" className="text-white text-xs font-semibold truncate notranslate">{song.title}</NoTranslate>
+                      <NoTranslate tag="p" className="text-gray-500 text-[10px] truncate notranslate">{song.artist}</NoTranslate>
                     </motion.div>
                   ))}
                 </div>
@@ -626,8 +626,8 @@ const HomePage = () => {
                         </div>
                       </div>
                       <div className="flex-1 min-w-0">
-                        <NoTranslate tag="p" className="text-white text-sm font-semibold truncate notranslate"><NoTranslate className="truncate">{song.title}</NoTranslate></NoTranslate>
-                        <NoTranslate tag="p" className="text-gray-400 text-xs truncate notranslate"><NoTranslate className="truncate">{song.artist}</NoTranslate></NoTranslate>
+                        <NoTranslate tag="p" className="text-white text-sm font-semibold truncate notranslate">{song.title}</NoTranslate>
+                        <NoTranslate tag="p" className="text-gray-400 text-xs truncate notranslate">{song.artist}</NoTranslate>
                         {song.genre && <span className="text-[10px] text-green-400 font-medium bg-green-500/10 px-1.5 py-0.5 rounded-full mt-0.5 inline-block">{song.genre}</span>}
                       </div>
                       <div className="flex items-center gap-1 text-gray-600 flex-shrink-0">
