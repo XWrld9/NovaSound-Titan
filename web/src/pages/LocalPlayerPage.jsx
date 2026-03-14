@@ -244,8 +244,6 @@ const LocalPlayerPage=()=>{
   const[speed,setSpeed]=useState(1);
   const[showSpeedPanel,setShowSpeedPanel]=useState(false);
   const[dominantColor,setDominantColor]=useState(null);
-  // Favoris : calculé depuis le contexte partagé
-  const favorited = activeSong ? localFavoriteIds.has(activeSong.id) : false;
   const osdIdRef=useRef(0);
   const sleepIntervalRef=useRef(null);
 
@@ -282,6 +280,8 @@ const LocalPlayerPage=()=>{
 
   /* Dominant color from cover */
   const activeSong=!!currentSong?.is_local?currentSong:(songs[0]||null);
+  // Favoris : calculé après activeSong pour éviter TDZ
+  const favorited=activeSong?localFavoriteIds.has(activeSong.id):false;
   const rawActiveCover=activeSong?.cover_url||activeSong?.cover_svg;
   const cover=(!rawActiveCover||rawActiveCover.startsWith('blob:'))?makeCoverSvg(activeSong?.title||'',activeSong?.artist||''):rawActiveCover;
   useEffect(()=>{
