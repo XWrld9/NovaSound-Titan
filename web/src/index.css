@@ -373,3 +373,19 @@ html, body {
   .hero-section { min-height: 200px !important; }
   .bottom-player-bar { padding-top: 6px; padding-bottom: 6px; }
 }
+
+/* ══════════════════════════════════════════════════════════════════
+   Protection anti-traduction — données musicales
+   Tous les traducteurs (Google, Bing, DeepL, Elfsight) respectent
+   ces attributs. Double protection : classe + attribut HTML.
+   ══════════════════════════════════════════════════════════════════ */
+.notranslate,
+[translate="no"] {
+  /* Empêche Google Translate de wrapper le texte */
+  -webkit-user-select: none;
+}
+/* Forcer la visibilité des éléments wrappés par Google Translate */
+.notranslate font,
+[translate="no"] font {
+  color: inherit !important;
+}

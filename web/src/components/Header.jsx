@@ -196,11 +196,11 @@ const Header = () => {
                 </div>
                 <span className="nova-dot-hdr" style={{animationDelay:'.8s'}} />
               </div>
-              {/* Mobile : nom complet aussi avec effets */}
+              {/* Mobile : nom court pour ne pas pousser le hamburger */}
               <div className="items-center gap-1 flex lg:hidden">
                 <span className="nova-dot-hdr" style={{width:4,height:4}} />
                 <div className="nova-scan-wrap">
-                  <span className="nova-logo-text nova-logo-text-sm">NovaSound TITAN LUX</span>
+                  <span className="nova-logo-text nova-logo-text-sm">NovaSound TL</span>
                   <div className="nova-scan-line" />
                 </div>
                 <span className="nova-dot-hdr" style={{width:4,height:4,animationDelay:'.8s'}} />

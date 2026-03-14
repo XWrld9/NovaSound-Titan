@@ -221,8 +221,8 @@ const TrendingPage = () => {
                               }
                             </div>
                             <div className="flex-1 min-w-0">
-                              <p className="text-white font-bold text-sm truncate">{song.title}</p>
-                              <p className="text-gray-400 text-xs truncate">{song.artist}</p>
+                              <p className="text-white font-bold text-sm truncate notranslate" translate="no">{song.title}</p>
+                              <p className="text-gray-400 text-xs truncate notranslate" translate="no">{song.artist}</p>
                               <div className="flex items-center gap-2 mt-1.5">
                                 <span className="flex items-center gap-1 text-[10px] text-cyan-400">
                                   <Headphones className="w-3 h-3" />{formatPlays(song.plays_count)}
@@ -264,8 +264,8 @@ const TrendingPage = () => {
                           }
                         </div>
                         <div className="flex-1 min-w-0">
-                          <p className="text-white text-sm font-semibold truncate">{song.title}</p>
-                          <p className="text-gray-500 text-xs truncate">{song.artist}</p>
+                          <p className="text-white text-sm font-semibold truncate notranslate" translate="no">{song.title}</p>
+                          <p className="text-gray-500 text-xs truncate notranslate" translate="no">{song.artist}</p>
                         </div>
                         <div className="flex items-center gap-3 flex-shrink-0">
                           <span className="hidden sm:flex items-center gap-1 text-xs text-cyan-400/70">
@@ -338,7 +338,7 @@ const TrendingPage = () => {
                           <div className="absolute -top-1.5 -left-1.5 text-sm"><RankBadge rank={idx + 1} /></div>
                         </div>
                         <div className="flex-1 min-w-0">
-                          <p className="text-white font-bold text-sm truncate group-hover:text-cyan-300 transition-colors">{artist.username}</p>
+                          <p className="text-white font-bold text-sm truncate group-hover:text-cyan-300 transition-colors notranslate" translate="no">{artist.username}</p>
                           <div className="flex items-center gap-2 mt-1 flex-wrap">
                             <span className="flex items-center gap-1 text-[10px] text-cyan-400">
                               <Headphones className="w-3 h-3" />{formatPlays(Number(artist.period_plays || artist.total_plays))}

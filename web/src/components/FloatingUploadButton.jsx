@@ -21,7 +21,7 @@ const FloatingUploadButton = () => {
   return (
     <Link
       to="/upload"
-      className="upload-floating group"
+      className="upload-floating hidden md:flex group"
       title="Uploader un son"
       aria-label="Uploader un son"
     >

@@ -505,7 +505,7 @@ const ArtistProfilePage = () => {
                             }
                           </div>
                           <div className="flex-1 min-w-0">
-                            <p className={`font-semibold text-xs sm:text-sm truncate ${currentSong?.id === song.id ? 'text-cyan-300' : 'text-white'}`}>{song.title}</p>
+                            <p className={`font-semibold text-xs sm:text-sm truncate notranslate ${currentSong?.id === song.id ? 'text-cyan-300' : 'text-white'}`} translate="no">{song.title}</p>
                             <div className="flex items-center gap-1 mt-px">
                               <Headphones className="w-2.5 h-2.5 sm:w-3 sm:h-3 text-gray-600" />
                               <span className="text-[10px] sm:text-xs text-gray-600 tabular-nums">{formatPlays(song.plays_count)}</span>

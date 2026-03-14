@@ -85,8 +85,8 @@ const SuggestionCard = ({ s, onPlay }) => (
       </div>
     </div>
     <div className="flex-1 min-w-0">
-      <p className="text-white text-xs font-semibold truncate">{s.title}</p>
-      <p className="text-gray-500 text-xs truncate">{s.artist}</p>
+      <p className="text-white text-xs font-semibold truncate notranslate" translate="no">{s.title}</p>
+      <p className="text-gray-500 text-xs truncate notranslate" translate="no">{s.artist}</p>
     </div>
     <Link to={`/song/${s.id}`} onClick={e=>e.stopPropagation()}
       className="opacity-0 group-hover:opacity-100 p-1 rounded hover:bg-gray-700 text-gray-500 hover:text-cyan-400 transition-all">
@@ -362,7 +362,7 @@ const SongPage = () => {
                         </span>
                       )}
 
-                      <h1 className="text-2xl sm:text-3xl font-black text-white leading-tight mb-2">{song.title}</h1>
+                      <h1 className="text-2xl sm:text-3xl font-black text-white leading-tight mb-2 notranslate" translate="no">{song.title}</h1>
 
                       {artist ? (
                         <Link to={`/artist/${artist.id}`} className="flex items-center gap-2 mt-1 mb-4 w-fit group">
@@ -372,7 +372,7 @@ const SongPage = () => {
                           <span className="font-semibold group-hover:opacity-80 transition-opacity" style={{color}}>{artist.username||song.artist}</span>
                         </Link>
                       ) : (
-                        <p className="text-gray-400 mt-1 mb-4 font-medium">{song.artist}</p>
+                        <p className="text-gray-400 mt-1 mb-4 font-medium notranslate" translate="no">{song.artist}</p>
                       )}
 
                       {/* Stats */}
