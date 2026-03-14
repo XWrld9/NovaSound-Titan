@@ -59,7 +59,7 @@ const PodiumBar = ({ user, rank, score }) => {
         </div>
         <span className="absolute -top-2 -right-2 text-lg">{medals[rank]}</span>
       </div>
-      <p className="text-white text-xs font-bold text-center truncate max-w-[80px]">{name}</p>
+      <p className="text-white text-xs font-bold text-center truncate max-w-[80px]" translate="no"><span className="notranslate"><span className="notranslate" translate="no">{name}</span></span></p>
       <p className="text-xs font-semibold" style={{ color: badge.color }}>{badge.icon} {badge.label}</p>
       <div className={`w-16 md:w-20 ${heights[rank]} rounded-t-xl bg-gradient-to-t ${badge.bg} opacity-70 flex items-end justify-center pb-2`}>
         <span className="text-white text-xs font-black">{formatPlays(score)}</span>
@@ -106,12 +106,12 @@ const RankRow = ({ item, rank, scoreKey, scoreLabel, labelKey, secondLabel, seco
       </div>
       <div className="flex-1 min-w-0">
         {linkPrefix
-          ? <Link to={`${linkPrefix}/${item.id}`} className={`font-semibold text-sm hover:text-cyan-400 transition-colors truncate block ${isMe ? 'text-cyan-300' : 'text-white'}`}>
-              {name}
+          ? <Link to={`${linkPrefix}/${item.id}`} className={`font-semibold text-sm hover:text-cyan-400 transition-colors truncate block ${isMe ? 'text-cyan-300' : 'text-white'}`} translate="no">
+              <span className="notranslate">{name}</span>
               {isMe && <span className="ml-1.5 text-[10px] bg-cyan-500/20 text-cyan-400 px-1.5 py-0.5 rounded-full font-bold">Toi</span>}
             </Link>
-          : <p className={`font-semibold text-sm truncate ${isMe ? 'text-cyan-300' : 'text-white'}`}>
-              {name}
+          : <p className={`font-semibold text-sm truncate ${isMe ? 'text-cyan-300' : 'text-white'}`} translate="no">
+              <span className="notranslate">{name}</span>
               {isMe && <span className="ml-1.5 text-[10px] bg-cyan-500/20 text-cyan-400 px-1.5 py-0.5 rounded-full font-bold">Toi</span>}
             </p>
         }

@@ -135,7 +135,7 @@ const BottomNav = () => {
                 active ? 'text-cyan-400' : 'text-gray-600'
               }`}
             >
-              {label}
+              <span className="notranslate" translate="no">{label}</span>
             </span>
           </Link>
         );

@@ -215,7 +215,7 @@ const Header = () => {
                   key={to} to={to}
                   className={`relative text-gray-300 ${color} transition-colors flex items-center gap-1.5 font-medium px-3 py-2 rounded-lg hover:bg-white/5 text-sm`}
                 >
-                  <Icon className="w-4 h-4" />{label}
+                  <Icon className="w-4 h-4" /><span className="notranslate" translate="no">{label}</span>
                   {badge && <span className="absolute top-1.5 right-1 w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse" />}
                 </Link>
               ))}
@@ -226,7 +226,7 @@ const Header = () => {
                   onClick={() => setShowMoreMenu(v => !v)}
                   className="flex items-center gap-1 text-gray-300 hover:text-cyan-400 transition-colors font-medium px-3 py-2 rounded-lg hover:bg-white/5 text-sm"
                 >
-                  {'Plus'} <ChevronDown className={`w-3.5 h-3.5 transition-transform duration-200 ${showMoreMenu ? 'rotate-180' : ''}`} />
+                  <span className="notranslate" translate="no">Plus</span> <ChevronDown className={`w-3.5 h-3.5 transition-transform duration-200 ${showMoreMenu ? 'rotate-180' : ''}`} />
                 </button>
                 <AnimatePresence>
                   {showMoreMenu && (
@@ -243,7 +243,7 @@ const Header = () => {
                           onClick={() => setShowMoreMenu(false)}
                           className={`flex items-center gap-3 px-4 py-2.5 text-sm text-gray-300 ${color} hover:bg-white/5 transition-colors`}
                         >
-                          <Icon className="w-4 h-4" />{label}
+                          <Icon className="w-4 h-4" /><span className="notranslate" translate="no">{label}</span>
                         </Link>
                       ))}
                     </motion.div>
@@ -491,7 +491,7 @@ const Header = () => {
                       key={to} to={to} onClick={closeMenu}
                       className={`flex items-center gap-3 px-4 py-3 text-gray-300 ${color} hover:bg-white/5 rounded-lg transition-colors relative`}
                     >
-                      <Icon className="w-5 h-5" />{label}
+                      <Icon className="w-5 h-5" /><span className="notranslate" translate="no">{label}</span>
                       {badge && <span className="ml-auto w-2 h-2 rounded-full bg-red-500 animate-pulse" />}
                     </Link>
                   ))}
