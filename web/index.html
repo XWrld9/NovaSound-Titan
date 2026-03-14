@@ -58,6 +58,79 @@
 		<meta name="google" content="notranslate">
 		<!-- Elfsight Website Translator -->
 		<script src="https://elfsightcdn.com/platform.js" async></script>
+		<script>
+		// ── Anti-traduction : protection active des données musicales ──────────
+		// Surveille le DOM en temps réel et restaure les textes originaux sur
+		// tous les éléments .notranslate ou [translate="no"] si un traducteur
+		// (Google Translate, Elfsight, DeepL...) les modifie.
+		(function() {
+		  var SELECTOR = '.notranslate, [translate="no"]';
+
+		  // 1. Stocker le texte original de chaque élément protégé
+		  function storeOriginals(root) {
+		    (root || document).querySelectorAll(SELECTOR).forEach(function(el) {
+		      if (!el.dataset.originalText) {
+		        el.dataset.originalText = el.textContent;
+		      }
+		    });
+		  }
+
+		  // 2. Restaurer le texte si un traducteur l'a modifié
+		  function restoreTranslated(root) {
+		    (root || document).querySelectorAll(SELECTOR).forEach(function(el) {
+		      var original = el.dataset.originalText;
+		      if (original && el.textContent !== original) {
+		        // Vider les noeuds enfants ajoutés par le traducteur (<font>, <span>...)
+		        // et restaurer le texte brut
+		        el.textContent = original;
+		      }
+		    });
+		  }
+
+		  // 3. Observer les mutations du DOM
+		  function startObserver() {
+		    storeOriginals(document);
+
+		    var observer = new MutationObserver(function(mutations) {
+		      var needsRestore = false;
+		      for (var i = 0; i < mutations.length; i++) {
+		        var m = mutations[i];
+		        // Détecter les modifications typiques des traducteurs
+		        if (m.type === 'childList' || m.type === 'characterData') {
+		          needsRestore = true;
+		          break;
+		        }
+		      }
+		      if (needsRestore) {
+		        // Stocker les nouveaux éléments ajoutés par React
+		        storeOriginals(document);
+		        restoreTranslated(document);
+		      }
+		    });
+
+		    observer.observe(document.body, {
+		      childList: true,
+		      subtree: true,
+		      characterData: true
+		    });
+		  }
+
+		  // 4. Démarrer après le chargement du DOM
+		  if (document.readyState === 'loading') {
+		    document.addEventListener('DOMContentLoaded', startObserver);
+		  } else {
+		    startObserver();
+		  }
+
+		  // 5. Re-stocker après chaque navigation React (SPA)
+		  // React met à jour le DOM → on re-scanne pour les nouveaux éléments
+		  var _pushState = history.pushState;
+		  history.pushState = function() {
+		    _pushState.apply(history, arguments);
+		    setTimeout(storeOriginals, 500);
+		  };
+		})();
+		</script>
 	</head>
 	<body>
 		<div id="root"></div>

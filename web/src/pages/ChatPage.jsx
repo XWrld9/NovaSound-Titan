@@ -109,9 +109,131 @@ const CHAT_STYLES = `
   @keyframes mentionPulse{0%,100%{box-shadow:0 0 0 0 rgba(6,182,212,.5)}60%{box-shadow:0 0 0 6px rgba(6,182,212,0)}}
   @keyframes mentionAllPulse{0%,100%{box-shadow:0 0 0 0 rgba(234,179,8,.5)}60%{box-shadow:0 0 0 6px rgba(234,179,8,0)}}
   @keyframes selfMentionShine{0%{background-position:0% 50%}100%{background-position:200% 50%}}
-  @keyframes chatFadeIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
-  @keyframes topBarGlow{0%,100%{border-bottom-color:rgba(6,182,212,.12)}50%{border-bottom-color:rgba(168,85,247,.18)}}
+  @keyframes chatFadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+  @keyframes topBarGlow{0%,100%{border-bottom-color:rgba(6,182,212,.15)}50%{border-bottom-color:rgba(168,85,247,.25)}}
   @keyframes liveRing{0%{transform:scale(1);opacity:.7}100%{transform:scale(2.2);opacity:0}}
+  @keyframes nsGradientShift{0%{background-position:0% 50%}50%{background-position:100% 50%}100%{background-position:0% 50%}}
+  @keyframes nsPulse{0%,100%{opacity:1}50%{opacity:0.5}}
+
+  .chat-mention-user{
+    display:inline-flex;align-items:center;
+    background:linear-gradient(135deg,rgba(6,182,212,.18),rgba(6,182,212,.08));
+    border:1px solid rgba(6,182,212,.35);
+    color:#67e8f9;font-weight:700;
+    padding:0 5px;border-radius:6px;
+    font-size:.88em;letter-spacing:.01em;
+    transition:all .15s;cursor:pointer;
+    animation:mentionPulse 2.5s ease-in-out 1;
+    text-decoration:none;
+  }
+  .chat-mention-user:hover{background:linear-gradient(135deg,rgba(6,182,212,.28),rgba(6,182,212,.14));border-color:rgba(6,182,212,.6);color:#a5f3fc;}
+  .chat-mention-all{
+    display:inline-flex;align-items:center;gap:3px;
+    background:linear-gradient(135deg,rgba(234,179,8,.22),rgba(251,146,60,.12));
+    border:1px solid rgba(234,179,8,.4);
+    color:#fde047;font-weight:800;padding:0 6px;border-radius:6px;font-size:.88em;letter-spacing:.01em;
+    animation:mentionAllPulse 2s ease-in-out 1;
+  }
+  .chat-mention-self{
+    display:inline-flex;align-items:center;
+    background:linear-gradient(90deg,rgba(6,182,212,.3),rgba(168,85,247,.25),rgba(6,182,212,.3));
+    background-size:200% 100%;border:1px solid rgba(168,85,247,.45);
+    color:#d8b4fe;font-weight:800;padding:0 5px;border-radius:6px;font-size:.88em;
+    animation:selfMentionShine 2s linear 3;
+  }
+  .chat-link{color:#22d3ee;text-decoration:underline;text-underline-offset:2px;word-break:break-all;}
+  .chat-link:hover{color:#67e8f9}
+  .chat-live-link{
+    display:inline-flex;align-items:center;gap:5px;
+    background:rgba(239,68,68,.12);border:1px solid rgba(239,68,68,.3);
+    color:#fca5a5;border-radius:8px;padding:1px 8px;font-size:.85em;font-weight:700;
+  }
+  .msg-bubble-own{
+    background:linear-gradient(135deg,rgba(8,145,178,.85) 0%,rgba(124,58,237,.85) 100%) !important;
+    box-shadow:0 4px 24px rgba(8,145,178,.25),0 2px 8px rgba(0,0,0,.3);
+    border:1px solid rgba(6,182,212,.2) !important;
+    backdrop-filter:blur(12px);
+  }
+  .msg-bubble-other{
+    background:rgba(255,255,255,.05) !important;
+    border:1px solid rgba(255,255,255,.08) !important;
+    backdrop-filter:blur(12px);
+  }
+  .msg-bubble-mention-all{
+    background:linear-gradient(135deg,rgba(234,179,8,.12),rgba(251,146,60,.07)) !important;
+    border:1px solid rgba(234,179,8,.25) !important;
+  }
+  .mention-autocomplete-item:hover .mention-name{color:#67e8f9}
+  .mention-all-item:hover .mention-all-label{color:#fde047}
+
+  /* ── TOP BAR premium ── */
+  .chat-top-bar{
+    border-bottom:1px solid rgba(255,255,255,.06);
+    background:rgba(5,5,18,.92);
+    backdrop-filter:blur(32px) saturate(1.8);
+    animation:topBarGlow 4s ease-in-out infinite;
+  }
+
+  /* ── Period pills ── */
+  .chat-period-active{
+    background:linear-gradient(135deg,rgba(6,182,212,.2),rgba(168,85,247,.15));
+    border-color:rgba(6,182,212,.45)!important;color:#22d3ee!important;
+    box-shadow:0 0 12px rgba(6,182,212,.15);
+  }
+
+  /* ── Tab active states ── */
+  .chat-tab-global-active{
+    background:linear-gradient(135deg,rgba(6,182,212,.18),rgba(168,85,247,.12));
+    color:#22d3ee!important;border-color:rgba(6,182,212,.4)!important;
+    box-shadow:0 0 16px rgba(6,182,212,.1);
+  }
+  .chat-tab-msg-active{
+    background:linear-gradient(135deg,rgba(168,85,247,.18),rgba(6,182,212,.12));
+    color:#c084fc!important;border-color:rgba(168,85,247,.4)!important;
+    box-shadow:0 0 16px rgba(168,85,247,.1);
+  }
+
+  /* ── Input zone premium ── */
+  .chat-input-glass{
+    background:rgba(255,255,255,.04);
+    border:1px solid rgba(255,255,255,.09);
+    backdrop-filter:blur(20px);
+    transition:border-color .2s,box-shadow .2s;
+  }
+  .chat-input-glass:focus-within{
+    border-color:rgba(6,182,212,.4);
+    box-shadow:0 0 0 3px rgba(6,182,212,.08),0 4px 24px rgba(6,182,212,.1);
+  }
+
+  /* ── Message animation ── */
+  .chat-msg-in{animation:chatFadeIn .25s ease-out both;}
+
+  /* ── Scrollbar ── */
+  .chat-scroll::-webkit-scrollbar{width:4px;}
+  .chat-scroll::-webkit-scrollbar-track{background:transparent;}
+  .chat-scroll::-webkit-scrollbar-thumb{background:rgba(255,255,255,.08);border-radius:2px;}
+  .chat-scroll::-webkit-scrollbar-thumb:hover{background:rgba(255,255,255,.14);}
+
+  /* ── Reactions bar ── */
+  .reaction-btn{
+    display:flex;align-items:center;gap:4px;
+    padding:2px 8px;border-radius:20px;
+    background:rgba(255,255,255,.05);
+    border:1px solid rgba(255,255,255,.08);
+    font-size:12px;cursor:pointer;transition:all .15s;
+  }
+  .reaction-btn:hover{background:rgba(6,182,212,.12);border-color:rgba(6,182,212,.3);}
+  .reaction-btn.active{background:rgba(6,182,212,.15);border-color:rgba(6,182,212,.4);color:#22d3ee;}
+
+  /* ── NS Gradient title ── */
+  .ns-chat-title{
+    background:linear-gradient(135deg,#22d3ee,#a855f7,#22d3ee);
+    background-size:200% 200%;
+    -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
+    animation:nsGradientShift 4s ease infinite;
+  }
+
+
 
   .chat-mention-user{
     display:inline-flex;align-items:center;
@@ -726,35 +848,46 @@ const ChatPage = () => {
       </Helmet>
       <style>{CHAT_STYLES}</style>
 
-      <div className="min-h-screen bg-[#05050f] flex flex-col">
+      <div className="min-h-screen bg-[#03030d] flex flex-col">
         <Header />
 
         <div
           className="flex-1 flex flex-col overflow-hidden relative"
           style={{
             height: 'calc(100dvh - 64px)',
-            backgroundImage: 'url(/chat-wallpaper.jpg)',
-            backgroundSize: 'cover',
-            backgroundPosition: 'center',
-            backgroundRepeat: 'no-repeat',
           }}
         >
-          {/* Overlay profond */}
-          <div className="absolute inset-0 bg-[#05050f]/88 pointer-events-none z-0" />
+          {/* ── Background premium — particules + gradient animé ── */}
+          <div className="absolute inset-0 pointer-events-none z-0 overflow-hidden">
+            {/* Base gradient */}
+            <div className="absolute inset-0" style={{background:'linear-gradient(135deg,#03030d 0%,#060618 40%,#080820 70%,#03030d 100%)'}}/>
+            {/* Glow orbs */}
+            <div className="absolute -top-32 -left-32 w-96 h-96 rounded-full opacity-20" style={{background:'radial-gradient(circle,rgba(6,182,212,.5) 0%,transparent 70%)',filter:'blur(40px)',animation:'nsPulse 6s ease-in-out infinite'}}/>
+            <div className="absolute -bottom-32 -right-32 w-96 h-96 rounded-full opacity-15" style={{background:'radial-gradient(circle,rgba(168,85,247,.5) 0%,transparent 70%)',filter:'blur(40px)',animation:'nsPulse 8s ease-in-out infinite reverse'}}/>
+            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] rounded-full opacity-5" style={{background:'radial-gradient(circle,rgba(6,182,212,.3) 0%,transparent 70%)',filter:'blur(60px)'}}/>
+            {/* Subtle grid */}
+            <div className="absolute inset-0 opacity-[0.02]" style={{backgroundImage:'linear-gradient(rgba(255,255,255,.15) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.15) 1px,transparent 1px)',backgroundSize:'40px 40px'}}/>
+          </div>
 
           {/* ── Barre supérieure ── */}
           <div className="flex-shrink-0 chat-top-bar px-4 py-3 relative z-10">
             <div className="max-w-3xl mx-auto">
               <div className="flex items-center justify-between mb-3">
-                {/* Titre */}
-                <div className="flex items-center gap-2.5">
-                  <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-cyan-500/25 to-fuchsia-500/25 border border-cyan-500/20 flex items-center justify-center shadow-inner shadow-cyan-500/10">
-                    <Globe className="w-4 h-4 text-cyan-400" />
+                {/* Titre premium */}
+                <div className="flex items-center gap-3">
+                  <div className="relative">
+                    <div className="w-10 h-10 rounded-2xl flex items-center justify-center"
+                      style={{background:'linear-gradient(135deg,rgba(6,182,212,.25),rgba(168,85,247,.2))',border:'1px solid rgba(6,182,212,.25)',boxShadow:'0 0 20px rgba(6,182,212,.15)'}}>
+                      <Globe className="w-5 h-5 text-cyan-400" />
+                    </div>
+                    <span className="absolute -top-1 -right-1 w-3 h-3 rounded-full bg-green-400 border-2 border-[#03030d] flex items-center justify-center">
+                      <span className="w-1.5 h-1.5 rounded-full bg-green-300 animate-ping"/>
+                    </span>
                   </div>
                   <div>
-                    <h1 className="text-white font-black text-sm leading-none tracking-wide">Chat Global</h1>
-                    <p className="text-[10px] text-gray-500 mt-0.5">
-                      Communauté NovaSound · <span className="text-yellow-400/90 font-semibold">@tous</span> pour mentionner tout le monde
+                    <h1 className="font-black text-base leading-none tracking-tight ns-chat-title">Chat Global</h1>
+                    <p className="text-[10px] text-gray-600 mt-0.5">
+                      Communauté NovaSound · <span className="text-amber-400/80 font-semibold">@tous</span> pour tout le monde
                     </p>
                   </div>
                 </div>
@@ -763,7 +896,8 @@ const ChatPage = () => {
                   {/* Compteur en ligne */}
                   {onlineCount > 0 && (
                     <div
-                      className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full border transition-all ${isAdmin ? 'cursor-pointer hover:bg-green-500/15' : ''} bg-green-500/8 border-green-500/20`}
+                      className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-full border transition-all ${isAdmin ? 'cursor-pointer hover:bg-green-500/15' : ''}`}
+                      style={{background:'rgba(34,197,94,.06)',border:'1px solid rgba(34,197,94,.18)'}}
                       onClick={() => isAdmin && setShowOnlinePanel(v => !v)}
                     >
                       <span className="relative flex h-1.5 w-1.5">
@@ -771,15 +905,16 @@ const ChatPage = () => {
                         <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-green-400" />
                       </span>
                       <Users className="w-3 h-3 text-green-400" />
-                      <span className="text-green-400 text-[11px] font-semibold">{onlineCount}</span>
-                      {isAdmin && <span className="text-green-500/60 text-[9px]">▼</span>}
+                      <span className="text-green-400 text-[11px] font-bold">{onlineCount}</span>
+                      {isAdmin && <span className="text-green-500/50 text-[9px]">▼</span>}
                     </div>
                   )}
                   {/* Bouton nettoyer (admin) */}
                   {isAdmin && (
                     <button
                       onClick={() => setShowClearConfirm(true)}
-                      className="flex items-center gap-1.5 px-2.5 py-1 bg-red-500/8 border border-red-500/18 rounded-full hover:bg-red-500/18 transition-colors"
+                      className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-full hover:bg-red-500/15 transition-colors"
+                      style={{background:'rgba(239,68,68,.06)',border:'1px solid rgba(239,68,68,.18)'}}
                     >
                       <Trash2 className="w-3.5 h-3.5 text-red-400" />
                       <span className="text-red-400 text-[11px] font-semibold hidden sm:inline">Nettoyer</span>
@@ -1125,9 +1260,9 @@ const ChatPage = () => {
                   </AnimatePresence>
 
                   {currentUser ? (
-                    <div className="flex items-end gap-2">
+                    <div className="flex items-end gap-2.5">
                       <Avatar user={currentUser} size={8} />
-                      <div className="flex-1 relative flex items-end gap-2 px-3 py-2 input-bubble" style={{ minHeight: 44 }}>
+                      <div className="flex-1 relative flex items-end gap-2 px-4 py-2.5 chat-input-glass rounded-2xl" style={{ minHeight: 48 }}>
                         <textarea
                           ref={inputRef}
                           id="chat-input"
@@ -1135,11 +1270,11 @@ const ChatPage = () => {
                           value={text}
                           onChange={handleTextChange}
                           onKeyDown={handleKeyDown}
-                          placeholder="Message…"
+                          placeholder="Message… (@nom pour mentionner)"
                           maxLength={MAX}
                           rows={1}
-                          style={{ resize: 'none', minHeight: 24, maxHeight: 120, overflowY: 'auto', lineHeight: '1.5' }}
-                          className="flex-1 bg-transparent text-sm text-white placeholder-gray-500 focus:outline-none leading-relaxed self-center"
+                          style={{ resize: 'none', minHeight: 26, maxHeight: 120, overflowY: 'auto', lineHeight: '1.5' }}
+                          className="flex-1 bg-transparent text-sm text-white placeholder-gray-600 focus:outline-none leading-relaxed self-center"
                           onInput={e => {
                             e.target.style.height = 'auto';
                             e.target.style.height = Math.min(e.target.scrollHeight, 120) + 'px';
@@ -1150,11 +1285,13 @@ const ChatPage = () => {
                         )}
                       </div>
                       <button onClick={handleSend} disabled={!text.trim() || sending}
-                        className="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 disabled:opacity-30 transition-all active:scale-90"
+                        className="w-11 h-11 rounded-2xl flex items-center justify-center flex-shrink-0 disabled:opacity-25 transition-all active:scale-90 hover:scale-105"
                         style={{
-                          background: 'linear-gradient(135deg,#0891b2,#7c3aed)',
-                          boxShadow: '0 4px 16px rgba(8,145,178,.35)',
+                          background: text.trim() ? 'linear-gradient(135deg,#0891b2,#7c3aed)' : 'rgba(255,255,255,.06)',
+                          boxShadow: text.trim() ? '0 4px 20px rgba(8,145,178,.4)' : 'none',
+                          border: text.trim() ? 'none' : '1px solid rgba(255,255,255,.08)',
                           marginBottom: 2,
+                          transition: 'all .2s',
                         }}>
                         {sending
                           ? <div className="w-4 h-4 rounded-full border-2 border-white/30 border-t-white animate-spin" />
@@ -1163,7 +1300,7 @@ const ChatPage = () => {
                       </button>
                     </div>
                   ) : (
-                    <div className="flex items-center justify-center gap-3 py-3.5 px-4 rounded-2xl" style={{ background: 'rgba(255,255,255,.03)', border: '1px solid rgba(255,255,255,.06)' }}>
+                    <div className="flex items-center justify-center gap-3 py-4 px-4 rounded-2xl" style={{ background: 'rgba(255,255,255,.03)', border: '1px solid rgba(255,255,255,.06)' }}>
                       <p className="text-gray-500 text-sm">Tu dois être connecté pour participer</p>
                       <Link to="/login" className="px-4 py-1.5 text-white text-sm font-bold rounded-full transition-all" style={{ background: 'linear-gradient(135deg,#0891b2,#7c3aed)' }}>Connexion</Link>
                     </div>

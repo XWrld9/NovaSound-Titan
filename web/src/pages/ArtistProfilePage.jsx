@@ -125,7 +125,7 @@ const ArtistShareModal = ({ artist, onClose }) => {
         </div>
         <div ref={cardRef} style={{ background: theme.bg, borderRadius: 16, padding: 20, fontFamily: 'sans-serif', position: 'relative', overflow: 'hidden' }}>
           {avatarDataUrl && <img src={avatarDataUrl} alt="" style={{ width: 64, height: 64, borderRadius: '50%', objectFit: 'cover', border: `3px solid ${theme.logo}`, marginBottom: 12 }} />}
-          <p style={{ color: '#fff', fontWeight: 700, fontSize: 18 }}>{artist.username}</p>
+          <p style={{ color: '#fff', fontWeight: 700, fontSize: 18 }} className="notranslate" translate="no">{artist.username}</p>
           {artist.bio && <p style={{ color: 'rgba(255,255,255,0.6)', fontSize: 12, marginTop: 4, lineHeight: 1.4 }}>{artist.bio.slice(0, 80)}{artist.bio.length > 80 ? '…' : ''}</p>}
           <p style={{ color: theme.logo, fontSize: 11, marginTop: 10, fontWeight: 600 }}>NovaSound TITAN LUX ✦</p>
           {logoDataUrl && <img src={logoDataUrl} alt="" style={{ position: 'absolute', top: 16, right: 16, width: 28, height: 28, borderRadius: 6, opacity: 0.8 }} />}

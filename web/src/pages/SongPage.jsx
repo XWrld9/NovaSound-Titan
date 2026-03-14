@@ -468,7 +468,7 @@ const SongPage = () => {
                         ? <img src={artist.avatar_url} alt={artist.username} className="w-12 h-12 rounded-full object-cover ring-2 ring-cyan-500/20" />
                         : <div className="w-12 h-12 rounded-full bg-gray-800 flex items-center justify-center"><User className="w-6 h-6 text-gray-600" /></div>}
                       <div>
-                        <p className="text-white font-bold text-sm group-hover:text-cyan-400 transition-colors">{artist.username}</p>
+                        <p className="text-white font-bold text-sm group-hover:text-cyan-400 transition-colors notranslate" translate="no">{artist.username}</p>
                         <p className="text-gray-600 text-xs flex items-center gap-1"><Radio className="w-3 h-3" />Artiste NovaSound</p>
                       </div>
                     </div>

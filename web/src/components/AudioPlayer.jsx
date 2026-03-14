@@ -1283,8 +1283,8 @@ const AudioPlayerDesktop = ({ currentSong, playlist = [], onNext, onPrevious, on
                             : <div className="w-10 h-10 rounded-lg bg-gray-800 flex items-center justify-center flex-shrink-0"><Music className="w-4 h-4 text-gray-600" /></div>
                           }
                           <div className="flex-1 min-w-0">
-                            <p className="text-white text-sm font-semibold truncate">{s.title}</p>
-                            <p className="text-gray-500 text-xs truncate">{s.artist}</p>
+                            <p className="text-white text-sm font-semibold truncate notranslate" translate="no">{s.title}</p>
+                            <p className="text-gray-500 text-xs truncate notranslate" translate="no">{s.artist}</p>
                           </div>
                           <button onClick={() => removeFromQueue(i)}
                             className="opacity-0 group-hover:opacity-100 p-1.5 text-gray-600 hover:text-red-400 transition-all rounded-lg hover:bg-red-500/10"
@@ -1644,8 +1644,8 @@ const AudioPlayerDesktop = ({ currentSong, playlist = [], onNext, onPrevious, on
                           : <div className="w-11 h-11 rounded-xl bg-gray-800 flex items-center justify-center flex-shrink-0"><Music className="w-5 h-5 text-gray-600" /></div>
                         }
                         <div className="flex-1 min-w-0">
-                          <p className="text-white text-sm font-semibold truncate">{s.title}</p>
-                          <p className="text-gray-500 text-xs truncate">{s.artist}</p>
+                          <p className="text-white text-sm font-semibold truncate notranslate" translate="no">{s.title}</p>
+                          <p className="text-gray-500 text-xs truncate notranslate" translate="no">{s.artist}</p>
                         </div>
                         {s.genre && (
                           <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-cyan-500/10 text-cyan-500 border border-cyan-500/20 flex-shrink-0">{s.genre}</span>

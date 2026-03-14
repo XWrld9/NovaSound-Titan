@@ -222,6 +222,19 @@ export const NotificationProvider = ({ children }) => {
     };
   }, [currentUser?.id, syncPushState, loadNotifications]);
 
+  // ── Polling fallback — si Realtime échoue sur mobile/tablette ─
+  // Vérifie toutes les 30s si de nouvelles notifs sont arrivées
+  useEffect(() => {
+    if (!currentUser?.id) return;
+    const interval = setInterval(() => {
+      // Ne poll que si la page est visible et que le realtime est peut-être inactif
+      if (document.visibilityState === 'visible') {
+        loadNotifications();
+      }
+    }, 30000);
+    return () => clearInterval(interval);
+  }, [currentUser?.id, loadNotifications]);
+
   // ── Messages du Service Worker ────────────────────────────────
   useEffect(() => {
     const handler = async (e) => {

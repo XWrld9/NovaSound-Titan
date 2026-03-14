@@ -228,8 +228,8 @@ const HomePage = () => {
             </div>
           </div>
         </div>
-        <p className={`text-xs font-semibold truncate transition-colors ${isPlaying ? 'text-cyan-400' : 'text-white group-hover:text-cyan-300'}`}>{song.title}</p>
-        <p className="text-gray-500 text-xs truncate">{song.artist}</p>
+        <p className={`text-xs font-semibold truncate transition-colors notranslate ${isPlaying ? 'text-cyan-400' : 'text-white group-hover:text-cyan-300'}`} translate="no">{song.title}</p>
+        <p className="text-gray-500 text-xs truncate notranslate" translate="no">{song.artist}</p>
       </motion.div>
     );
   };
@@ -396,8 +396,8 @@ const HomePage = () => {
                             }
                           </div>
                           <div className="flex-1 min-w-0">
-                            <p className="text-white font-bold text-sm truncate group-hover:text-amber-300 transition-colors">{song.title}</p>
-                            <p className="text-gray-400 text-xs truncate mt-0.5">{song.artist}</p>
+                            <p className="text-white font-bold text-sm truncate group-hover:text-amber-300 transition-colors notranslate" translate="no">{song.title}</p>
+                            <p className="text-gray-400 text-xs truncate mt-0.5 notranslate" translate="no">{song.artist}</p>
                             <div className="flex items-center gap-1 mt-1">
                               <Headphones className="w-3 h-3 text-amber-400" />
                               <span className="text-xs text-amber-400 font-semibold">{formatPlays(song.plays_count)}</span>

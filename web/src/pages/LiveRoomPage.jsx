@@ -39,6 +39,11 @@ const BRAND_STYLES = `
     50%  { background-position: 100% 50%; }
     100% { background-position: 0% 50%; }
   }
+  @keyframes nsGradientShift {
+    0%   { background-position: 0% 50%; }
+    50%  { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
+  }
   @keyframes brandGlow {
     0%,100%{ filter: drop-shadow(0 0 8px rgba(6,182,212,0.8)) drop-shadow(0 0 20px rgba(6,182,212,0.4)); }
     50%    { filter: drop-shadow(0 0 12px rgba(168,85,247,0.9)) drop-shadow(0 0 30px rgba(168,85,247,0.5)); }
@@ -1196,170 +1201,213 @@ const LiveRoomPage = () => {
     <>
       <Helmet><title>Live Rooms — NovaSound TITAN LUX</title></Helmet>
       <style>{BRAND_STYLES}</style>
-      <div className="min-h-screen bg-gray-950 flex flex-col">
+      <div className="min-h-screen flex flex-col" style={{background:'#03030d'}}>
         <Header />
-        <main className="flex-1 w-full max-w-screen-xl mx-auto px-4 md:px-8 lg:px-12 py-4 sm:py-8 pb-28">
 
-          {/* Hero — compact on mobile */}
-          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="text-center mb-5 sm:mb-12">
-            <div className="inline-flex items-center gap-2 bg-green-500/10 border border-green-500/25 text-green-400 px-3 py-1.5 sm:px-5 sm:py-2 rounded-full text-xs sm:text-sm font-bold mb-3 sm:mb-5">
-              <span className="relative flex h-2 w-2 sm:h-2.5 sm:w-2.5">
+        {/* ── Background premium ── */}
+        <div className="fixed inset-0 pointer-events-none z-0 overflow-hidden" style={{top:64}}>
+          <div className="absolute inset-0" style={{background:'linear-gradient(135deg,#03030d 0%,#06061a 40%,#080820 70%,#03030d 100%)'}}/>
+          <div className="absolute top-0 left-1/4 w-[500px] h-[500px] rounded-full opacity-20" style={{background:'radial-gradient(circle,rgba(34,197,94,.4) 0%,transparent 70%)',filter:'blur(60px)'}}/>
+          <div className="absolute bottom-0 right-1/4 w-[400px] h-[400px] rounded-full opacity-15" style={{background:'radial-gradient(circle,rgba(6,182,212,.4) 0%,transparent 70%)',filter:'blur(60px)'}}/>
+          <div className="absolute top-1/3 right-0 w-[300px] h-[300px] rounded-full opacity-10" style={{background:'radial-gradient(circle,rgba(168,85,247,.5) 0%,transparent 70%)',filter:'blur(50px)'}}/>
+          <div className="absolute inset-0 opacity-[0.015]" style={{backgroundImage:'linear-gradient(rgba(255,255,255,.15) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.15) 1px,transparent 1px)',backgroundSize:'50px 50px'}}/>
+        </div>
+
+        <main className="relative z-10 flex-1 w-full max-w-screen-xl mx-auto px-4 md:px-8 lg:px-12 py-6 sm:py-10 pb-28">
+
+          {/* ── HERO ── */}
+          <motion.div initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} className="text-center mb-8 sm:mb-14">
+            <div className="inline-flex items-center gap-2.5 px-4 py-2 rounded-full mb-5 text-xs sm:text-sm font-bold"
+              style={{background:'rgba(34,197,94,.08)',border:'1px solid rgba(34,197,94,.22)',color:'#4ade80'}}>
+              <span className="relative flex h-2.5 w-2.5">
                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75" />
-                <span className="relative inline-flex rounded-full h-2 w-2 sm:h-2.5 sm:w-2.5 bg-green-500" />
+                <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-green-400" />
               </span>
               LIVE ROOMS
+              {rooms.length > 0 && <span className="ml-1 px-2 py-0.5 rounded-full text-[10px] font-black" style={{background:'rgba(34,197,94,.15)'}}>{rooms.length} actives</span>}
             </div>
-            <h1 className="text-2xl sm:text-4xl md:text-6xl font-black text-white mb-2 sm:mb-4 tracking-tight">
-              {'Écoute'} <span className="bg-gradient-to-r from-cyan-400 via-fuchsia-400 to-cyan-400 bg-clip-text text-transparent">{'ensemble'}</span>
+            <h1 className="text-3xl sm:text-5xl md:text-7xl font-black text-white mb-3 sm:mb-5 tracking-tight leading-none">
+              Écoute{' '}
+              <span className="bg-gradient-to-r from-green-400 via-cyan-400 to-purple-400 bg-clip-text text-transparent"
+                style={{backgroundSize:'200% 200%',animation:'nsGradientShift 5s ease infinite'}}>
+                ensemble
+              </span>
             </h1>
-            <p className="text-gray-400 text-sm sm:text-lg max-w-lg mx-auto leading-relaxed hidden sm:block">{'Crée une salle, invite tes amis et partagez la même vibe musicale en temps réel.'}</p>
+            <p className="text-gray-500 text-sm sm:text-lg max-w-xl mx-auto leading-relaxed">
+              Crée une salle, invite tes amis et partagez la même vibe musicale en temps réel.
+            </p>
           </motion.div>
 
-          {/* Créer une salle - Interface améliorée */}
-          <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}
-            className="bg-gray-900/60 backdrop-blur-md border border-white/[0.06] rounded-2xl p-4 sm:p-8 mb-5 sm:mb-10 shadow-xl shadow-black/20">
-            <div className="flex items-center gap-2.5 sm:gap-3 mb-4 sm:mb-6">
-              <div className="w-9 h-9 sm:w-12 sm:h-12 rounded-xl sm:rounded-2xl bg-gradient-to-br from-green-500 to-cyan-500 flex items-center justify-center">
-                <Radio className="w-4 h-4 sm:w-6 sm:h-6 text-white" />
+          {/* ── CREATE ROOM — glass card ── */}
+          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}
+            className="rounded-3xl p-5 sm:p-8 mb-8 sm:mb-12"
+            style={{background:'rgba(255,255,255,.03)',border:'1px solid rgba(255,255,255,.07)',backdropFilter:'blur(24px)',boxShadow:'0 8px 64px rgba(0,0,0,.4)'}}>
+
+            <div className="flex items-center gap-3 sm:gap-4 mb-5 sm:mb-7">
+              <div className="w-11 h-11 sm:w-14 sm:h-14 rounded-2xl flex items-center justify-center"
+                style={{background:'linear-gradient(135deg,#16a34a,#0891b2)',boxShadow:'0 0 24px rgba(22,163,74,.3)'}}>
+                <Radio className="w-5 h-5 sm:w-7 sm:h-7 text-white" />
               </div>
               <div>
-                <h2 className="text-base sm:text-xl font-bold text-white">Créer ta salle live</h2>
-                <p className="text-gray-400 text-xs sm:text-sm hidden sm:block">Lance un live et partage ta musique avec tes amis</p>
+                <h2 className="text-white font-black text-lg sm:text-2xl tracking-tight">Créer ta salle live</h2>
+                <p className="text-gray-500 text-xs sm:text-sm mt-0.5">Lance un live et partage ta musique</p>
               </div>
             </div>
 
-            {/* Formulaire de création */}
             <div className="space-y-4">
-              {/* Titre du live */}
+              {/* Titre */}
               <div>
-                <label className="block text-sm font-medium text-gray-300 mb-2">Titre du live</label>
-                <input 
-                  value={roomName} 
-                  onChange={e => setRoomName(e.target.value)} 
+                <label className="block text-xs font-bold text-gray-400 uppercase tracking-widest mb-2">Titre du live</label>
+                <input
+                  value={roomName}
+                  onChange={e => setRoomName(e.target.value)}
                   onKeyDown={e => e.key === 'Enter' && createRoom()}
-                  placeholder="Ex: Soirée Chill, Session Hip-Hop, Mix Electro..." 
+                  placeholder="Ex: Soirée Chill, Session Hip-Hop, Mix Electro..."
                   maxLength={60}
-                  className="w-full bg-gray-800/90 border border-white/[0.10] text-white rounded-xl px-4 py-3 text-base focus:outline-none focus:border-cyan-500/50 focus:bg-gray-800 transition-all"
+                  className="w-full text-white text-base focus:outline-none transition-all rounded-2xl px-4 py-3.5"
+                  style={{background:'rgba(255,255,255,.05)',border:'1px solid rgba(255,255,255,.09)',transition:'border-color .2s,box-shadow .2s'}}
+                  onFocus={e=>{e.target.style.borderColor='rgba(6,182,212,.4)';e.target.style.boxShadow='0 0 0 3px rgba(6,182,212,.08)';}}
+                  onBlur={e=>{e.target.style.borderColor='rgba(255,255,255,.09)';e.target.style.boxShadow='none';}}
                 />
-                <p className="text-xs text-gray-500 mt-1">{roomName.length}/60 caractères</p>
+                <p className="text-[10px] text-gray-700 mt-1 text-right">{roomName.length}/60</p>
               </div>
 
-              {/* Description optionnelle */}
+              {/* Description */}
               <div>
-                <label className="block text-sm font-medium text-gray-300 mb-2">Description (optionnel)</label>
+                <label className="block text-xs font-bold text-gray-400 uppercase tracking-widest mb-2">Description <span className="text-gray-700 font-normal normal-case">(optionnel)</span></label>
                 <textarea
                   value={roomDescription || ''}
                   onChange={e => setRoomDescription(e.target.value)}
-                  placeholder="Décris ton live... ambiance, style musical, etc."
+                  placeholder="Décris l'ambiance, le style musical..."
                   maxLength={200}
                   rows={2}
-                  className="w-full bg-gray-800/90 border border-white/[0.10] text-white rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-cyan-500/50 focus:bg-gray-800 transition-all resize-none"
+                  className="w-full text-white text-sm focus:outline-none transition-all rounded-2xl px-4 py-3 resize-none"
+                  style={{background:'rgba(255,255,255,.05)',border:'1px solid rgba(255,255,255,.09)'}}
+                  onFocus={e=>{e.target.style.borderColor='rgba(6,182,212,.35)';}}
+                  onBlur={e=>{e.target.style.borderColor='rgba(255,255,255,.09)';}}
                 />
-                <p className="text-xs text-gray-500 mt-1">{(roomDescription || '').length}/200 caractères</p>
               </div>
 
               {/* Options */}
-              <div className="flex flex-wrap gap-3">
-                <button 
+              <div className="flex flex-wrap gap-2.5">
+                <button
                   onClick={() => setIsPrivate(!isPrivate)}
-                  className={`flex items-center gap-2 px-4 py-2.5 rounded-xl border text-sm font-medium transition-all ${
-                    isPrivate 
-                      ? 'bg-amber-500/15 border-amber-500/40 text-amber-400' 
-                      : 'bg-gray-800/90 border-white/[0.10] text-gray-400 hover:border-cyan-500/30'
-                  }`}
-                >
+                  className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold transition-all"
+                  style={isPrivate
+                    ? {background:'rgba(245,158,11,.12)',border:'1px solid rgba(245,158,11,.35)',color:'#fbbf24'}
+                    : {background:'rgba(255,255,255,.05)',border:'1px solid rgba(255,255,255,.08)',color:'rgba(255,255,255,.5)'}}>
                   {isPrivate ? <Lock className="w-4 h-4" /> : <Unlock className="w-4 h-4" />}
                   {isPrivate ? 'Privée' : 'Publique'}
                 </button>
-
-                <button 
+                <button
                   onClick={() => setMaxParticipants(maxParticipants === 10 ? 50 : maxParticipants - 10)}
-                  className="flex items-center gap-2 px-4 py-2.5 rounded-xl border border-white/[0.10] bg-gray-800/90 text-gray-400 hover:border-cyan-500/30 text-sm font-medium transition-all"
-                >
-                  <Users className="w-4 h-4" />
-                  Max: {maxParticipants}
+                  className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold transition-all"
+                  style={{background:'rgba(255,255,255,.05)',border:'1px solid rgba(255,255,255,.08)',color:'rgba(255,255,255,.5)'}}>
+                  <Users className="w-4 h-4" />Max: {maxParticipants}
                 </button>
-
-                <div className="flex flex-wrap gap-2">
-                  {ALL_GENRES.map(g => (
-                    <button key={g} type="button"
-                      onClick={() => setRoomGenre(roomGenre === g ? '' : g)}
-                      className={`px-3 py-1.5 rounded-full text-xs font-semibold border transition-all ${
-                        roomGenre === g
-                          ? 'bg-cyan-500/20 border-cyan-400 text-cyan-300'
-                          : 'border-gray-700 text-gray-400 hover:border-cyan-500/50 hover:text-gray-200'
-                      }`}
-                    >{g}</button>
-                  ))}
-                </div>
-
-                {/* Aperçu de la description personnalisée */}
-                {roomGenre && GENRE_DESCRIPTIONS[roomGenre] && (
-                  <div className="mt-3 p-3 bg-cyan-500/5 border border-cyan-500/20 rounded-xl">
-                    <p className="text-xs text-cyan-300 leading-relaxed">
-                      💡 Description automatique : {GENRE_DESCRIPTIONS[roomGenre]}
-                    </p>
-                  </div>
-                )}
               </div>
 
-              {/* Bouton de création */}
-              <button 
-                onClick={createRoom} 
+              {/* Genres */}
+              <div className="flex flex-wrap gap-2">
+                {ALL_GENRES.map(g => (
+                  <button key={g} type="button"
+                    onClick={() => setRoomGenre(roomGenre === g ? '' : g)}
+                    className="px-3 py-1.5 rounded-full text-xs font-semibold transition-all"
+                    style={roomGenre === g
+                      ? {background:'rgba(6,182,212,.18)',border:'1px solid rgba(6,182,212,.45)',color:'#22d3ee',boxShadow:'0 0 12px rgba(6,182,212,.15)'}
+                      : {background:'rgba(255,255,255,.04)',border:'1px solid rgba(255,255,255,.07)',color:'rgba(255,255,255,.4)'}}>
+                    {g}
+                  </button>
+                ))}
+              </div>
+
+              {roomGenre && GENRE_DESCRIPTIONS[roomGenre] && (
+                <div className="p-3 rounded-xl text-xs text-cyan-300/70 leading-relaxed"
+                  style={{background:'rgba(6,182,212,.05)',border:'1px solid rgba(6,182,212,.12)'}}>
+                  💡 {GENRE_DESCRIPTIONS[roomGenre]}
+                </div>
+              )}
+
+              {/* CTA */}
+              <button
+                onClick={createRoom}
                 disabled={!roomName.trim() || creatingRoom || !currentUser}
-                className="w-full bg-gradient-to-r from-green-500 via-cyan-500 to-purple-500 hover:from-green-600 hover:via-cyan-600 hover:to-purple-600 disabled:opacity-40 disabled:cursor-not-allowed text-white font-bold py-4 rounded-xl text-base transition-all shadow-xl shadow-green-500/30 flex items-center justify-center gap-3 transform hover:scale-[1.02] active:scale-[0.98]"
-              >
+                className="w-full text-white font-black py-4 rounded-2xl text-base transition-all flex items-center justify-center gap-3 disabled:opacity-30 disabled:cursor-not-allowed"
+                style={{
+                  background: 'linear-gradient(135deg,#16a34a,#0891b2,#7c3aed)',
+                  backgroundSize: '200% 200%',
+                  animation: 'nsGradientShift 4s ease infinite',
+                  boxShadow: '0 8px 32px rgba(22,163,74,.3),0 4px 16px rgba(0,0,0,.3)',
+                }}>
                 {creatingRoom ? (
-                  <>
-                    <Loader2 className="w-5 h-5 animate-spin" />
-                    <span>Création de la salle...</span>
-                  </>
+                  <><Loader2 className="w-5 h-5 animate-spin" /><span>Création en cours…</span></>
                 ) : (
-                  <>
-                    <Zap className="w-5 h-5" />
-                    <span>Lancer le live maintenant</span>
-                  </>
+                  <><Zap className="w-5 h-5" /><span>Lancer le live maintenant</span></>
                 )}
               </button>
 
               {!currentUser && (
-                <p className="text-amber-400 text-sm text-center flex items-center justify-center gap-2">
+                <p className="text-amber-400/80 text-sm text-center flex items-center justify-center gap-2">
                   <AlertCircle className="w-4 h-4" />
-                  <Link to="/login" className="underline hover:text-amber-300 font-medium">
-                    Connecte-toi pour créer une salle
-                  </Link>
+                  <Link to="/login" className="underline hover:text-amber-300 font-medium">Connecte-toi pour créer une salle</Link>
                 </p>
               )}
             </div>
           </motion.div>
 
-          {/* Grille de salles */}
+          {/* ── ROOMS GRID ── */}
           <div>
-            <div className="flex items-center justify-between mb-4 sm:mb-5">
-              <h2 className="text-sm font-bold text-white flex items-center gap-2">
-                <Radio className="w-4 h-4 text-green-400" />{'Écoute'}
-                <span className="text-xs text-gray-600 font-normal bg-gray-800 px-2 py-0.5 rounded-full">{rooms.length}</span>
-              </h2>
-              <button onClick={fetchRooms} className="text-xs text-gray-500 hover:text-gray-300 flex items-center gap-1.5 transition-colors">
-                <RefreshCw className="w-3.5 h-3.5" />{'Réessayer'}
+            <div className="flex items-center justify-between mb-5 sm:mb-6">
+              <div className="flex items-center gap-3">
+                <h2 className="text-white font-black text-lg sm:text-xl flex items-center gap-2.5">
+                  <Radio className="w-5 h-5 text-green-400" />Salles actives
+                </h2>
+                <span className="px-2.5 py-0.5 rounded-full text-xs font-bold text-green-400"
+                  style={{background:'rgba(34,197,94,.1)',border:'1px solid rgba(34,197,94,.2)'}}>
+                  {rooms.length}
+                </span>
+              </div>
+              <button onClick={fetchRooms}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold transition-all"
+                style={{background:'rgba(255,255,255,.04)',border:'1px solid rgba(255,255,255,.07)',color:'rgba(255,255,255,.4)'}}>
+                <RefreshCw className="w-3.5 h-3.5" />Actualiser
               </button>
             </div>
-            {loadingRooms
-              ? <div className="flex justify-center py-16"><Loader2 className="w-6 h-6 text-green-400 animate-spin" /></div>
-              : rooms.length === 0
-                ? <div className="text-center py-16 sm:py-20">
-                    <div className="w-16 h-16 rounded-2xl bg-gray-900 border border-gray-800 flex items-center justify-center mx-auto mb-4"><Radio className="w-8 h-8 text-gray-700" /></div>
-                    <p className="text-gray-500 font-medium mb-1">{'Aucune salle active'}</p>
-                    <p className="text-gray-700 text-sm">{'Sois le premier à lancer une session live !'}</p>
+
+            {loadingRooms ? (
+              <div className="flex justify-center py-20">
+                <div className="flex flex-col items-center gap-4">
+                  <div className="w-12 h-12 rounded-2xl flex items-center justify-center" style={{background:'rgba(34,197,94,.1)',border:'1px solid rgba(34,197,94,.2)'}}>
+                    <Loader2 className="w-6 h-6 text-green-400 animate-spin" />
                   </div>
-                : <div className="grid gap-3 sm:gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                    {rooms.map((r, i) => (
-                      <motion.div key={r.id} initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.05 }}>
-                        <RoomCard room={r} onJoin={joinRoom} />
-                      </motion.div>
-                    ))}
-                  </div>
-            }
+                  <p className="text-gray-600 text-sm">Chargement des salles…</p>
+                </div>
+              </div>
+            ) : rooms.length === 0 ? (
+              <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}
+                className="text-center py-20 sm:py-28 rounded-3xl"
+                style={{background:'rgba(255,255,255,.02)',border:'1px solid rgba(255,255,255,.05)',backdropFilter:'blur(12px)'}}>
+                <div className="w-20 h-20 rounded-3xl flex items-center justify-center mx-auto mb-5"
+                  style={{background:'rgba(34,197,94,.07)',border:'1px solid rgba(34,197,94,.12)'}}>
+                  <Radio className="w-10 h-10" style={{color:'rgba(34,197,94,.4)'}} />
+                </div>
+                <p className="text-white font-bold text-xl mb-2">Aucune salle active</p>
+                <p className="text-gray-600 text-sm mb-6">Sois le premier à lancer une session live !</p>
+                <button onClick={() => document.querySelector('input')?.focus()}
+                  className="px-6 py-3 rounded-2xl text-white font-bold text-sm"
+                  style={{background:'linear-gradient(135deg,#16a34a,#0891b2)'}}>
+                  Créer la première salle
+                </button>
+              </motion.div>
+            ) : (
+              <div className="grid gap-4 sm:gap-5 sm:grid-cols-2 lg:grid-cols-3">
+                {rooms.map((r, i) => (
+                  <motion.div key={r.id} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.06 }}>
+                    <RoomCard room={r} onJoin={joinRoom} />
+                  </motion.div>
+                ))}
+              </div>
+            )}
           </div>
         </main>
         <Footer />
