@@ -389,7 +389,7 @@ const CHAT_STYLES = `
     content:'';position:absolute;top:0;left:0;bottom:0;width:1px;
     background:linear-gradient(180deg,transparent,rgba(6,182,212,.3) 30%,rgba(168,85,247,.3) 70%,transparent);
   }
-``;
+`;
 
 // Rendu du contenu avec mentions colorées premium
 const renderContent = (text, currentUserId, msgUserId, currentUsername) => {
