@@ -431,9 +431,9 @@ const renderContent = (text, currentUserId, msgUserId, currentUsername) => {
       // Mention normale — cliquable vers la page artiste
       return (
         <a key={subKey}
-          href={`/#/search?q=${encodeURIComponent(mentionName)}&type=artists`}
+          href={'/#/search?q=' + encodeURIComponent(mentionName) + '&type=artists'}
           className="chat-mention-user"
-          title={`Voir le profil de ${sub}`}
+          title={'Voir le profil de ' + sub}
           onClick={e => e.stopPropagation()}>
           {sub.slice(1)}{/* @ géré par ::before CSS */}
         </a>
