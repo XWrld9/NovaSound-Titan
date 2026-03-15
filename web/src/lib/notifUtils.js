@@ -33,20 +33,28 @@ const _isDupe = key => {
 const _pushUrl = sb =>
   (sb.supabaseUrl || import.meta?.env?.VITE_SUPABASE_URL || '') +
   '/functions/v1/send-push-notification';
-const _pushKey = sb =>
-  sb.supabaseKey || import.meta?.env?.VITE_SUPABASE_ANON_KEY || '';
 
-const _push = (sb, body) => {
+// ✅ FIX v2.0.2 : utiliser le JWT de session utilisateur, PAS la clé anon.
+// L'Edge Function appelle supabase.auth.getUser(token) pour valider l'appelant.
+// La clé anon n'est pas un JWT utilisateur → getUser() retourne 401 →
+// la fonction s'arrête immédiatement → push jamais envoyé, jamais loggé,
+// erreur avalée silencieusement par le .catch(() => {}).
+const _push = async (sb, body) => {
   const url = _pushUrl(sb);
   if (!url || url === '/functions/v1/send-push-notification') return;
-  fetch(url, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${_pushKey(sb)}`,
-    },
-    body: JSON.stringify(body),
-  }).catch(() => {});
+  try {
+    const { data: { session } } = await sb.auth.getSession();
+    const token = session?.access_token;
+    if (!token) return; // pas de session active → skip silencieux
+    fetch(url, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify(body),
+    }).catch(() => {});
+  } catch { /* non-bloquant */ }
 };
 
 /* ─── Insert DB + trigger push ──────────────────────────────────── */
