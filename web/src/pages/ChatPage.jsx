@@ -479,7 +479,7 @@ const ChatMessage = memo(({
 
   return (
     <motion.div
-      id={`msg-${msg.id}`}
+      id={'msg-' + msg.id}
       initial={{ opacity: 0, y: 8, scale: 0.97 }}
       animate={{ opacity: 1, y: 0, scale: 1 }}
       transition={{ duration: 0.18, ease: 'easeOut' }}
@@ -553,7 +553,7 @@ const ChatMessage = memo(({
           {/* Bulle principale */}
           {editing ? (
             <div className="flex items-center gap-2 w-full" onClick={e => e.stopPropagation()}>
-              <input ref={editRef} id={`edit-msg-${msg?.id}`} name="chat-edit" value={editText}
+              <input ref={editRef} id={'edit-msg-' + (msg?.id || '')} name="chat-edit" value={editText}
                 onChange={e => setEditText(e.target.value.slice(0, 1000))}
                 onKeyDown={e => { if (e.key === 'Enter') handleSaveEdit(); if (e.key === 'Escape') setEditing(false); }}
                 className="flex-1 bg-[#080818] border border-cyan-500/40 rounded-xl px-3 py-1.5 text-sm text-white focus:outline-none focus:border-cyan-500/60 transition-colors" />
