@@ -325,7 +325,28 @@ export const NotificationProvider = ({ children }) => {
         return false;
       }
 
-      const reg = await navigator.serviceWorker.ready;
+      // ✅ FIX v2.0 — S'assurer que le SW est enregistré avant d'attendre .ready
+      // Sans ça, si le SW n'a jamais été enregistré (ex: premier chargement, SW bloqué),
+      // navigator.serviceWorker.ready attend indéfiniment → l'UI est figée.
+      if (!navigator.serviceWorker.controller) {
+        try {
+          await navigator.serviceWorker.register('/sw.js');
+        } catch (swErr) {
+          console.warn('[Push] SW registration fallback échoué:', swErr);
+        }
+      }
+
+      // ✅ FIX v2.0 — Timeout sur serviceWorker.ready (10s max)
+      // Sans timeout, si le SW reste bloqué en état "installing", la promesse
+      // ne résout jamais → setLoading reste true, le bouton est bloqué.
+      const swReadyWithTimeout = Promise.race([
+        navigator.serviceWorker.ready,
+        new Promise((_, reject) =>
+          setTimeout(() => reject(new Error('SW ready timeout')), 10_000)
+        ),
+      ]);
+
+      const reg = await swReadyWithTimeout;
       let sub = await reg.pushManager.getSubscription();
 
       if (!sub) {
@@ -335,13 +356,11 @@ export const NotificationProvider = ({ children }) => {
         });
       }
 
-      // 🔧 FIX v900: La session est forcément valide ici car l'utilisateur
-      // vient de cliquer → déclenchement par geste → session active garantie
       await upsertSubscription(currentUser.id, sub);
       setPushEnabled(true);
       setLoading(false);
 
-      // ✅ v3000: Enregistrer le Periodic Background Sync
+      // Enregistrer le Periodic Background Sync
       if ('periodicSync' in reg) {
         try {
           const status = await navigator.permissions.query({ name: 'periodic-background-sync' });
@@ -353,7 +372,16 @@ export const NotificationProvider = ({ children }) => {
 
       return true;
     } catch (err) {
-      console.error('[Push] requestPermission error:', err);
+      // ✅ FIX v2.0 — Messages distincts par type d'erreur pour faciliter le debug
+      if (err.name === 'AbortError') {
+        console.error('[Push] AbortError — push service injoignable ou SW non actif. Réessayer dans quelques secondes.', err);
+      } else if (err.name === 'NotAllowedError') {
+        console.warn('[Push] Permission notifications refusée par l\'utilisateur.');
+      } else if (err.message === 'SW ready timeout') {
+        console.error('[Push] Service Worker n\'est pas devenu actif dans les 10s — rechargez la page.');
+      } else {
+        console.error('[Push] requestPermission error:', err);
+      }
       setLoading(false);
       return false;
     }

@@ -326,7 +326,20 @@ const AdminPanel = () => {
 Il pourra accéder au panneau d'administration.`,
     confirmText:'Promouvoir', onConfirm: async () => {
       try {
-        await supabase.from('user_roles').upsert({ user_id: user.id, role: 'admin', is_active: true, granted_by: currentUser?.id }, { onConflict: 'user_id,role' });
+        // ✅ FIX v2.0.1 : user_roles n'a pas de contrainte UNIQUE sur (user_id, role)
+        // upsert({ onConflict: 'user_id,role' }) faisait un INSERT à chaque fois
+        // On vérifie d'abord si le rôle existe (actif ou non) avant d'insérer/réactiver
+        const { data: existing } = await supabase
+          .from('user_roles')
+          .select('id, is_active')
+          .eq('user_id', user.id)
+          .eq('role', 'admin')
+          .maybeSingle();
+        if (existing) {
+          await supabase.from('user_roles').update({ is_active: true, granted_by: currentUser?.id }).eq('id', existing.id);
+        } else {
+          await supabase.from('user_roles').insert({ user_id: user.id, role: 'admin', is_active: true, granted_by: currentUser?.id });
+        }
         addToast(`⭐ ${user.username} promu administrateur`);
         loadAdminRoles(); loadUsers();
       } catch (e) { addToast(e.message, 'error'); }

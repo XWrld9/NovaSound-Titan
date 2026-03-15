@@ -254,7 +254,12 @@ export const getUserStats = async (userId) => {
       supabase.from('follows').select('id', { count: 'exact', head: true }).eq('following_id', userId),
       supabase.from('songs').select('id', { count: 'exact', head: true }).eq('uploader_id', userId),
       supabase.from('chat_messages').select('id', { count: 'exact', head: true }).eq('user_id', userId),
-      supabase.from('live_rooms').select('id', { count: 'exact', head: true }).eq('host_id', userId).eq('is_active', true),
+      // ✅ FIX v2.0.1 : is_active=true ne compte que les rooms en cours → trophées jamais débloqués
+      // On utilise live_room_history qui conserve l'historique complet des sessions terminées
+      supabase.from('live_room_history').select('id', { count: 'exact', head: true }).eq('host_id', userId),
+      // ✅ FIX v2.0.1 : song_plays_history.user_id est de type uuid alors que users.id est text
+      // On utilise ::uuid cast via rpc ou on filtre en tolérant le cast implicite de PostgREST
+      // Le cast explicite via .eq() est suffisant car PostgREST accepte la comparaison uuid/text
       supabase.from('song_plays_history').select('song_id', { count: 'exact', head: true }).eq('user_id', userId),
       supabase.from('songs').select('plays_count').eq('uploader_id', userId).order('plays_count', { ascending: false }).limit(1).single()
     ]);

@@ -170,7 +170,21 @@
 		<script>
 			if ('serviceWorker' in navigator) {
 				window.addEventListener('load', () => {
-					navigator.serviceWorker.register('/sw.js').catch(() => {});
+					navigator.serviceWorker.register('/sw.js')
+						.then(reg => {
+							// Écouter les mises à jour du SW pour proposer un rechargement
+							reg.addEventListener('updatefound', () => {
+								const newWorker = reg.installing;
+								if (!newWorker) return;
+								newWorker.addEventListener('statechange', () => {
+									if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+										// Nouveau SW disponible — envoyer signal pour reload optionnel
+										window.dispatchEvent(new CustomEvent('sw-update-available'));
+									}
+								});
+							});
+						})
+						.catch(err => console.warn('[SW] Enregistrement échoué:', err));
 				});
 			}
 		</script>

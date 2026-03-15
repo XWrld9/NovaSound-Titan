@@ -106,13 +106,11 @@ const ModerationPanel = () => {
       if (error) throw error;
 
       // Marquer l'utilisateur comme banni
+      // ✅ FIX v2.0.1 : ban_reason et ban_expires_at n'existent pas dans public.users
+      // Les détails du ban sont stockés dans banned_users (insert ci-dessus)
       await supabase
         .from('users')
-        .update({
-          is_banned: true,
-          ban_reason: reason,
-          ban_expires_at: duration === 'permanent' ? null : new Date(Date.now() + duration * 24 * 60 * 60 * 1000).toISOString()
-        })
+        .update({ is_banned: true })
         .eq('id', userId);
 
       fetchReports();

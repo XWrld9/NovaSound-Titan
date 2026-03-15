@@ -1,43 +1,43 @@
-# NovaSound TITAN LUX — v1000001
+# NovaSound TITAN LUX — v2.0.1
 
-> **La plateforme musicale nouvelle génération avec système de notifications parfait.**  
+> **La plateforme musicale nouvelle génération.**  
 > Streamez, uploadez, connectez-vous avec des artistes, et profitez d'un lecteur audio natif complet.  
 > © 2026 NovaSound TITAN LUX — ELOADXFAMILY · [eloadxfamily@gmail.com](mailto:eloadxfamily@gmail.com)
 
 ---
 
-## 🌟 Caractéristiques Principales
+## 🌟 Fonctionnalités principales
 
-### 🔔 **Notifications Parfaites (22/22 types)**
-- **Système complet** avec 22 types de notifications fonctionnels
-- **Gamification** : 18 trophées avec 4 niveaux de rareté
-- **Broadcast admin** : 6 types d'annonces avec ciblage avancé
-- **Push notifications** : Support complet desktop/mobile (VAPID Web Push)
-- **Interface moderne** : Filtres avancés, animations, badge dynamique
+### 🔔 Notifications (22 types)
+- Système complet avec 22 types de notifications in-app et push
+- Gamification : 18 trophées avec 4 niveaux de rareté
+- Broadcast admin : 6 types d'annonces avec ciblage avancé
+- Push notifications Web Push (VAPID) — Android, iOS 16.4+ PWA, Desktop
+- Interface moderne : filtres avancés, animations, badge dynamique
 
-### 🎵 **Lecteur Audio Global**
-- **Persistant** : survit à toute navigation (monté une seule fois)
-- **Auto-skip sur erreur** : avance au son suivant après 2s si inaccessible
-- **File d'attente dédupliquée** : impossible d'ajouter le même son deux fois
-- **Bulle minimisée** : draggable, contrôles rapides play/next
-- **Mode radio** : lecture infinie par genre/artiste
+### 🎵 Lecteur audio global
+- Persistant : survit à toute navigation (monté une seule fois)
+- Auto-skip sur erreur : avance au son suivant après 2s si inaccessible
+- File d'attente dédupliquée : impossible d'ajouter le même son deux fois
+- Bulle minimisée : draggable, contrôles rapides play/next
+- Mode radio : lecture infinie par genre/artiste
 
-### 🎵 **Lecteur Audio Natif (hors-ligne)**
-- **Scan automatique** de votre bibliothèque musicale locale
-- **Support multi-plateformes** : iOS, Android, Desktop
-- **Métadonnées riches** : Extraction automatique ID3
-- **100% offline** : aucune connexion requise
+### 📁 Lecteur audio natif (hors-ligne)
+- Scan automatique de votre bibliothèque musicale locale
+- Support multi-plateformes : iOS, Android, Desktop
+- Extraction automatique des métadonnées ID3
+- 100% offline — aucune connexion requise
 
-### 🏆 **Gamification Complète**
-- **18 trophées** : Music, Social, Chat, Live, Spéciaux
-- **4 niveaux de rareté** : Common, Rare, Epic, Legendary
-- **Points et classements** : Système de progression XP
-- **Notifications spéciales** : Animations et brillance
+### 🏆 Gamification
+- 18 trophées répartis en catégories : Music, Social, Chat, Live, Spéciaux
+- 4 niveaux de rareté : Common, Rare, Epic, Legendary
+- Système de points XP et classements
+- Notifications spéciales avec animations
 
-### 👑 **Administration Avancée**
-- **Broadcasts ciblés** : Maintenance, Update, Event, Announcement…
-- **Interface admin** : Panneau complet avec historique
-- **Permissions sécurisées** : Admin/Moderator roles (RLS)
+### 👑 Administration
+- Broadcasts ciblés : Maintenance, Update, Event, Announcement…
+- Panneau admin complet avec historique
+- Permissions sécurisées via RLS (Admin/Moderator roles)
 
 ---
 
@@ -45,68 +45,62 @@
 
 ```
 NovaSound TITAN LUX/
-├── web/                          # Frontend React + Vite + Tailwind
-│   ├── src/
-│   │   ├── App.jsx               # Router, providers globaux
-│   │   ├── contexts/
-│   │   │   ├── PlayerContext.jsx       # État lecteur global
-│   │   │   ├── NotificationContext.jsx # Notifications + push VAPID
-│   │   │   ├── AuthContext.jsx         # Session Supabase Auth
-│   │   │   ├── ChatContext.jsx         # Chat global + realtime
-│   │   │   └── PlayerTimeContext.jsx   # Temps lecture (anti re-render)
-│   │   ├── components/
-│   │   │   ├── AudioPlayer.jsx         # Lecteur audio global (persistant)
-│   │   │   ├── NotificationBell.jsx    # Interface notifications 22 types
-│   │   │   ├── AchievementNotification.jsx # Composant trophées animé
-│   │   │   ├── AdminBroadcastPanel.jsx # Panneau admin broadcasts
-│   │   │   ├── NativeAudioPlayer.jsx   # Lecteur audio natif
-│   │   │   ├── BottomNav.jsx           # Navigation mobile
-│   │   │   └── OfflineBanner.jsx       # Gestion mode offline
-│   │   ├── lib/
-│   │   │   ├── notifUtils.js           # Notifications DB + push Edge Fn
-│   │   │   ├── notificationService.js  # CRUD notifications (client partagé)
-│   │   │   ├── achievementUtils.js     # Système de trophées
-│   │   │   ├── broadcastUtils.js       # Broadcasts admin
-│   │   │   ├── offlineStore.js         # Stockage offline localStorage
-│   │   │   └── networkDetector.js      # Détection réseau + sync offline
-│   │   └── pages/
-│   │       ├── LocalPlayerPageNative.jsx # Lecteur local natif
-│   │       └── ...
-│   └── package.json
+├── web/                                  # Frontend React + Vite + Tailwind
+│   ├── index.html                        # Entrée SPA + enregistrement SW
+│   ├── public/
+│   │   └── sw.js                         # Service Worker (cache, push, sync)
+│   └── src/
+│       ├── App.jsx                       # Router, providers globaux
+│       ├── contexts/
+│       │   ├── NotificationContext.jsx   # Notifications + push VAPID
+│       │   ├── PlayerContext.jsx         # État lecteur global
+│       │   ├── AuthContext.jsx           # Session Supabase Auth
+│       │   ├── ChatContext.jsx           # Chat global + realtime
+│       │   └── PlayerTimeContext.jsx     # Temps lecture (anti re-render)
+│       ├── components/
+│       │   ├── AudioPlayer.jsx           # Lecteur audio global (persistant)
+│       │   ├── NotificationBell.jsx      # Interface notifications 22 types
+│       │   ├── AchievementNotification.jsx
+│       │   ├── AdminBroadcastPanel.jsx
+│       │   └── BottomNav.jsx             # Navigation mobile
+│       ├── lib/
+│       │   ├── notifUtils.js             # Notifications DB + push Edge Fn
+│       │   ├── notificationService.js    # CRUD notifications
+│       │   ├── achievementUtils.js       # Système de trophées
+│       │   ├── broadcastUtils.js         # Broadcasts admin
+│       │   └── offlineStore.js           # Stockage offline localStorage
+│       └── pages/
+│           └── ...
 ├── supabase/
 │   └── functions/
 │       └── send-push-notification/
-│           └── index.ts              # Edge Function v2.0 — 22 types VAPID
+│           └── index.ts                  # Edge Function v2.0 — VAPID RFC 8291
 └── README.md
 ```
 
 ---
 
-## 🚀 Installation et Démarrage
+## 🚀 Installation
 
 ### Prérequis
 - Node.js 18+
 - Supabase CLI
 - Git
 
-### Installation
+### Démarrage local
 ```bash
-# Cloner le projet
 git clone <repository-url>
-cd NovaSound-TITAN-LUX
-
-# Installer les dépendances frontend
-cd web
+cd NovaSound-TITAN-LUX/web
 npm install
-
-# Démarrer le développement
 npm run dev
 ```
 
 ### Variables d'environnement
 ```bash
 cp .env.example .env
+```
 
+```env
 VITE_SUPABASE_URL=https://YOUR_REF.supabase.co
 VITE_SUPABASE_ANON_KEY=your_anon_key
 VITE_VAPID_PUBLIC_KEY=your_vapid_public_key
@@ -114,19 +108,20 @@ VITE_VAPID_PUBLIC_KEY=your_vapid_public_key
 
 ---
 
-## 🔔 Système de Notifications
+## 🔔 Système de notifications
 
 ### Flux complet
 ```
 Action utilisateur (like, follow, commentaire…)
   → INSERT dans public.notifications (notifUtils.js)
-  → _push() appelle Edge Function send-push-notification
-  → Edge Fn récupère push_subscriptions de l'user
-  → Envoie push VAPID chiffré (Web Push Protocol)
-  → Service Worker reçoit 'push' event
-  → Affiche notification système Android/iOS/PC
-  → NotificationContext lit les nouvelles notifs via Realtime
-  → Badge in-app mis à jour (setAppBadge)
+  → _push() appelle l'Edge Function send-push-notification
+  → Edge Function récupère push_subscriptions de l'user
+  → Chiffrement Web Push RFC 8291 (ECDH P-256 + AES-128-GCM)
+  → Envoi VAPID vers le push service (FCM / Apple Push / Mozilla)
+  → Service Worker reçoit l'événement 'push'
+  → Affiche la notification système (Android / iOS / Desktop)
+  → NotificationContext reçoit la mise à jour via Supabase Realtime
+  → Badge in-app mis à jour (navigator.setAppBadge)
 ```
 
 ### 22 types supportés
@@ -141,7 +136,15 @@ live_start · live_started · live_invite · live_join · live_comment · live_l
 achievement · broadcast
 ```
 
-### Champs DB (table `notifications`)
+### Urgency et TTL par catégorie
+| Catégorie | Urgency | TTL |
+|---|---|---|
+| Live, Chat | `high` | 1h – 24h |
+| Social, Musique | `normal` | 7 jours |
+| Likes, News | `low` | 7 jours – 30 jours |
+| Achievement | `high` | 7 jours |
+
+### Schéma de la table `notifications`
 | Champ | Type | Description |
 |---|---|---|
 | `user_id` | text | Destinataire |
@@ -149,7 +152,7 @@ achievement · broadcast
 | `title` | text | Titre (max 120 chars) |
 | `body` | text | Contenu (max 200 chars) |
 | `url` | text | Lien de navigation |
-| `icon_url` | text | Icône de la notification |
+| `icon_url` | text | Icône |
 | `is_read` | boolean | Lu ou non |
 | `from_user_id` | text | Expéditeur |
 | `song_id` | text | Deep link son |
@@ -157,18 +160,18 @@ achievement · broadcast
 
 ---
 
-## 🎵 Lecteur Audio
+## 🎵 Lecteur audio
 
 ### Fonctionnalités
 - **Persistant** : l'élément `<audio>` n'est jamais démonté
-- **Auto-skip erreur** : si un fichier est inaccessible, skip automatique après 2s
+- **Auto-skip erreur** : skip automatique après 2s si un fichier est inaccessible
 - **File dédupliquée** : `addToQueue()` refuse les doublons
-- **Mode radio** : lecture infinie par genre/artiste (Supabase queries)
+- **Mode radio** : lecture infinie par genre/artiste
 - **Bulle minimisée** : draggable verticalement, quick controls
 - **Sleep timer** : pause automatique après X minutes
 - **Vitesse lecture** : 0.75× à 2×
 
-### Événements CustomEvent
+### CustomEvents disponibles
 | Événement | Description |
 |---|---|
 | `novasound:force-play` | Lancer la lecture |
@@ -181,16 +184,14 @@ achievement · broadcast
 
 ---
 
-## 🏆 Système de Trophées
-
-Les trophées se débloquent automatiquement lors de vos actions :
+## 🏆 Trophées
 
 | Trophée | Condition | Rareté | Points |
 |---|---|---|---|
 | Premier Like | 1 like reçu | Common | 10 |
 | Première Écoute | 1 play | Common | 5 |
 | Amoureux de la Musique | 100 sons différents | Rare | 50 |
-| Artiste en Tendance | 1000+ plays sur un son | Epic | 100 |
+| Artiste en Tendance | 1 000+ plays sur un son | Epic | 100 |
 | Premier Abonné | 1 follower | Common | 20 |
 | Papillon Social | 50 followers | Rare | 75 |
 | Influenceur | 100 followers | Epic | 150 |
@@ -206,28 +207,29 @@ Les trophées se débloquent automatiquement lors de vos actions :
 
 ---
 
-## 📱 Mode Offline
+## 📱 Mode offline
 
 - **Messages chat** : stockés dans localStorage si hors-ligne, synchronisés au retour
 - **Détection réseau** : `useNetworkDetector()` → events `online`/`offline`
 - **Sync automatique** : reprise des messages pendants au reconnect
+- **Chunks Vite** : Network-first avec détection de deploy périmé → reload automatique
 
 ---
 
-## 🔧 Stack Technique
+## 🔧 Stack technique
 
 | Couche | Technologie |
 |---|---|
 | Frontend | React 18, Vite, Tailwind CSS, Framer Motion |
 | Backend | Supabase (PostgreSQL, Auth, Storage, Realtime) |
-| Edge Functions | Deno (TypeScript) — VAPID custom crypto |
+| Edge Functions | Deno (TypeScript) — VAPID custom crypto RFC 8291 |
 | Push | Web Push Protocol (VAPID), Service Worker |
 | Offline | localStorage, File System Access API |
 | Déploiement | Vercel (frontend), Supabase Cloud (backend) |
 
 ---
 
-## 🚀 Déploiement Production
+## 🚀 Déploiement production
 
 ```bash
 # 1. Builder le frontend
@@ -236,7 +238,7 @@ cd web && npm run build
 # 2. Déployer l'Edge Function
 supabase functions deploy send-push-notification
 
-# 3. Déployer le frontend (Vercel)
+# 3. Déployer le frontend
 vercel --prod
 ```
 
@@ -244,39 +246,60 @@ vercel --prod
 
 ## 📋 Changelog
 
-### v1000001 (2026-03-13) — Corrections critiques
-- **FIX CRASH** : `useNotifications` manquant dans `NotificationBell.jsx` → `ReferenceError` corrigé
-- **FIX** : `addToQueue` — déduplication pour éviter la file cassée (même son ajouté N fois)
-- **FIX** : `AudioPlayer.onError` — auto-skip automatique après 2s sur fichier inaccessible
-- **FIX** : `PlayerContext` — listener `novasound:audio-error` → `handleNext()` global
-- **FIX** : `notifUtils._push()` — champ `icon_url` → `icon` (alignement avec Edge Function v2.0)
-- **FIX** : `notificationService.js` — suppression du champ `read_at` inexistant en DB
-- **FIX** : `notificationService.js` — suppression du client Supabase dupliqué (import partagé)
-- **FIX** : `console.log` → `console.info` dans tous les fichiers de production
+### v2.0.1 (2026-03-15) — Correctifs DB schema
+
+**`ModerationPanel.jsx`**
+- Suppression des champs `ban_reason` et `ban_expires_at` inexistants dans `public.users` (les détails du ban sont dans `banned_users`)
+
+**`broadcastUtils.js`**
+- Remplacement des actions `broadcast` et `targeted_broadcast` qui violaient le CHECK constraint de `moderation_logs.action` → mappées sur `resolve_report` avec prefix dans `reason`
+
+**`achievementUtils.js`**
+- Comptage des lives hébergés corrigé : `live_room_history` (historique complet) au lieu de `live_rooms WHERE is_active=true` (rooms en cours seulement → trophées jamais débloqués)
+- Commentaire explicatif sur le type mismatch `song_plays_history.user_id` (uuid) vs `users.id` (text)
+
+**`AdminPanel.jsx`**
+- Remplacement du `upsert({ onConflict: "user_id,role" })` sans contrainte UNIQUE par un check-then-insert/update explicite pour la promotion admin
+---
+
+### v2.0 (2026-03-15) — Correctifs critiques push + stabilisation
+
+**Edge Function `send-push-notification`**
+- `encryptPayload` réécrit intégralement selon RFC 8291 + RFC 8188
+- Correction du bug ECDH : la clé privée éphémère est maintenant correctement utilisée comme `baseKey` (au lieu d'un `CryptoKeyPair` complet qui causait un `TypeError` silencieux en runtime)
+- Ajout de l'étape IKM manquante : `HKDF(salt=authSecret, ikm=ecdhSecret, info="WebPush: info\0"+sub_pub+eph_pub)`
+- Construction correcte du header `aes128gcm` : `salt(16) + rs(4) + idlen(1) + ephemeralPublic(65)`
+- Padding record avec délimiteur `0x02` (RFC 8188)
+- Helper `concat()` pour l'assemblage des buffers
+
+**Client — `NotificationContext.jsx`**
+- Ajout d'un re-enregistrement défensif du SW si `controller` est absent au moment du subscribe (évite l'`AbortError: Registration failed - push service error` au premier chargement)
+- Ajout d'un timeout de 10s sur `navigator.serviceWorker.ready` (évite le blocage définitif si le SW reste en état `installing`)
+- Messages d'erreur distincts par type : `AbortError`, `NotAllowedError`, timeout SW
+
+**Client — `index.html`**
+- Remplacement du `.catch(() => {})` silencieux par un log sur l'enregistrement du SW
+- Ajout d'un listener `updatefound` pour détecter les nouvelles versions du SW et émettre `sw-update-available`
+
+### v1000001 (2026-03-13)
+- FIX CRASH : `useNotifications` manquant dans `NotificationBell.jsx`
+- FIX : `addToQueue` — déduplication file d'attente
+- FIX : `AudioPlayer.onError` — auto-skip après 2s
+- FIX : `notifUtils._push()` — champ `icon_url` → `icon`
+- FIX : `notificationService.js` — suppression champ `read_at` inexistant
 
 ### v1000000
 - Système de notifications complet (22/22 types)
 - Gamification : 18 trophées, 4 raretés
 - Lecteur audio natif multi-plateformes
 - Broadcast admin avec ciblage avancé
-- Edge Function VAPID v2.0 custom crypto
-- Push notifications Android/iOS/PC PWA
-
-### v500000
-- Push notifications via DB Trigger + pg_net
-- 15 index DB pour les performances
-- RLS renforcé, crons nettoyage automatique
-
-### v410000
-- Refonte complète LocalPlayerPage (FSA, ID3v2)
-- Chat : @tous/@all, suppressions, éditions
-- Live Room : réactions, file d'attente, historique
+- Edge Function VAPID custom crypto
 
 ---
 
 ## 📞 Support
 
-- **Email** : eloadxfamily@gmail.com
+- **Email** : eloadxfamily@gmail.com  
 - **Licence** : © 2026 NovaSound TITAN LUX — ELOADXFAMILY
 
 ---

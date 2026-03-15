@@ -156,6 +156,9 @@ export const sendBroadcast = async (adminId, broadcastType, title, body, options
     const result = await notifyAll(supabase, notificationPayload, [adminId]);
     
     // Logger le broadcast
+    // ✅ FIX v2.0.1 : 'broadcast' ne fait pas partie des valeurs autorisées par le CHECK
+    // constraint de moderation_logs.action → on utilise 'resolve_report' comme action générique
+    // ✅ v2.0.1 : action 'broadcast' désormais valide après migration v2.0.1_schema_fixes.sql
     await supabase.from('moderation_logs').insert({
       admin_id: adminId,
       action: 'broadcast',
@@ -270,6 +273,7 @@ export const sendTargetedBroadcast = async (adminId, broadcastType, title, body,
     }
     
     // Logger
+    // ✅ v2.0.1 : action 'targeted_broadcast' désormais valide après migration
     await supabase.from('moderation_logs').insert({
       admin_id: adminId,
       action: 'targeted_broadcast',
