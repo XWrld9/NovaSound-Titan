@@ -287,21 +287,32 @@ const AudioPlayerDesktop = ({ currentSong, playlist = [], onNext, onPrevious, on
 
   const lastVolKeyRef = useRef(0);
 
-  // ── Raccourcis clavier — actifs en mode expanded/plein écran ────
+  // ── Raccourcis clavier — actifs en mode expanded ET en bulle minimisée ────
   useEffect(() => {
     const onKey = (e) => {
       if (['INPUT', 'TEXTAREA'].includes(e.target.tagName)) return;
+      // Sur /local-player, LocalPlayerPage gère lui-même Space → on laisse passer
+      if (e.code === 'Space' && window.location.hash.includes('/local-player')) return;
       const now = Date.now();
       switch (e.code) {
         case 'ArrowRight': case 'MediaTrackNext':
-          if (!isExpanded) break;
+          // Fonctionne en expanded ET en bulle minimisée
+          if (!isExpanded && !isMinimized) break;
           e.preventDefault(); autoPlayRef.current = true; goNextRef.current?.(); break;
         case 'ArrowLeft': case 'MediaTrackPrevious':
-          if (!isExpanded) break;
+          if (!isExpanded && !isMinimized) break;
+          e.preventDefault(); autoPlayRef.current = true; goPreviousRef.current?.(); break;
+        case 'KeyN':
+          // Suivant — actif partout dès qu'un son joue
+          if (!currentSong) break;
+          e.preventDefault(); autoPlayRef.current = true; goNextRef.current?.(); break;
+        case 'KeyP':
+          // Précédent — actif partout dès qu'un son joue
+          if (!currentSong) break;
           e.preventDefault(); autoPlayRef.current = true; goPreviousRef.current?.(); break;
         case 'ArrowUp':
           e.preventDefault();
-          if (now - lastVolKeyRef.current < 80) break; // throttle 80ms
+          if (now - lastVolKeyRef.current < 80) break;
           lastVolKeyRef.current = now;
           setVolume(prev => {
             const v = Math.min(100, (prev || 0) + 2);
@@ -311,7 +322,7 @@ const AudioPlayerDesktop = ({ currentSong, playlist = [], onNext, onPrevious, on
           break;
         case 'ArrowDown':
           e.preventDefault();
-          if (now - lastVolKeyRef.current < 80) break; // throttle 80ms
+          if (now - lastVolKeyRef.current < 80) break;
           lastVolKeyRef.current = now;
           setVolume(prev => {
             const v = Math.max(0, (prev || 0) - 2);
@@ -334,6 +345,8 @@ const AudioPlayerDesktop = ({ currentSong, playlist = [], onNext, onPrevious, on
           }
           break;
         case 'Escape':
+          // En bulle : Escape restaure le lecteur
+          if (isMinimized) { restorePlayer(); break; }
           if (!isExpanded) break;
           if (isCoverMode || isNativeFS) toggleImmersiveRef.current?.();
           else { setIsExpanded(false); setIsCoverMode(false); setShowQueue(false); setShowSpeedMenu(false); }
@@ -345,7 +358,7 @@ const AudioPlayerDesktop = ({ currentSong, playlist = [], onNext, onPrevious, on
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [isExpanded, isPlaying, isCoverMode, isNativeFS, toggleMute, isMuted]);
+  }, [isExpanded, isMinimized, isPlaying, isCoverMode, isNativeFS, toggleMute, isMuted, currentSong, restorePlayer]);
 
   // ── Scroll lock ─────────────────────────────────────────────────
   useEffect(() => {
@@ -829,39 +842,95 @@ const AudioPlayerDesktop = ({ currentSong, playlist = [], onNext, onPrevious, on
           <motion.button
             whileTap={{ scale: 0.92 }}
             onClick={restorePlayer}
-            onPointerDown={e => e.stopPropagation()} /* évite que le drag intercepte le tap */
-            className="w-14 h-14 rounded-full shadow-2xl flex items-center justify-center relative overflow-hidden border-2 border-white/20"
-            style={{ background: `linear-gradient(135deg, ${genreTheme.primary}, ${genreTheme.secondary})`, boxShadow: `0 8px 32px ${genreTheme.glow}` }}
+            onPointerDown={e => e.stopPropagation()}
+            className="relative flex flex-col items-center gap-0 touch-none"
             title={`${currentSong.title} — cliquer pour afficher`}
           >
-            {currentSong.cover_url
-              ? <img src={currentSong.cover_url} alt="" className={`w-full h-full object-cover ${isPlaying ? 'animate-spin' : ''}`} style={{ animationDuration: '8s' }} />
-              : <Music className="w-6 h-6 text-white" />
-            }
-            {isPlaying && (
+            {/* Titre défilant au-dessus */}
+            <div className="w-[220px] mb-1.5 overflow-hidden rounded-xl px-3 py-1.5"
+              style={{background:'rgba(0,0,0,0.72)',backdropFilter:'blur(16px)',border:'1px solid rgba(255,255,255,0.08)'}}>
               <motion.div
-                className="absolute inset-0 rounded-full border-2 border-white/40"
-                animate={{ scale: [1, 1.15, 1], opacity: [0.6, 0, 0.6] }}
-                transition={{ repeat: Infinity, duration: 2 }}
-              />
-            )}
+                animate={isPlaying ? { x: [0, -120, 0] } : { x: 0 }}
+                transition={{ duration: 8, repeat: Infinity, ease: 'linear', repeatDelay: 1 }}
+                className="whitespace-nowrap text-xs font-semibold text-white">
+                {currentSong.title}
+                {isPlaying && <span className="text-gray-500 mx-2">·</span>}
+                {isPlaying && <span className="text-gray-400 text-[11px]">{currentSong.artist}</span>}
+              </motion.div>
+            </div>
+
+            {/* Bulle principale avec ring de progression */}
+            <div className="relative w-16 h-16">
+              {/* Ring de progression animé */}
+              <svg className="absolute inset-0 w-full h-full -rotate-90" viewBox="0 0 64 64">
+                <circle cx="32" cy="32" r="29" fill="none" stroke="rgba(255,255,255,0.08)" strokeWidth="2.5"/>
+                <circle cx="32" cy="32" r="29" fill="none"
+                  stroke={genreTheme.primary} strokeWidth="2.5"
+                  strokeLinecap="round"
+                  strokeDasharray={`${2 * Math.PI * 29}`}
+                  strokeDashoffset={`${2 * Math.PI * 29 * (1 - (duration > 0 ? currentTime / duration : 0))}`}
+                  style={{transition:'stroke-dashoffset 0.4s linear'}}
+                />
+              </svg>
+              {/* Halo pulsant si en lecture */}
+              {isPlaying && (
+                <motion.div
+                  className="absolute inset-0 rounded-full pointer-events-none"
+                  animate={{ scale: [1, 1.18, 1], opacity: [0.5, 0, 0.5] }}
+                  transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}
+                  style={{ background: `radial-gradient(circle, ${genreTheme.glow} 0%, transparent 70%)` }}
+                />
+              )}
+              {/* Cover ou icône */}
+              <div className="absolute inset-[5px] rounded-full overflow-hidden"
+                style={{ boxShadow: `0 4px 20px ${genreTheme.glow}` }}>
+                {currentSong.cover_url
+                  ? <img src={currentSong.cover_url} alt=""
+                      className="w-full h-full object-cover"
+                      style={{ filter: isPlaying ? 'none' : 'brightness(0.55)' }}/>
+                  : <div className="w-full h-full flex items-center justify-center"
+                      style={{ background: `linear-gradient(135deg,${genreTheme.primary},${genreTheme.secondary})` }}>
+                      <Music className="w-5 h-5 text-white"/>
+                    </div>
+                }
+              </div>
+              {/* Overlay pause */}
+              {!isPlaying && (
+                <div className="absolute inset-[5px] rounded-full bg-black/50 flex items-center justify-center">
+                  <Play className="w-4 h-4 text-white ml-0.5"/>
+                </div>
+              )}
+            </div>
           </motion.button>
 
-          {/* Boutons play/next rapides + Épingler */}
-          <div className="flex gap-1 items-center">
+          {/* Boutons play/next/prev rapides + Épingler */}
+          <div className="flex gap-1.5 items-center mt-1">
+            <button
+              onClick={e => { e.stopPropagation(); goPrevious(); }}
+              onPointerDown={e => e.stopPropagation()}
+              className="w-7 h-7 rounded-full bg-black/70 backdrop-blur-sm border border-white/10 flex items-center justify-center text-gray-400 hover:text-white transition-all active:scale-75"
+            >
+              <SkipBack className="w-3 h-3"/>
+            </button>
             <button
               onClick={e => { e.stopPropagation(); togglePlay(); }}
               onPointerDown={e => e.stopPropagation()}
-              className="w-8 h-8 rounded-full bg-black/70 backdrop-blur-sm border border-white/10 flex items-center justify-center text-white"
+              className="w-9 h-9 rounded-full flex items-center justify-center text-white shadow-lg transition-all active:scale-75"
+              style={{ background: `linear-gradient(135deg,${genreTheme.primary},${genreTheme.secondary})`, boxShadow: `0 4px 16px ${genreTheme.glow}` }}
             >
-              {isPlaying ? <Pause className="w-3.5 h-3.5" /> : <Play className="w-3.5 h-3.5 ml-0.5" />}
+              {isBuffering
+                ? <div className="w-3.5 h-3.5 rounded-full border-2 border-white/30 border-t-white animate-spin"/>
+                : isPlaying
+                  ? <Pause className="w-3.5 h-3.5"/>
+                  : <Play className="w-3.5 h-3.5 ml-0.5"/>
+              }
             </button>
             <button
               onClick={e => { e.stopPropagation(); goNext(); }}
               onPointerDown={e => e.stopPropagation()}
-              className="w-8 h-8 rounded-full bg-black/70 backdrop-blur-sm border border-white/10 flex items-center justify-center text-white"
+              className="w-7 h-7 rounded-full bg-black/70 backdrop-blur-sm border border-white/10 flex items-center justify-center text-gray-400 hover:text-white transition-all active:scale-75"
             >
-              <SkipForward className="w-3.5 h-3.5" />
+              <SkipForward className="w-3 h-3"/>
             </button>
             {/* Widget épinglage */}
             <div className="relative" onPointerDown={e => e.stopPropagation()}>

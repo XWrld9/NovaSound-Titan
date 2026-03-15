@@ -283,7 +283,10 @@ const LocalPlayerPage=()=>{
   // Favoris : calculé après activeSong pour éviter TDZ
   const favorited=activeSong?localFavoriteIds.has(activeSong.id):false;
   const rawActiveCover=activeSong?.cover_url||activeSong?.cover_svg;
-  const cover=(!rawActiveCover||rawActiveCover.startsWith('blob:'))?makeCoverSvg(activeSong?.title||'',activeSong?.artist||''):rawActiveCover;
+  // Pour l'affichage : on garde les blob: URLs (vraie pochette MP3)
+  const cover=rawActiveCover||makeCoverSvg(activeSong?.title||'',activeSong?.artist||'');
+  // Pour mediaSession : les blob: URLs ne sont pas supportées → fallback svg
+  const coverForSession=(!rawActiveCover||rawActiveCover.startsWith('blob:'))?makeCoverSvg(activeSong?.title||'',activeSong?.artist||''):rawActiveCover;
   useEffect(()=>{
     if(!cover||cover.startsWith('data:image/svg'))return;
     const img=new Image();img.crossOrigin='anonymous';
@@ -318,12 +321,15 @@ const LocalPlayerPage=()=>{
   /* Media Session */
   useEffect(()=>{
     if(!('mediaSession' in navigator)||!currentSong?.is_local)return;
-    try{const src=currentSong.cover_url||currentSong.cover_svg||'/icon-192.png';navigator.mediaSession.metadata=new MediaMetadata({title:currentSong.title||'Titre inconnu',artist:currentSong.artist||'Fichier local',album:currentSong.album||'NovaSound Local',artwork:[{src,sizes:'512x512',type:src.startsWith('data:')?'image/png':'image/jpeg'}]});}catch(_){}
+    // blob: URLs ne sont pas supportées par mediaSession → on utilise coverForSession
+    const src=coverForSession&&!coverForSession.startsWith('blob:')?coverForSession:'/icon-192.png';
+    const artType=src.startsWith('data:')?'image/png':src.endsWith('.png')?'image/png':'image/jpeg';
+    try{navigator.mediaSession.metadata=new MediaMetadata({title:currentSong.title||'Titre inconnu',artist:currentSong.artist||'Fichier local',album:currentSong.album||'NovaSound Local',artwork:[{src,sizes:'192x192',type:artType},{src,sizes:'512x512',type:artType}]});}catch(_){}
     const handlers={play:()=>{const a=document.querySelector('audio');a?.play();},pause:()=>{const a=document.querySelector('audio');a?.pause();},nexttrack:()=>handleNext?.(),previoustrack:()=>handlePrevious?.(),seekbackward:()=>seekTo?.(Math.max(0,(audioCurrentTime||0)-10)),seekforward:()=>seekTo?.(Math.min(audioDuration||0,(audioCurrentTime||0)+10)),seekto:d=>{if(d.seekTime!=null)seekTo?.(d.seekTime);}};
     Object.entries(handlers).forEach(([a,h])=>{try{navigator.mediaSession.setActionHandler(a,h);}catch(_){}});
     if(audioDuration>0)try{navigator.mediaSession.setPositionState?.({duration:audioDuration,playbackRate:1,position:Math.min(audioCurrentTime||0,audioDuration)});}catch(_){}
     return()=>Object.keys(handlers).forEach(a=>{try{navigator.mediaSession.setActionHandler(a,null);}catch(_){};});
-  },[currentSong,isPlayingGlobal,audioCurrentTime,audioDuration,handleNext,handlePrevious,seekTo]);
+  },[currentSong,coverForSession,isPlayingGlobal,audioCurrentTime,audioDuration,handleNext,handlePrevious,seekTo]);
 
   /* Media Session — playbackState (bouton play/pause du mini lecteur OS) */
   useEffect(()=>{
