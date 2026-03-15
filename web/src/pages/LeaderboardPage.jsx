@@ -37,32 +37,64 @@ const getBadge = (score) => {
 };
 
 // ── Podium ────────────────────────────────────────────────────────────
-const PodiumBar = ({ user, rank, score }) => {
+const PodiumBar = ({ user, rank, score, tab }) => {
   const heights = { 1: 'h-28 md:h-36', 2: 'h-20 md:h-28', 3: 'h-14 md:h-20' };
   const orders  = { 1: 'order-2', 2: 'order-1', 3: 'order-3' };
   const medals  = { 1: '🥇', 2: '🥈', 3: '🥉' };
+  const glows   = { 1: 'rgba(251,191,36,.35)', 2: 'rgba(148,163,184,.25)', 3: 'rgba(180,83,9,.25)' };
+  const borders = { 1: 'rgba(251,191,36,.5)', 2: 'rgba(148,163,184,.4)', 3: 'rgba(180,83,9,.4)' };
   const badge   = getBadge(score);
   const name    = user.username || user.title || user.artist || '?';
+  const isStreak = tab === 'streaks';
+  const isListener = tab === 'listeners';
   return (
     <motion.div
       initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }}
       transition={{ delay: rank * 0.12, type: 'spring', stiffness: 200 }}
       className={`flex flex-col items-center gap-2 ${orders[rank]}`}
     >
-      <div className="relative">
-        <div className="w-14 h-14 md:w-16 md:h-16 rounded-full overflow-hidden border-2 border-white/20 shadow-xl">
+      {/* Avatar avec halo */}
+      <motion.div className="relative"
+        animate={rank === 1 ? { y: [0, -4, 0] } : {}}
+        transition={{ duration: 3, repeat: Infinity, ease: 'easeInOut' }}>
+        <div className="absolute inset-0 rounded-full blur-xl opacity-60"
+          style={{ background: glows[rank], transform: 'scale(1.3)' }} />
+        <div className="relative w-14 h-14 md:w-16 md:h-16 rounded-full overflow-hidden"
+          style={{ border: '2px solid ' + borders[rank], boxShadow: '0 0 20px ' + glows[rank] }}>
           {user.avatar_url || user.cover_url
             ? <img src={user.avatar_url || user.cover_url} className="w-full h-full object-cover" alt={name} />
-            : <div className={`w-full h-full bg-gradient-to-br ${badge.bg} flex items-center justify-center text-white font-bold text-lg`}>
+            : <div className={'w-full h-full bg-gradient-to-br ' + badge.bg + ' flex items-center justify-center text-white font-bold text-lg'}>
                 {name[0].toUpperCase()}
               </div>
           }
         </div>
         <span className="absolute -top-2 -right-2 text-lg">{medals[rank]}</span>
-      </div>
-      <p className="text-white text-xs font-bold text-center truncate max-w-[80px]"><NoTranslate className="truncate">{name}</NoTranslate></p>
-      <p className="text-xs font-semibold" style={{ color: badge.color }}>{badge.icon} {badge.label}</p>
-      <div className={`w-16 md:w-20 ${heights[rank]} rounded-t-xl bg-gradient-to-t ${badge.bg} opacity-70 flex items-end justify-center pb-2`}>
+        {rank === 1 && <motion.div animate={{ rotate: [0,5,-5,0] }} transition={{ duration: 2, repeat: Infinity }}
+          className="absolute -top-4 left-1/2 -translate-x-1/2 text-base">👑</motion.div>}
+      </motion.div>
+
+      <p className="text-white text-xs font-black text-center truncate max-w-[90px]">
+        <NoTranslate>{name}</NoTranslate>
+      </p>
+
+      {/* Score spécifique au tab */}
+      {isStreak ? (
+        <div className="flex flex-col items-center gap-0.5">
+          <span className="text-sm font-black" style={{ color: badge.color }}>🔥 {score}j</span>
+          <span className="text-[10px] text-gray-600">de suite</span>
+        </div>
+      ) : isListener ? (
+        <div className="flex flex-col items-center gap-0.5">
+          <span className="text-sm font-black" style={{ color: badge.color }}>🎧 {score}j</span>
+          <span className="text-[10px] text-gray-600">écoutés</span>
+        </div>
+      ) : (
+        <p className="text-xs font-semibold" style={{ color: badge.color }}>{badge.icon} {badge.label}</p>
+      )}
+
+      {/* Barre podium */}
+      <div className={'w-16 md:w-20 ' + heights[rank] + ' rounded-t-xl bg-gradient-to-t ' + badge.bg + ' opacity-80 flex items-end justify-center pb-2'}
+        style={{ boxShadow: 'inset 0 1px 0 rgba(255,255,255,.15)' }}>
         <span className="text-white text-xs font-black">{formatPlays(score)}</span>
       </div>
     </motion.div>
@@ -70,61 +102,120 @@ const PodiumBar = ({ user, rank, score }) => {
 };
 
 // ── Ligne classement ──────────────────────────────────────────────────
-const RankRow = ({ item, rank, scoreKey, scoreLabel, labelKey, secondLabel, secondLabelFn, linkPrefix, onPlay, isMe }) => {
+const StreakBar = ({ value, max = 30 }) => {
+  const pct = Math.min((value / max) * 100, 100);
+  const color = value >= 20 ? '#f59e0b' : value >= 10 ? '#f97316' : value >= 5 ? '#ef4444' : '#6b7280';
+  return (
+    <div className="w-full h-1.5 rounded-full mt-1 overflow-hidden" style={{ background: 'rgba(255,255,255,.06)' }}>
+      <motion.div
+        initial={{ width: 0 }}
+        animate={{ width: pct + '%' }}
+        transition={{ duration: 0.8, ease: 'easeOut', delay: 0.1 }}
+        className="h-full rounded-full"
+        style={{ background: color, boxShadow: '0 0 6px ' + color + '80' }}
+      />
+    </div>
+  );
+};
+
+const RankRow = ({ item, rank, scoreKey, scoreLabel, labelKey, secondLabel, secondLabelFn, linkPrefix, onPlay, isMe, tab }) => {
   const badge  = getBadge(item[scoreKey] || 0);
   const isTop3 = rank <= 3;
   const name   = item[labelKey] || '?';
-  // V110000 : secondLabelFn override secondLabel pour valeurs dynamiques
+  const isStreak   = tab === 'streaks';
+  const isListener = tab === 'listeners';
   const secondContent = secondLabelFn
     ? secondLabelFn(item)
     : (typeof secondLabel === 'string' ? item[secondLabel] : secondLabel);
+
+  const streakVal = item.current_streak || 0;
+  const longestVal = item.longest_streak || 0;
+  const fireEmoji = streakVal >= 30 ? '🔥🔥🔥' : streakVal >= 14 ? '🔥🔥' : streakVal >= 5 ? '🔥' : '💧';
+
   return (
     <motion.div
       initial={{ opacity: 0, x: -12 }} animate={{ opacity: 1, x: 0 }}
       transition={{ delay: Math.min(rank * 0.03, 0.6) }}
-      className={`flex items-center gap-3 p-3 rounded-xl transition-all group ${
+      className={'flex items-center gap-3 p-3 rounded-xl transition-all group ' + (
         isMe
           ? 'bg-gradient-to-r from-cyan-500/15 to-fuchsia-500/10 border border-cyan-500/30'
           : isTop3
             ? 'bg-gradient-to-r from-white/5 to-transparent border border-white/10'
-            : 'hover:bg-gray-800/60 border border-transparent'
-      }`}
+            : 'hover:bg-gray-800/60 border border-transparent hover:border-white/5'
+      )}
     >
+      {/* Rang */}
       <div className="w-8 text-center flex-shrink-0">
         {rank === 1 ? <span className="text-xl">🥇</span>
         : rank === 2 ? <span className="text-xl">🥈</span>
         : rank === 3 ? <span className="text-xl">🥉</span>
-        : <span className={`text-sm font-bold tabular-nums ${isMe ? 'text-cyan-400' : 'text-gray-500'}`}>{rank}</span>
+        : <span className={'text-sm font-bold tabular-nums ' + (isMe ? 'text-cyan-400' : 'text-gray-600')}>{rank}</span>
         }
       </div>
-      <div className="w-10 h-10 rounded-xl overflow-hidden bg-gray-800 flex-shrink-0">
-        {item.avatar_url || item.cover_url
-          ? <img src={item.avatar_url || item.cover_url} className="w-full h-full object-cover" alt="" />
-          : <div className={`w-full h-full bg-gradient-to-br ${badge.bg} flex items-center justify-center text-white text-sm font-bold`}>
-              {name[0].toUpperCase()}
-            </div>
-        }
+
+      {/* Avatar */}
+      <div className="relative flex-shrink-0">
+        <div className={'w-10 h-10 rounded-xl overflow-hidden ' + (isStreak && streakVal >= 7 ? 'ring-2 ring-orange-500/40' : '')}>
+          {item.avatar_url || item.cover_url
+            ? <img src={item.avatar_url || item.cover_url} className="w-full h-full object-cover" alt="" />
+            : <div className={'w-full h-full bg-gradient-to-br ' + badge.bg + ' flex items-center justify-center text-white text-sm font-bold'}>
+                {name[0].toUpperCase()}
+              </div>
+          }
+        </div>
+        {/* Flame badge pour les grosses séries */}
+        {(isStreak || isListener) && streakVal >= 7 && (
+          <span className="absolute -top-1.5 -right-1.5 text-xs">{fireEmoji[0]}</span>
+        )}
       </div>
+
+      {/* Infos */}
       <div className="flex-1 min-w-0">
         {linkPrefix
-          ? <Link to={`${linkPrefix}/${item.id}`} className={`font-semibold text-sm hover:text-cyan-400 transition-colors truncate block ${isMe ? 'text-cyan-300' : 'text-white'}`}>
-              <NoTranslate className="truncate">{name}</NoTranslate>
+          ? <Link to={linkPrefix + '/' + item.id} className={'font-bold text-sm truncate block transition-colors ' + (isMe ? 'text-cyan-300 hover:text-cyan-200' : 'text-white hover:text-cyan-400')}>
+              <NoTranslate>{name}</NoTranslate>
               {isMe && <span className="ml-1.5 text-[10px] bg-cyan-500/20 text-cyan-400 px-1.5 py-0.5 rounded-full font-bold">Toi</span>}
             </Link>
-          : <p className={`font-semibold text-sm truncate ${isMe ? 'text-cyan-300' : 'text-white'}`}>
-              <NoTranslate className="truncate">{name}</NoTranslate>
+          : <p className={'font-bold text-sm truncate ' + (isMe ? 'text-cyan-300' : 'text-white')}>
+              <NoTranslate>{name}</NoTranslate>
               {isMe && <span className="ml-1.5 text-[10px] bg-cyan-500/20 text-cyan-400 px-1.5 py-0.5 rounded-full font-bold">Toi</span>}
             </p>
         }
-        {secondContent != null && (
-          <p className="text-gray-500 text-xs truncate">{secondContent}</p>
+        {/* Barre de streak */}
+        {isStreak && <StreakBar value={streakVal} max={Math.max(longestVal, 30)} />}
+        {isListener && <StreakBar value={item.total_days || 0} max={30} />}
+        {secondContent != null && !isStreak && !isListener && (
+          <p className="text-gray-500 text-xs truncate mt-0.5">{secondContent}</p>
+        )}
+        {isStreak && (
+          <p className="text-gray-600 text-[10px] mt-0.5">Record : {longestVal}j · Total : {item.total_days || 0}j</p>
         )}
       </div>
-      <span className="text-xs hidden sm:block flex-shrink-0" style={{ color: badge.color }}>{badge.icon}</span>
+
+      {/* Score principal */}
       <div className="text-right flex-shrink-0">
-        <p className={`text-sm font-bold tabular-nums ${isMe ? 'text-cyan-400' : 'text-white'}`}>{formatPlays(item[scoreKey] || 0)}</p>
-        {scoreLabel && <p className="text-[10px] text-gray-600">{scoreLabel}</p>}
+        {isStreak ? (
+          <div className="flex flex-col items-end">
+            <p className="text-sm font-black tabular-nums" style={{ color: streakVal >= 14 ? '#f59e0b' : streakVal >= 5 ? '#f97316' : undefined }}>
+              {fireEmoji} {streakVal}j
+            </p>
+            <p className="text-[10px] text-gray-600">de suite</p>
+          </div>
+        ) : isListener ? (
+          <div className="flex flex-col items-end">
+            <p className={'text-sm font-black tabular-nums ' + (isMe ? 'text-cyan-400' : 'text-white')}>
+              🎧 {item.total_days || 0}j
+            </p>
+            <p className="text-[10px] text-gray-600">🔥 {item.current_streak || 0}j streak</p>
+          </div>
+        ) : (
+          <>
+            <p className={'text-sm font-bold tabular-nums ' + (isMe ? 'text-cyan-400' : 'text-white')}>{formatPlays(item[scoreKey] || 0)}</p>
+            {scoreLabel && <p className="text-[10px] text-gray-600">{scoreLabel}</p>}
+          </>
+        )}
       </div>
+
       {onPlay && (
         <button onClick={() => onPlay(item)}
           className="p-1.5 rounded-full bg-white/10 hover:bg-cyan-500/20 text-gray-500 hover:text-cyan-400 opacity-0 group-hover:opacity-100 transition-all flex-shrink-0">
@@ -210,11 +301,11 @@ const LeaderboardPage = () => {
         const byId = new Map((ud || []).map(u => [u.id, u]));
         const rows = streaks
           .map(r => ({
-            ...(byId.get(r.user_id) || { id: r.user_id, username: 'Anonyme', avatar_url: null }),
-            total_days: r.total_days,
-            current_streak: r.current_streak,
+            ...(byId.get(r.user_id) || { id: r.user_id, username: 'Auditeur', avatar_url: null }),
+            total_days: r.total_days || 0,
+            current_streak: r.current_streak || 0,
           }))
-          .filter(r => r.username && r.username !== 'Anonyme');
+          .filter(r => (r.total_days || 0) > 0);
         setTopListeners(rows);
         if (currentUser?.id) {
           const idx = rows.findIndex(u => u.id === currentUser.id);
@@ -276,12 +367,12 @@ const LeaderboardPage = () => {
         const byId = new Map((ud || []).map(u => [u.id, u]));
         const rows = streakData
           .map(r => ({
-            ...(byId.get(r.user_id) || { id: r.user_id, username: 'Anonyme', avatar_url: null }),
-            current_streak: r.current_streak,
-            longest_streak: r.longest_streak,
-            total_days:     r.total_days,
+            ...(byId.get(r.user_id) || { id: r.user_id, username: 'Auditeur', avatar_url: null }),
+            current_streak: r.current_streak || 0,
+            longest_streak: r.longest_streak || 0,
+            total_days:     r.total_days || 0,
           }))
-          .filter(r => r.username && r.username !== 'Anonyme');
+          .filter(r => (r.current_streak || 0) > 0);
         setStreaks(rows);
         if (currentUser?.id) {
           const idx = rows.findIndex(r => r.id === currentUser.id);
@@ -408,18 +499,28 @@ const LeaderboardPage = () => {
                       { item: podiumData[0], rank: 1 },
                       podiumData.length >= 3 ? { item: podiumData[2], rank: 3 } : null,
                     ].filter(Boolean).map(({ item, rank }) => (
-                      <PodiumBar key={rank} user={item} rank={rank} score={getScore(item)} />
+                      <PodiumBar key={rank} user={item} rank={rank} score={getScore(item)} tab={tab} />
                     ))}
                   </div>
                 </div>
               )}
 
               {/* Liste complète */}
-              <div className="bg-gray-900/50 border border-gray-800 rounded-2xl overflow-hidden">
+              <div className="border border-gray-800 rounded-2xl overflow-hidden"
+                style={{ background: tab === 'streaks' ? 'linear-gradient(180deg,rgba(234,88,12,.04) 0%,rgba(9,9,11,.5) 100%)' : tab === 'listeners' ? 'linear-gradient(180deg,rgba(6,182,212,.04) 0%,rgba(9,9,11,.5) 100%)' : 'rgba(17,17,24,.5)' }}>
                 <div className="px-4 py-3 border-b border-gray-800 flex items-center justify-between">
-                  <span className="text-sm font-bold text-white">Top 20</span>
+                  <div className="flex items-center gap-2">
+                    <span className="text-base">{tab === 'streaks' ? '🔥' : tab === 'listeners' ? '🎧' : tab === 'songs' ? '🎵' : '🏆'}</span>
+                    <span className="text-sm font-black text-white">Top {Math.max(currentData.length, 20)}</span>
+                    {(tab === 'streaks' || tab === 'listeners') && currentData.length > 0 && (
+                      <span className="text-[10px] px-2 py-0.5 rounded-full font-bold"
+                        style={{ background: tab === 'streaks' ? 'rgba(234,88,12,.15)' : 'rgba(6,182,212,.12)', color: tab === 'streaks' ? '#fb923c' : '#22d3ee', border: '1px solid ' + (tab === 'streaks' ? 'rgba(234,88,12,.3)' : 'rgba(6,182,212,.25)') }}>
+                        {currentData.length} joueurs
+                      </span>
+                    )}
+                  </div>
                   <span className="text-xs text-gray-600">
-                    {tab === 'artists' ? 'par écoutes totales' : tab === 'songs' ? 'par popularité' : 'par jours d\'écoute'}
+                    {tab === 'artists' ? 'par écoutes totales' : tab === 'songs' ? 'par popularité' : tab === 'listeners' ? 'par jours d\'écoute' : 'par série active'}
                   </span>
                 </div>
                 <div className="p-3 space-y-0.5">
@@ -430,20 +531,35 @@ const LeaderboardPage = () => {
                       rank={i + 1}
                       scoreKey={scoreKey}
                       scoreLabel={scoreLabel}
+                      tab={tab}
                       labelKey={tab === 'songs' ? 'title' : 'username'}
                       secondLabel={tab === 'songs' ? 'artist' : null}
-                      secondLabelFn={
-                        tab === 'listeners' ? (r) => `🔥 ${r.current_streak || 0}j de suite`
-                        : tab === 'streaks'  ? (r) => `record : ${r.longest_streak || 0}j · total : ${r.total_days || 0}j`
-                        : null
-                      }
+                      secondLabelFn={null}
                       linkPrefix={tab === 'songs' ? '/song' : '/artist'}
                       onPlay={tab === 'songs' ? (s) => playSong(s, currentData) : null}
                       isMe={currentUser?.id === item.id || currentUser?.id === item.user_id}
                     />
                   ))}
                   {currentData.length === 0 && (
-                    <p className="text-center text-gray-500 text-sm py-8">Aucune donnée disponible.</p>
+                    <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
+                      className="flex flex-col items-center justify-center py-14 text-center">
+                      <motion.div
+                        animate={{ scale: [1, 1.1, 1], rotate: [0, 5, -5, 0] }}
+                        transition={{ duration: 3, repeat: Infinity, ease: 'easeInOut' }}
+                        className="text-5xl mb-4">
+                        {tab === 'streaks' ? '🔥' : tab === 'listeners' ? '🎧' : '🏆'}
+                      </motion.div>
+                      <p className="text-white font-bold text-base mb-1">
+                        {tab === 'streaks' ? 'Aucune série en cours' : tab === 'listeners' ? 'Aucun auditeur classé' : 'Aucune donnée'}
+                      </p>
+                      <p className="text-gray-600 text-sm max-w-xs">
+                        {tab === 'streaks'
+                          ? 'Écoute de la musique chaque jour pour lancer ta série et apparaître ici 🔥'
+                          : tab === 'listeners'
+                          ? 'Continue d\'écouter pour accumuler des jours et grimper dans le classement 🎵'
+                          : 'Les données apparaîtront bientôt.'}
+                      </p>
+                    </motion.div>
                   )}
                 </div>
               </div>

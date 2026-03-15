@@ -27,7 +27,7 @@ import {
   Headphones, Zap, X, ArrowLeft, Loader2, WifiOff, RefreshCw, Search, Upload,
   Pencil, Trash2, CheckCircle2, XCircle, Play, ListMusic, SkipForward, LogOut,
   Smile, Share2, AlertCircle, Clock, Volume2, ChevronUp, BookOpen, Pause,
-  MessageCircle,
+  MessageCircle, AtSign,
 } from 'lucide-react';
 
 /* ══════════════════════════════════════════════════════════════════════════
@@ -596,6 +596,48 @@ const BRAND_STYLES = `
   /* ── Scrollbar hide ── */
   .scrollbar-hide::-webkit-scrollbar { display: none; }
   .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
+
+  /* ── Mentions live chat ── */
+  .lr-mention-user {
+    display:inline-flex;align-items:center;
+    background:linear-gradient(135deg,rgba(6,182,212,.15),rgba(6,182,212,.07));
+    border:1px solid rgba(6,182,212,.4);color:#67e8f9;font-weight:800;
+    padding:0 7px 1px;border-radius:20px;font-size:.87em;
+    cursor:pointer;white-space:nowrap;vertical-align:middle;
+    transition:all .15s;
+  }
+  .lr-mention-user:hover {
+    background:linear-gradient(135deg,rgba(6,182,212,.28),rgba(6,182,212,.14));
+    border-color:rgba(6,182,212,.7);color:#a5f3fc;
+    transform:translateY(-1px);box-shadow:0 4px 12px rgba(6,182,212,.25);
+  }
+  .lr-mention-all {
+    display:inline-flex;align-items:center;gap:3px;
+    background:linear-gradient(135deg,rgba(234,179,8,.2),rgba(251,146,60,.1));
+    border:1px solid rgba(234,179,8,.45);color:#fde047;font-weight:900;
+    padding:0 8px 1px;border-radius:20px;font-size:.87em;
+    white-space:nowrap;vertical-align:middle;
+    box-shadow:0 2px 10px rgba(234,179,8,.12);
+  }
+  .lr-mention-self {
+    display:inline-flex;align-items:center;
+    background:linear-gradient(90deg,rgba(6,182,212,.28),rgba(168,85,247,.22),rgba(236,72,153,.18),rgba(6,182,212,.28));
+    background-size:300% 100%;border:1px solid rgba(168,85,247,.5);
+    color:#e9d5ff;font-weight:900;padding:0 8px 1px;border-radius:20px;font-size:.87em;
+    white-space:nowrap;vertical-align:middle;
+    box-shadow:0 2px 12px rgba(168,85,247,.18);
+    animation:selfMentionShine 2.5s linear 4;
+  }
+  @keyframes selfMentionShine{0%{background-position:0% 50%}50%{background-position:100% 50%}100%{background-position:0% 50%}}
+
+  /* ── Mention popup live ── */
+  .lr-mention-popup {
+    background:linear-gradient(180deg,rgba(6,6,20,.98) 0%,rgba(4,4,16,.99) 100%);
+    border:1px solid rgba(255,255,255,.1);
+    backdrop-filter:blur(28px) saturate(1.6);
+    box-shadow:0 -16px 48px rgba(0,0,0,.7),0 0 0 1px rgba(6,182,212,.07);
+    border-radius:16px;overflow:hidden;
+  }
 `;
 
 /* ══════════════════════════════════════════════════════════════════════════
@@ -798,7 +840,7 @@ const RoomCard = ({ room, onJoin }) => {
       <div className="h-1 rounded-full overflow-hidden" style={{background:'rgba(255,255,255,.06)'}}>
         <motion.div
           className={`h-full rounded-full ${full ? 'bg-red-500' : 'bg-gradient-to-r from-green-400 to-cyan-400'}`}
-          initial={{ width: 0 }} animate={{ width: `${pct * 100}%` }} transition={{ duration: 0.8 }} />
+          initial={{ width: 0 }} animate={{ width: (pct * 100) + "%" }} transition={{ duration: 0.8 }} />
       </div>
 
       {/* CTA */}
@@ -841,8 +883,61 @@ const QueueItem = ({ song, index, isHost, isNowPlaying, onPlay, onRemove }) => (
   </motion.div>
 );
 
+/* ── Rendu du contenu avec mentions colorées ── */
+const LR_ALL_KEYWORDS = ['@tous','@all','@everyone','@todo','@todos','@tutti','@allen','@alle'];
+
+const renderLiveContent = (text, currentUsername, participants = []) => {
+  if (!text) return null;
+  const urlRegex = /(https?:\/\/[^\s]+)/g;
+  const parts = text.split(urlRegex);
+  return parts.map((part, i) => {
+    if (urlRegex.test(part)) {
+      return <a key={i} href={part} target="_blank" rel="noopener noreferrer"
+        className="text-cyan-400 underline underline-offset-2 break-all hover:text-cyan-300 transition-colors"
+        onClick={e => e.stopPropagation()}>{part}</a>;
+    }
+    const mentionRegex = /(@[\w-]+)/g;
+    const subParts = part.split(mentionRegex);
+    return subParts.map((sub, j) => {
+      const subKey = i + '-' + j;
+      if (!sub.startsWith('@')) return <span key={subKey}>{sub}</span>;
+      const lower = sub.toLowerCase();
+      const isAll = LR_ALL_KEYWORDS.includes(lower);
+      if (isAll) return (
+        <span key={subKey}
+          className="inline-flex items-center gap-1 font-black px-2.5 py-0.5 rounded-full text-[0.85em] align-middle whitespace-nowrap"
+          style={{background:'rgba(234,179,8,.18)',border:'1px solid rgba(234,179,8,.42)',color:'#fde047',boxShadow:'0 2px 10px rgba(234,179,8,.15)'}}>
+          📢{sub}
+        </span>
+      );
+      const isSelf = currentUsername && sub.slice(1).toLowerCase() === currentUsername.toLowerCase();
+      if (isSelf) return (
+        <span key={subKey}
+          className="inline-flex items-center font-black px-2.5 py-0.5 rounded-full text-[0.85em] align-middle whitespace-nowrap"
+          style={{background:'linear-gradient(90deg,rgba(6,182,212,.25),rgba(168,85,247,.2),rgba(6,182,212,.25))',backgroundSize:'300% 100%',border:'1px solid rgba(168,85,247,.5)',color:'#e9d5ff',boxShadow:'0 2px 12px rgba(168,85,247,.22)',animation:'selfMentionShine 2.5s linear 4'}}>
+          {sub}
+        </span>
+      );
+      // Chercher le participant dans la liste pour lien de profil direct
+      const participant = participants.find(p => p.username?.toLowerCase() === sub.slice(1).toLowerCase());
+      const profileHref = participant
+        ? '/#/artist/' + participant.id
+        : '/#/search?q=' + encodeURIComponent(sub.slice(1)) + '&type=artists';
+      return (
+        <a key={subKey}
+          href={profileHref}
+          className="inline-flex items-center font-black px-2.5 py-0.5 rounded-full text-[0.85em] align-middle whitespace-nowrap transition-all hover:scale-105 hover:brightness-125"
+          style={{background:'rgba(6,182,212,.13)',border:'1px solid rgba(6,182,212,.4)',color:'#67e8f9',boxShadow:'0 2px 10px rgba(6,182,212,.12)'}}
+          onClick={e => e.stopPropagation()}>
+          @{sub.slice(1)}
+        </a>
+      );
+    });
+  });
+};
+
 /* Message de chat */
-const ChatMsg = ({ m, isMine, currentUserId, isEditing, editContent, onStartEdit, onSaveEdit, onCancelEdit, onDelete, onChangeEdit }) => (
+const ChatMsg = ({ m, isMine, currentUserId, currentUsername, participants, isEditing, editContent, onStartEdit, onSaveEdit, onCancelEdit, onDelete, onChangeEdit }) => (
   <motion.div layout initial={{ opacity: 0, y: 10, scale: 0.96 }} animate={{ opacity: 1, y: 0, scale: 1 }} transition={{ duration: 0.2, ease: 'easeOut' }}
     className={`flex gap-2.5 ${isMine ? 'justify-end' : 'justify-start'} group`}>
     {!isMine && (
@@ -869,8 +964,8 @@ const ChatMsg = ({ m, isMine, currentUserId, isEditing, editContent, onStartEdit
             <button onClick={onCancelEdit} className="text-red-300 hover:text-red-200 transition-colors"><XCircle className="w-4 h-4" /></button>
           </div>
         ) : (
-          <><p className="break-words whitespace-pre-wrap text-sm leading-relaxed">{m.content}</p>
-          {m.is_edited && <p className="text-[10px] opacity-40 mt-0.5 italic">modifié</p>}</>
+          <><p className="break-words whitespace-pre-wrap text-sm leading-relaxed">{renderLiveContent(m.content, currentUsername, participants)}</p>
+          {m.is_edited && <p className="text-[10px] opacity-40 mt-0.5 italic">modifié</p></>
         )}
       </div>
       <div className={`flex items-center gap-2 mt-1 px-1 ${isMine ? 'flex-row-reverse' : ''}`}>
@@ -961,6 +1056,7 @@ const LiveRoomPage = () => {
   const [msgInput, setMsgInput]         = useState('');
   const [mentionUsers,  setMentionUsers]  = useState([]);
   const [showMention,   setShowMention]   = useState(false);
+  const [showMentionAll, setShowMentionAll] = useState(false);
   const msgInputRef = useRef(null);
   const mentionDebounce = useRef(null);
   const [editingMsgId, setEditingMsgId] = useState(null);
@@ -1480,6 +1576,10 @@ const LiveRoomPage = () => {
     if (match) {
       const q = match[1].toLowerCase();
       setShowMention(true);
+      // @tous suggestion — afficher si la saisie commence par t, to, tou, tous, all, etc.
+      const ALL_KEYWORDS = ['tous','all','everyone','todo','todos','tutti'];
+      const showAll = q === '' || ALL_KEYWORDS.some(k => k.startsWith(q));
+      setShowMentionAll(showAll);
       if (q.length >= 1) {
         clearTimeout(mentionDebounce.current);
         mentionDebounce.current = setTimeout(async () => {
@@ -1493,7 +1593,7 @@ const LiveRoomPage = () => {
           } else {
             try {
               const { data } = await supabase.from('users')
-                .select('id,username,avatar_url').ilike('username', `${q}%`).limit(5);
+                .select('id,username,avatar_url').ilike('username', q+'%').limit(5);
               setMentionUsers(data || []);
             } catch { setMentionUsers([]); }
           }
@@ -1501,10 +1601,12 @@ const LiveRoomPage = () => {
       } else {
         // @ seul → montrer tous les participants
         setMentionUsers(participants.slice(0, 5));
+        setShowMentionAll(true);
       }
     } else {
       setShowMention(false);
       setMentionUsers([]);
+      setShowMentionAll(false);
     }
   }, [participants, broadcastTyping]);
 
@@ -1512,11 +1614,12 @@ const LiveRoomPage = () => {
     const cursor    = msgInputRef.current?.selectionStart || msgInput.length;
     const before    = msgInput.slice(0, cursor);
     const after     = msgInput.slice(cursor);
-    const newBefore = before.replace(/@([\w-]*)$/, `@${username} `);
+    const newBefore = before.replace(/@([\w-]*)$/, '@' + username + ' ');
     const newText   = (newBefore + after).slice(0, 500);
     setMsgInput(newText);
     setShowMention(false);
     setMentionUsers([]);
+    setShowMentionAll(false);
     setTimeout(() => {
       if (msgInputRef.current) {
         msgInputRef.current.focus();
@@ -1978,11 +2081,22 @@ const LiveRoomPage = () => {
                       <Clock className="w-2.5 h-2.5" />{fmtDuration(liveDuration)}
                     </span>
                   )}
-                  {/* V110000 — indicateur pause */}
+                  {/* Indicateur pause */}
                   {liveIsPaused && (
-                    <span className="text-[10px] text-amber-400 flex items-center gap-1 bg-amber-500/10 px-2 py-0.5 rounded-full border border-amber-500/30">
-                      <Pause className="w-2.5 h-2.5" />En pause
-                    </span>
+                    <motion.span
+                      initial={{ opacity: 0, scale: 0.8 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      className="text-[10px] text-amber-300 flex items-center gap-1 px-2 py-0.5 rounded-full font-bold"
+                      style={{ background: 'rgba(245,158,11,0.15)', border: '1px solid rgba(245,158,11,0.4)', boxShadow: '0 0 10px rgba(245,158,11,0.15)' }}
+                    >
+                      <motion.span
+                        animate={{ opacity: [1, 0.3, 1] }}
+                        transition={{ duration: 1.2, repeat: Infinity }}
+                      >
+                        <Pause className="w-2.5 h-2.5" />
+                      </motion.span>
+                      En pause
+                    </motion.span>
                   )}
                 </div>
               </div>
@@ -2064,6 +2178,105 @@ const LiveRoomPage = () => {
 
               {/* Messages — peut rétrécir pour laisser de la place à l'input */}
               <div className="min-h-0 flex-1 relative overflow-hidden" style={{ minHeight: '60px' }}>
+
+                {/* ── OVERLAY PAUSE — Pro cinematic effect ── */}
+                <AnimatePresence>
+                  {liveIsPaused && (
+                    <motion.div
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      exit={{ opacity: 0 }}
+                      transition={{ duration: 0.4 }}
+                      className="absolute inset-0 z-30 flex flex-col items-center justify-center pointer-events-none"
+                      style={{
+                        background: 'linear-gradient(180deg, rgba(3,3,18,0.82) 0%, rgba(8,5,28,0.9) 50%, rgba(3,3,18,0.82) 100%)',
+                        backdropFilter: 'blur(6px)',
+                      }}
+                    >
+                      {/* Scan line animée */}
+                      <motion.div
+                        animate={{ y: ['-100%', '200%'] }}
+                        transition={{ duration: 3, repeat: Infinity, ease: 'linear', repeatDelay: 1 }}
+                        className="absolute inset-x-0 h-px pointer-events-none"
+                        style={{ background: 'linear-gradient(90deg, transparent, rgba(6,182,212,0.4), rgba(168,85,247,0.4), transparent)' }}
+                      />
+
+                      {/* Icône pause animée */}
+                      <motion.div
+                        animate={{ scale: [1, 1.06, 1], opacity: [0.9, 1, 0.9] }}
+                        transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}
+                        className="relative mb-4"
+                      >
+                        {/* Halo pulsant */}
+                        <motion.div
+                          animate={{ scale: [1, 1.6, 1], opacity: [0.3, 0, 0.3] }}
+                          transition={{ duration: 2.5, repeat: Infinity, ease: 'easeOut' }}
+                          className="absolute inset-0 rounded-full"
+                          style={{ background: 'radial-gradient(circle, rgba(245,158,11,0.5) 0%, transparent 70%)' }}
+                        />
+                        <div className="relative w-16 h-16 rounded-2xl flex items-center justify-center"
+                          style={{
+                            background: 'linear-gradient(135deg, rgba(245,158,11,0.15), rgba(251,146,60,0.1))',
+                            border: '1.5px solid rgba(245,158,11,0.5)',
+                            boxShadow: '0 0 30px rgba(245,158,11,0.25), inset 0 1px 0 rgba(255,255,255,0.08)',
+                          }}>
+                          <Pause className="w-7 h-7 text-amber-400" />
+                        </div>
+                      </motion.div>
+
+                      {/* Texte */}
+                      <motion.div
+                        initial={{ opacity: 0, y: 8 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: 0.15 }}
+                        className="text-center"
+                      >
+                        <p className="text-white font-black text-base tracking-wide mb-1">Live en pause</p>
+                        <p className="text-amber-400/70 text-xs font-medium">
+                          {isHost ? "Reprends quand tu es prêt 👑" : "L'hôte a mis le live en pause…"}
+                        </p>
+                      </motion.div>
+
+                      {/* Bouton Reprendre pour l'hôte */}
+                      {isHost && (
+                        <motion.button
+                          initial={{ opacity: 0, y: 8 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          transition={{ delay: 0.25 }}
+                          whileHover={{ scale: 1.05 }}
+                          whileTap={{ scale: 0.95 }}
+                          onClick={togglePause}
+                          className="pointer-events-auto mt-5 flex items-center gap-2 px-5 py-2.5 rounded-xl font-bold text-sm text-white"
+                          style={{
+                            background: 'linear-gradient(135deg, #d97706, #b45309)',
+                            boxShadow: '0 8px 24px rgba(245,158,11,0.35)',
+                          }}
+                        >
+                          <Play className="w-4 h-4 fill-current" />
+                          Reprendre le live
+                        </motion.button>
+                      )}
+
+                      {/* Points de suspension animés (auditeurs) */}
+                      {!isHost && (
+                        <motion.div
+                          initial={{ opacity: 0 }}
+                          animate={{ opacity: 1 }}
+                          transition={{ delay: 0.3 }}
+                          className="flex gap-1.5 mt-4"
+                        >
+                          {[0, 1, 2].map(i => (
+                            <motion.div key={i}
+                              animate={{ scale: [1, 1.4, 1], opacity: [0.3, 0.9, 0.3] }}
+                              transition={{ duration: 1, repeat: Infinity, delay: i * 0.22 }}
+                              className="w-1.5 h-1.5 rounded-full bg-amber-400"
+                            />
+                          ))}
+                        </motion.div>
+                      )}
+                    </motion.div>
+                  )}
+                </AnimatePresence>
                 {/* V110000 — Toast discret join/leave en haut du chat */}
                 <AnimatePresence>
                   {joinLeaveToast && (
@@ -2101,6 +2314,8 @@ const LiveRoomPage = () => {
                         <ChatMsg key={m.id} m={m}
                           isMine={m.user_id === currentUser?.id}
                           currentUserId={currentUser?.id}
+                          currentUsername={currentUser?.username || currentUser?.user_metadata?.username}
+                          participants={participants}
                           isEditing={editingMsgId === m.id} editContent={editContent}
                           onStartEdit={() => { setEditingMsgId(m.id); setEditContent(m.content); }}
                           onSaveEdit={saveEdit} onCancelEdit={() => { setEditingMsgId(null); setEditContent(''); }}
@@ -2143,18 +2358,64 @@ const LiveRoomPage = () => {
                 </AnimatePresence>
                 <div className="flex gap-2 items-end flex-1 min-h-0">
                   <div className="relative flex-1 h-full flex flex-col">
-                    {showMention && mentionUsers.length > 0 && (
-                      <div className="absolute bottom-full mb-1 left-0 right-0 bg-gray-800 border border-gray-700 rounded-xl shadow-xl z-50 overflow-hidden">
-                        {mentionUsers.map(u => (
-                          <button key={u.id} onClick={() => insertMention(u.username)}
-                            className="w-full flex items-center gap-2 px-3 py-2 hover:bg-gray-700 transition-colors text-left">
-                            {u.avatar_url
-                              ? <img src={u.avatar_url} alt="" className="w-6 h-6 rounded-full object-cover flex-shrink-0" />
-                              : <div className="w-6 h-6 rounded-full bg-cyan-500/20 flex items-center justify-center text-xs text-cyan-400 flex-shrink-0">{u.username?.[0]?.toUpperCase()}</div>
-                            }
-                            <span className="text-white text-sm font-medium"><NoTranslate>@{u.username}</NoTranslate></span>
-                          </button>
-                        ))}
+                    {showMention && (mentionUsers.length > 0 || showMentionAll) && (
+                      <div className="absolute bottom-full mb-2 left-0 right-0 lr-mention-popup z-50">
+                        {/* Header */}
+                        <div className="flex items-center gap-2 px-3 py-2" style={{borderBottom:'1px solid rgba(255,255,255,.06)',background:'rgba(255,255,255,.02)'}}>
+                          <span className="text-[10px] text-gray-500 font-black uppercase tracking-widest">@ Mentions</span>
+                          <span className="ml-auto text-[10px] text-gray-700">↵ sélectionner</span>
+                        </div>
+                        <div className="p-1.5 space-y-0.5 max-h-52 overflow-y-auto" style={{scrollbarWidth:'none'}}>
+                          {/* @tous */}
+                          {showMentionAll && (
+                            <button
+                              className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all text-left hover:bg-amber-500/8"
+                              onMouseDown={e => { e.preventDefault(); insertMention('tous'); }}>
+                              <div className="w-9 h-9 rounded-2xl flex items-center justify-center text-lg flex-shrink-0"
+                                style={{background:'rgba(234,179,8,.15)',border:'1px solid rgba(234,179,8,.3)'}}>
+                                📢
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <div className="text-yellow-300 text-sm font-black">@tous</div>
+                                <div className="text-gray-600 text-[11px]">Mentionner tous les participants</div>
+                              </div>
+                              <span className="text-[9px] px-1.5 py-0.5 rounded-full font-black text-yellow-400"
+                                style={{background:'rgba(234,179,8,.12)',border:'1px solid rgba(234,179,8,.2)'}}>TOUS</span>
+                            </button>
+                          )}
+                          {/* Séparateur */}
+                          {showMentionAll && mentionUsers.length > 0 && (
+                            <div style={{height:1,background:'linear-gradient(90deg,transparent,rgba(255,255,255,.07),transparent)',margin:'4px 8px'}}/>
+                          )}
+                          {/* Participants */}
+                          {mentionUsers.map((u, ui) => (
+                            <button key={u.id}
+                              className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all text-left hover:bg-cyan-500/8"
+                              onMouseDown={e => { e.preventDefault(); insertMention(u.username); }}>
+                              <div className="relative flex-shrink-0">
+                                {u.avatar_url
+                                  ? <img src={u.avatar_url} alt="" className="w-9 h-9 rounded-2xl object-cover" style={{border:'1px solid rgba(6,182,212,.3)'}}/>
+                                  : <div className="w-9 h-9 rounded-2xl flex items-center justify-center font-black text-sm text-white"
+                                      style={{background:'linear-gradient(135deg,rgba(6,182,212,.25),rgba(168,85,247,.2))',border:'1px solid rgba(6,182,212,.25)'}}>
+                                      {(u.username||'?')[0].toUpperCase()}
+                                    </div>
+                                }
+                                <span className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full bg-green-400 border-2" style={{borderColor:'#04041a'}}/>
+                              </div>
+                              <div className="min-w-0 flex-1">
+                                <div className="text-white text-sm font-black"><NoTranslate>@{u.username}</NoTranslate></div>
+                                <div className="text-gray-600 text-[10px]">Participant du live</div>
+                              </div>
+                              <span className="text-[9px] px-1.5 py-0.5 rounded-full font-bold text-cyan-400/70"
+                                style={{background:'rgba(6,182,212,.06)',border:'1px solid rgba(6,182,212,.12)'}}>@TAG</span>
+                            </button>
+                          ))}
+                          {mentionUsers.length === 0 && !showMentionAll && (
+                            <div className="flex flex-col items-center py-4 text-center">
+                              <p className="text-gray-700 text-xs">Aucun participant trouvé</p>
+                            </div>
+                          )}
+                        </div>
                       </div>
                     )}
                     <textarea

@@ -1014,7 +1014,7 @@ const ChatPage = () => {
                   {/* Compteur en ligne */}
                   {onlineCount > 0 && (
                     <div
-                      className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-full border transition-all ${isAdmin ? 'cursor-pointer hover:bg-green-500/15' : ''}`}
+                      className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-full border transition-all ${isAdmin ? 'xl:cursor-default cursor-pointer xl:pointer-events-none hover:bg-green-500/15 xl:hover:bg-transparent' : ''}`}
                       style={{background:'rgba(34,197,94,.06)',border:'1px solid rgba(34,197,94,.18)'}}
                       onClick={() => isAdmin && setShowOnlinePanel(v => !v)}
                     >
@@ -1024,7 +1024,7 @@ const ChatPage = () => {
                       </span>
                       <Users className="w-3 h-3 text-green-400" />
                       <span className="text-green-400 text-[11px] font-bold">{onlineCount}</span>
-                      {isAdmin && <span className="text-green-500/50 text-[9px]">▼</span>}
+                      {isAdmin && <span className="text-green-500/50 text-[9px] xl:hidden">▼</span>}
                     </div>
                   )}
                   {/* Bouton nettoyer (admin) */}
@@ -1040,7 +1040,7 @@ const ChatPage = () => {
                   )}
                 </div>
 
-                {/* Panel admin en ligne */}
+                {/* Panel admin en ligne — masqué sur xl+ où le panneau droit gère ça */}
                 <AnimatePresence>
                   {isAdmin && showOnlinePanel && (
                     <motion.div
@@ -1048,7 +1048,7 @@ const ChatPage = () => {
                       animate={{ opacity: 1, y: 0, scale: 1 }}
                       exit={{ opacity: 0, y: -8, scale: 0.96 }}
                       transition={{ duration: 0.15 }}
-                      className="absolute top-16 right-4 z-50 w-72 bg-gray-950/98 border border-green-500/25 rounded-2xl shadow-2xl overflow-hidden backdrop-blur-xl"
+                      className="absolute top-16 right-4 z-50 w-72 xl:hidden bg-gray-950/98 border border-green-500/25 rounded-2xl shadow-2xl overflow-hidden backdrop-blur-xl"
                       onClick={e => e.stopPropagation()}
                     >
                       <div className="flex items-center justify-between px-4 py-3 border-b border-white/[0.06]">
