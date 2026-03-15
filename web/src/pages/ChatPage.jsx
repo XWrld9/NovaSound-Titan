@@ -107,228 +107,255 @@ const ReactionBar = memo(({ msgId, reactions, currentUserId, onToggle }) => {
 // Styles chat premium + effets mentions
 const CHAT_STYLES = `
   @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&display=swap');
-  @keyframes mentionPulse{0%,100%{box-shadow:0 0 0 0 rgba(6,182,212,.5)}60%{box-shadow:0 0 0 6px rgba(6,182,212,0)}}
-  @keyframes mentionAllPulse{0%,100%{box-shadow:0 0 0 0 rgba(234,179,8,.5)}60%{box-shadow:0 0 0 6px rgba(234,179,8,0)}}
-  @keyframes selfMentionShine{0%{background-position:0% 50%}100%{background-position:200% 50%}}
-  @keyframes chatFadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
-  @keyframes topBarGlow{0%,100%{border-bottom-color:rgba(6,182,212,.15)}50%{border-bottom-color:rgba(168,85,247,.25)}}
-  @keyframes liveRing{0%{transform:scale(1);opacity:.7}100%{transform:scale(2.2);opacity:0}}
-  @keyframes nsGradientShift{0%{background-position:0% 50%}50%{background-position:100% 50%}100%{background-position:0% 50%}}
-  @keyframes nsPulse{0%,100%{opacity:1}50%{opacity:0.5}}
 
-  .chat-mention-user{
+  /* ══ KEYFRAMES ══ */
+  @keyframes mentionPulse{0%,100%{box-shadow:0 0 0 0 rgba(6,182,212,.5)}60%{box-shadow:0 0 0 8px rgba(6,182,212,0)}}
+  @keyframes mentionAllPulse{0%,100%{box-shadow:0 0 0 0 rgba(234,179,8,.5)}60%{box-shadow:0 0 0 8px rgba(234,179,8,0)}}
+  @keyframes selfMentionShine{0%{background-position:0% 50%}100%{background-position:200% 50%}}
+  @keyframes chatFadeIn{from{opacity:0;transform:translateY(10px) scale(0.97)}to{opacity:1;transform:translateY(0) scale(1)}}
+  @keyframes chatFadeInOwn{from{opacity:0;transform:translateY(10px) scale(0.97) translateX(10px)}to{opacity:1;transform:translateY(0) scale(1) translateX(0)}}
+  @keyframes topBarGlow{0%,100%{box-shadow:0 1px 0 rgba(6,182,212,.12),0 0 30px rgba(6,182,212,.04)}50%{box-shadow:0 1px 0 rgba(168,85,247,.15),0 0 30px rgba(168,85,247,.06)}}
+  @keyframes liveRing{0%{transform:scale(1);opacity:.7}100%{transform:scale(2.4);opacity:0}}
+  @keyframes nsGradientShift{0%{background-position:0% 50%}50%{background-position:100% 50%}100%{background-position:0% 50%}}
+  @keyframes nsPulse{0%,100%{opacity:1}50%{opacity:0.4}}
+  @keyframes floatParticle{0%{transform:translateY(0) scale(1);opacity:0.6}50%{opacity:0.3}100%{transform:translateY(-40px) scale(0.6);opacity:0}}
+  @keyframes scanLine{0%{transform:translateX(-100%)}100%{transform:translateX(200%)}}
+  @keyframes inputGlow{0%,100%{box-shadow:0 0 0 3px rgba(6,182,212,.06)}50%{box-shadow:0 0 0 3px rgba(168,85,247,.08)}}
+  @keyframes unreadDot{0%,100%{transform:scale(1)}50%{transform:scale(1.3)}}
+  @keyframes msgSlideIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+  @keyframes replyBounce{0%{transform:translateX(0)}30%{transform:translateX(4px)}60%{transform:translateX(-2px)}100%{transform:translateX(0)}}
+  @keyframes sendPop{0%{transform:scale(1)}40%{transform:scale(1.18)}100%{transform:scale(1)}}
+
+  /* ══ WALLPAPER CHAT ══ */
+  .chat-wallpaper {
+    position:absolute;inset:0;pointer-events:none;overflow:hidden;
+  }
+  .chat-wallpaper::before {
+    content:'';position:absolute;inset:0;
+    background:
+      radial-gradient(ellipse 55% 35% at 15% 20%, rgba(6,182,212,.05) 0%, transparent 65%),
+      radial-gradient(ellipse 45% 40% at 85% 75%, rgba(168,85,247,.06) 0%, transparent 65%),
+      radial-gradient(ellipse 30% 50% at 50% 50%, rgba(6,182,212,.03) 0%, transparent 70%);
+    animation:nsPulse 8s ease-in-out infinite;
+  }
+  .chat-wallpaper::after {
+    content:'';position:absolute;inset:0;
+    background-image:
+      linear-gradient(rgba(6,182,212,.025) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(6,182,212,.025) 1px, transparent 1px);
+    background-size:48px 48px;
+    mask-image:radial-gradient(ellipse 80% 80% at 50% 50%, black 20%, transparent 80%);
+  }
+
+  /* ══ TOP BAR ══ */
+  .chat-top-bar {
+    background:rgba(4,4,18,.96);
+    backdrop-filter:blur(32px) saturate(2);
+    border-bottom:1px solid transparent;
+    animation:topBarGlow 5s ease-in-out infinite;
+    position:relative;
+  }
+  .chat-top-bar::after {
+    content:'';position:absolute;bottom:0;left:0;right:0;height:1px;
+    background:linear-gradient(90deg,transparent 0%,rgba(6,182,212,.5) 30%,rgba(168,85,247,.4) 70%,transparent 100%);
+  }
+
+  /* ══ PERIOD PILLS ══ */
+  .chat-period-active {
+    background:linear-gradient(135deg,rgba(6,182,212,.18),rgba(168,85,247,.12));
+    border-color:rgba(6,182,212,.45) !important;
+    color:#22d3ee !important;
+    box-shadow:0 0 16px rgba(6,182,212,.12),inset 0 1px 0 rgba(255,255,255,.08);
+  }
+
+  /* ══ TABS ══ */
+  .chat-tab-global-active {
+    background:linear-gradient(135deg,rgba(6,182,212,.2),rgba(168,85,247,.14));
+    color:#67e8f9 !important;border-color:rgba(6,182,212,.45) !important;
+    box-shadow:0 4px 20px rgba(6,182,212,.15),inset 0 1px 0 rgba(255,255,255,.1);
+  }
+  .chat-tab-msg-active {
+    background:linear-gradient(135deg,rgba(168,85,247,.2),rgba(236,72,153,.12));
+    color:#d8b4fe !important;border-color:rgba(168,85,247,.45) !important;
+    box-shadow:0 4px 20px rgba(168,85,247,.15),inset 0 1px 0 rgba(255,255,255,.1);
+  }
+
+  /* ══ MESSAGE BUBBLES ══ */
+  .chat-msg-in { animation:chatFadeIn .22s cubic-bezier(.34,1.56,.64,1) both; }
+  .chat-msg-in-own { animation:chatFadeInOwn .22s cubic-bezier(.34,1.56,.64,1) both; }
+
+  .msg-bubble-own {
+    background:linear-gradient(135deg,rgba(8,145,178,.95) 0%,rgba(88,28,220,.9) 60%,rgba(124,58,237,.95) 100%) !important;
+    box-shadow:0 6px 28px rgba(8,145,178,.3),0 2px 8px rgba(0,0,0,.4),inset 0 1px 0 rgba(255,255,255,.18) !important;
+    border:1px solid rgba(6,182,212,.2) !important;
+    backdrop-filter:blur(16px);
+    position:relative;overflow:hidden;
+  }
+  .msg-bubble-own::before {
+    content:'';position:absolute;top:0;left:0;right:0;height:1px;
+    background:linear-gradient(90deg,rgba(255,255,255,.2),rgba(255,255,255,.05));
+  }
+  .msg-bubble-other {
+    background:rgba(255,255,255,.055) !important;
+    border:1px solid rgba(255,255,255,.09) !important;
+    backdrop-filter:blur(16px);
+    box-shadow:0 2px 16px rgba(0,0,0,.25);
+  }
+  .msg-bubble-other:hover {
+    background:rgba(255,255,255,.075) !important;
+    border-color:rgba(255,255,255,.13) !important;
+  }
+  .msg-bubble-mention-all {
+    background:linear-gradient(135deg,rgba(234,179,8,.13),rgba(251,146,60,.07)) !important;
+    border:1px solid rgba(234,179,8,.3) !important;
+    box-shadow:0 4px 20px rgba(234,179,8,.1);
+  }
+  .msg-bubble-mention-self {
+    background:linear-gradient(135deg,rgba(168,85,247,.15),rgba(236,72,153,.08)) !important;
+    border:1px solid rgba(168,85,247,.3) !important;
+    box-shadow:0 4px 20px rgba(168,85,247,.12);
+    animation:mentionPulse 2.5s ease-in-out 1;
+  }
+
+  /* ══ MENTIONS ══ */
+  .chat-mention-user {
     display:inline-flex;align-items:center;
     background:linear-gradient(135deg,rgba(6,182,212,.18),rgba(6,182,212,.08));
-    border:1px solid rgba(6,182,212,.35);
-    color:#67e8f9;font-weight:700;
-    padding:0 5px;border-radius:6px;
-    font-size:.88em;letter-spacing:.01em;
+    border:1px solid rgba(6,182,212,.35);color:#67e8f9;font-weight:700;
+    padding:0 6px 1px;border-radius:7px;font-size:.87em;letter-spacing:.01em;
     transition:all .15s;cursor:pointer;
     animation:mentionPulse 2.5s ease-in-out 1;
     text-decoration:none;
   }
-  .chat-mention-user:hover{background:linear-gradient(135deg,rgba(6,182,212,.28),rgba(6,182,212,.14));border-color:rgba(6,182,212,.6);color:#a5f3fc;}
-  .chat-mention-all{
+  .chat-mention-user:hover {
+    background:linear-gradient(135deg,rgba(6,182,212,.3),rgba(6,182,212,.15));
+    border-color:rgba(6,182,212,.6);color:#a5f3fc;
+    transform:translateY(-1px);box-shadow:0 4px 12px rgba(6,182,212,.2);
+  }
+  .chat-mention-all {
     display:inline-flex;align-items:center;gap:3px;
     background:linear-gradient(135deg,rgba(234,179,8,.22),rgba(251,146,60,.12));
-    border:1px solid rgba(234,179,8,.4);
-    color:#fde047;font-weight:800;padding:0 6px;border-radius:6px;font-size:.88em;letter-spacing:.01em;
+    border:1px solid rgba(234,179,8,.4);color:#fde047;font-weight:800;
+    padding:0 6px 1px;border-radius:7px;font-size:.87em;
     animation:mentionAllPulse 2s ease-in-out 1;
   }
-  .chat-mention-self{
+  .chat-mention-self {
     display:inline-flex;align-items:center;
     background:linear-gradient(90deg,rgba(6,182,212,.3),rgba(168,85,247,.25),rgba(6,182,212,.3));
     background-size:200% 100%;border:1px solid rgba(168,85,247,.45);
-    color:#d8b4fe;font-weight:800;padding:0 5px;border-radius:6px;font-size:.88em;
+    color:#d8b4fe;font-weight:800;padding:0 6px 1px;border-radius:7px;font-size:.87em;
     animation:selfMentionShine 2s linear 3;
   }
-  .chat-link{color:#22d3ee;text-decoration:underline;text-underline-offset:2px;word-break:break-all;}
-  .chat-link:hover{color:#67e8f9}
-  .chat-live-link{
+  .chat-link{color:#22d3ee;text-decoration:underline;text-underline-offset:3px;word-break:break-all;transition:color .15s;}
+  .chat-link:hover{color:#67e8f9;text-shadow:0 0 12px rgba(6,182,212,.5);}
+  .chat-live-link {
     display:inline-flex;align-items:center;gap:5px;
     background:rgba(239,68,68,.12);border:1px solid rgba(239,68,68,.3);
     color:#fca5a5;border-radius:8px;padding:1px 8px;font-size:.85em;font-weight:700;
+    transition:all .15s;
   }
-  .msg-bubble-own{
-    background:linear-gradient(135deg,rgba(8,145,178,.85) 0%,rgba(124,58,237,.85) 100%) !important;
-    box-shadow:0 4px 24px rgba(8,145,178,.25),0 2px 8px rgba(0,0,0,.3);
-    border:1px solid rgba(6,182,212,.2) !important;
-    backdrop-filter:blur(12px);
-  }
-  .msg-bubble-other{
-    background:rgba(255,255,255,.05) !important;
-    border:1px solid rgba(255,255,255,.08) !important;
-    backdrop-filter:blur(12px);
-  }
-  .msg-bubble-mention-all{
-    background:linear-gradient(135deg,rgba(234,179,8,.12),rgba(251,146,60,.07)) !important;
-    border:1px solid rgba(234,179,8,.25) !important;
-  }
-  .mention-autocomplete-item:hover .mention-name{color:#67e8f9}
-  .mention-all-item:hover .mention-all-label{color:#fde047}
+  .chat-live-link:hover{background:rgba(239,68,68,.2);border-color:rgba(239,68,68,.5);}
 
-  /* ── TOP BAR premium ── */
-  .chat-top-bar{
-    border-bottom:1px solid rgba(255,255,255,.06);
-    background:rgba(5,5,18,.92);
-    backdrop-filter:blur(32px) saturate(1.8);
-    animation:topBarGlow 4s ease-in-out infinite;
-  }
-
-  /* ── Period pills ── */
-  .chat-period-active{
-    background:linear-gradient(135deg,rgba(6,182,212,.2),rgba(168,85,247,.15));
-    border-color:rgba(6,182,212,.45)!important;color:#22d3ee!important;
-    box-shadow:0 0 12px rgba(6,182,212,.15);
-  }
-
-  /* ── Tab active states ── */
-  .chat-tab-global-active{
-    background:linear-gradient(135deg,rgba(6,182,212,.18),rgba(168,85,247,.12));
-    color:#22d3ee!important;border-color:rgba(6,182,212,.4)!important;
-    box-shadow:0 0 16px rgba(6,182,212,.1);
-  }
-  .chat-tab-msg-active{
-    background:linear-gradient(135deg,rgba(168,85,247,.18),rgba(6,182,212,.12));
-    color:#c084fc!important;border-color:rgba(168,85,247,.4)!important;
-    box-shadow:0 0 16px rgba(168,85,247,.1);
-  }
-
-  /* ── Input zone premium ── */
-  .chat-input-glass{
+  /* ══ INPUT ZONE ══ */
+  .chat-input-glass {
     background:rgba(255,255,255,.04);
     border:1px solid rgba(255,255,255,.09);
-    backdrop-filter:blur(20px);
-    transition:border-color .2s,box-shadow .2s;
+    backdrop-filter:blur(24px);
+    transition:border-color .2s,box-shadow .2s,background .2s;
   }
-  .chat-input-glass:focus-within{
-    border-color:rgba(6,182,212,.4);
-    box-shadow:0 0 0 3px rgba(6,182,212,.08),0 4px 24px rgba(6,182,212,.1);
-  }
-
-  /* ── Message animation ── */
-  .chat-msg-in{animation:chatFadeIn .25s ease-out both;}
-
-  /* ── Scrollbar ── */
-  .chat-scroll::-webkit-scrollbar{width:4px;}
-  .chat-scroll::-webkit-scrollbar-track{background:transparent;}
-  .chat-scroll::-webkit-scrollbar-thumb{background:rgba(255,255,255,.08);border-radius:2px;}
-  .chat-scroll::-webkit-scrollbar-thumb:hover{background:rgba(255,255,255,.14);}
-
-  /* ── Reactions bar ── */
-  .reaction-btn{
-    display:flex;align-items:center;gap:4px;
-    padding:2px 8px;border-radius:20px;
-    background:rgba(255,255,255,.05);
-    border:1px solid rgba(255,255,255,.08);
-    font-size:12px;cursor:pointer;transition:all .15s;
-  }
-  .reaction-btn:hover{background:rgba(6,182,212,.12);border-color:rgba(6,182,212,.3);}
-  .reaction-btn.active{background:rgba(6,182,212,.15);border-color:rgba(6,182,212,.4);color:#22d3ee;}
-
-  /* ── NS Gradient title ── */
-  .ns-chat-title{
-    background:linear-gradient(135deg,#22d3ee,#a855f7,#22d3ee);
-    background-size:200% 200%;
-    -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
-    animation:nsGradientShift 4s ease infinite;
-  }
-
-
-
-  .chat-mention-user{
-    display:inline-flex;align-items:center;
-    background:linear-gradient(135deg,rgba(6,182,212,.18),rgba(6,182,212,.08));
-    border:1px solid rgba(6,182,212,.35);
-    color:#67e8f9;font-weight:700;
-    padding:0 5px;border-radius:6px;
-    font-size:.88em;letter-spacing:.01em;
-    transition:all .15s;cursor:pointer;
-    animation:mentionPulse 2.5s ease-in-out 1;
-    text-decoration:none;
-  }
-  .chat-mention-user:hover{
-    background:linear-gradient(135deg,rgba(6,182,212,.28),rgba(6,182,212,.14));
-    border-color:rgba(6,182,212,.6);color:#a5f3fc;
-  }
-  .chat-mention-all{
-    display:inline-flex;align-items:center;gap:3px;
-    background:linear-gradient(135deg,rgba(234,179,8,.22),rgba(251,146,60,.12));
-    border:1px solid rgba(234,179,8,.4);
-    color:#fde047;font-weight:800;
-    padding:0 6px;border-radius:6px;
-    font-size:.88em;letter-spacing:.01em;
-    animation:mentionAllPulse 2s ease-in-out 1;
-  }
-  .chat-mention-self{
-    display:inline-flex;align-items:center;
-    background:linear-gradient(90deg,rgba(6,182,212,.3),rgba(168,85,247,.25),rgba(6,182,212,.3));
-    background-size:200% 100%;
-    border:1px solid rgba(168,85,247,.45);
-    color:#d8b4fe;font-weight:800;
-    padding:0 5px;border-radius:6px;
-    font-size:.88em;
-    animation:selfMentionShine 2s linear 3;
-  }
-  .chat-link{color:#22d3ee;text-decoration:underline;text-underline-offset:2px;word-break:break-all;}
-  .chat-link:hover{color:#67e8f9}
-  .chat-live-link{
-    display:inline-flex;align-items:center;gap:5px;
-    background:rgba(239,68,68,.12);border:1px solid rgba(239,68,68,.3);
-    color:#fca5a5;border-radius:8px;padding:1px 8px;font-size:.85em;font-weight:700;
-  }
-  .msg-bubble-own{
-    background:linear-gradient(135deg,#0891b2 0%,#7c3aed 100%) !important;
-    box-shadow:0 2px 16px rgba(8,145,178,.3);
-  }
-  .msg-bubble-other{
-    background:rgba(255,255,255,.06) !important;
-    border:1px solid rgba(255,255,255,.09) !important;
-    backdrop-filter:blur(8px);
-  }
-  .msg-bubble-mention-all{
-    background:linear-gradient(135deg,rgba(234,179,8,.14),rgba(251,146,60,.08)) !important;
-    border:1px solid rgba(234,179,8,.28) !important;
-  }
-  .mention-autocomplete-item:hover .mention-name{color:#67e8f9}
-  .mention-all-item:hover .mention-all-label{color:#fde047}
-  .chat-top-bar{
-    border-bottom:1px solid rgba(6,182,212,.1);
-    background:rgba(5,5,18,.94);
-    backdrop-filter:blur(28px) saturate(1.6);
-    animation:topBarGlow 5s ease-in-out infinite;
-  }
-  .chat-period-active{
-    background:linear-gradient(135deg,rgba(6,182,212,.2),rgba(168,85,247,.15));
-    border-color:rgba(6,182,212,.4) !important;
-    color:#67e8f9 !important;
-  }
-  .chat-tab-global-active{
-    background:linear-gradient(135deg,#0891b2,#7c3aed);
-    box-shadow:0 4px 20px rgba(8,145,178,.35);
-  }
-  .chat-tab-msg-active{
-    background:linear-gradient(135deg,#a855f7,#ec4899);
-    box-shadow:0 4px 20px rgba(168,85,247,.35);
-  }
-  .input-bubble{
-    background:rgba(255,255,255,.07);
-    border:1px solid rgba(255,255,255,.1);
-    transition:border-color .2s,background .2s;
-    border-radius:22px;
-  }
-  .input-bubble:focus-within{
-    background:rgba(255,255,255,.1);
+  .chat-input-glass:focus-within {
     border-color:rgba(6,182,212,.4);
     box-shadow:0 0 0 3px rgba(6,182,212,.07);
+    background:rgba(6,182,212,.025);
+    animation:inputGlow 3s ease-in-out infinite;
   }
-  .mention-popup{
-    background:rgba(10,10,26,.97);
+
+  /* ══ REPLY PREVIEW ══ */
+  .chat-reply-bar {
+    background:rgba(6,182,212,.06);
+    border-left:2px solid rgba(6,182,212,.6);
+    border-radius:0 12px 12px 0;
+    border-top:1px solid rgba(6,182,212,.12);
+    border-right:1px solid rgba(6,182,212,.12);
+    border-bottom:1px solid rgba(6,182,212,.12);
+    animation:replyBounce .3s ease;
+  }
+
+  /* ══ MENTION POPUP ══ */
+  .mention-popup {
+    background:linear-gradient(180deg,rgba(8,8,26,.98) 0%,rgba(6,6,20,.99) 100%);
     border:1px solid rgba(255,255,255,.1);
-    backdrop-filter:blur(24px);
-    box-shadow:0 -8px 40px rgba(0,0,0,.6),0 0 0 1px rgba(6,182,212,.08);
+    backdrop-filter:blur(28px) saturate(1.6);
+    box-shadow:0 -12px 48px rgba(0,0,0,.7),0 0 0 1px rgba(6,182,212,.07);
   }
-`;
+  .mention-autocomplete-item:hover{background:rgba(6,182,212,.07) !important;}
+  .mention-autocomplete-item:hover .mention-name{color:#67e8f9}
+  .mention-all-item:hover{background:rgba(234,179,8,.07) !important;}
+  .mention-all-item:hover .mention-all-label{color:#fde047}
+
+  /* ══ REACTIONS ══ */
+  .reaction-btn {
+    display:flex;align-items:center;gap:3px;
+    padding:3px 8px;border-radius:20px;
+    background:rgba(255,255,255,.05);
+    border:1px solid rgba(255,255,255,.08);
+    font-size:12px;cursor:pointer;
+    transition:all .15s;
+  }
+  .reaction-btn:hover {
+    background:rgba(6,182,212,.1);border-color:rgba(6,182,212,.3);
+    transform:scale(1.08);
+  }
+  .reaction-btn.active {
+    background:rgba(6,182,212,.15);border-color:rgba(6,182,212,.4);
+    color:#22d3ee;box-shadow:0 2px 12px rgba(6,182,212,.15);
+  }
+
+  /* ══ SCROLLBAR ══ */
+  .chat-scroll::-webkit-scrollbar{width:3px;}
+  .chat-scroll::-webkit-scrollbar-track{background:transparent;}
+  .chat-scroll::-webkit-scrollbar-thumb{background:rgba(6,182,212,.2);border-radius:2px;}
+  .chat-scroll::-webkit-scrollbar-thumb:hover{background:rgba(6,182,212,.4);}
+
+  /* ══ TITLE ══ */
+  .ns-chat-title {
+    background:linear-gradient(135deg,#22d3ee 0%,#a855f7 40%,#ec4899 70%,#22d3ee 100%);
+    background-size:250% 100%;
+    -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
+    animation:nsGradientShift 4s ease infinite;
+    font-family:'Orbitron',monospace;
+    letter-spacing:.04em;
+  }
+
+  /* ══ LOAD MORE BUTTON ══ */
+  .chat-load-more {
+    background:rgba(255,255,255,.04);
+    border:1px solid rgba(255,255,255,.08);
+    border-radius:99px;color:rgba(255,255,255,.4);
+    transition:all .18s;
+  }
+  .chat-load-more:hover {
+    background:rgba(6,182,212,.08);border-color:rgba(6,182,212,.25);
+    color:#22d3ee;box-shadow:0 4px 16px rgba(6,182,212,.1);
+  }
+
+  /* ══ SEND BUTTON ANIM ══ */
+  .chat-send-pop { animation:sendPop .25s ease; }
+
+  /* ══ ONLINE DOT ══ */
+  .chat-online-dot { animation:unreadDot 2s ease-in-out infinite; }
+
+  /* ══ RIGHT CONTEXT PANEL ══ */
+  .chat-ctx-panel {
+    background:rgba(4,4,18,.94);
+    backdrop-filter:blur(28px) saturate(1.6);
+    border-left:1px solid rgba(255,255,255,.06);
+  }
+  .chat-ctx-panel::before {
+    content:'';position:absolute;top:0;left:0;bottom:0;width:1px;
+    background:linear-gradient(180deg,transparent,rgba(6,182,212,.3) 30%,rgba(168,85,247,.3) 70%,transparent);
+  }
+``;
 
 // Rendu du contenu avec mentions colorées premium
 const renderContent = (text, currentUserId, msgUserId) => {
@@ -397,7 +424,7 @@ const ChatMessage = memo(({
       animate={{ opacity: 1, y: 0, scale: 1 }}
       transition={{ duration: 0.18, ease: 'easeOut' }}
       style={{ willChange: 'auto' }}
-      className={`group flex flex-col px-2 py-0.5 ${isOwn ? 'items-end' : 'items-start'} ${
+      className={`group flex flex-col px-2 py-0.5 ${isOwn ? 'items-end chat-msg-in-own' : 'items-start chat-msg-in'} ${
         isHighlighted ? 'bg-cyan-500/8 rounded-2xl' : ''
       }`}
       onClick={() => !editing && setShowActions(v => !v)}
@@ -1000,15 +1027,22 @@ const ChatPage = () => {
               {/* Filtres période */}
               {activeTab === 'global' && (
                 <div className="flex items-center gap-1.5 overflow-x-auto scrollbar-hide pb-0.5">
-                  {CHAT_PERIODS.map(p => (
-                    <button key={p.key} onClick={() => changePeriod(p.key)}
-                      className={`flex-shrink-0 px-3 py-1.5 rounded-full text-xs font-semibold transition-all border ${
+                  {[
+                    { key:'today',  label:"Aujourd'hui", icon:'⚡' },
+                    { key:'7d',     label:'7 jours',     icon:'📅' },
+                    { key:'month',  label:'Ce mois',     icon:'🗓' },
+                    { key:'year',   label:'Cette année', icon:'🏆' },
+                    { key:'all',    label:'Tout',        icon:'🌐' },
+                  ].map(p => (
+                    <motion.button key={p.key} onClick={() => changePeriod(p.key)}
+                      whileTap={{ scale: 0.93 }}
+                      className={`flex-shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold transition-all border ${
                         period === p.key
                           ? 'chat-period-active'
-                          : 'bg-white/[0.03] text-gray-600 border-white/[0.06] hover:bg-white/8 hover:text-gray-400'
+                          : 'bg-white/[0.03] text-gray-600 border-white/[0.06] hover:bg-white/[0.07] hover:text-gray-400'
                       }`}>
-                      {p.label}
-                    </button>
+                      <span className="text-[11px]">{p.icon}</span>{p.label}
+                    </motion.button>
                   ))}
                 </div>
               )}
@@ -1112,16 +1146,20 @@ const ChatPage = () => {
               </div>
             </div>
           )}
-          {/* ─── {'Chat Global'} ─────────────────────────────────────── */}
+          {/* ─── Chat Global ─────────────────────────────────────── */}
           {activeTab === 'global' && (
-            <>
-              <div ref={scrollRef} className="flex-1 overflow-y-auto relative z-10" style={{ WebkitOverflowScrolling: 'touch' }} onScroll={handleScroll}>
+            <div className="flex-1 flex overflow-hidden relative z-10">
+              {/* ── Zone principale messages ── */}
+              <div className="flex-1 flex flex-col min-w-0">
+              <div ref={scrollRef} className="flex-1 overflow-y-auto chat-scroll" style={{ WebkitOverflowScrolling: 'touch' }} onScroll={handleScroll}>
+              {/* Wallpaper atmosphérique */}
+              <div className="chat-wallpaper" aria-hidden="true"/>
                 <div className="max-w-3xl mx-auto py-3 pb-2">
                   {hasMore && (
                     <div className="flex justify-center py-3">
                       <button onClick={loadMore} disabled={loading}
-                        className="flex items-center gap-2 px-4 py-2 bg-white/5 hover:bg-white/10 border border-white/10 rounded-full text-sm text-gray-400 hover:text-white transition-all">
-                        {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <ChevronUp className="w-4 h-4" />}
+                        className="chat-load-more flex items-center gap-2 px-5 py-2 text-xs font-semibold transition-all">
+                        {loading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <ChevronUp className="w-3.5 h-3.5" />}
                         Charger plus
                       </button>
                     </div>
@@ -1133,13 +1171,18 @@ const ChatPage = () => {
                     </div>
                   )}
                   {!loading && messages.length === 0 && (
-                    <div className="flex flex-col items-center justify-center py-20 text-center px-6">
-                      <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-cyan-500/15 to-fuchsia-500/15 border border-cyan-500/15 flex items-center justify-center mb-4">
-                        <Music className="w-8 h-8 text-cyan-400/60" />
-                      </div>
-                      <p className="text-gray-300 font-semibold">Aucun message pour cette période</p>
-                      <p className="text-gray-500 text-sm mt-1.5">Sois le premier à écrire ! 🎵</p>
-                    </div>
+                    <motion.div initial={{opacity:0,y:12}} animate={{opacity:1,y:0}} transition={{delay:.2}}
+                      className="flex flex-col items-center justify-center py-24 text-center px-6">
+                      <motion.div
+                        animate={{scale:[1,1.08,1],rotate:[0,3,-3,0]}}
+                        transition={{duration:4,repeat:Infinity,ease:'easeInOut'}}
+                        className="w-20 h-20 rounded-3xl flex items-center justify-center mb-5"
+                        style={{background:'linear-gradient(135deg,rgba(6,182,212,.12),rgba(168,85,247,.1))',border:'1px solid rgba(6,182,212,.2)',boxShadow:'0 0 40px rgba(6,182,212,.08)'}}>
+                        <Music className="w-9 h-9 text-cyan-400/70" />
+                      </motion.div>
+                      <p className="text-white font-bold text-lg mb-2">Silence… pour l'instant</p>
+                      <p className="text-gray-500 text-sm max-w-xs">Sois le premier à briser la glace ! Envoie un message ou mentionne <span className="text-amber-400/80 font-semibold">@tous</span> 🎵</p>
+                    </motion.div>
                   )}
                   <div className="space-y-0.5">
                     {messages.map(msg => (
@@ -1175,7 +1218,7 @@ const ChatPage = () => {
 
               {/* Zone de saisie */}
               <div
-                className="flex-shrink-0 px-3 py-2.5 relative z-10"
+                className="flex-shrink-0 px-3 py-2.5"
                 style={{
                   background: 'rgba(5,5,18,.97)',
                   borderTop: '1px solid rgba(255,255,255,.06)',
@@ -1188,7 +1231,7 @@ const ChatPage = () => {
                   <AnimatePresence>
                     {replyTo && (
                       <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }} className="overflow-hidden">
-                        <div className="flex items-center gap-2 px-3 py-2 mb-2 rounded-xl" style={{ background: 'rgba(6,182,212,.07)', borderLeft: '2px solid #22d3ee', border: '1px solid rgba(6,182,212,.15)' }}>
+                        <div className="chat-reply-bar flex items-center gap-2 px-3 py-2 mb-2">
                           <Reply className="w-3.5 h-3.5 text-cyan-400 flex-shrink-0" />
                           <div className="flex-1 min-w-0">
                             <p className="text-[11px] font-semibold text-cyan-400 truncate">
@@ -1285,20 +1328,31 @@ const ChatPage = () => {
                           <span className={`text-[10px] flex-shrink-0 self-end pb-0.5 ${remaining < 50 ? 'text-red-400' : 'text-gray-600'}`}>{remaining}</span>
                         )}
                       </div>
-                      <button onClick={handleSend} disabled={!text.trim() || sending}
-                        className="w-11 h-11 rounded-2xl flex items-center justify-center flex-shrink-0 disabled:opacity-25 transition-all active:scale-90 hover:scale-105"
+                      <motion.button
+                        onClick={handleSend}
+                        disabled={!text.trim() || sending}
+                        whileTap={{ scale: 0.88 }}
+                        whileHover={{ scale: text.trim() ? 1.06 : 1 }}
+                        className="w-11 h-11 rounded-2xl flex items-center justify-center flex-shrink-0 disabled:opacity-25 transition-all"
                         style={{
                           background: text.trim() ? 'linear-gradient(135deg,#0891b2,#7c3aed)' : 'rgba(255,255,255,.06)',
-                          boxShadow: text.trim() ? '0 4px 20px rgba(8,145,178,.4)' : 'none',
-                          border: text.trim() ? 'none' : '1px solid rgba(255,255,255,.08)',
+                          boxShadow: text.trim() ? '0 4px 24px rgba(8,145,178,.45),inset 0 1px 0 rgba(255,255,255,.15)' : 'none',
+                          border: text.trim() ? '1px solid rgba(6,182,212,.2)' : '1px solid rgba(255,255,255,.08)',
                           marginBottom: 2,
-                          transition: 'all .2s',
+                          transition: 'background .2s, box-shadow .2s',
                         }}>
-                        {sending
-                          ? <div className="w-4 h-4 rounded-full border-2 border-white/30 border-t-white animate-spin" />
-                          : <Send className="w-4 h-4 text-white" />
-                        }
-                      </button>
+                        <AnimatePresence mode="wait">
+                          {sending ? (
+                            <motion.div key="spin" initial={{scale:0,rotate:-90}} animate={{scale:1,rotate:0}} exit={{scale:0}}>
+                              <div className="w-4 h-4 rounded-full border-2 border-white/30 border-t-white animate-spin"/>
+                            </motion.div>
+                          ) : (
+                            <motion.div key="send" initial={{scale:0,rotate:20}} animate={{scale:1,rotate:0}} exit={{scale:0,rotate:-20}}>
+                              <Send className="w-4 h-4 text-white"/>
+                            </motion.div>
+                          )}
+                        </AnimatePresence>
+                      </motion.button>
                     </div>
                   ) : (
                     <div className="flex items-center justify-center gap-3 py-4 px-4 rounded-2xl" style={{ background: 'rgba(255,255,255,.03)', border: '1px solid rgba(255,255,255,.06)' }}>
@@ -1308,8 +1362,115 @@ const ChatPage = () => {
                   )}
                 </div>
               </div>
-            </>
-          )}
+              </div>{/* end main column */}
+
+              {/* ── Panneau droit desktop ── */}
+              <div className="hidden xl:flex flex-col w-72 flex-shrink-0 chat-ctx-panel relative overflow-y-auto" style={{scrollbarWidth:'none'}}>
+                {/* Gradient accent vertical */}
+                <div className="absolute top-0 left-0 bottom-0 w-px" style={{background:'linear-gradient(180deg,transparent,rgba(6,182,212,.3) 30%,rgba(168,85,247,.3) 70%,transparent)'}}/>
+
+                {/* En ligne */}
+                <div className="px-4 pt-5 pb-3">
+                  <div className="flex items-center justify-between mb-3">
+                    <p className="text-[10px] font-black uppercase tracking-widest text-gray-600">En ligne</p>
+                    <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-full" style={{background:'rgba(34,197,94,.06)',border:'1px solid rgba(34,197,94,.15)'}}>
+                      <span className="relative flex h-1.5 w-1.5">
+                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"/>
+                        <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-green-400"/>
+                      </span>
+                      <span className="text-green-400 text-[11px] font-bold">{onlineCount}</span>
+                    </div>
+                  </div>
+                  <div className="space-y-1.5">
+                    {onlineUsers.length === 0 ? (
+                      <div className="flex flex-col items-center py-6 text-center">
+                        <div className="w-10 h-10 rounded-2xl flex items-center justify-center mb-2" style={{background:'rgba(34,197,94,.05)',border:'1px solid rgba(34,197,94,.1)'}}>
+                          <Users className="w-4 h-4 text-green-500/40"/>
+                        </div>
+                        <p className="text-gray-700 text-xs">Aucun utilisateur tracé</p>
+                      </div>
+                    ) : onlineUsers.slice(0,8).map((u,idx) => (
+                      <motion.div key={u.user_id+idx}
+                        initial={{opacity:0,x:8}} animate={{opacity:1,x:0}} transition={{delay:idx*0.04}}
+                        className="flex items-center gap-2.5 px-3 py-2 rounded-xl transition-all cursor-pointer group"
+                        style={{background:'rgba(255,255,255,.02)',border:'1px solid transparent'}}
+                        onMouseEnter={e=>{e.currentTarget.style.background='rgba(34,197,94,.05)';e.currentTarget.style.borderColor='rgba(34,197,94,.1)';}}
+                        onMouseLeave={e=>{e.currentTarget.style.background='rgba(255,255,255,.02)';e.currentTarget.style.borderColor='transparent';}}>
+                        <div className="relative flex-shrink-0">
+                          {u.avatar_url
+                            ? <img src={u.avatar_url} alt="" className="w-7 h-7 rounded-full object-cover" style={{border:'1px solid rgba(34,197,94,.3)'}}/>
+                            : <div className="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold text-white" style={{background:'linear-gradient(135deg,rgba(6,182,212,.3),rgba(168,85,247,.3))'}}>{(u.username||'?')[0].toUpperCase()}</div>
+                          }
+                          <span className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full bg-green-400 border-2 border-[#04041a]"/>
+                        </div>
+                        <NoTranslate className="text-white text-xs font-semibold truncate flex-1">{u.username||'Anonyme'}</NoTranslate>
+                      </motion.div>
+                    ))}
+                    {onlineUsers.length > 8 && (
+                      <p className="text-center text-gray-700 text-[10px] pt-1">+{onlineUsers.length-8} autres</p>
+                    )}
+                  </div>
+                </div>
+
+                {/* Séparateur */}
+                <div className="mx-4 h-px" style={{background:'linear-gradient(90deg,transparent,rgba(255,255,255,.06),transparent)'}}/>
+
+                {/* Stats rapides */}
+                <div className="px-4 py-4">
+                  <p className="text-[10px] font-black uppercase tracking-widest text-gray-600 mb-3">Activité</p>
+                  <div className="grid grid-cols-2 gap-2">
+                    {[
+                      {label:'Messages',value:messages.length,color:'rgba(6,182,212,.15)',border:'rgba(6,182,212,.2)',text:'#22d3ee',icon:'💬'},
+                      {label:'Actifs',value:onlineCount,color:'rgba(34,197,94,.1)',border:'rgba(34,197,94,.2)',text:'#4ade80',icon:'👥'},
+                    ].map(s=>(
+                      <div key={s.label} className="rounded-2xl px-3 py-3 text-center" style={{background:s.color,border:`1px solid ${s.border}`}}>
+                        <p className="text-lg">{s.icon}</p>
+                        <p className="font-black text-base leading-tight" style={{color:s.text}}>{s.value}</p>
+                        <p className="text-[10px] text-gray-600 mt-0.5">{s.label}</p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Séparateur */}
+                <div className="mx-4 h-px" style={{background:'linear-gradient(90deg,transparent,rgba(255,255,255,.06),transparent)'}}/>
+
+                {/* Raccourcis */}
+                <div className="px-4 py-4">
+                  <p className="text-[10px] font-black uppercase tracking-widest text-gray-600 mb-3">Raccourcis</p>
+                  <div className="space-y-2">
+                    {[
+                      {key:'Enter','desc':'Envoyer'},
+                      {key:'Shift+Enter','desc':'Nouvelle ligne'},
+                      {key:'@','desc':'Mentionner'},
+                      {key:'@tous','desc':'Tout le monde'},
+                    ].map(r=>(
+                      <div key={r.key} className="flex items-center justify-between">
+                        <span className="text-gray-600 text-[11px]">{r.desc}</span>
+                        <kbd className="px-2 py-0.5 rounded-lg text-[10px] font-mono font-bold text-cyan-300" style={{background:'rgba(6,182,212,.08)',border:'1px solid rgba(6,182,212,.15)'}}>{r.key}</kbd>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Règles de la communauté */}
+                <div className="px-4 pb-5 mt-auto">
+                  <div className="rounded-2xl px-3 py-3" style={{background:'rgba(168,85,247,.05)',border:'1px solid rgba(168,85,247,.1)'}}>
+                    <p className="text-[10px] font-black text-fuchsia-400/80 uppercase tracking-widest mb-2">Règles</p>
+                    <ul className="space-y-1.5">
+                      {['Respecte tout le monde 🤝','Pas de spam 🚫','Musique & bonne humeur 🎵'].map(r=>(
+                        <li key={r} className="text-[11px] text-gray-600 flex items-start gap-1.5">
+                          <span className="text-fuchsia-500/50 mt-0.5">›</span>{r}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                </div>
+              </div>
+              {/* end right panel */}
+
+            </div>
+          )}{/* end activeTab global */}
         </div>
       </div>
 

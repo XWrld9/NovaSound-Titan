@@ -15,7 +15,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
   FolderOpen, HardDrive, WifiOff, Wifi, ListMusic, Trash2, Plus,
   Play, Pause, SkipBack, SkipForward, Shuffle, Repeat, Repeat1,
-  Volume2, VolumeX, Save, CheckSquare, Square, ChevronUp,
+  Volume2, VolumeX, Save, CheckSquare, Square, ChevronUp, ChevronDown, Check,
   RefreshCcw, Search, X, SlidersHorizontal, ArrowLeft, Home,
   Music2, Keyboard, Headphones, Clock, Heart, MoreHorizontal,
   AlertTriangle, GripVertical, Timer, Gauge, List, Grid,
@@ -233,6 +233,7 @@ const LocalPlayerPage=()=>{
   const[activeTab,setActiveTab]=useState('library');
   const[searchQuery,setSearchQuery]=useState('');
   const[sortBy,setSortBy]=useState('default');
+  const[showSortMenu,setShowSortMenu]=useState(false);
   const[trackDurations,setTrackDurations]=useState({});
   const[isDragging,setIsDragging]=useState(false);
   const[showShortcuts,setShowShortcuts]=useState(false);
@@ -336,6 +337,18 @@ const LocalPlayerPage=()=>{
     if(!('mediaSession' in navigator)||!currentSong?.is_local)return;
     try{navigator.mediaSession.playbackState=isPlayingGlobal?'playing':'paused';}catch(_){}
   },[isPlayingGlobal,currentSong?.is_local]);
+
+  /* Sync depuis les événements natifs audio → mini lecteur OS toujours correct */
+  useEffect(()=>{
+    if(!('mediaSession' in navigator))return;
+    const audio=document.querySelector('audio');
+    if(!audio)return;
+    const onPlay =()=>{try{navigator.mediaSession.playbackState='playing';}catch(_){}};
+    const onPause=()=>{try{navigator.mediaSession.playbackState='paused';}catch(_){}};
+    audio.addEventListener('play', onPlay);
+    audio.addEventListener('pause',onPause);
+    return()=>{audio.removeEventListener('play',onPlay);audio.removeEventListener('pause',onPause);};
+  },[]);
 
   /* Keyboard shortcuts */
   useEffect(()=>{
@@ -836,12 +849,37 @@ const LocalPlayerPage=()=>{
                 placeholder="Rechercher…" className="flex-1 bg-transparent text-white text-sm placeholder-gray-700 outline-none min-w-0"/>
               {searchQuery&&<button onClick={()=>setSearchQuery('')}><X className="w-3.5 h-3.5 text-gray-600 hover:text-gray-400"/></button>}
             </div>
-            <select value={sortBy} onChange={e=>setSortBy(e.target.value)}
-              className="text-xs rounded-xl px-2 py-2 outline-none text-gray-400" style={{background:'rgba(255,255,255,0.05)',border:'1px solid rgba(255,255,255,0.07)'}}>
-              <option value="default">Défaut</option>
-              <option value="name">Titre</option>
-              <option value="artist">Artiste</option>
-            </select>
+            {/* Custom sort dropdown */}
+            <div className="relative">
+              <button
+                onClick={()=>setShowSortMenu(v=>!v)}
+                className="flex items-center gap-1.5 text-xs rounded-xl px-2.5 py-2 transition-all"
+                style={{background:'rgba(255,255,255,0.05)',border:`1px solid ${showSortMenu?'rgba(6,182,212,0.4)':'rgba(255,255,255,0.07)'}`,color:showSortMenu?'#22d3ee':'rgba(255,255,255,0.4)'}}>
+                <ChevronDown className={`w-3 h-3 transition-transform ${showSortMenu?'rotate-180 text-cyan-400':''}`}/>
+                <span>{sortBy==='default'?'Défaut':sortBy==='name'?'Titre':'Artiste'}</span>
+              </button>
+              <AnimatePresence>
+                {showSortMenu&&(
+                  <>
+                    <div className="fixed inset-0 z-10" onClick={()=>setShowSortMenu(false)}/>
+                    <motion.div
+                      initial={{opacity:0,y:-6,scale:0.96}} animate={{opacity:1,y:0,scale:1}} exit={{opacity:0,y:-6,scale:0.96}}
+                      transition={{duration:0.12}}
+                      className="absolute right-0 top-full mt-1.5 z-20 rounded-xl overflow-hidden min-w-[110px]"
+                      style={{background:'rgba(6,6,22,0.97)',border:'1px solid rgba(255,255,255,0.1)',backdropFilter:'blur(20px)',boxShadow:'0 16px 40px rgba(0,0,0,0.6)'}}>
+                      {[['default','Défaut','🔀'],['name','Titre','🔤'],['artist','Artiste','🎤']].map(([v,l,e])=>(
+                        <button key={v} onClick={()=>{setSortBy(v);setShowSortMenu(false);}}
+                          className="flex items-center gap-2 w-full px-3 py-2.5 text-xs text-left transition-all"
+                          style={sortBy===v?{background:'rgba(6,182,212,0.12)',color:'#22d3ee'}:{color:'rgba(255,255,255,0.6)'}}>
+                          <span>{e}</span>{l}
+                          {sortBy===v&&<Check className="w-3 h-3 ml-auto text-cyan-400"/>}
+                        </button>
+                      ))}
+                    </motion.div>
+                  </>
+                )}
+              </AnimatePresence>
+            </div>
             {activeTab==='library'&&songs.length>0&&(
               <div className="flex items-center gap-1">
                 <button onClick={()=>{setSelectionMode(v=>{if(v){setSelectedIds(new Set());}return !v;});}}
@@ -1044,24 +1082,53 @@ const LocalPlayerPage=()=>{
       <AnimatePresence>
         {showSaveModal&&(
           <>
-            <motion.div initial={{opacity:0}} animate={{opacity:1}} exit={{opacity:0}} className="fixed inset-0 z-[300] bg-black/80 backdrop-blur-sm" onClick={()=>setShowSaveModal(false)}/>
-            <motion.div initial={{scale:0.9,y:16,opacity:0}} animate={{scale:1,y:0,opacity:1}} exit={{scale:0.9,y:16,opacity:0}}
+            <motion.div initial={{opacity:0}} animate={{opacity:1}} exit={{opacity:0}}
+              className="fixed inset-0 z-[300] bg-black/80 backdrop-blur-sm" onClick={()=>setShowSaveModal(false)}/>
+            <motion.div initial={{scale:0.92,y:20,opacity:0}} animate={{scale:1,y:0,opacity:1}} exit={{scale:0.92,y:20,opacity:0}}
+              transition={{type:'spring',stiffness:420,damping:30}}
               className="fixed inset-0 z-[301] flex items-center justify-center p-5">
-              <div className="w-full max-w-sm rounded-2xl p-6 shadow-2xl" style={{background:'rgba(10,10,30,0.97)',border:'1px solid rgba(255,255,255,0.1)',backdropFilter:'blur(20px)'}}>
-                <h3 className="text-white font-black text-lg mb-1">Nouvelle playlist</h3>
-                <p className="text-gray-500 text-sm mb-4">{selectedIds.size} fichier{selectedIds.size>1?'s':''} sélectionné{selectedIds.size>1?'s':''}</p>
-                <input type="text" placeholder="Nom de la playlist…" autoFocus
-                  onKeyDown={e=>e.key==='Enter'&&e.target.value.trim()&&savePlaylist(e.target.value.trim())}
-                  onChange={e=>{}}
-                  id="pl-name-input"
-                  className="w-full rounded-xl px-4 py-3 text-white text-sm placeholder-gray-600 focus:outline-none mb-4"
-                  style={{background:'rgba(255,255,255,0.06)',border:'1px solid rgba(255,255,255,0.1)'}}/>
-                <div className="flex gap-2">
-                  <button onClick={()=>setShowSaveModal(false)} className="flex-1 py-2.5 rounded-xl text-gray-400 text-sm font-semibold" style={{background:'rgba(255,255,255,0.05)'}}>Annuler</button>
-                  <button onClick={()=>{const v=document.getElementById('pl-name-input')?.value?.trim();if(v)savePlaylist(v);}} className="flex-1 py-2.5 rounded-xl text-white text-sm font-bold" style={{background:'linear-gradient(135deg,#0e7490,#7c3aed)'}}>
-                    <Save className="w-3.5 h-3.5 inline mr-1.5"/>Sauvegarder
-                  </button>
+              <div className="w-full max-w-sm rounded-2xl overflow-hidden shadow-2xl"
+                style={{background:'rgba(6,6,20,0.98)',border:'1px solid rgba(255,255,255,0.08)',backdropFilter:'blur(32px)',boxShadow:'0 32px 80px rgba(0,0,0,0.8),0 0 0 1px rgba(6,182,212,0.08)'}}>
+                {/* Header gradient line */}
+                <div className="h-px w-full" style={{background:'linear-gradient(90deg,transparent,rgba(6,182,212,0.6),rgba(168,85,247,0.6),transparent)'}}/>
+                <div className="p-6">
+                  {/* Icon + title */}
+                  <div className="flex items-center gap-3 mb-4">
+                    <div className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0"
+                      style={{background:'linear-gradient(135deg,rgba(6,182,212,0.15),rgba(168,85,247,0.15))',border:'1px solid rgba(255,255,255,0.08)'}}>
+                      <ListMusic className="w-5 h-5 text-cyan-400"/>
+                    </div>
+                    <div>
+                      <h3 className="text-white font-black text-base leading-tight">Nouvelle playlist</h3>
+                      <p className="text-gray-600 text-xs mt-0.5">{selectedIds.size} fichier{selectedIds.size>1?'s':''} sélectionné{selectedIds.size>1?'s':''}</p>
+                    </div>
+                  </div>
+                  {/* Input */}
+                  <div className="relative mb-4">
+                    <input type="text" placeholder="Nom de la playlist…" autoFocus
+                      onKeyDown={e=>e.key==='Enter'&&e.target.value.trim()&&savePlaylist(e.target.value.trim())}
+                      id="pl-name-input"
+                      className="w-full rounded-xl px-4 py-3 text-white text-sm placeholder-gray-700 focus:outline-none pr-10 transition-all"
+                      style={{background:'rgba(255,255,255,0.05)',border:'1px solid rgba(255,255,255,0.08)',caretColor:'#22d3ee'}}
+                      onFocus={e=>{e.target.style.borderColor='rgba(6,182,212,0.4)';e.target.style.boxShadow='0 0 0 3px rgba(6,182,212,0.06)';}}
+                      onBlur={e=>{e.target.style.borderColor='rgba(255,255,255,0.08)';e.target.style.boxShadow='none';}}/>
+                    <Music2 className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-700 pointer-events-none"/>
+                  </div>
+                  {/* Actions */}
+                  <div className="flex gap-2">
+                    <button onClick={()=>setShowSaveModal(false)}
+                      className="flex-1 py-2.5 rounded-xl text-gray-500 text-sm font-semibold transition-all hover:text-gray-300"
+                      style={{background:'rgba(255,255,255,0.04)',border:'1px solid rgba(255,255,255,0.06)'}}>
+                      Annuler
+                    </button>
+                    <button onClick={()=>{const v=document.getElementById('pl-name-input')?.value?.trim();if(v)savePlaylist(v);}}
+                      className="flex-1 py-2.5 rounded-xl text-white text-sm font-bold transition-all hover:brightness-110 flex items-center justify-center gap-2"
+                      style={{background:'linear-gradient(135deg,#0e7490,#7c3aed)',boxShadow:'0 4px 16px rgba(6,182,212,0.25)'}}>
+                      <Save className="w-3.5 h-3.5"/>Sauvegarder
+                    </button>
+                  </div>
                 </div>
+                <div className="h-px w-full" style={{background:'linear-gradient(90deg,transparent,rgba(168,85,247,0.3),transparent)'}}/>
               </div>
             </motion.div>
           </>

@@ -34,13 +34,15 @@ import {
    CSS BRAND EFFECTS
    ══════════════════════════════════════════════════════════════════════════ */
 const BRAND_STYLES = `
-  @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&display=swap');
+  @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&family=Syne:wght@400;600;700;800&display=swap');
+
+  /* ── Keyframes ── */
   @keyframes brandShimmer {
     0%   { background-position: 0% 50%; }
     50%  { background-position: 100% 50%; }
     100% { background-position: 0% 50%; }
   }
-  @keyframes nsGradientShift {
+  @keyframes auroraShift {
     0%   { background-position: 0% 50%; }
     50%  { background-position: 100% 50%; }
     100% { background-position: 0% 50%; }
@@ -57,18 +59,46 @@ const BRAND_STYLES = `
     0%,100%{ opacity:1; transform:scale(1); box-shadow:0 0 6px #22d3ee,0 0 12px rgba(6,182,212,0.6); }
     50%    { opacity:0.5; transform:scale(0.7); box-shadow:0 0 3px #a855f7; }
   }
-  @keyframes borderFlow {
-    0%   { background-position: 0% 50%; }
-    100% { background-position: 200% 50%; }
-  }
   @keyframes particleFloat {
     0%,100%{ transform:translateY(0) translateX(0); opacity:0.7; }
-    33%    { transform:translateY(-6px) translateX(3px); opacity:1; }
-    66%    { transform:translateY(-3px) translateX(-2px); opacity:0.5; }
+    33%    { transform:translateY(-8px) translateX(4px); opacity:1; }
+    66%    { transform:translateY(-4px) translateX(-3px); opacity:0.5; }
+  }
+  @keyframes pulseRing {
+    0%   { transform: scale(1); opacity: 0.6; }
+    100% { transform: scale(1.8); opacity: 0; }
+  }
+  @keyframes livebeat {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50%      { opacity: 0.4; transform: scale(0.85); }
+  }
+  @keyframes msgSlide {
+    from { opacity: 0; transform: translateY(6px) scale(0.97); }
+    to   { opacity: 1; transform: translateY(0) scale(1); }
+  }
+  @keyframes borderGlow {
+    0%, 100% { border-color: rgba(6,182,212,0.2); box-shadow: 0 0 0 rgba(6,182,212,0); }
+    50%      { border-color: rgba(168,85,247,0.35); box-shadow: 0 0 20px rgba(168,85,247,0.08); }
+  }
+  @keyframes scanH {
+    0%   { transform: translateY(-100%); }
+    100% { transform: translateY(600%); }
+  }
+  @keyframes npWave {
+    0%,100% { height: 4px; }
+    50%     { height: 18px; }
+  }
+  @keyframes fadeUp {
+    from { opacity:0; transform: translateY(12px); }
+    to   { opacity:1; transform: translateY(0); }
   }
 
+  /* ── Global typography ── */
+  .lr-ui { font-family: 'Syne', system-ui, sans-serif; }
+
+  /* ── Brand ── */
   .nova-brand {
-    font-family: 'Orbitron', 'Share Tech Mono', 'Courier New', monospace;
+    font-family: 'Orbitron', monospace;
     font-weight: 900;
     letter-spacing: 0.14em;
     background: linear-gradient(90deg,#22d3ee 0%,#a855f7 35%,#f0abfc 55%,#22d3ee 80%,#06b6d4 100%);
@@ -78,62 +108,494 @@ const BRAND_STYLES = `
     background-clip: text;
     animation: brandShimmer 3.5s ease infinite, brandGlow 3s ease-in-out infinite;
   }
-  .nova-brand-sm {
-    font-size: clamp(13px, 3.5vw, 18px);
-  }
-  .nova-brand-lg {
-    font-size: 13px;
-  }
+  .nova-brand-sm { font-size: clamp(13px, 3.5vw, 18px); }
+  .nova-brand-lg { font-size: 13px; }
   .nova-scan-line {
     position: absolute; top:0; left:0; right:0; bottom:0;
     background: linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.12) 50%, transparent 100%);
     animation: brandScan 4s ease-in-out infinite;
-    pointer-events: none; border-radius: inherit;
-    overflow: hidden;
+    pointer-events: none; border-radius: inherit; overflow: hidden;
   }
   .nova-dot {
     display: inline-block; width:6px; height:6px; border-radius:50%;
     background: #22d3ee;
     animation: brandDot 1.5s ease-in-out infinite;
   }
+  .nova-particle {
+    position: absolute; width:3px; height:3px; border-radius:50%;
+    animation: particleFloat ease-in-out infinite;
+  }
+
+  /* ── Page background ── */
+  .lr-bg {
+    background: #03030d;
+    min-height: 100vh;
+    position: relative;
+    overflow: hidden;
+  }
+  .lr-bg::before {
+    content: '';
+    position: fixed; inset: 0;
+    background:
+      radial-gradient(ellipse 80% 50% at 15% 10%, rgba(6,182,212,0.07) 0%, transparent 60%),
+      radial-gradient(ellipse 60% 40% at 85% 20%, rgba(168,85,247,0.07) 0%, transparent 55%),
+      radial-gradient(ellipse 50% 60% at 50% 90%, rgba(6,182,212,0.04) 0%, transparent 55%);
+    pointer-events: none; z-index: 0;
+    animation: auroraShift 12s ease infinite;
+  }
+  .lr-bg > * { position: relative; z-index: 1; }
+
+  /* ── Top bar ── */
+  .lr-topbar {
+    background: rgba(3,3,18,0.88);
+    backdrop-filter: blur(32px) saturate(2);
+    border-bottom: 1px solid rgba(255,255,255,0.05);
+    position: relative;
+  }
+  .lr-topbar::after {
+    content: '';
+    position: absolute; bottom: 0; left: 0; right: 0; height: 1px;
+    background: linear-gradient(90deg, transparent 0%, rgba(6,182,212,0.4) 30%, rgba(168,85,247,0.4) 70%, transparent 100%);
+  }
+
+  /* ── Brand bar mobile ── */
   .nova-mobile-bar {
     position: relative; overflow: hidden;
-    background: linear-gradient(135deg, rgba(6,182,212,0.07) 0%, rgba(168,85,247,0.07) 100%);
-    border-bottom: 0 !important;
+    background: linear-gradient(135deg, rgba(6,182,212,0.05) 0%, rgba(168,85,247,0.05) 100%);
   }
   .nova-mobile-bar::before {
     content:''; position:absolute; bottom:0; left:0; right:0; height:1px;
     background: linear-gradient(90deg, transparent, rgba(6,182,212,0.5), rgba(168,85,247,0.5), transparent);
   }
-  .nova-particle {
-    position: absolute; width:3px; height:3px; border-radius:50%;
-    animation: particleFloat ease-in-out infinite;
+
+  /* ── Now Playing ── */
+  .lr-nowplaying {
+    background: rgba(3,3,18,0.92);
+    backdrop-filter: blur(24px) saturate(1.8);
+    border-bottom: 1px solid rgba(6,182,212,0.1);
+    position: relative;
+    animation: borderGlow 4s ease-in-out infinite;
   }
+  .lr-nowplaying::before {
+    content: '';
+    position: absolute; top: 0; left: 0; right: 0; height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(6,182,212,0.6), rgba(168,85,247,0.3), transparent);
+  }
+
+  /* ── Chat area ── */
+  .lr-chat-bg {
+    background: transparent;
+  }
+
+  /* ── Message bubbles ── */
+  .lr-msg-mine {
+    background: linear-gradient(135deg, rgba(6,182,212,0.9) 0%, rgba(139,92,246,0.85) 100%);
+    box-shadow: 0 4px 20px rgba(6,182,212,0.2), inset 0 1px 0 rgba(255,255,255,0.15);
+    animation: msgSlide 0.2s ease-out;
+  }
+  .lr-msg-other {
+    background: rgba(255,255,255,0.05);
+    border: 1px solid rgba(255,255,255,0.08);
+    backdrop-filter: blur(12px);
+    box-shadow: 0 2px 12px rgba(0,0,0,0.3);
+    animation: msgSlide 0.2s ease-out;
+  }
+
+  /* ── Input area ── */
+  .lr-input-zone {
+    background: rgba(3,3,18,0.95);
+    backdrop-filter: blur(32px);
+    border-top: 1px solid rgba(255,255,255,0.06);
+    position: relative;
+  }
+  .lr-input-zone::before {
+    content: '';
+    position: absolute; top: 0; left: 0; right: 0; height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(6,182,212,0.3), rgba(168,85,247,0.3), transparent);
+  }
+  .lr-textarea {
+    background: rgba(255,255,255,0.04) !important;
+    border: 1px solid rgba(255,255,255,0.08) !important;
+    font-family: 'Syne', system-ui, sans-serif !important;
+    transition: border-color 0.2s, box-shadow 0.2s !important;
+  }
+  .lr-textarea:focus {
+    border-color: rgba(6,182,212,0.4) !important;
+    box-shadow: 0 0 0 3px rgba(6,182,212,0.06) !important;
+  }
+
+  /* ── Side panel ── */
+  .lr-side {
+    background: rgba(5,5,20,0.92);
+    backdrop-filter: blur(28px) saturate(1.6);
+    border-left: 1px solid rgba(255,255,255,0.05);
+  }
+  .lr-side-tab-active {
+    background: rgba(6,182,212,0.1);
+    color: #22d3ee;
+    border-bottom: 2px solid #22d3ee;
+  }
+
+  /* ── Participant card ── */
+  .lr-participant {
+    background: rgba(255,255,255,0.03);
+    border: 1px solid rgba(255,255,255,0.05);
+    transition: all 0.2s;
+  }
+  .lr-participant:hover {
+    background: rgba(6,182,212,0.06);
+    border-color: rgba(6,182,212,0.15);
+  }
+
+  /* ── Host controls card ── */
+  .lr-ctrl-card {
+    background: rgba(255,255,255,0.03);
+    border: 1px solid rgba(255,255,255,0.06);
+    border-radius: 16px;
+    padding: 16px;
+    animation: borderGlow 5s ease-in-out infinite;
+  }
+  .lr-ctrl-btn {
+    background: rgba(255,255,255,0.04);
+    border: 1px solid rgba(255,255,255,0.07);
+    color: rgba(255,255,255,0.75);
+    transition: all 0.2s;
+    font-family: 'Syne', system-ui, sans-serif;
+  }
+  .lr-ctrl-btn:hover {
+    background: rgba(6,182,212,0.08);
+    border-color: rgba(6,182,212,0.25);
+    color: #22d3ee;
+  }
+  .lr-ctrl-btn-danger {
+    background: rgba(239,68,68,0.07);
+    border: 1px solid rgba(239,68,68,0.2);
+    color: #f87171;
+    transition: all 0.2s;
+    font-family: 'Syne', system-ui, sans-serif;
+  }
+  .lr-ctrl-btn-danger:hover {
+    background: rgba(239,68,68,0.15);
+    border-color: rgba(239,68,68,0.4);
+  }
+
+  /* ── Live badge ── */
+  .lr-live-badge {
+    display: inline-flex; align-items: center; gap: 5px;
+    background: rgba(34,197,94,0.1);
+    border: 1px solid rgba(34,197,94,0.3);
+    padding: 2px 8px; border-radius: 99px;
+    font-size: 10px; font-weight: 700; letter-spacing: 0.1em;
+    color: #4ade80; font-family: 'Orbitron', monospace;
+  }
+  .lr-live-dot {
+    width: 6px; height: 6px; border-radius: 50%;
+    background: #4ade80;
+    animation: livebeat 1s ease-in-out infinite;
+    box-shadow: 0 0 6px #4ade80;
+  }
+
+  /* ── Queue item ── */
+  .lr-queue-active {
+    background: rgba(6,182,212,0.07);
+    border: 1px solid rgba(6,182,212,0.18);
+  }
+  .lr-queue-item {
+    background: transparent;
+    border: 1px solid transparent;
+    transition: all 0.18s;
+  }
+  .lr-queue-item:hover {
+    background: rgba(255,255,255,0.04);
+    border-color: rgba(255,255,255,0.07);
+  }
+
+  /* ── Info card ── */
+  .lr-info-card {
+    background: rgba(255,255,255,0.02);
+    border: 1px solid rgba(255,255,255,0.05);
+    border-radius: 14px;
+    padding: 14px;
+  }
+
+  /* ── System message ── */
+  .lr-sys-msg {
+    display: flex; align-items: center; justify-content: center;
+    gap: 8px; margin: 6px 0;
+  }
+  .lr-sys-line {
+    flex: 1; height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.07), transparent);
+  }
+  .lr-sys-text {
+    font-size: 11px; color: rgba(255,255,255,0.3);
+    padding: 2px 10px;
+    background: rgba(255,255,255,0.03);
+    border: 1px solid rgba(255,255,255,0.06);
+    border-radius: 99px;
+    font-family: 'Syne', system-ui, sans-serif;
+  }
+
+  /* ── Scan lines overlay ── */
+  .lr-scanlines::after {
+    content: '';
+    position: absolute; inset: 0;
+    background: repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,0,0,0.04) 2px, rgba(0,0,0,0.04) 4px);
+    pointer-events: none; z-index: 10;
+  }
+
+  /* ── EQ bars ── */
+  .lr-np-bar {
+    display: inline-block;
+    width: 3px; border-radius: 2px;
+    background: linear-gradient(to top, #06b6d4, #a855f7);
+    animation: npWave ease-in-out infinite;
+  }
+
+  /* ── Empty state ── */
+  .lr-empty-icon {
+    width: 64px; height: 64px; border-radius: 20px;
+    background: rgba(255,255,255,0.03);
+    border: 1px solid rgba(255,255,255,0.07);
+    display: flex; align-items: center; justify-content: center;
+    margin: 0 auto 16px;
+  }
+
+  /* ── Room card (lobby) ── */
+  .lr-room-card {
+    background: rgba(255,255,255,0.03);
+    border: 1px solid rgba(34,197,94,0.15);
+    backdrop-filter: blur(20px);
+    border-radius: 20px;
+    overflow: hidden;
+    transition: all 0.22s;
+    position: relative;
+  }
+  .lr-room-card::before {
+    content: '';
+    position: absolute; top: 0; left: 0; right: 0; height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(34,197,94,0.4), transparent);
+  }
+  .lr-room-card:hover {
+    border-color: rgba(34,197,94,0.35);
+    background: rgba(34,197,94,0.04);
+    transform: translateY(-3px);
+    box-shadow: 0 12px 40px rgba(34,197,94,0.08);
+  }
+
+  /* ── Mobile bottom sheet ── */
+  .lr-sheet {
+    background: rgba(5,5,22,0.97);
+    backdrop-filter: blur(32px);
+    border-top: 1px solid rgba(255,255,255,0.07);
+  }
+
+  /* ── Confirm modal ── */
+  .lr-modal {
+    background: rgba(8,8,28,0.98);
+    border: 1px solid rgba(255,255,255,0.08);
+    backdrop-filter: blur(32px);
+    border-radius: 24px;
+    box-shadow: 0 32px 80px rgba(0,0,0,0.7), 0 0 0 1px rgba(255,255,255,0.04);
+  }
+
+
+  /* ── Top bar glass (active room) ── */
   .room-glass-bar {
-    background: rgba(3,3,13,0.92) !important;
-    backdrop-filter: blur(32px) saturate(1.8) !important;
-    border-bottom: 1px solid rgba(255,255,255,0.06) !important;
+    background: rgba(3,3,18,0.92);
+    backdrop-filter: blur(32px) saturate(2);
+    border-bottom: 1px solid rgba(255,255,255,0.05);
     position: relative;
   }
   .room-glass-bar::after {
-    content:''; position:absolute; bottom:0; left:0; right:0; height:1px;
-    background: linear-gradient(90deg, transparent, rgba(6,182,212,0.3), rgba(168,85,247,0.3), transparent);
+    content: '';
+    position: absolute; bottom: 0; left: 0; right: 0; height: 1px;
+    background: linear-gradient(90deg, transparent 0%, rgba(6,182,212,0.5) 30%, rgba(168,85,247,0.5) 70%, transparent 100%);
   }
+
+  /* ── Now Playing glass bar ── */
   .nowplaying-glass {
-    background: rgba(3,3,13,0.88) !important;
-    backdrop-filter: blur(24px) saturate(1.6) !important;
-    border-bottom: 1px solid rgba(6,182,212,0.12) !important;
+    background: linear-gradient(135deg, rgba(6,182,212,0.06) 0%, rgba(168,85,247,0.04) 100%);
+    backdrop-filter: blur(24px);
+    border-bottom: 1px solid rgba(6,182,212,0.12);
+    position: relative;
+    box-shadow: inset 0 -1px 0 rgba(168,85,247,0.08);
   }
-  .chat-glass-input {
-    background: rgba(3,3,13,0.95) !important;
-    backdrop-filter: blur(28px) !important;
+  .nowplaying-glass::before {
+    content: '';
+    position: absolute; top: 0; left: 0; right: 0; height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(6,182,212,0.7), rgba(168,85,247,0.4), transparent);
+    animation: borderGlow 4s ease-in-out infinite;
   }
-  .side-panel-glass {
-    background: rgba(5,5,16,0.92) !important;
-    backdrop-filter: blur(24px) !important;
-    border-left: 1px solid rgba(255,255,255,0.06) !important;
+
+  /* ── Side panel redesign ── */
+  .lr-side {
+    background: rgba(4,4,18,0.96);
+    backdrop-filter: blur(32px) saturate(1.6);
+    border-left: 1px solid rgba(255,255,255,0.05);
   }
-`;
+  .lr-side-tabs {
+    background: rgba(3,3,15,0.8);
+    border-bottom: 1px solid rgba(255,255,255,0.05);
+    padding: 8px;
+    gap: 4px;
+    display: flex;
+  }
+  .lr-side-tab {
+    flex: 1; display: flex; flex-direction: column; align-items: center;
+    gap: 4px; padding: 8px 4px; border-radius: 12px;
+    font-size: 10px; font-weight: 700; letter-spacing: 0.02em;
+    color: rgba(255,255,255,0.35);
+    transition: all 0.18s; cursor: pointer; border: 1px solid transparent;
+  }
+  .lr-side-tab:hover {
+    background: rgba(255,255,255,0.04);
+    color: rgba(255,255,255,0.6);
+  }
+  .lr-side-tab.active-participants {
+    background: rgba(34,197,94,0.08);
+    border-color: rgba(34,197,94,0.2);
+    color: #4ade80;
+  }
+  .lr-side-tab.active-queue {
+    background: rgba(6,182,212,0.08);
+    border-color: rgba(6,182,212,0.2);
+    color: #22d3ee;
+  }
+  .lr-side-tab.active-controls {
+    background: rgba(168,85,247,0.08);
+    border-color: rgba(168,85,247,0.2);
+    color: #c084fc;
+  }
+
+  /* ── Participant card redesign ── */
+  .lr-participant {
+    background: rgba(255,255,255,0.02);
+    border: 1px solid rgba(255,255,255,0.04);
+    border-radius: 14px;
+    padding: 8px 10px;
+    transition: all 0.18s;
+    display: flex; align-items: center; gap: 10px;
+  }
+  .lr-participant:hover {
+    background: rgba(34,197,94,0.05);
+    border-color: rgba(34,197,94,0.12);
+  }
+  .lr-participant.is-host {
+    background: rgba(251,191,36,0.04);
+    border-color: rgba(251,191,36,0.12);
+  }
+
+  /* ── Host control buttons redesign ── */
+  .lr-ctrl-card {
+    background: rgba(168,85,247,0.04);
+    border: 1px solid rgba(168,85,247,0.12);
+    border-radius: 16px;
+    padding: 14px;
+    position: relative;
+    overflow: hidden;
+  }
+  .lr-ctrl-card::before {
+    content: '';
+    position: absolute; top: 0; left: 0; right: 0; height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(168,85,247,0.5), transparent);
+  }
+  .lr-ctrl-btn {
+    background: rgba(255,255,255,0.04);
+    border: 1px solid rgba(255,255,255,0.07);
+    color: rgba(255,255,255,0.7);
+    transition: all 0.18s;
+    font-family: 'Syne', system-ui, sans-serif;
+    border-radius: 12px;
+    padding: 10px 14px;
+    width: 100%;
+    display: flex; align-items: center; gap: 8px;
+    font-size: 13px; font-weight: 600;
+  }
+  .lr-ctrl-btn:hover {
+    background: rgba(6,182,212,0.08);
+    border-color: rgba(6,182,212,0.25);
+    color: #22d3ee;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 16px rgba(6,182,212,0.1);
+  }
+  .lr-ctrl-btn-danger {
+    background: rgba(239,68,68,0.06);
+    border: 1px solid rgba(239,68,68,0.18);
+    color: #f87171;
+    transition: all 0.18s;
+    font-family: 'Syne', system-ui, sans-serif;
+    border-radius: 12px;
+    padding: 10px 14px;
+    width: 100%;
+    display: flex; align-items: center; gap: 8px;
+    font-size: 13px; font-weight: 600;
+  }
+  .lr-ctrl-btn-danger:hover {
+    background: rgba(239,68,68,0.12);
+    border-color: rgba(239,68,68,0.35);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 16px rgba(239,68,68,0.15);
+  }
+
+  /* ── Queue item refined ── */
+  .lr-queue-active {
+    background: linear-gradient(135deg, rgba(6,182,212,0.08) 0%, rgba(168,85,247,0.05) 100%);
+    border: 1px solid rgba(6,182,212,0.2);
+    box-shadow: inset 0 0 0 1px rgba(6,182,212,0.05);
+  }
+  .lr-queue-item {
+    background: transparent;
+    border: 1px solid transparent;
+    transition: all 0.15s;
+    border-radius: 12px;
+  }
+  .lr-queue-item:hover {
+    background: rgba(255,255,255,0.03);
+    border-color: rgba(255,255,255,0.06);
+  }
+
+  /* ── Chat input refined ── */
+  .lr-textarea {
+    background: rgba(255,255,255,0.04) !important;
+    border: 1px solid rgba(255,255,255,0.07) !important;
+    font-family: 'Syne', system-ui, sans-serif !important;
+    transition: border-color 0.2s, box-shadow 0.2s !important;
+    border-radius: 16px !important;
+  }
+  .lr-textarea:focus {
+    border-color: rgba(6,182,212,0.35) !important;
+    box-shadow: 0 0 0 3px rgba(6,182,212,0.05) !important;
+    background: rgba(6,182,212,0.03) !important;
+  }
+
+  /* ── Mobile sheet refined ── */
+  .lr-sheet {
+    background: linear-gradient(180deg, rgba(6,6,22,0.99) 0%, rgba(4,4,16,1) 100%);
+    backdrop-filter: blur(32px);
+    border-top: 1px solid rgba(255,255,255,0.07);
+    box-shadow: 0 -20px 60px rgba(0,0,0,0.6);
+  }
+
+  /* ── Confirm modal refined ── */
+  .lr-modal {
+    background: linear-gradient(160deg, rgba(8,8,28,0.99) 0%, rgba(5,5,20,0.99) 100%);
+    border: 1px solid rgba(255,255,255,0.08);
+    backdrop-filter: blur(40px);
+    border-radius: 24px;
+    box-shadow: 0 40px 80px rgba(0,0,0,0.8), 0 0 0 1px rgba(6,182,212,0.05);
+    overflow: hidden;
+    position: relative;
+  }
+  .lr-modal::before {
+    content: '';
+    position: absolute; top: 0; left: 0; right: 0; height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(6,182,212,0.5), rgba(168,85,247,0.4), transparent);
+  }
+
+  /* ── Scrollbar hide ── */
+  .scrollbar-hide::-webkit-scrollbar { display: none; }
+  .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
 
 /* ══════════════════════════════════════════════════════════════════════════
    CONSTANTES
@@ -351,22 +813,28 @@ const RoomCard = ({ room, onJoin }) => {
 /* Item de la file d'attente */
 const QueueItem = ({ song, index, isHost, isNowPlaying, onPlay, onRemove }) => (
   <motion.div layout initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 10 }}
-    className={`flex items-center gap-3 p-2.5 rounded-xl group transition-all ${isNowPlaying ? 'bg-cyan-500/10 border border-cyan-500/20' : 'hover:bg-gray-800'}`}>
+    className={`flex items-center gap-3 p-2.5 rounded-xl group transition-all ${isNowPlaying ? 'lr-queue-active' : 'lr-queue-item'}`}>
     <span className="w-5 text-gray-600 text-xs font-mono flex-shrink-0 text-center">
-      {isNowPlaying ? <Eq active size={4} /> : index + 1}
+      {isNowPlaying ? (
+        <div className="flex items-end gap-[2px] h-4 justify-center">
+          {[0,1,2].map(i => (
+            <div key={i} className="lr-np-bar w-[3px]" style={{animationDuration:`${0.7+i*0.15}s`,animationDelay:`${i*0.1}s`,height:'4px'}}/>
+          ))}
+        </div>
+      ) : index + 1}
     </span>
     {song.cover_url
       ? <img src={song.cover_url} alt={song.title} className="w-8 h-8 rounded-lg object-cover flex-shrink-0" />
-      : <div className="w-8 h-8 rounded-lg bg-gray-700 flex items-center justify-center flex-shrink-0"><Music className="w-4 h-4 text-gray-500" /></div>
+      : <div className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0" style={{background:'rgba(255,255,255,0.05)'}}><Music className="w-4 h-4" style={{color:'rgba(255,255,255,0.3)'}} /></div>
     }
     <div className="flex-1 min-w-0">
-      <p className={`text-xs font-medium truncate ${isNowPlaying ? 'text-cyan-300' : 'text-white'}`}><NoTranslate className="truncate"><NoTranslate className="truncate">{song.title}</NoTranslate></NoTranslate></p>
-      <p className="text-gray-500 text-xs truncate"><NoTranslate className="truncate"><NoTranslate className="truncate">{song.artist}</NoTranslate></NoTranslate></p>
+      <p className={`text-xs font-semibold truncate ${isNowPlaying ? 'text-cyan-300' : 'text-white'}`}><NoTranslate className="truncate"><NoTranslate className="truncate">{song.title}</NoTranslate></NoTranslate></p>
+      <p className="text-[10px] truncate" style={{color:'rgba(255,255,255,0.3)'}}><NoTranslate className="truncate"><NoTranslate className="truncate">{song.artist}</NoTranslate></NoTranslate></p>
     </div>
     {isHost && (
-      <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-        {!isNowPlaying && <button onClick={() => onPlay(song)} className="p-1 text-gray-400 hover:text-cyan-400 transition-colors"><Play className="w-3.5 h-3.5" /></button>}
-        <button onClick={() => onRemove(song.id)} className="p-1 text-gray-400 hover:text-red-400 transition-colors"><X className="w-3.5 h-3.5" /></button>
+      <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-all">
+        {!isNowPlaying && <button onClick={() => onPlay(song)} className="p-1.5 rounded-lg transition-all hover:bg-cyan-500/10 text-gray-600 hover:text-cyan-400"><Play className="w-3.5 h-3.5" /></button>}
+        <button onClick={() => onRemove(song.id)} className="p-1.5 rounded-lg transition-all hover:bg-red-500/10 text-gray-600 hover:text-red-400"><X className="w-3.5 h-3.5" /></button>
       </div>
     )}
   </motion.div>
@@ -374,44 +842,57 @@ const QueueItem = ({ song, index, isHost, isNowPlaying, onPlay, onRemove }) => (
 
 /* Message de chat */
 const ChatMsg = ({ m, isMine, currentUserId, isEditing, editContent, onStartEdit, onSaveEdit, onCancelEdit, onDelete, onChangeEdit }) => (
-  <motion.div layout initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.18 }}
-    className={`flex gap-2 ${isMine ? 'justify-end' : 'justify-start'} group`}>
-    {!isMine && <Avatar user={m.user} size={7} pulse />}
-    <div className={`max-w-[78%] ${isMine ? 'text-right' : 'text-left'}`}>
-      {!isMine && <p className="text-xs text-gray-500 mb-1 ml-1"><NoTranslate>{m.user?.username || 'Anonyme'}</NoTranslate></p>}
-      <div className={`inline-block px-3.5 py-2.5 rounded-2xl text-sm leading-relaxed ${isMine ? 'bg-gradient-to-br from-cyan-500 to-fuchsia-500 text-white rounded-tr-sm' : 'bg-gray-800 text-gray-100 rounded-tl-sm'}`}>
+  <motion.div layout initial={{ opacity: 0, y: 10, scale: 0.96 }} animate={{ opacity: 1, y: 0, scale: 1 }} transition={{ duration: 0.2, ease: 'easeOut' }}
+    className={`flex gap-2.5 ${isMine ? 'justify-end' : 'justify-start'} group`}>
+    {!isMine && (
+      <div className="flex-shrink-0 mt-0.5">
+        <Avatar user={m.user} size={7} pulse />
+      </div>
+    )}
+    <div className={`max-w-[76%] flex flex-col ${isMine ? 'items-end' : 'items-start'}`}>
+      {!isMine && (
+        <p className="text-[11px] font-semibold mb-1 ml-1" style={{color:'rgba(6,182,212,0.7)'}}>
+          <NoTranslate>{m.user?.username || 'Anonyme'}</NoTranslate>
+        </p>
+      )}
+      <div className={`relative px-4 py-2.5 ${isMine
+        ? 'lr-msg-mine text-white rounded-2xl rounded-tr-sm'
+        : 'lr-msg-other text-gray-100 rounded-2xl rounded-tl-sm'}`}>
         {isEditing ? (
           <div className="flex items-center gap-2">
             <input value={editContent} onChange={e => onChangeEdit(e.target.value)}
               onKeyDown={e => { if (e.key === 'Enter') onSaveEdit(); if (e.key === 'Escape') onCancelEdit(); }}
               className="bg-black/20 border border-white/30 rounded-lg px-2 py-1 text-white text-sm w-44 focus:outline-none focus:border-white/60"
               autoFocus />
-            <button onClick={onSaveEdit} className="text-green-300 hover:text-green-200"><CheckCircle2 className="w-4 h-4" /></button>
-            <button onClick={onCancelEdit} className="text-red-300 hover:text-red-200"><XCircle className="w-4 h-4" /></button>
+            <button onClick={onSaveEdit} className="text-green-300 hover:text-green-200 transition-colors"><CheckCircle2 className="w-4 h-4" /></button>
+            <button onClick={onCancelEdit} className="text-red-300 hover:text-red-200 transition-colors"><XCircle className="w-4 h-4" /></button>
           </div>
         ) : (
-          <><p className="break-words whitespace-pre-wrap">{m.content}</p>{m.is_edited && <p className="text-xs opacity-50 mt-0.5">modifié</p>}</>
+          <><p className="break-words whitespace-pre-wrap text-sm leading-relaxed">{m.content}</p>
+          {m.is_edited && <p className="text-[10px] opacity-40 mt-0.5 italic">modifié</p>}</>
         )}
       </div>
-      <div className={`flex items-center gap-1.5 mt-1 ${isMine ? 'justify-end' : 'justify-start'}`}>
-        <span className="text-[10px] text-gray-600">{relTime(m.created_at)}</span>
+      <div className={`flex items-center gap-2 mt-1 px-1 ${isMine ? 'flex-row-reverse' : ''}`}>
+        <span className="text-[10px]" style={{color:'rgba(255,255,255,0.2)'}}>{relTime(m.created_at)}</span>
         {isMine && !isEditing && (
-          <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-            <button onClick={onStartEdit} className="text-gray-600 hover:text-gray-300"><Pencil className="w-3 h-3" /></button>
-            <button onClick={onDelete} className="text-gray-600 hover:text-red-400"><Trash2 className="w-3 h-3" /></button>
+          <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-all">
+            <button onClick={onStartEdit} className="p-1 rounded-md transition-colors hover:bg-white/10 text-gray-600 hover:text-gray-300"><Pencil className="w-3 h-3" /></button>
+            <button onClick={onDelete} className="p-1 rounded-md transition-colors hover:bg-red-500/10 text-gray-600 hover:text-red-400"><Trash2 className="w-3 h-3" /></button>
           </div>
         )}
       </div>
     </div>
-    {isMine && <Avatar user={m.user} size={7} />}
+    {isMine && <div className="flex-shrink-0 mt-0.5"><Avatar user={m.user} size={7} /></div>}
   </motion.div>
 );
 
 const SysMsg = ({ text, icon: Icon = Zap }) => (
-  <div className="flex items-center justify-center gap-2 my-2">
-    <div className="h-px flex-1 bg-gray-800" />
-    <div className="flex items-center gap-1.5 text-xs text-gray-600 px-2"><Icon className="w-3 h-3" />{text}</div>
-    <div className="h-px flex-1 bg-gray-800" />
+  <div className="lr-sys-msg">
+    <div className="lr-sys-line" />
+    <div className="lr-sys-text flex items-center gap-1.5">
+      <Icon className="w-3 h-3 opacity-60" />{text}
+    </div>
+    <div className="lr-sys-line" />
   </div>
 );
 
@@ -1711,11 +2192,16 @@ const LiveRoomPage = () => {
               {/* Brand desktop */}
               <BrandHeader variant="desktop" />
               {/* Tabs */}
-              <div className="flex-shrink-0 flex bg-gray-900/80 border-b border-white/[0.05] p-1 gap-1">
-                {[['participants', '👥'], ['queue', '🎵'], ['controls', '⚙️']].map(([id, emoji]) => (
+              <div className="lr-side-tabs flex-shrink-0">
+                {[
+                  ['participants','👥','Participants','active-participants'],
+                  ['queue','🎵','File','active-queue'],
+                  ['controls','⚙️','Contrôles','active-controls'],
+                ].map(([id,emoji,label,activeClass]) => (
                   <button key={id} onClick={() => setSideTab(id)}
-                    className={`flex-1 flex items-center justify-center py-1.5 rounded-lg text-xs font-medium transition-all ${sideTab === id ? 'bg-gray-800 text-white' : 'text-gray-500 hover:text-gray-300'}`}>
-                    {emoji}
+                    className={`lr-side-tab ${sideTab===id ? activeClass : ''}`}>
+                    <span className="text-base leading-none">{emoji}</span>
+                    <span>{label}</span>
                   </button>
                 ))}
               </div>
@@ -1728,16 +2214,30 @@ const LiveRoomPage = () => {
                       <span className="text-xs text-gray-600 bg-gray-800 px-2 py-0.5 rounded-full">{participants.length}/{MAX_PARTICIPANTS}</span>
                     </div>
                     {participants.length === 0
-                      ? <p className="text-gray-600 text-xs text-center py-6">En attente de participants…</p>
+                      ? (
+                        <div className="flex flex-col items-center justify-center py-10 text-center">
+                          <div className="w-12 h-12 rounded-2xl flex items-center justify-center mb-3" style={{background:'rgba(34,197,94,0.06)',border:'1px solid rgba(34,197,94,0.12)'}}>
+                            <Users className="w-5 h-5 text-green-500/40"/>
+                          </div>
+                          <p className="text-gray-600 text-xs">En attente de participants…</p>
+                        </div>
+                      )
                       : participants.map(p => (
-                        <div key={p.id} className="flex items-center gap-2.5 p-2 rounded-xl hover:bg-gray-800 transition-colors">
+                        <motion.div key={p.id} initial={{opacity:0,x:-8}} animate={{opacity:1,x:0}}
+                          className={`lr-participant mb-1.5 ${p.id===room?.host_id?'is-host':''}`}>
                           <Avatar user={p} size={7} pulse />
                           <div className="flex-1 min-w-0">
                             <p className="text-white text-xs font-semibold truncate"><NoTranslate>{p.username}</NoTranslate></p>
-                            {p.id === room?.host_id && <p className="text-amber-400 text-[10px]">Hôte</p>}
+                            {p.id === room?.host_id
+                              ? <p className="text-amber-400 text-[10px] flex items-center gap-1"><Crown className="w-2.5 h-2.5"/>Hôte</p>
+                              : <p className="text-gray-600 text-[10px]">Auditeur</p>}
                           </div>
-                          {p.id === room?.host_id && <Crown className="w-3.5 h-3.5 text-amber-400 flex-shrink-0" />}
-                        </div>
+                          {p.id === room?.host_id && (
+                            <motion.div animate={{rotate:[0,5,-5,0]}} transition={{duration:2,repeat:Infinity,ease:'easeInOut'}}>
+                              <Crown className="w-3.5 h-3.5 text-amber-400 flex-shrink-0" />
+                            </motion.div>
+                          )}
+                        </motion.div>
                       ))
                     }
                     <div className="mt-3 pt-3 border-t border-gray-800">
@@ -1775,34 +2275,32 @@ const LiveRoomPage = () => {
                 {sideTab === 'controls' && (
                   <div className="space-y-3">
                     {isHost && (
-                      <div className="bg-gray-900 border border-gray-800 rounded-2xl p-4">
+                      <div className="lr-ctrl-card">
                         <h3 className="text-white font-bold text-sm mb-3 flex items-center gap-2"><Crown className="w-4 h-4 text-amber-400" />Contrôles Hôte</h3>
                         <div className="space-y-2">
                           <button onClick={() => { setShowPicker(!showPicker); setShowPlaylists(false); }}
-                            className="w-full bg-gray-800 hover:bg-gray-700 text-white rounded-xl px-4 py-2.5 text-sm transition-all flex items-center gap-2">
-                            <Search className="w-4 h-4 text-cyan-400" />Chercher une musique
+                            className="lr-ctrl-btn">
+                            <Search className="w-4 h-4 text-cyan-400 flex-shrink-0" />Chercher une musique
                           </button>
                           <button onClick={() => { setShowPlaylists(!showPlaylists); if (!showPlaylists) loadMyPlaylists(); setShowPicker(false); }}
-                            className="w-full bg-gray-800 hover:bg-gray-700 text-white rounded-xl px-4 py-2.5 text-sm transition-all flex items-center gap-2">
-                            <BookOpen className="w-4 h-4 text-fuchsia-400" />Mes playlists
+                            className="lr-ctrl-btn">
+                            <BookOpen className="w-4 h-4 text-fuchsia-400 flex-shrink-0" />Mes playlists
                           </button>
                           <input ref={fileInputRef} type="file"
                             accept="audio/mpeg,audio/mp4,audio/ogg,audio/wav,audio/aac,audio/flac,audio/x-m4a,audio/*"
                             onChange={handleLocalFile} className="hidden" />
                           <button onClick={() => fileInputRef.current?.click()} disabled={uploadingLocal}
-                            className="w-full bg-gray-800 hover:bg-gray-700 text-white rounded-xl px-4 py-2.5 text-sm transition-all flex items-center gap-2 disabled:opacity-50">
+                            className="lr-ctrl-btn disabled:opacity-40">
                             <Upload className="w-4 h-4 text-green-400" />{uploadingLocal ? 'Upload en cours…' : 'Importer un fichier local'}
                           </button>
                           {queue.length > 0 && (
-                            <button onClick={skipToNext}
-                              className="w-full bg-gray-800 hover:bg-gray-700 text-white rounded-xl px-4 py-2.5 text-sm transition-all flex items-center gap-2">
-                              <SkipForward className="w-4 h-4 text-cyan-400" />Passer au suivant ({queue.length})
+                            <button onClick={skipToNext} className="lr-ctrl-btn">
+                              <SkipForward className="w-4 h-4 text-cyan-400 flex-shrink-0" />Passer au suivant ({queue.length})
                             </button>
                           )}
                           {canStop && (
-                            <button onClick={() => setConfirmModal('stop')}
-                              className="w-full bg-red-600/20 hover:bg-red-600/30 border border-red-500/30 text-red-400 rounded-xl px-4 py-2.5 text-sm transition-all flex items-center gap-2">
-                              <X className="w-4 h-4" />Terminer le live
+                            <button onClick={() => setConfirmModal('stop')} className="lr-ctrl-btn-danger">
+                              <X className="w-4 h-4 flex-shrink-0" />Terminer le live
                             </button>
                           )}
                         </div>
@@ -1813,11 +2311,11 @@ const LiveRoomPage = () => {
                     <AnimatePresence>
                       {showPicker && (
                         <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }}
-                          className="bg-gray-900 border border-gray-800 rounded-2xl p-4 overflow-hidden">
+                          className="lr-ctrl-card overflow-hidden">
                           <h3 className="text-white font-bold text-sm mb-3 flex items-center gap-2"><Search className="w-4 h-4 text-cyan-400" />Recherche</h3>
                           <input value={songSearch} onChange={e => setSongSearch(e.target.value)}
                             placeholder="Titre ou artiste…" autoFocus
-                            className="w-full bg-gray-800 border border-gray-700 text-white rounded-xl px-4 py-3 text-base mb-3 focus:outline-none focus:border-cyan-500 placeholder-gray-500 transition-colors" />
+                            className="lr-textarea w-full text-white px-4 py-3 text-sm mb-3 outline-none placeholder-gray-600" style={{borderRadius:14}} />
                           <div className="space-y-1 max-h-52 overflow-y-auto scrollbar-hide">
                             {songResults.map(s => (
                               <div key={s.id} className="flex items-center gap-2 p-2 rounded-xl hover:bg-gray-800 group transition-colors cursor-pointer">
@@ -1845,7 +2343,7 @@ const LiveRoomPage = () => {
                     <AnimatePresence>
                       {showPlaylists && (
                         <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }}
-                          className="bg-gray-900 border border-gray-800 rounded-2xl p-4 overflow-hidden">
+                          className="lr-ctrl-card overflow-hidden">
                           <h3 className="text-white font-bold text-sm mb-3 flex items-center gap-2"><BookOpen className="w-4 h-4 text-fuchsia-400" />Mes playlists</h3>
                           {loadingPlaylists
                             ? <div className="flex justify-center py-4"><Loader2 className="w-5 h-5 text-fuchsia-400 animate-spin" /></div>
@@ -1874,7 +2372,7 @@ const LiveRoomPage = () => {
                     </AnimatePresence>
 
                     {/* Infos room */}
-                    <div className="bg-gray-900 border border-gray-800 rounded-2xl p-4">
+                    <div className="lr-info-card">
                       <h3 className="text-white font-bold text-sm mb-3 flex items-center gap-2"><Zap className="w-4 h-4 text-cyan-400" />Infos</h3>
                       <div className="space-y-2 text-xs mb-3">
                         <div className="flex justify-between items-center"><span className="text-gray-500">Statut</span><ConnBadge status={channelStatus} /></div>
@@ -1882,11 +2380,11 @@ const LiveRoomPage = () => {
                         <div className="flex justify-between"><span className="text-gray-500">Visibilité</span><span className={room?.is_private ? 'text-amber-400' : 'text-green-400'}>{room?.is_private ? '🔒 Privée' : '🌐 Publique'}</span></div>
                         {isHost && <div className="flex justify-between"><span className="text-gray-500">Durée</span><span className="text-green-400">{fmtDuration(liveDuration)}</span></div>}
                       </div>
-                      <button onClick={copyLink} className="w-full bg-gray-800 hover:bg-gray-700 text-white rounded-xl px-4 py-2 text-xs transition-all flex items-center justify-center gap-2">
+                      <button onClick={copyLink} className="lr-ctrl-btn mt-2 text-xs justify-center">
                         {copied ? <><Check className="w-3.5 h-3.5 text-green-400" />Lien copié !</> : <><Copy className="w-3.5 h-3.5" />Copier le lien</>}
                       </button>
                       {/* V110000 — Partager dans le chat global */}
-                      <button onClick={shareInGlobalChat} className="w-full bg-gray-800 hover:bg-gray-700 text-white rounded-xl px-4 py-2 text-xs transition-all flex items-center justify-center gap-2">
+                      <button onClick={shareInGlobalChat} className="lr-ctrl-btn mt-1 text-xs justify-center">
                         {chatShared ? <><Check className="w-3.5 h-3.5 text-green-400" />Partagé dans le chat !</> : <><MessageCircle className="w-3.5 h-3.5 text-fuchsia-400" />Partager dans le chat global</>}
                       </button>
                     </div>
@@ -1914,18 +2412,28 @@ const LiveRoomPage = () => {
               onClick={() => setMobileSideOpen(false)} />
             <motion.div initial={{ y: '100%' }} animate={{ y: 0 }} exit={{ y: '100%' }}
               transition={{ type: 'spring', damping: 30, stiffness: 300 }}
-              className="fixed bottom-0 left-0 right-0 z-50 lg:hidden bg-gray-900 border-t border-gray-700 rounded-t-3xl max-h-[80vh] flex flex-col">
-              {/* Handle */}
-              <div className="flex-shrink-0 flex items-center justify-between px-4 py-3 border-b border-gray-800">
-                <div className="flex bg-gray-800 rounded-xl p-1 gap-1">
-                  {[['participants', '👥'], ['queue', '🎵'], ['controls', '⚙️']].map(([id, emoji]) => (
-                    <button key={id} onClick={() => setSideTab(id)}
-                      className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${sideTab === id ? 'bg-gray-700 text-white' : 'text-gray-500'}`}>
-                      {emoji} {id === 'participants' ? id.slice(0,4) : id === 'queue' ? 'File' : 'Ctrl'}
-                    </button>
-                  ))}
+              className="fixed bottom-0 left-0 right-0 z-50 lg:hidden rounded-t-3xl max-h-[80vh] flex flex-col lr-sheet overflow-hidden">
+              {/* Accent line */}
+              <div className="h-px w-full flex-shrink-0" style={{background:'linear-gradient(90deg,transparent,rgba(6,182,212,0.6),rgba(168,85,247,0.5),transparent)'}}/>
+              {/* Handle + tabs */}
+              <div className="flex-shrink-0 px-4 pt-3 pb-2" style={{background:'rgba(4,4,16,0.98)'}}>
+                <div className="w-10 h-1 rounded-full mx-auto mb-3" style={{background:'rgba(255,255,255,0.12)'}}/>
+                <div className="flex items-center justify-between">
+                  <div className="flex rounded-2xl p-1 gap-1" style={{background:'rgba(255,255,255,0.04)',border:'1px solid rgba(255,255,255,0.07)'}}>
+                    {[['participants','👥','Participants'],['queue','🎵','File'],['controls','⚙️','Ctrl']].map(([id,emoji,label]) => (
+                      <button key={id} onClick={() => setSideTab(id)}
+                        className="px-3 py-1.5 rounded-xl text-xs font-bold transition-all"
+                        style={sideTab===id?{background:'rgba(6,182,212,0.12)',color:'#22d3ee',border:'1px solid rgba(6,182,212,0.2)'}:{color:'rgba(255,255,255,0.35)'}}>
+                        {emoji} {label}
+                      </button>
+                    ))}
+                  </div>
+                  <button onClick={() => setMobileSideOpen(false)}
+                    className="w-8 h-8 rounded-xl flex items-center justify-center transition-all"
+                    style={{background:'rgba(255,255,255,0.05)',border:'1px solid rgba(255,255,255,0.08)'}}>
+                    <X className="w-4 h-4 text-gray-400"/>
+                  </button>
                 </div>
-                <button onClick={() => setMobileSideOpen(false)} className="text-gray-500 hover:text-white p-1"><X className="w-5 h-5" /></button>
               </div>
 
               <div className="flex-1 overflow-y-auto p-4 pb-8">
@@ -1961,25 +2469,25 @@ const LiveRoomPage = () => {
                 )}
 
                 {sideTab === 'controls' && (
-                  <div className="space-y-3">
+                  <div className="space-y-2.5">
                     {isHost ? (
                       <>
                         <button onClick={() => { setShowPicker(!showPicker); setShowPlaylists(false); }}
-                          className="w-full bg-gray-800 hover:bg-gray-700 text-white rounded-xl px-4 py-3 text-sm transition-all flex items-center gap-2">
-                          <Search className="w-4 h-4 text-cyan-400" />Chercher une musique
+                          className="lr-ctrl-btn">
+                          <Search className="w-4 h-4 text-cyan-400 flex-shrink-0" />Chercher une musique
                         </button>
                         <button onClick={() => { setShowPlaylists(!showPlaylists); if (!showPlaylists) loadMyPlaylists(); setShowPicker(false); }}
-                          className="w-full bg-gray-800 hover:bg-gray-700 text-white rounded-xl px-4 py-3 text-sm transition-all flex items-center gap-2">
-                          <BookOpen className="w-4 h-4 text-fuchsia-400" />Mes playlists
+                          className="lr-ctrl-btn">
+                          <BookOpen className="w-4 h-4 text-fuchsia-400 flex-shrink-0" />Mes playlists
                         </button>
                         <button onClick={() => fileInputRef.current?.click()} disabled={uploadingLocal}
-                          className="w-full bg-gray-800 hover:bg-gray-700 text-white rounded-xl px-4 py-3 text-sm transition-all flex items-center gap-2 disabled:opacity-50">
-                          <Upload className="w-4 h-4 text-green-400" />{uploadingLocal ? 'Upload…' : 'Fichier local (MP3, WAV…)'}
+                          className="lr-ctrl-btn disabled:opacity-40">
+                          <Upload className="w-4 h-4 text-green-400 flex-shrink-0" />{uploadingLocal ? 'Upload…' : 'Fichier local (MP3, WAV…)'}
                         </button>
                         {queue.length > 0 && (
                           <button onClick={() => { skipToNext(); setMobileSideOpen(false); }}
-                            className="w-full bg-gray-800 hover:bg-gray-700 text-white rounded-xl px-4 py-3 text-sm transition-all flex items-center gap-2">
-                            <SkipForward className="w-4 h-4 text-cyan-400" />Passer au suivant
+                            className="lr-ctrl-btn">
+                            <SkipForward className="w-4 h-4 text-cyan-400 flex-shrink-0" />Passer au suivant
                           </button>
                         )}
                         {canStop && (

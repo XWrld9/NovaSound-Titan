@@ -7,7 +7,7 @@ import {
 } from 'lucide-react';
 import { Slider } from '@/components/ui/slider';
 import { supabase } from '@/lib/supabaseClient';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence, useAnimationControls, useMotionValue } from 'framer-motion';
 import { useAuth } from '@/contexts/AuthContext';
 import { usePlayer } from '@/contexts/PlayerContext';
 import { usePlayerTime } from '@/contexts/PlayerTimeContext';
@@ -150,6 +150,20 @@ const AudioPlayerDesktop = ({ currentSong, playlist = [], onNext, onPrevious, on
   const swipeStartX   = useRef(null);
   // Drag vertical bulle minimisée — stocké en ref pour éviter les re-renders
   const miniDragY     = useRef(0);
+  const miniSide      = useRef(localStorage.getItem('ns_bubble_side') || 'right');
+  const miniYOffset   = useRef(parseFloat(localStorage.getItem('ns_bubble_y') || '0'));
+  const bubbleX       = useMotionValue(0);
+  const bubbleY       = useMotionValue(miniYOffset.current);
+  const bubbleControls = useAnimationControls();
+  const [bubbleSide, setBubbleSide] = React.useState(miniSide.current);
+
+  // Init position au montage
+  useEffect(() => {
+    if (isMinimized) {
+      bubbleY.set(miniYOffset.current);
+      bubbleControls.start({ scale: 1, opacity: 1, transition: { type: 'spring', stiffness: 400, damping: 28 } });
+    }
+  }, [isMinimized]); // eslint-disable-line
 
   const expandedRef   = useRef(null);
   const goNextRef     = useRef(null);
@@ -490,6 +504,18 @@ const AudioPlayerDesktop = ({ currentSong, playlist = [], onNext, onPrevious, on
     try { navigator.mediaSession.playbackState = isPlaying ? 'playing' : 'paused'; } catch {}
   }, [isPlaying]);
 
+  // Sync supplémentaire depuis les événements natifs de l'élément audio
+  // → garantit que le mini lecteur OS est toujours correct même pour les sons locaux
+  useEffect(() => {
+    const audio = audioRef.current;
+    if (!audio || !('mediaSession' in navigator)) return;
+    const onPlay  = () => { try { navigator.mediaSession.playbackState = 'playing'; } catch {} };
+    const onPause = () => { try { navigator.mediaSession.playbackState = 'paused';  } catch {} };
+    audio.addEventListener('play',  onPlay);
+    audio.addEventListener('pause', onPause);
+    return () => { audio.removeEventListener('play', onPlay); audio.removeEventListener('pause', onPause); };
+  }, []);
+
   useEffect(() => {
     if (!('mediaSession' in navigator) || !('setPositionState' in navigator.mediaSession)) return;
     if (!duration || isNaN(duration)) return;
@@ -812,26 +838,53 @@ const AudioPlayerDesktop = ({ currentSong, playlist = [], onNext, onPrevious, on
         />
         <motion.div
           initial={{ scale: 0, opacity: 0 }}
-          animate={{ scale: 1, opacity: 1 }}
+          animate={bubbleControls}
           exit={{ scale: 0, opacity: 0 }}
-          transition={{ type: 'spring', stiffness: 400, damping: 28 }}
-          /* ── Drag vertical ── */
-          drag="y"
+          style={{
+            position: 'fixed',
+            bottom: isNavHiddenPage ? '1rem' : 'calc(var(--ns-bottom-nav-h) + 1rem)',
+            right: bubbleSide === 'right' ? '1rem' : 'auto',
+            left:  bubbleSide === 'left'  ? '1rem' : 'auto',
+            x: bubbleX,
+            y: bubbleY,
+            zIndex: 9998,
+            cursor: 'grab',
+            touchAction: 'none',
+          }}
+          drag
           dragMomentum={false}
-          dragElastic={0.12}
-          dragConstraints={{
-            top:    -(typeof window !== 'undefined' ? window.innerHeight * 0.72 : 500),
-            bottom: 0,
-          }}
+          dragElastic={0.05}
           onDragEnd={(_, info) => {
-            miniDragY.current += info.offset.y;
-            // Swipe-down prononcé → fermer le player
-            if (info.offset.y > 90 || info.velocity.y > 600) { closePlayer(); return; }
-            // Swipe-up prononcé → ouvrir le grand lecteur
-            if (info.offset.y < -90 || info.velocity.y < -600) { setIsExpanded(true); }
+            const W = window.innerWidth;
+            const H = window.innerHeight;
+
+            // Swipe-down fort → fermer
+            if (info.velocity.y > 700) { closePlayer(); return; }
+            // Swipe-up fort → ouvrir grand lecteur
+            if (info.velocity.y < -700) { setIsExpanded(true); return; }
+
+            // Position absolue X de la bulle au lâcher
+            const originX = bubbleSide === 'right' ? W - 16 - 80 : 16;
+            const absX = originX + bubbleX.get() + info.offset.x;
+            const snapLeft = absX + 40 < W / 2;
+            const newSide = snapLeft ? 'left' : 'right';
+
+            // Y clampé
+            const navH = isNavHiddenPage ? 16 : 72;
+            const rawY = miniYOffset.current + info.offset.y;
+            const maxUp = -(H - navH - 260);
+            const clampedY = Math.min(0, Math.max(maxUp, rawY));
+            miniYOffset.current = clampedY;
+            localStorage.setItem('ns_bubble_y', String(clampedY));
+            localStorage.setItem('ns_bubble_side', newSide);
+            miniSide.current = newSide;
+
+            // Reset X puis mettre à jour côté + Y
+            bubbleX.set(0);
+            bubbleY.set(clampedY);
+            setBubbleSide(newSide);
           }}
-          className="ns-bubble-fixed right-4 z-[9998] flex flex-col items-end gap-2 touch-none"
-          style={{ bottom: isNavHiddenPage ? '1rem' : 'calc(var(--ns-bottom-nav-h) + 1rem)', cursor: 'grab' }}
+          className={`flex flex-col gap-2 ${bubbleSide === 'left' ? 'items-start' : 'items-end'}`}
         >
           {/* Grip handle — indique visuellement la déplaçabilité */}
           <div className="flex flex-col gap-[3px] items-center mb-0.5 opacity-40 pointer-events-none">
@@ -853,9 +906,9 @@ const AudioPlayerDesktop = ({ currentSong, playlist = [], onNext, onPrevious, on
                 animate={isPlaying ? { x: [0, -120, 0] } : { x: 0 }}
                 transition={{ duration: 8, repeat: Infinity, ease: 'linear', repeatDelay: 1 }}
                 className="whitespace-nowrap text-xs font-semibold text-white">
-                {currentSong.title}
+                <NoTranslate>{currentSong.title}</NoTranslate>
                 {isPlaying && <span className="text-gray-500 mx-2">·</span>}
-                {isPlaying && <span className="text-gray-400 text-[11px]">{currentSong.artist}</span>}
+                {isPlaying && <NoTranslate tag="span" className="text-gray-400 text-[11px]">{currentSong.artist}</NoTranslate>}
               </motion.div>
             </div>
 
