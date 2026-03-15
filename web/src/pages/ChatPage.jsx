@@ -66,19 +66,27 @@ const Avatar = memo(({ user, size = 8 }) => (
 
 const EmojiPicker = memo(({ onPick, onClose }) => (
   <motion.div
-    initial={{ opacity: 0, scale: 0.85, y: 6 }}
+    initial={{ opacity: 0, scale: 0.8, y: 8 }}
     animate={{ opacity: 1, scale: 1, y: 0 }}
-    exit={{ opacity: 0, scale: 0.85, y: 6 }}
-    transition={{ duration: 0.12 }}
-    className="absolute bottom-full mb-2 right-0 z-50 flex gap-1 bg-gray-900 border border-white/10 rounded-2xl p-2 shadow-2xl"
+    exit={{ opacity: 0, scale: 0.8, y: 8 }}
+    transition={{ type: 'spring', stiffness: 500, damping: 30 }}
+    className="absolute bottom-full mb-2 right-0 z-50"
+    style={{background:'linear-gradient(160deg,rgba(8,8,26,.98),rgba(5,5,18,.99))',border:'1px solid rgba(255,255,255,.1)',borderRadius:20,padding:'10px',boxShadow:'0 20px 60px rgba(0,0,0,.7),0 0 0 1px rgba(6,182,212,.06)',backdropFilter:'blur(28px)'}}
     onClick={e => e.stopPropagation()}
   >
-    {EMOJI_LIST.map(e => (
-      <button key={e} onClick={() => { onPick(e); onClose(); }}
-        className="w-8 h-8 flex items-center justify-center rounded-xl hover:bg-white/10 text-lg transition-colors">
-        {e}
-      </button>
-    ))}
+    <div style={{height:1,background:'linear-gradient(90deg,transparent,rgba(6,182,212,.5),rgba(168,85,247,.4),transparent)',marginBottom:8,borderRadius:1}}/>
+    <div className="flex gap-1 flex-wrap" style={{maxWidth:228}}>
+      {EMOJI_LIST.map((e,i) => (
+        <motion.button key={e}
+          whileHover={{scale:1.35,y:-3}} whileTap={{scale:0.9}}
+          initial={{opacity:0,scale:0.5}} animate={{opacity:1,scale:1}} transition={{delay:i*0.03,type:'spring',stiffness:500}}
+          onClick={() => { onPick(e); onClose(); }}
+          className="w-9 h-9 flex items-center justify-center rounded-xl text-xl transition-all"
+          style={{background:'rgba(255,255,255,.03)'}}>
+          {e}
+        </motion.button>
+      ))}
+    </div>
   </motion.div>
 ));
 
@@ -88,18 +96,22 @@ const ReactionBar = memo(({ msgId, reactions, currentUserId, onToggle }) => {
   if (!entries.length) return null;
   return (
     <div className="flex flex-wrap gap-1 mt-1.5">
-      {entries.map(([emoji, data]) => (
-        <button key={emoji}
-          onClick={() => onToggle(msgId, emoji)}
-          className={`flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold border transition-all ${
-            data.users?.includes(currentUserId)
-              ? 'bg-cyan-500/20 border-cyan-500/40 text-cyan-300'
-              : 'bg-white/5 border-white/10 text-gray-400 hover:bg-white/10'
-          }`}>
-          <span>{emoji}</span>
-          <span>{data.count}</span>
-        </button>
-      ))}
+      {entries.map(([emoji, data]) => {
+        const isMe = data.users?.includes(currentUserId);
+        return (
+          <motion.button key={emoji}
+            whileHover={{scale:1.12,y:-1}} whileTap={{scale:0.9}}
+            onClick={() => onToggle(msgId, emoji)}
+            className="flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold transition-all"
+            style={isMe
+              ? {background:'rgba(6,182,212,.18)',border:'1px solid rgba(6,182,212,.45)',color:'#67e8f9',boxShadow:'0 2px 10px rgba(6,182,212,.2)'}
+              : {background:'rgba(255,255,255,.05)',border:'1px solid rgba(255,255,255,.09)',color:'rgba(255,255,255,.55)'}
+            }>
+            <span className="text-sm leading-none">{emoji}</span>
+            <span className="tabular-nums">{data.count}</span>
+          </motion.button>
+        );
+      })}
     </div>
   );
 });
@@ -111,7 +123,8 @@ const CHAT_STYLES = `
   /* ══ KEYFRAMES ══ */
   @keyframes mentionPulse{0%,100%{box-shadow:0 0 0 0 rgba(6,182,212,.5)}60%{box-shadow:0 0 0 8px rgba(6,182,212,0)}}
   @keyframes mentionAllPulse{0%,100%{box-shadow:0 0 0 0 rgba(234,179,8,.5)}60%{box-shadow:0 0 0 8px rgba(234,179,8,0)}}
-  @keyframes selfMentionShine{0%{background-position:0% 50%}100%{background-position:200% 50%}}
+  @keyframes selfMentionShine{0%{background-position:0% 50%}50%{background-position:100% 50%}100%{background-position:0% 50%}}
+  @keyframes mentionBounce{0%,100%{transform:scale(1)}30%{transform:scale(1.06)}60%{transform:scale(0.97)}}
   @keyframes chatFadeIn{from{opacity:0;transform:translateY(10px) scale(0.97)}to{opacity:1;transform:translateY(0) scale(1)}}
   @keyframes chatFadeInOwn{from{opacity:0;transform:translateY(10px) scale(0.97) translateX(10px)}to{opacity:1;transform:translateY(0) scale(1) translateX(0)}}
   @keyframes topBarGlow{0%,100%{box-shadow:0 1px 0 rgba(6,182,212,.12),0 0 30px rgba(6,182,212,.04)}50%{box-shadow:0 1px 0 rgba(168,85,247,.15),0 0 30px rgba(168,85,247,.06)}}
@@ -219,32 +232,53 @@ const CHAT_STYLES = `
 
   /* ══ MENTIONS ══ */
   .chat-mention-user {
-    display:inline-flex;align-items:center;
-    background:linear-gradient(135deg,rgba(6,182,212,.18),rgba(6,182,212,.08));
-    border:1px solid rgba(6,182,212,.35);color:#67e8f9;font-weight:700;
-    padding:0 6px 1px;border-radius:7px;font-size:.87em;letter-spacing:.01em;
-    transition:all .15s;cursor:pointer;
+    display:inline-flex;align-items:center;gap:2px;
+    background:linear-gradient(135deg,rgba(6,182,212,.15),rgba(6,182,212,.07));
+    border:1px solid rgba(6,182,212,.4);color:#67e8f9;font-weight:800;
+    padding:1px 8px 2px 6px;border-radius:20px;font-size:.86em;letter-spacing:.01em;
+    transition:all .18s cubic-bezier(.34,1.56,.64,1);cursor:pointer;
     animation:mentionPulse 2.5s ease-in-out 1;
     text-decoration:none;
+    box-shadow:0 2px 10px rgba(6,182,212,.12),inset 0 1px 0 rgba(255,255,255,.06);
+    position:relative;
+    white-space:nowrap;
+    vertical-align:middle;
+  }
+  .chat-mention-user::before {
+    content:'@';font-size:.78em;opacity:.5;font-weight:900;
   }
   .chat-mention-user:hover {
-    background:linear-gradient(135deg,rgba(6,182,212,.3),rgba(6,182,212,.15));
-    border-color:rgba(6,182,212,.6);color:#a5f3fc;
-    transform:translateY(-1px);box-shadow:0 4px 12px rgba(6,182,212,.2);
+    background:linear-gradient(135deg,rgba(6,182,212,.28),rgba(6,182,212,.14));
+    border-color:rgba(6,182,212,.7);color:#a5f3fc;
+    transform:translateY(-1.5px) scale(1.04);
+    box-shadow:0 8px 20px rgba(6,182,212,.25),inset 0 1px 0 rgba(255,255,255,.1);
   }
   .chat-mention-all {
-    display:inline-flex;align-items:center;gap:3px;
-    background:linear-gradient(135deg,rgba(234,179,8,.22),rgba(251,146,60,.12));
-    border:1px solid rgba(234,179,8,.4);color:#fde047;font-weight:800;
-    padding:0 6px 1px;border-radius:7px;font-size:.87em;
+    display:inline-flex;align-items:center;gap:4px;
+    background:linear-gradient(135deg,rgba(234,179,8,.2),rgba(251,146,60,.1));
+    border:1px solid rgba(234,179,8,.45);color:#fde047;font-weight:900;
+    padding:1px 9px 2px 7px;border-radius:20px;font-size:.86em;
+    box-shadow:0 2px 12px rgba(234,179,8,.15),inset 0 1px 0 rgba(255,255,255,.06);
     animation:mentionAllPulse 2s ease-in-out 1;
+    vertical-align:middle;
+    white-space:nowrap;
+    letter-spacing:.01em;
+  }
+  .chat-mention-all::before {
+    content:'📢';font-size:.85em;
   }
   .chat-mention-self {
-    display:inline-flex;align-items:center;
-    background:linear-gradient(90deg,rgba(6,182,212,.3),rgba(168,85,247,.25),rgba(6,182,212,.3));
-    background-size:200% 100%;border:1px solid rgba(168,85,247,.45);
-    color:#d8b4fe;font-weight:800;padding:0 6px 1px;border-radius:7px;font-size:.87em;
-    animation:selfMentionShine 2s linear 3;
+    display:inline-flex;align-items:center;gap:2px;
+    background:linear-gradient(90deg,rgba(6,182,212,.28),rgba(168,85,247,.22),rgba(236,72,153,.18),rgba(6,182,212,.28));
+    background-size:300% 100%;border:1px solid rgba(168,85,247,.5);
+    color:#e9d5ff;font-weight:900;padding:1px 9px 2px 7px;border-radius:20px;font-size:.86em;
+    box-shadow:0 2px 14px rgba(168,85,247,.2),inset 0 1px 0 rgba(255,255,255,.08);
+    animation:selfMentionShine 2.5s linear 4;
+    vertical-align:middle;
+    white-space:nowrap;
+  }
+  .chat-mention-self::before {
+    content:'@';font-size:.78em;opacity:.55;font-weight:900;
   }
   .chat-link{color:#22d3ee;text-decoration:underline;text-underline-offset:3px;word-break:break-all;transition:color .15s;}
   .chat-link:hover{color:#67e8f9;text-shadow:0 0 12px rgba(6,182,212,.5);}
@@ -358,7 +392,7 @@ const CHAT_STYLES = `
 ``;
 
 // Rendu du contenu avec mentions colorées premium
-const renderContent = (text, currentUserId, msgUserId) => {
+const renderContent = (text, currentUserId, msgUserId, currentUsername) => {
   if (!text) return null;
   const urlRegex = /(https?:\/\/[^\s]+|#\/live\/[^\s]+)/g;
   const parts = text.split(urlRegex);
@@ -373,11 +407,37 @@ const renderContent = (text, currentUserId, msgUserId) => {
     const mentionRegex = /(@[\w-]+)/g;
     const subParts = part.split(mentionRegex);
     return subParts.map((sub, j) => {
-      if (!sub.startsWith('@')) return <span key={`${i}-${j}`}>{sub}</span>;
+      const subKey = i + '-' + j;
+      if (!sub.startsWith('@')) return <span key={subKey}>{sub}</span>;
       const lower = sub.toLowerCase();
+      const mentionName = sub.slice(1).toLowerCase(); // sans le @
+
+      // @tous / @all / @everyone etc.
       const isAll = ['@tous','@all','@everyone','@todo','@todos','@tutti','@allen','@alle'].includes(lower);
-      if (isAll) return <span key={`${i}-${j}`} className="chat-mention-all">📢{sub}</span>;
-      return <span key={`${i}-${j}`} className="chat-mention-user">{sub}</span>;
+      if (isAll) return (
+        <span key={subKey} className="chat-mention-all" title="Mentionner tout le monde">
+          {sub}
+        </span>
+      );
+
+      // Mention de soi-même
+      const isSelf = currentUsername && mentionName === currentUsername.toLowerCase();
+      if (isSelf) return (
+        <span key={subKey} className="chat-mention-self" title="Tu as été mentionné(e)">
+          {sub.slice(1)}{/* @ géré par ::before CSS */}
+        </span>
+      );
+
+      // Mention normale — cliquable vers la page artiste
+      return (
+        <a key={subKey}
+          href={`/#/search?q=${encodeURIComponent(mentionName)}&type=artists`}
+          className="chat-mention-user"
+          title={`Voir le profil de ${sub}`}
+          onClick={e => e.stopPropagation()}>
+          {sub.slice(1)}{/* @ géré par ::before CSS */}
+        </a>
+      );
     });
   });
 };
@@ -448,31 +508,43 @@ const ChatMessage = memo(({
             <div className="flex items-center gap-1.5 mb-1 px-1">
               {user?.id
                 ? <Link to={`/artist/${user.id}`} onClick={e => e.stopPropagation()}
-                    className="text-[11px] font-bold text-cyan-400 hover:text-cyan-300 truncate transition-colors">
+                    className="text-[11px] font-black text-cyan-400 hover:text-white truncate transition-all hover:drop-shadow-[0_0_8px_rgba(6,182,212,0.8)]">
                     <NoTranslate>{user.username || 'Utilisateur'}</NoTranslate>
                   </Link>
                 : <span className="text-[11px] font-bold text-gray-500 truncate"><NoTranslate>{user?.username || 'Utilisateur'}</NoTranslate></span>
               }
-              {isAdmin && <span className="text-[9px] px-1.5 py-0.5 bg-yellow-500/20 text-yellow-400 rounded-full border border-yellow-500/30">ADMIN</span>}
-              {hasMentionAll && <span className="text-[9px] px-1.5 py-0.5 bg-yellow-500/20 text-yellow-400 rounded-full border border-yellow-500/30">📢 @tous</span>}
+              {isAdmin && (
+                <span className="inline-flex items-center gap-0.5 text-[9px] px-1.5 py-0.5 rounded-full font-black tracking-wide"
+                  style={{background:'linear-gradient(135deg,rgba(234,179,8,.15),rgba(251,146,60,.1))',border:'1px solid rgba(234,179,8,.35)',color:'#fbbf24'}}>
+                  👑 ADMIN
+                </span>
+              )}
+              {hasMentionAll && (
+                <span className="inline-flex items-center gap-0.5 text-[9px] px-1.5 py-0.5 rounded-full font-bold"
+                  style={{background:'rgba(234,179,8,.1)',border:'1px solid rgba(234,179,8,.25)',color:'#fde047'}}>
+                  📢 @tous
+                </span>
+              )}
             </div>
           )}
 
           {/* Citation reply */}
           {msg.reply_to_id && msg.reply_to_content && (
             <div
-              className={`flex items-start gap-2 mb-1.5 px-2.5 py-1.5 rounded-xl cursor-pointer max-w-full ${
-                isOwn
-                  ? 'bg-cyan-500/15 border border-cyan-500/30 self-end'
-                  : 'bg-white/[0.08] border border-white/[0.12]'
-              }`}
+              className={'flex items-start gap-2 mb-1.5 px-3 py-2 rounded-xl cursor-pointer max-w-full transition-all hover:brightness-110 ' + (isOwn ? 'self-end' : '')}
+              style={isOwn
+                ? {background:'rgba(6,182,212,.08)',border:'1px solid rgba(6,182,212,.2)',borderLeft:'3px solid rgba(6,182,212,.6)'}
+                : {background:'rgba(255,255,255,.04)',border:'1px solid rgba(255,255,255,.07)',borderLeft:'3px solid rgba(168,85,247,.45)'}
+              }
               onClick={e => {
                 e.stopPropagation();
-                document.getElementById(`msg-${msg.reply_to_id}`)?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                document.getElementById('msg-'+msg.reply_to_id)?.scrollIntoView({ behavior: 'smooth', block: 'center' });
               }}>
-              <Reply className="w-3 h-3 text-cyan-500/60 flex-shrink-0 mt-0.5" />
-              <div className="min-w-0">
-                <p className="text-[10px] font-semibold text-cyan-400/80 truncate">↩ <NoTranslate tag="span">{msg.reply_to_username}</NoTranslate></p>
+              <Reply className="w-3 h-3 flex-shrink-0 mt-0.5" style={{color: isOwn ? 'rgba(6,182,212,.7)' : 'rgba(168,85,247,.7)'}} />
+              <div className="min-w-0 flex-1">
+                <p className="text-[10px] font-bold truncate mb-0.5" style={{color: isOwn ? '#67e8f9' : '#c084fc'}}>
+                  ↩ <NoTranslate tag="span">{msg.reply_to_username}</NoTranslate>
+                </p>
                 <p className="text-[11px] text-gray-400 truncate">{msg.reply_to_content}</p>
               </div>
             </div>
@@ -522,37 +594,55 @@ const ChatMessage = memo(({
 
         <AnimatePresence>
           {(showActions || showEmoji) && currentUser && !editing && (
-            <motion.div initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -4 }}
-              className={`flex items-center gap-1 mt-1.5 flex-wrap ${isOwn ? 'justify-end pr-2' : 'justify-start pl-9'}`}
-              onClick={e => e.stopPropagation()}>
-              <button onClick={() => { onReply(msg); setShowActions(false); }}
-                className="flex items-center gap-1 px-2 py-1 rounded-lg bg-white/5 hover:bg-cyan-500/15 text-gray-500 hover:text-cyan-400 text-[11px] transition-all">
+            <motion.div
+              initial={{ opacity: 0, y: -8, scale: 0.94 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: -8, scale: 0.94 }}
+              transition={{ type: 'spring', stiffness: 500, damping: 32 }}
+              className={`flex items-center gap-1 mt-2 flex-wrap ${isOwn ? 'justify-end pr-2' : 'justify-start pl-9'}`}
+              onClick={e => e.stopPropagation()}
+              style={{background:'rgba(4,4,18,.85)',backdropFilter:'blur(16px)',border:'1px solid rgba(255,255,255,.07)',borderRadius:14,padding:'5px 7px',width:'fit-content'}}
+            >
+              <motion.button whileHover={{scale:1.08}} whileTap={{scale:0.9}}
+                onClick={() => { onReply(msg); setShowActions(false); }}
+                className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl text-[11px] font-semibold"
+                style={{color:'rgba(6,182,212,.85)'}}>
                 <Reply className="w-3 h-3" /> Répondre
-              </button>
+              </motion.button>
               {canEdit && (
-                <button onClick={() => { setEditing(true); setEditText(msg.content); setShowActions(false); }}
-                  className="flex items-center gap-1 px-2 py-1 rounded-lg bg-white/5 hover:bg-blue-500/20 text-gray-500 hover:text-blue-400 text-[11px] transition-all">
+                <motion.button whileHover={{scale:1.08}} whileTap={{scale:0.9}}
+                  onClick={() => { setEditing(true); setEditText(msg.content); setShowActions(false); }}
+                  className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl text-[11px] font-semibold"
+                  style={{color:'rgba(129,140,248,.85)'}}>
                   <Edit2 className="w-3 h-3" /> Modifier
-                </button>
+                </motion.button>
               )}
               <div className="relative">
-                <button onClick={() => setShowEmoji(v => !v)}
-                  className="flex items-center gap-1 px-2 py-1 rounded-lg bg-white/5 hover:bg-white/10 text-gray-500 hover:text-yellow-400 text-[11px] transition-all">
-                  <Smile className="w-3 h-3" />
-                </button>
+                <motion.button whileHover={{scale:1.08}} whileTap={{scale:0.9}}
+                  onClick={() => setShowEmoji(v => !v)}
+                  className="flex items-center gap-1 px-2 py-1.5 rounded-xl text-[11px]"
+                  style={{color:showEmoji?'#fbbf24':'rgba(255,255,255,.4)'}}>
+                  <Smile className="w-3.5 h-3.5" />
+                </motion.button>
                 <AnimatePresence>
                   {showEmoji && <EmojiPicker onPick={(e) => onToggleReaction(msg.id, e)} onClose={() => setShowEmoji(false)} />}
                 </AnimatePresence>
               </div>
               {canDelete && (
-                <button onClick={() => { onDelete(msg.id); setShowActions(false); }}
-                  className="flex items-center gap-1 px-2 py-1 rounded-lg bg-white/5 hover:bg-red-500/20 text-gray-600 hover:text-red-400 text-[11px] transition-all">
+                <motion.button whileHover={{scale:1.08}} whileTap={{scale:0.9}}
+                  onClick={() => { onDelete(msg.id); setShowActions(false); }}
+                  className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl text-[11px] font-semibold"
+                  style={{color:'rgba(248,113,113,.7)'}}>
                   <Trash2 className="w-3 h-3" /> Suppr.
-                </button>
+                </motion.button>
               )}
-              <button onClick={() => { setShowActions(false); setShowEmoji(false); }} className="p-1 text-gray-700 hover:text-white">
+              <div style={{width:1,height:16,background:'rgba(255,255,255,.08)',margin:'0 2px'}}/>
+              <motion.button whileHover={{scale:1.1}} whileTap={{scale:0.9}}
+                onClick={() => { setShowActions(false); setShowEmoji(false); }}
+                className="p-1.5 rounded-xl"
+                style={{color:'rgba(255,255,255,.25)'}}>
                 <X className="w-3 h-3" />
-              </button>
+              </motion.button>
             </motion.div>
           )}
         </AnimatePresence>
@@ -1249,55 +1339,74 @@ const ChatPage = () => {
                   <AnimatePresence>
                     {showMention && (mentionUsers.length > 0 || showMentionAll) && (
                       <motion.div
-                        initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 8 }}
-                        transition={{ duration: 0.14 }}
+                        initial={{ opacity: 0, y: 10, scale: 0.97 }}
+                        animate={{ opacity: 1, y: 0, scale: 1 }}
+                        exit={{ opacity: 0, y: 10, scale: 0.97 }}
+                        transition={{ type: 'spring', stiffness: 480, damping: 32 }}
                         className="mention-popup absolute bottom-full left-3 right-3 mb-2 rounded-2xl overflow-hidden z-50"
-                        style={{ maxHeight: 280 }}
+                        style={{ maxHeight: 300 }}
                       >
                         {/* Header popup */}
-                        <div className="flex items-center gap-2 px-3 py-2" style={{ borderBottom: '1px solid rgba(255,255,255,.06)', background: 'rgba(255,255,255,.03)' }}>
-                          <AtSign className="w-3 h-3 text-cyan-400/70" />
-                          <span className="text-[10px] text-gray-500 font-semibold uppercase tracking-widest">Mentions</span>
+                        <div className="flex items-center justify-between px-3 py-2" style={{ borderBottom: '1px solid rgba(255,255,255,.06)', background: 'rgba(255,255,255,.02)' }}>
+                          <div className="flex items-center gap-2">
+                            <AtSign className="w-3 h-3 text-cyan-400/70" />
+                            <span className="text-[10px] text-gray-500 font-black uppercase tracking-widest">Mentions</span>
+                          </div>
+                          <span className="text-[10px] text-gray-700">↵ pour sélectionner</span>
                         </div>
-                        <div className="p-1.5 space-y-0.5 overflow-y-auto" style={{ maxHeight: 220 }}>
+                        <div className="p-1.5 space-y-0.5 overflow-y-auto" style={{ maxHeight: 240 }}>
                           {/* @tous */}
-                          {showMentionAll && MENTION_ALL_SUGGESTIONS.map(s => (
-                            <button key={s.label}
-                              className="mention-all-item w-full flex items-center gap-3 px-3 py-2.5 rounded-xl transition-colors text-left"
+                          {showMentionAll && MENTION_ALL_SUGGESTIONS.map((s, si) => (
+                            <motion.button key={s.label}
+                              initial={{ opacity: 0, x: -6 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: si * 0.04 }}
+                              className="mention-all-item w-full flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all text-left"
                               style={{ background: 'transparent' }}
                               onMouseDown={e => { e.preventDefault(); insertMention(s.label.slice(1)); }}>
-                              <div className="w-8 h-8 rounded-full flex items-center justify-center text-base flex-shrink-0" style={{ background: 'rgba(234,179,8,.15)', border: '1px solid rgba(234,179,8,.3)' }}>
+                              <div className="w-9 h-9 rounded-2xl flex items-center justify-center text-lg flex-shrink-0" style={{ background: 'rgba(234,179,8,.15)', border: '1px solid rgba(234,179,8,.3)', boxShadow: '0 0 12px rgba(234,179,8,.1)' }}>
                                 📢
                               </div>
                               <div className="min-w-0 flex-1">
                                 <div className="mention-all-label text-yellow-300 text-sm font-black">{s.label}</div>
-                                <div className="text-gray-500 text-[11px]">{s.desc}</div>
+                                <div className="text-gray-600 text-[11px]">{s.desc}</div>
                               </div>
-                              <span className="text-[9px] px-1.5 py-0.5 rounded-full font-bold text-yellow-400" style={{ background: 'rgba(234,179,8,.12)', border: '1px solid rgba(234,179,8,.2)' }}>TOUS</span>
-                            </button>
+                              <span className="text-[9px] px-1.5 py-0.5 rounded-full font-black text-yellow-400" style={{ background: 'rgba(234,179,8,.12)', border: '1px solid rgba(234,179,8,.2)' }}>TOUS</span>
+                            </motion.button>
                           ))}
                           {/* Séparateur si les deux */}
                           {showMentionAll && mentionUsers.length > 0 && (
-                            <div style={{ height: 1, background: 'rgba(255,255,255,.05)', margin: '4px 8px' }} />
+                            <div style={{ height: 1, background: 'linear-gradient(90deg,transparent,rgba(255,255,255,.07),transparent)', margin: '4px 8px' }} />
                           )}
                           {/* Utilisateurs */}
-                          {mentionUsers.map(u => (
-                            <button key={u.id}
-                              className="mention-autocomplete-item w-full flex items-center gap-3 px-3 py-2.5 rounded-xl transition-colors text-left"
+                          {mentionUsers.map((u, ui) => (
+                            <motion.button key={u.id}
+                              initial={{ opacity: 0, x: -6 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: ui * 0.04 }}
+                              className="mention-autocomplete-item w-full flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all text-left"
                               style={{ background: 'transparent' }}
                               onMouseDown={e => { e.preventDefault(); insertMention(u.username); }}>
-                              {u.avatar_url
-                                ? <img src={u.avatar_url} alt="" className="w-8 h-8 rounded-full object-cover flex-shrink-0" style={{ border: '1px solid rgba(6,182,212,.25)' }} />
-                                : <div className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0" style={{ background: 'rgba(6,182,212,.12)', border: '1px solid rgba(6,182,212,.2)' }}>
-                                    <User className="w-3.5 h-3.5 text-cyan-400/60" />
-                                  </div>
-                              }
-                              <div className="min-w-0 flex-1">
-                                <div className="mention-name text-white text-sm font-bold transition-colors"><NoTranslate>@{u.username}</NoTranslate></div>
+                              <div className="relative flex-shrink-0">
+                                {u.avatar_url
+                                  ? <img src={u.avatar_url} alt="" className="w-9 h-9 rounded-2xl object-cover" style={{ border: '1px solid rgba(6,182,212,.3)' }} />
+                                  : <div className="w-9 h-9 rounded-2xl flex items-center justify-center font-black text-sm text-white" style={{ background: 'linear-gradient(135deg,rgba(6,182,212,.25),rgba(168,85,247,.2))', border: '1px solid rgba(6,182,212,.25)' }}>
+                                      {(u.username||'?')[0].toUpperCase()}
+                                    </div>
+                                }
+                                <span className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full bg-green-400 border-2 border-[#080820]"/>
                               </div>
-                              <Reply className="w-3 h-3 text-gray-600 flex-shrink-0" />
-                            </button>
+                              <div className="min-w-0 flex-1">
+                                <div className="mention-name text-white text-sm font-black transition-colors"><NoTranslate>@{u.username}</NoTranslate></div>
+                                <div className="text-gray-600 text-[10px]">Cliquer pour mentionner</div>
+                              </div>
+                              <div className="flex-shrink-0 flex items-center gap-1">
+                                <span className="text-[9px] px-1.5 py-0.5 rounded-full text-cyan-400/70 font-bold" style={{ background: 'rgba(6,182,212,.06)', border: '1px solid rgba(6,182,212,.12)' }}>@TAG</span>
+                              </div>
+                            </motion.button>
                           ))}
+                          {mentionUsers.length === 0 && !showMentionAll && (
+                            <div className="flex flex-col items-center py-4 text-center">
+                              <User className="w-5 h-5 text-gray-700 mb-1.5"/>
+                              <p className="text-gray-700 text-xs">Aucun utilisateur trouvé</p>
+                            </div>
+                          )}
                         </div>
                       </motion.div>
                     )}
