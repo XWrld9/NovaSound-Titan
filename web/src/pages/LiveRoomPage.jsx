@@ -596,6 +596,7 @@ const BRAND_STYLES = `
   /* ── Scrollbar hide ── */
   .scrollbar-hide::-webkit-scrollbar { display: none; }
   .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
+`;
 
 /* ══════════════════════════════════════════════════════════════════════════
    CONSTANTES
@@ -655,8 +656,8 @@ const fmtDuration = (secs) => {
   const h = Math.floor(secs / 3600);
   const m = Math.floor((secs % 3600) / 60);
   const s = secs % 60;
-  if (h > 0) return `${h}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
-  return `${m}:${String(s).padStart(2, '0')}`;
+  if (h > 0) return h + ':' + String(m).padStart(2, '0') + ':' + String(s).padStart(2, '0');
+  return m + ':' + String(s).padStart(2, '0');
 };
 
 /* ══════════════════════════════════════════════════════════════════════════
@@ -685,7 +686,7 @@ const Eq = ({ active = true, color = 'cyan' }) => {
     <div className="flex items-end gap-0.5 h-4 flex-shrink-0">
       {bars.map((h, i) => (
         <motion.div key={i} className={`w-0.5 rounded-full ${c}`}
-          animate={active ? { height: [`${h * 100}%`, '20%', `${h * 80}%`, '100%', `${h * 100}%`] } : { height: '20%' }}
+          animate={active ? { height: [(h*100)+'%', '20%', (h*80)+'%', '100%', (h*100)+'%'] } : { height: '20%' }}
           transition={{ duration: 1.2, repeat: Infinity, delay: i * 0.15, ease: 'easeInOut' }}
           style={{ height: '20%' }} />
       ))}
