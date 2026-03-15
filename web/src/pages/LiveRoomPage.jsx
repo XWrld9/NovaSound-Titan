@@ -964,8 +964,10 @@ const ChatMsg = ({ m, isMine, currentUserId, currentUsername, participants, isEd
             <button onClick={onCancelEdit} className="text-red-300 hover:text-red-200 transition-colors"><XCircle className="w-4 h-4" /></button>
           </div>
         ) : (
-          <><p className="break-words whitespace-pre-wrap text-sm leading-relaxed">{renderLiveContent(m.content, currentUsername, participants)}</p>
-          {m.is_edited && <p className="text-[10px] opacity-40 mt-0.5 italic">modifié</p></>
+          <>
+            <p className="break-words whitespace-pre-wrap text-sm leading-relaxed">{renderLiveContent(m.content, currentUsername, participants)}</p>
+            {m.is_edited && <p className="text-[10px] opacity-40 mt-0.5 italic">modifié</p>}
+          </>
         )}
       </div>
       <div className={`flex items-center gap-2 mt-1 px-1 ${isMine ? 'flex-row-reverse' : ''}`}>
