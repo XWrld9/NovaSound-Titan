@@ -30,9 +30,13 @@ const _isDupe = key => {
 };
 
 /* ─── Edge Function push helper ─────────────────────────────────── */
-const _pushUrl = sb =>
-  (sb.supabaseUrl || import.meta?.env?.VITE_SUPABASE_URL || '') +
+// ✅ On utilise directement la variable d'env — sb.supabaseUrl n'est pas
+// garanti d'être exposé selon la version de supabase-js
+const SUPABASE_FUNCTIONS_URL =
+  (import.meta?.env?.VITE_SUPABASE_URL || '') +
   '/functions/v1/send-push-notification';
+
+const _pushUrl = (_sb) => SUPABASE_FUNCTIONS_URL;
 
 // ✅ FIX v2.0.2 : utiliser le JWT de session utilisateur, PAS la clé anon.
 // L'Edge Function appelle supabase.auth.getUser(token) pour valider l'appelant.
