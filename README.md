@@ -1,4 +1,4 @@
-# NovaSound TITAN LUX — v2.0.1
+# NovaSound TITAN LUX  v2.0.1
 
 > **La plateforme musicale nouvelle génération.**  
 > Streamez, uploadez, connectez-vous avec des artistes, et profitez d'un lecteur audio natif complet.  
